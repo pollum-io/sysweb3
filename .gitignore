@@ -1,0 +1,10 @@
+
+# dist
+dist/
+build/
+bak/
+
+# dependencies
+node_modules/
+
+scratch/

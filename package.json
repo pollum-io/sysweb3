@@ -1,0 +1,57 @@
+{
+  "name": "@syscoin/web3.js",
+  "version": "1.1.12",
+  "description": "Syscoin Web 3 JavaScript API",
+  "author": "Pollum labs",
+  "email": "pollum@io",
+  "license": "MIT",
+  "main": "cjs/index.js",
+  "module": "esm/index.js",
+  "typings": "types/index.d.ts",
+  "homepage": "https://github.com/Pollum-io/syscoin-web3.js#readme",
+  "scripts": {
+    "clean": "rimraf dist/",
+    "prebuild": "npm run clean",
+    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "build-rollup": "rollup -c scripts/config/rollup.config.js && rollup -c scripts/config/rollup.config.js --environment NODE_ENV:production",
+    "build-all": "npm run build && npm run build-rollup",
+    "prerelease": "npm run build && npm version patch --no-git-tag-version",
+    "release": "node ./scripts/package/copy && npm run release:npm",
+    "release:npm": "npm publish ./dist -access public",
+    "release:preflight": "npm pack ./dist --dry-run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pollum-io/syscoin-web3.js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Pollum-io/syscoin-web3.js/issues"
+  },
+  "dependencies": {
+    "@syscoin/syscoin-core": "^1.0.5",
+    "@syscoin/syscoin-keystore": "^1.0.11",
+    "@syscoin/syscoin-network": "^1.0.12",
+    "@syscoin/syscoin-wallet": "^1.0.21"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^16.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^10.0.0",
+    "@rollup/plugin-replace": "^2.3.4",
+    "@rollup/plugin-typescript": "^8.2.0",
+    "@types/mocha": "^8.2.0",
+    "@types/node": "^14.11.2",
+    "node-fetch": "^2.6.1",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.42.4",
+    "rollup-plugin-node-builtins": "^2.0.0",
+    "rollup-plugin-node-globals": "^1.4.0",
+    "rollup-plugin-node-polyfills": "^0.2.1",
+    "rollup-plugin-sourcemaps": "^0.6.3",
+    "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-typescript-paths": "^1.2.2",
+    "standard-version": "^9.0.0",
+    "typescript": "^4.0.3",
+    "webpack-config-utils": "^2.3.1"
+  }
+}

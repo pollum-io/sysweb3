@@ -1,0 +1,27 @@
+{
+  "name": "@syscoin/core",
+  "version": "0.0.1",
+  "description": "Syscoin Web 3 JavaScript API",
+  "author": "Frank Fox",
+  "license": "MIT",
+  "email": "ffox77@gmail.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pollum-io/syscoin-web3.js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Pollum-io/syscoin-web3.js/issues"
+  },
+  "homepage": "https://github.com/Pollum-io/syscoin-web3.js#readme",
+  "main": "cjs/index.js",
+  "module": "esm/index.js",
+  "typings": "types/index.d.ts",
+  "scripts": {
+    "prebuild": "rimraf dist/",
+    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "prerelease": "npm run build && npm version patch",
+    "release": "node ../../scripts/package/copy && npm run release:npm",
+    "release:npm": "npm publish ./dist -access public",
+    "release:preflight": "npm pack ./dist --dry-run"
+  }
+}
