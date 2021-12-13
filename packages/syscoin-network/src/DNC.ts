@@ -1,6 +1,6 @@
 export class DNC {
 
-  static BLOCK_EXPLORER_URL = 'https://block-explorer.constellationnetwork.io';
-  static LOAD_BALANCER_URL = 'http://lb.constellationnetwork.io:9000';
+  static BLOCK_EXPLORER_URL = 'https://blockbook.elint.services/';
+  static LOAD_BALANCER_URL = 'https://blockbook.elint.services/';
 }
 

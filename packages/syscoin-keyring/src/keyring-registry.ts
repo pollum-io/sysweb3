@@ -34,7 +34,7 @@ export const keyringRegistry = new KeyringRegistry();
 // - creates a single wallet with multiple chains, each with their own single account.
 // createMultiChainHdWallet(seed: string)
 //  DEFAULT ACCOUNTS
-//    Constellation, Ethereum
+//    syscoin, Ethereum
 //    keyring.addAccount() throws Error
 //  ERC-20
 //    account.addToken(chain, contractId)
