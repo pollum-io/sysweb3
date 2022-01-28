@@ -1,5 +1,5 @@
 {
-  "name": "@syscoin/web3.js",
+  "name": "@pollum-io/syscoin-web3-sdk",
   "version": "1.1.12",
   "description": "Syscoin Web 3 JavaScript API",
   "author": "Pollum labs",
@@ -27,12 +27,9 @@
   "bugs": {
     "url": "https://github.com/Pollum-io/syscoin-web3.js/issues"
   },
-  "dependencies": {
-    "@syscoin/syscoin-core": "^1.0.5",
-    "@syscoin/syscoin-keystore": "^1.0.11",
-    "@syscoin/syscoin-network": "^1.0.12",
-    "@syscoin/syscoin-wallet": "^1.0.21"
-  },
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "@rollup/plugin-commonjs": "^16.0.0",
     "@rollup/plugin-json": "^4.1.0",

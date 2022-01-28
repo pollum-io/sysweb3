@@ -1,1 +1,0 @@
-export * from './default-syscoin-web3-provider'
