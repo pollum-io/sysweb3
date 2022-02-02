@@ -4,8 +4,8 @@
   "description": "",
   "main": "src/index.ts",
   "scripts": {
-    "start-account": "ts-node src/sys-account.ts",
-    "start-import": "ts-node src/sys-import.ts"
+    "start-account": "ts-node packages/sys-account.ts",
+    "start-import": "ts-node packages/sys-import.ts"
   },
   "repository": {
     "type": "git",
