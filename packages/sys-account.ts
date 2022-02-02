@@ -1,12 +1,5 @@
-import web3Provider from '../src/web3Provider';
-
-interface IWeb3Account {
-  address: string;
-  privateKey: string;
-  signTransaction: Function;
-  sign: Function;
-  encrypt: Function;
-}
+import web3Provider from '../provider/web3Provider';
+import { IWeb3Account } from '../types/web3AccountType';
 
 export const createAccount = () => {
   const newAccount: IWeb3Account = web3Provider.eth.accounts.create();

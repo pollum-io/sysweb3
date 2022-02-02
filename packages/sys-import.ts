@@ -1,23 +1,9 @@
-import web3Provider from '../src/web3Provider';
-
-interface IWeb3ImportAccount {
-  address: string;
-  privateKey: string;
-  signTransaction: Function;
-  sign: Function;
-  encrypt: Function;
-}
+import web3Provider from '../provider/web3Provider';
+import { IWeb3Account } from '../types/web3AccountType';
 
 const sysImportAccount = (key: string) => {
-  const {
-    address,
-    privateKey,
-    signTransaction,
-    sign,
-    encrypt,
-  }: IWeb3ImportAccount = web3Provider.eth.accounts.privateKeyToAccount(
-    `${key}`
-  );
+  const { address, privateKey, signTransaction, sign, encrypt }: IWeb3Account =
+    web3Provider.eth.accounts.privateKeyToAccount(`${key}`);
 
   return { address, privateKey, signTransaction, sign, encrypt };
 };
