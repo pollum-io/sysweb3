@@ -5,7 +5,8 @@
   "main": "src/index.ts",
   "scripts": {
     "start-account": "ts-node packages/sys-account.ts",
-    "start-import": "ts-node packages/sys-import.ts"
+    "start-import": "ts-node packages/sys-import.ts",
+    "start-balance": "ts-node packages/sys-balance.ts"
   },
   "repository": {
     "type": "git",
