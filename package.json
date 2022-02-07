@@ -8,7 +8,7 @@
     "start-import": "ts-node packages/sys-import.ts",
     "start-balance": "ts-node packages/sys-balance.ts",
     "start-transactions": "ts-node packages/sys-transactions.ts",
-    "start-network": "ts-node networks/changeNetwork.ts"
+    "start-network": "ts-node provider/web3Provider.ts"
   },
   "repository": {
     "type": "git",
