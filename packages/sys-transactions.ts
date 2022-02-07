@@ -1,13 +1,30 @@
 import web3Provider from '../provider/web3Provider';
 
-export const sysGetTransactions = async (walletAddress: string) => {
-    try {
-      await web3Provider.eth
-        .getTransactionCount(walletAddress)
-        .then((transactions) => console.log(transactions));
-    } catch (error) {
-      console.log(`${error}`);
-    }
-  };
-  
-console.log(sysGetTransactions('0x8B06aFc57FdC8C33834A0bcf81a5326f8d46e8E5'));
+export const sysSendTransactions = async (
+  fromAddress: string,
+  fromPrivateKey: string,
+  toAddress: string,
+  value: number
+) => {
+  const signedTransaction =
+    await web3Provider.eth.accounts.signTransaction(
+      {
+        to: toAddress,
+        value: web3Provider.utils.toWei(value.toString(), 'ether'),
+        gas: await web3Provider.eth.estimateGas({
+          to: toAddress,
+        }),
+      },
+      fromPrivateKey
+    );
+
+  try {
+    web3Provider.eth
+      .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
+      .on('sending', (payload) => console.log(payload))
+      .on('confirmation', (confirmation) => console.log(confirmation))
+      .on('error', (err) => console.log(err))
+  } catch (error) {
+    console.log(`${error}`);
+  }
+};
