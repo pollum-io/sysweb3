@@ -1,9 +1,10 @@
+//@ts-nocheck
 import Web3 from 'web3';
 import { networks } from '../networks/networks';
 
-let provider: any;
+let provider;
 
-export const changeNetwork = (chainId: number) => {
+export const changeNetwork = async (chainId) => {
   if (chainId) {
     networks.map((net) => {
       if (net.chainId === chainId) {
@@ -11,6 +12,7 @@ export const changeNetwork = (chainId: number) => {
       }
     });
   }
+  console.log('networkId: ' + await web3Provider().eth.getChainId())
 };
 
 export const web3Provider = () => {
@@ -21,8 +23,3 @@ export const web3Provider = () => {
     )
   );
 };
-console.log(changeNetwork(1));
-
-console.log(web3Provider().eth.currentProvider);
-
-export default web3Provider;
