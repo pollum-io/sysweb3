@@ -4,10 +4,10 @@
   "description": "",
   "main": "src/index.ts",
   "scripts": {
-    "start-account": "ts-node packages/sys-account.ts",
-    "start-import": "ts-node packages/sys-import.ts",
-    "start-balance": "ts-node packages/sys-balance.ts",
-    "start-transactions": "ts-node packages/sys-transactions.ts",
+    "start-account": "ts-node packages/web3-account.ts",
+    "start-import": "ts-node packages/web3-import.ts",
+    "start-balance": "ts-node packages/web3-balance.ts",
+    "start-transactions": "ts-node packages/web3-transactions.ts",
     "start-network": "ts-node provider/web3Provider.ts"
   },
   "repository": {
