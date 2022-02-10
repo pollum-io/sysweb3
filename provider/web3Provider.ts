@@ -4,7 +4,7 @@ import { networks } from '../networks/networks';
 
 let provider;
 
-export const sysChangeNetwork = async (chainId) => {
+export const changeNetwork = async (chainId) => {
   if (chainId) {
     networks.map((net) => {
       if (net.chainId === chainId) {
