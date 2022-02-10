@@ -1,6 +1,6 @@
 import { web3Provider } from '../provider/web3Provider';
 
-export const sysSendTransactions = async (fromPrivateKey, toAddress, value) => {
+export const sendTransactions = async (fromPrivateKey, toAddress, value) => {
   const signedTransaction = await web3Provider().eth.accounts.signTransaction(
     {
       to: toAddress,

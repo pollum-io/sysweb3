@@ -1,6 +1,6 @@
 import { web3Provider } from '../provider/web3Provider';
 
-export const sysGetBalance = async (walletAddress) => {
+export const getBalance = async (walletAddress) => {
   try {
     const balance = await web3Provider().eth.getBalance(walletAddress);
     
