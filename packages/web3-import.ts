@@ -1,7 +1,7 @@
 import { web3Provider } from '../provider/web3Provider';
 import { ethers } from 'ethers';
 
-export const importAccount = (mnemonicOrPrivateKey: string) => {
+export const importAccount = (mnemonicOrPrivateKey) => {
   if (web3Provider().utils.isHexStrict(mnemonicOrPrivateKey)) {
     return web3Provider().eth.accounts.privateKeyToAccount(
       mnemonicOrPrivateKey
