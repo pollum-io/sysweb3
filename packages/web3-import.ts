@@ -1,6 +1,6 @@
 import { web3Provider } from '../provider/web3Provider';
 import { ethers } from 'ethers';
-import CryptoJS from 'crypto-js'
+import CryptoJS from 'crypto-js';
 
 export const importAccount = (mnemonicOrPrivateKey, pwdAccount) => {
   if (web3Provider().utils.isHexStrict(mnemonicOrPrivateKey)) {
@@ -8,7 +8,10 @@ export const importAccount = (mnemonicOrPrivateKey, pwdAccount) => {
       mnemonicOrPrivateKey
     );
   } else {
-    const descryptMnemonic = CryptoJS.AES.decrypt(mnemonicOrPrivateKey, pwdAccount);
+    const descryptMnemonic = CryptoJS.AES.decrypt(
+      mnemonicOrPrivateKey,
+      pwdAccount
+    ).toString(CryptoJS.enc.Utf8);
 
     const mnemonicAccount = ethers.Wallet.fromMnemonic(descryptMnemonic);
 
