@@ -9,14 +9,19 @@ export const changeNetwork = async (chainId) => {
     networks.map((net) => {
       if (net.chainId === chainId) {
         provider = net.url;
+
+        return provider;
       }
     });
   }
+  return provider;
   console.log('networkId: ' + (await web3Provider().eth.getChainId()));
 };
 
 export const web3Provider = () => {
   return new Web3(
-    new Web3.providers.HttpProvider(provider ? provider : 'https://rpc.syscoin.org/')
+    new Web3.providers.HttpProvider(
+      provider ? provider : 'https://rpc.syscoin.org/'
+    )
   );
 };
