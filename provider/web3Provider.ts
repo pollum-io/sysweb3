@@ -25,3 +25,5 @@ export const web3Provider = () => {
     )
   );
 };
+
+console.log(changeNetwork(4));
