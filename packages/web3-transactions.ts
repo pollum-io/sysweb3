@@ -16,7 +16,6 @@ export const sendTransactions = async (fromPrivateKey, toAddress, value) => {
     return web3Provider.eth
       .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
       .on('sending', (payload) => console.log(payload))
-      .on('confirmation', (confirmation) => console.log(confirmation))
       .on('error', (err) => console.log(err));
   } catch (error) {
     console.log(`${error}`);
