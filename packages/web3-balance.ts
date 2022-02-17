@@ -3,9 +3,8 @@ import _ from 'lodash';
 
 export const getBalance = async (walletAddress) => {
   try {
-    const balance = await web3Provider().eth.getBalance(walletAddress);
-
-    const formattedBalance = web3Provider().utils.fromWei(balance);
+    const balance = await web3Provider.eth.getBalance(walletAddress);
+    const formattedBalance = web3Provider.utils.fromWei(balance);
 
     const roundedBalance = _.floor(parseFloat(formattedBalance), 4);
 
