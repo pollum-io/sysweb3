@@ -1,5 +1,5 @@
 import { web3Provider } from '../provider/web3Provider';
-import { ethers } from 'ethers';
+
 import CryptoJS from 'crypto-js';
 import { mnemonicToSeed } from 'bip39';
 import { hdkey } from 'ethereumjs-wallet';
