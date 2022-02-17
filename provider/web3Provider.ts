@@ -1,5 +1,5 @@
 //@ts-nocheck
-import Web3 from 'web3';
+import * as Web3 from 'web3';
 import { networks } from '../networks/networks';
 
 export const changeNetwork = async (chainId) => {
