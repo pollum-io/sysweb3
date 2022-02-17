@@ -5,10 +5,8 @@ import { mnemonicToSeed } from 'bip39';
 import { hdkey } from 'ethereumjs-wallet';
 
 export const importAccount = async (mnemonicOrPrivateKey, pwdAccount) => {
-  if (web3Provider().utils.isHexStrict(mnemonicOrPrivateKey)) {
-    return web3Provider().eth.accounts.privateKeyToAccount(
-      mnemonicOrPrivateKey
-    );
+  if (web3Provider.utils.isHexStrict(mnemonicOrPrivateKey)) {
+    return web3Provider.eth.accounts.privateKeyToAccount(mnemonicOrPrivateKey);
   } else {
     const decryptMnemonic = CryptoJS.AES.decrypt(
       mnemonicOrPrivateKey,
@@ -22,7 +20,7 @@ export const importAccount = async (mnemonicOrPrivateKey, pwdAccount) => {
     const privateKey = '0x' + wallet.getPrivateKey().toString('hex');
 
     const web3MnemonicAccount =
-      await web3Provider().eth.accounts.privateKeyToAccount(privateKey);
+      await web3Provider.eth.accounts.privateKeyToAccount(privateKey);
 
     return web3MnemonicAccount;
   }
