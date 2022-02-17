@@ -3,7 +3,7 @@ import Web3 from 'web3';
 import { networks } from '../networks/networks';
 
 export const changeNetwork = async (chainId) => {
-  let provider: string;
+  let provider;
 
   for (var i = 0; i < networks.length; i++) {
     if (networks[i].chainId === chainId) {
