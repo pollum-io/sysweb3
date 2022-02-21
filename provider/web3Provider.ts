@@ -2,26 +2,23 @@
 import Web3 from 'web3';
 import { networks } from '../networks/networks';
 
-let provider;
-
 export const changeNetwork = async (chainId) => {
-  if (chainId) {
-    networks.map((net) => {
-      if (net.chainId === chainId) {
-        provider = net.url;
+  let provider;
 
-        return provider;
-      }
-    });
+  for (var i = 0; i < networks.length; i++) {
+    if (networks[i].chainId === chainId) {
+      provider = networks[i].url;
+    }
   }
-  return provider;
-  console.log('networkId: ' + (await web3Provider().eth.getChainId()));
+
+  if (provider === undefined)
+    throw new Error('Network not found, try again with a correct one!');
+
+  const { HttpProvider } = Web3.providers;
+
+  web3Provider.setProvider(new HttpProvider(provider));
 };
 
-export const web3Provider = () => {
-  return new Web3(
-    new Web3.providers.HttpProvider(
-      provider ? provider : 'https://rpc.syscoin.org/'
-    )
-  );
-};
+export const web3Provider = new Web3(
+  new Web3.providers.HttpProvider('https://rpc.syscoin.org/')
+);
