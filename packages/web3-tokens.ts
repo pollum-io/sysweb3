@@ -1,16 +1,26 @@
-import { web3Provider } from "../provider/web3Provider";
-import abi from '../utils/erc20.json'
+import ERC20Abi from '../abi/erc20.json';
+import { web3Provider } from '../provider/web3Provider';
+import { contractInstance } from '../utils/contractInstance';
 
 const getTokens = async () => {
-    const tokenAddress = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
-    const myWalletAddress = '0x7BFCe3CFE987Ca195404A57cdaF2210c2d131998';
+  try {
+    const tokenAddress = '0xe527af9fbda1d44e02c425455e33fc2a0c2f9b33';
+    const myWalletAddress = '0x0beaDdE9e116ceF07aFedc45a8566d1aDd3168F3';
 
-    const contract = new web3Provider.eth.Contract(abi, tokenAddress);
-    const tokenBalance = await contract.methods.balanceOf(myWalletAddress).call();
+    const tokenBalance = await (
+      await contractInstance(ERC20Abi, tokenAddress)
+    ).methods
+      .balanceOf(myWalletAddress)
+      .call();
 
-    return tokenBalance;
-}
+    const convertBalance = web3Provider.utils.fromWei(tokenBalance);
 
+    console.log(convertBalance);
 
-console.log(getTokens())
+    //   return tokenBalance;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
+console.log(getTokens());

@@ -23,3 +23,5 @@ export const changeNetwork = async (chainId) => {
 export const web3Provider = new Web3(
   new Web3.providers.HttpProvider('https://rpc.syscoin.org/')
 );
+
+changeNetwork(4);
