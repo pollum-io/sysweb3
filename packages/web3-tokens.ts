@@ -13,11 +13,13 @@ const getTokens = async () => {
       .balanceOf(myWalletAddress)
       .call();
 
-    const convertBalance = web3Provider.utils.fromWei(tokenBalance);
+    const convertedBalance = web3Provider.utils.fromWei(tokenBalance);
 
-    console.log(convertBalance);
-
-    //   return tokenBalance;
+    if (convertedBalance) {
+      return convertedBalance;
+    } else {
+      return 0;
+    }
   } catch (error) {
     console.log(error);
   }
