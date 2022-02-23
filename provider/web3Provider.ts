@@ -5,9 +5,10 @@ import { networks } from '../networks/networks';
 export const changeNetwork = async (chainId) => {
   let provider;
 
-  for (var i = 0; i < networks.length; i++) {
+  for (let i = 0; i < networks.length; i++) {
     if (networks[i].chainId === chainId) {
       provider = networks[i].url;
+      break;
     }
   }
 
