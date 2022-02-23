@@ -8,7 +8,8 @@
     "start-import": "ts-node packages/web3-import.ts",
     "start-balance": "ts-node packages/web3-balance.ts",
     "start-transactions": "ts-node packages/web3-transactions.ts",
-    "start-network": "ts-node provider/web3Provider.ts"
+    "start-network": "ts-node provider/web3Provider.ts",
+    "start-tokens": "ts-node packages/web3-tokens.ts"
   },
   "repository": {
     "type": "git",
