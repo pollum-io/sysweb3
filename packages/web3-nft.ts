@@ -3,13 +3,13 @@ import { web3Provider } from '../provider/web3Provider';
 import { contractInstance } from '../utils/contractInstance';
 import axios from 'axios';
 
-const getNFTInfo = async (NFTAddress: string) => {
+const getNFTInfo = async (NFTAddress, tokenId) => {
   try {
 
     const NFTInfo = await (
       await contractInstance(ERC721Abi, NFTAddress)
     ).methods
-      .tokenURI(0)
+      .tokenURI(tokenId)
       .call();
 
     if (NFTInfo) {
@@ -31,4 +31,4 @@ const getNFTInfo = async (NFTAddress: string) => {
   }
 };
 
-getNFTInfo('0x8943c7bac1914c9a7aba750bf2b6b09fd21037e0').then((r) => console.log(r));
+getNFTInfo('0x8943c7bac1914c9a7aba750bf2b6b09fd21037e0', 9801).then((r) => console.log(r));
