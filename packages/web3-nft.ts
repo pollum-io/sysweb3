@@ -3,7 +3,7 @@ import { web3Provider } from '../provider/web3Provider';
 import { contractInstance } from '../utils/contractInstance';
 import axios from 'axios';
 
-const getNFTInfo = async (NFTAddress, tokenId) => {
+const getNFTInfo = async (NFTAddress: string, tokenId: number) => {
   try {
 
     const NFTInfo = await (
@@ -27,7 +27,7 @@ const getNFTInfo = async (NFTAddress, tokenId) => {
 
     return NFTInfo;
   } catch (error) {
-    console.log(error);
+    console.log('Verify current network. Set the same network of NFT contract.');
   }
 };
 
