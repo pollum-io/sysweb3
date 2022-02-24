@@ -45,10 +45,15 @@ export const getUserNFT = async (walletAddress) => {
     const getUserNFTs = await axios.get(
       `https://api.etherscan.io/api?module=account&action=tokennfttx&address=${walletAddress}&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH`
     );
-
-    if (getUserNFTs.data.result) {
-      return getUserNFTs.data.result;
+    if(getUserNFTs.data.message === 'OK'){
+      if (getUserNFTs.data.result !== []) {
+        return getUserNFTs.data.result;
+      }
+      return null
+    } else{
+      return console.log(getUserNFTs.data.message)
     }
+    
   } catch (error) {
     console.log(error);
   }
