@@ -1,4 +1,5 @@
 import { Account, TransactionReceipt } from 'web3-core';
+import { IUserNFT } from './IUserNFT';
 
 export interface IWeb3 {
   createAccount: () => Account;
@@ -8,4 +9,5 @@ export interface IWeb3 {
   changeNetwork: (chainId: number) => void;
   getNFTImage: (NFTAddress: string, tokenId: number) => Promise<string | void>;
   getTokens: (walletAddress: string, tokenAddress: string) => Promise<string | 0 | undefined>;
+  getUserNFT: (walletAddress: string) => Promise<IUserNFT[]>
 }

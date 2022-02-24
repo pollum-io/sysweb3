@@ -7,7 +7,7 @@ import { web3Provider } from '../provider/web3Provider';
  * 
  * ```<button onClick={createAccount}>Create your Account!</button>```
  * 
- * Exemple of @returns object:
+ * Example of @returns object:
  * 
  * ```
  *      {
