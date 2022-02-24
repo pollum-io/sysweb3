@@ -8,7 +8,9 @@
     "start-import": "ts-node packages/web3-import.ts",
     "start-balance": "ts-node packages/web3-balance.ts",
     "start-transactions": "ts-node packages/web3-transactions.ts",
-    "start-network": "ts-node provider/web3Provider.ts"
+    "start-network": "ts-node provider/web3Provider.ts",
+    "start-tokens": "ts-node packages/web3-tokens.ts",
+    "start-nft": "ts-node packages/web3-nft.ts"
   },
   "repository": {
     "type": "git",
@@ -34,12 +36,14 @@
     "typescript": "^4.5.5"
   },
   "dependencies": {
+    "axios": "^0.26.0",
     "bip39": "^3.0.4",
     "crypto-js": "4.0.0",
     "ethereumjs-wallet": "^1.0.2",
     "ethers": "^5.5.4",
     "lodash": "^4.17.21",
     "ts-node": "^10.4.0",
-    "web3": "^1.7.0"
+    "web3": "^1.7.0",
+    "web3-utils": "^1.7.0"
   }
 }
