@@ -4,6 +4,32 @@ import CryptoJS from 'crypto-js';
 import { mnemonicToSeed } from 'bip39';
 import { hdkey } from 'ethereumjs-wallet';
 
+/**
+ * This function should return an Account Object from imported wallet.
+ * 
+ * @param mnemonicOrPrivateKey
+ * @param pwdAccount
+ * 
+ * Use example: 
+ * 
+ * ```
+ * <button onClick={importAccount('this test mnemonic phrase for import my account', 'test123')}>Import My account!</button>
+ * ```
+ * 
+ * Example of @returns object:
+ * 
+ * ```
+ *      {
+        address: '0x00000000000000000000000000',
+        privateKey: '0x0000000000000000000000000000000000000000000',
+        signTransaction: [Function: signTransaction],
+        sign: [Function: sign],
+        encrypt: [Function: encrypt]
+         }
+```
+ *
+ */
+
 export const importAccount = async (mnemonicOrPrivateKey, pwdAccount) => {
   if (web3Provider.utils.isHexStrict(mnemonicOrPrivateKey)) {
     return web3Provider.eth.accounts.privateKeyToAccount(mnemonicOrPrivateKey);
