@@ -3,7 +3,7 @@ import { web3Provider } from '../provider/web3Provider';
 import { contractInstance } from '../utils/contractInstance';
 import axios from 'axios';
 
-const getNFTInfo = async (NFTAddress: string, tokenId: number) => {
+const getNFTImage = async (NFTAddress, tokenId) => {
   try {
 
     const NFTInfo = await (
@@ -13,22 +13,23 @@ const getNFTInfo = async (NFTAddress: string, tokenId: number) => {
       .call();
 
     if (NFTInfo) {
-      const newValue = String(NFTInfo).replace(
+      const newURL = String(NFTInfo).replace(
         'ipfs://',
         'https://ipfs.io/ipfs/'
       );
 
-      const fetchValue = await axios.get(newValue);
+      const fetchValue = await axios.get(newURL);
       return String(fetchValue.data.image).replace(
         'ipfs://',
         'https://ipfs.io/ipfs/'
       );
     }
 
-    return NFTInfo;
+    return console.log('NFTinfo not found.');
+
   } catch (error) {
     console.log('Verify current network. Set the same network of NFT contract.');
   }
 };
 
-getNFTInfo('0x8943c7bac1914c9a7aba750bf2b6b09fd21037e0', 9801).then((r) => console.log(r));
+getNFTImage('0x2250d7c238392f4b575bb26c672afe45f0adcb75', 12100030213).then((r) => console.log(r));
