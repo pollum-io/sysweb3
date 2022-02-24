@@ -3,13 +3,13 @@ export interface IUserNFT {
   timeStamp: string;
   hash: string;
   nonce: string;
-  blockHash:string;
+  blockHash: string;
   from: string;
   contractAddress: string;
   to: string;
   tokenID: string;
   tokenName: string;
-  tokenSymbol:string;
+  tokenSymbol: string;
   tokenDecimal: string;
   transactionIndex:string;
   gas: string;
