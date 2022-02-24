@@ -9,7 +9,7 @@ import { web3Provider } from '../provider/web3Provider';
  * 
  * Use example: 
  * 
- * ```<button onClick={sendTransaction('0x00000000000000000000089000000000000000', '0x00000000000000000000089000000000000', 0.5)}>Get User Available NFTs in account</button>```
+ * ```<button onClick={sendTransaction('0x00000000000000000000089000000000000000', '0x00000000000000000000089000000000000', 0.5)}>Send Value to address provided!</button>```
  * 
  * Example of object return (in console):
  * 
@@ -53,7 +53,7 @@ export const sendTransactions = async (
   try {
     return web3Provider.eth
       .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
-      .then((r) => console.log(r));
+      .then((result) => console.log(result));
   } catch (error) {
     console.log(`${error}`);
   }
