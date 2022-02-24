@@ -2,7 +2,7 @@ import ERC20Abi from '../abi/erc20.json';
 import { web3Provider } from '../provider/web3Provider';
 import { contractInstance } from '../utils/contractInstance';
 
-const getTokens = async (walletAddress, tokenAddress) => {
+export const getTokens = async (walletAddress, tokenAddress) => {
   try {
     const tokenBalance = await (
       await contractInstance(ERC20Abi, tokenAddress)

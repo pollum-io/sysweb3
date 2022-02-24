@@ -1,6 +1,25 @@
 import { web3Provider } from '../provider/web3Provider';
 import _ from 'lodash';
 
+/**
+ * This function should return the balance of current account.
+ * 
+ * @param walletAddress
+ * 
+ * Use example: 
+ * 
+ * ```
+ * <button onClick={getBalance('0x000000000000000000000')}>Get balance!</button>
+ * ```
+ * 
+ * Return example:
+ * 
+ * ```
+ *     0.24501
+ *```
+ *
+ */
+
 export const getBalance = async (walletAddress) => {
   try {
     const balance = await web3Provider.eth.getBalance(walletAddress);
