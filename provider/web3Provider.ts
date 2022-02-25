@@ -2,6 +2,27 @@
 import Web3 from 'web3';
 import { networks } from '../networks/networks';
 
+/**
+ * This function should change the current network.
+ * 
+ * @param chainId
+ * 
+ * Here is the available networks to change:
+ * 
+  - Syscoin Mainnet (57) and Testnet (5700)
+  - Ethereum Mainnet (1)
+  - Ethereum Rinkeby (4)
+  - Polygon Mainnet (137) and Testnet (80001)
+ * 
+ * Use example: 
+ * 
+ * ```
+ * <button onClick={changeNetwork(4)}>Change the current network</button>
+ * ```
+ * 
+ * @returns void.
+ */
+
 export const changeNetwork = async (chainId) => {
   let provider;
 
