@@ -1,25 +1,40 @@
+import { request, gql } from 'graphql-request';
 import ERC20Abi from '../abi/erc20.json';
 import { web3Provider } from '../provider/web3Provider';
 import { contractInstance } from '../utils/contractInstance';
 
-export const getTokens = async (walletAddress, tokenAddress) => {
+export const getTokens = async (walletAddress) => {
   try {
-    const tokenBalance = await (
-      await contractInstance(ERC20Abi, tokenAddress)
-    ).methods
-      .balanceOf(walletAddress)
-      .call();
+    const query = gql`
+      {
+        ethereum {
+          address(
+            address: { is: "${walletAddress}" }
+          ) {
+            balances {
+              currency {
+                symbol
+              }
+              value
+            }
+          }
+        }
+      }
+    `;
+    
+    const fetchUserTokens = await request({
+      url: 'https://graphql.bitquery.io/',
+      document: query,
+      requestHeaders: {
+        'X-API-KEY': 'BQYvhnv04csZHaprIBZNwtpRiDIwEIW9',
+      },
+    })
 
-    const convertedBalance = web3Provider.utils.fromWei(tokenBalance);
+    return fetchUserTokens.ethereum.address[0].balances
 
-    if (convertedBalance) {
-      return convertedBalance;
-    } else {
-      return 0;
-    }
   } catch (error) {
     console.log(error);
   }
 };
 
-console.log(getTokens('0x0beaDdE9e116ceF07aFedc45a8566d1aDd3168F3', '0xe527af9fbda1d44e02c425455e33fc2a0c2f9b33'));
+// address for test: console.log(getTokens("0xc43db41aa6649ddda4ef0ef20fd4f16be43144f7").then((r) => console.log(r)));

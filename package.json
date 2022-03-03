@@ -41,6 +41,8 @@
     "crypto-js": "4.0.0",
     "ethereumjs-wallet": "^1.0.2",
     "ethers": "^5.5.4",
+    "graphql": "^16.3.0",
+    "graphql-request": "^4.0.0",
     "lodash": "^4.17.21",
     "ts-node": "^10.4.0",
     "web3": "^1.7.0",
