@@ -2,6 +2,7 @@ import ERC721Abi from '../abi/erc721.json';
 import { web3Provider } from '../provider/web3Provider';
 import { contractInstance } from '../utils/contractInstance';
 import axios from 'axios';
+import { IUserNFT } from '../types/IUserNFT';
 
 /**
  * This function should return a user NFT object (if account have any NFT).
@@ -40,48 +41,48 @@ import axios from 'axios';
  *
  */
 
-export const getUserNFT = async (walletAddress) => {
+export const getUserNFT = async (walletAddress: string) => {
   try {
     const getUserNFTs = await axios.get(
       `https://api.etherscan.io/api?module=account&action=tokennfttx&address=${walletAddress}&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH`
     );
-    if(getUserNFTs.data.message === 'OK'){
+
+    if (getUserNFTs.data.message === 'OK') {
       if (getUserNFTs.data.result !== []) {
-        return getUserNFTs.data.result;
+        return getUserNFTs.data.result as IUserNFT;
       }
-      return null
-    } else{
-      return console.log(getUserNFTs.data.message)
+      return null;
+    } else {
+      return null;
     }
-    
   } catch (error) {
     console.log(error);
   }
 };
 
-
-
 /**
  * This function should return a NFT image link.
- * 
- * @param NFTContractAddress 
+ *
+ * @param NFTContractAddress
  * @param tokenId
- * 
- * Use example: 
- * 
+ *
+ * Use example:
+ *
  * ```<button onClick={getNFTImage('0x0000000000000000000000000', 1234)}>Get NFT image link</button>```
- * 
+ *
  * Returns example:
- * 
+ *
  * ```
  * 'https://gateway.pinata.cloud/ipfs/Qmc4DqK9xeoSvtVmTcS6YG3DiWHyfiwQsnwQfzcqAvtmHj'
  * ```
  *
  */
 
-export const getNFTImage = async (NFTContractAddress, tokenId) => {
+export const getNFTImage = async (
+  NFTContractAddress: string,
+  tokenId: number
+) => {
   try {
-
     const NFTInfo = await (
       await contractInstance(ERC721Abi, NFTContractAddress)
     ).methods
@@ -101,9 +102,10 @@ export const getNFTImage = async (NFTContractAddress, tokenId) => {
       );
     }
 
-    return console.log('NFTinfo not found.');
-
+    return new Error('NFTinfo not found.');
   } catch (error) {
-    console.log('Verify current network. Set the same network of NFT contract.');
+    console.log(
+      'Verify current network. Set the same network of NFT contract.'
+    );
   }
 };

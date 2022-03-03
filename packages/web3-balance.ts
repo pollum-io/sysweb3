@@ -20,7 +20,7 @@ import _ from 'lodash';
  *
  */
 
-export const getBalance = async (walletAddress) => {
+export const getBalance = async (walletAddress: string) => {
   try {
     const balance = await web3Provider.eth.getBalance(walletAddress);
     const formattedBalance = web3Provider.utils.fromWei(balance);

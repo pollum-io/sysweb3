@@ -1,4 +1,4 @@
-import { request, gql } from 'graphql-request';
+import { request, gql, Variables } from 'graphql-request';
 import ERC20Abi from '../abi/erc20.json';
 import { web3Provider } from '../provider/web3Provider';
 import { contractInstance } from '../utils/contractInstance';
@@ -29,7 +29,7 @@ import { contractInstance } from '../utils/contractInstance';
  *
  */
 
-export const getTokens = async (walletAddress) => {
+export const getTokens = async (walletAddress: string) => {
   try {
     const query = gql`
       {
@@ -48,7 +48,7 @@ export const getTokens = async (walletAddress) => {
       }
     `;
 
-    const { ethereum } = await request({
+    const tokens = await request({
       url: 'https://graphql.bitquery.io/',
       document: query,
       requestHeaders: {
@@ -56,19 +56,13 @@ export const getTokens = async (walletAddress) => {
       },
     });
 
-    if (ethereum.address[0].balances) {
+    if (tokens.ethereum.address[0].balances) {
       return ethereum.address[0].balances;
     } else {
-      return new Error('Not available tokens');
+      throw new Error('Not available tokens');
     }
   } catch (error) {
     console.log(error);
   }
 };
 
-
-// console.log(
-//   getTokens('0xc43db41aa6649ddda4ef0ef20fd4f16be43144f7').then((r) =>
-//     console.log(r)
-//   )
-// );

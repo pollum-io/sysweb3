@@ -30,7 +30,7 @@ import { ethers } from 'ethers';
  *
  */
 
-export const importAccount = (mnemonicOrPrivateKey, pwdAccount) => {
+export const importAccount = (mnemonicOrPrivateKey: string, pwdAccount: string) => {
   if (web3Provider.utils.isHexStrict(mnemonicOrPrivateKey)) {
     return web3Provider.eth.accounts.privateKeyToAccount(mnemonicOrPrivateKey);
   } else {
