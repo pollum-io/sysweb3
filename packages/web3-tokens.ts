@@ -3,6 +3,32 @@ import ERC20Abi from '../abi/erc20.json';
 import { web3Provider } from '../provider/web3Provider';
 import { contractInstance } from '../utils/contractInstance';
 
+/**
+ * This function should return an array with all available currencys of provide wallet.
+ * 
+ * @param walletAddress
+ * 
+ * Use example: 
+ * 
+ * ```
+ * <button onClick={getTokens('0x00000000000000000000000')}>Get all available tokens!</button>
+ * ```
+ * 
+ * Example of return array:
+ * 
+ * ```
+ * [
+      { currency: { symbol: '1INCH' }, value: 12 },
+      { currency: { symbol: 'USDT' }, value: 4 },
+      { currency: { symbol: 'ETH' }, value: 184.421239 },
+      { currency: { symbol: 'KP3R' }, value: 7 },
+      { currency: { symbol: 'steCRV' }, value: 0 },
+      { currency: { symbol: 'UNI-V2' }, value: 0 },
+    ]
+```
+ *
+ */
+
 export const getTokens = async (walletAddress) => {
   try {
     const query = gql`
