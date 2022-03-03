@@ -4,7 +4,7 @@ import { web3Provider } from '../provider/web3Provider';
 import { contractInstance } from '../utils/contractInstance';
 
 /**
- * This function should return an array with all available currencys of provide wallet.
+ * This function should return an array with all available currencies of provide wallet.
  * 
  * @param walletAddress
  * 
