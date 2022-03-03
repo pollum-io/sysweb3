@@ -3,7 +3,7 @@ import ERC20Abi from '../abi/erc20.json';
 import { web3Provider } from '../provider/web3Provider';
 import { contractInstance } from '../utils/contractInstance';
 
-export const getTokens = async (walletAddress: string) => {
+export const getTokens = async (walletAddress) => {
   try {
     const query = gql`
       {
@@ -40,8 +40,9 @@ export const getTokens = async (walletAddress: string) => {
   }
 };
 
-console.log(
-  getTokens('0xc43db41aa6649ddda4ef0ef20fd4f16be43144f7').then((r) =>
-    console.log(r)
-  )
-);
+
+// console.log(
+//   getTokens('0xc43db41aa6649ddda4ef0ef20fd4f16be43144f7').then((r) =>
+//     console.log(r)
+//   )
+// );
