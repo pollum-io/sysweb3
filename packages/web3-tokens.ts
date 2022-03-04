@@ -66,18 +66,49 @@ export const getTokens = async (walletAddress: string) => {
   }
 };
 
+/**
+ * This function should return an object with 2 parameters that will be the thumb image  url and large image url
+ * 
+ * @param symbol
+ * 
+ * Use example: 
+ * 
+ * ```
+ * <image src={getTokenIconBySymbol('eth')} />
+ * ```
+ * 
+ * Example of return object:
+ * 
+ * ```
+ * 
+  {
+    thumbImage: 'https://assets.coingecko.com/coins/images/279/thumb/ethereum.png',
+    largeImage: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' 
+  }
+```
+ *
+ */
+
 const getTokenIconBySymbol = async (symbol: string) => {
-  const generalSearchForToken = await axios.get(
-    `https://api.coingecko.com/api/v3/search?query=${symbol}`
-  );
+  try {
+    const generalSearchForToken = await axios.get(
+      `https://api.coingecko.com/api/v3/search?query=${symbol.toUpperCase()}`
+    );
 
-  const getSpecificToken = generalSearchForToken.data.coins.filter(
-    (token: any) => {
-      return token.symbol === symbol;
+    const getSpecificToken = generalSearchForToken.data.coins.filter(
+      (token: any) => {
+        return token.symbol.toUpperCase() === symbol.toLocaleUpperCase();
+      }
+    );
+
+    if (getSpecificToken) {
+      const { thumb, large } = getSpecificToken[0];
+
+      return { thumbImage: thumb, largeImage: large };
+    } else {
+      return 'Token icon not found';
     }
-  );
-
-  const { thumb, large } = getSpecificToken[0];
-
-  return { thumbImage: thumb, largeImage: large };
+  } catch (error) {
+    console.log(error);
+  }
 };
