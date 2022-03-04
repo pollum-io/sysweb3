@@ -1,7 +1,5 @@
-import { request, gql, Variables } from 'graphql-request';
-import ERC20Abi from '../abi/erc20.json';
-import { web3Provider } from '../provider/web3Provider';
-import { contractInstance } from '../utils/contractInstance';
+import { request, gql } from 'graphql-request';
+import axios from 'axios';
 
 /**
  * This function should return an array with all available currencies of provide wallet.
@@ -57,7 +55,62 @@ export const getTokens = async (walletAddress: string) => {
     });
 
     if (tokens.ethereum.address[0].balances) {
-      return ethereum.address[0].balances;
+      const walletTokens = tokens.ethereum.address[0].balances;
+
+      let finalTokens: any;
+
+      walletTokens.map(async (token: any) => {
+        const searchForToken = await axios.get(
+          `https://api.coingecko.com/api/v3/search?query=${token.currency.symbol}`
+        );
+
+        const searchForEachToken = searchForToken.data.coins.filter(
+          (coinGeckoToken: any) =>
+            coinGeckoToken.symbol === token.currency.symbol
+        );
+
+        for (let i = 0; i < searchForEachToken.length; i++) {
+          const object = {
+            symbol: token.currency.symbol,
+            value: token.value,
+            image: searchForEachToken[i].thumb,
+          };
+
+          finalTokens.push(object);
+
+          // return finalTokens;
+          // console.log('final', finalTokens);
+        }
+      });
+
+      console.log('final', finalTokens);
+
+      // for (let i = 0; i < walletTokens.length; i++) {
+      //   const searchForToken = await axios.get(
+      //     `https://api.coingecko.com/api/v3/search?query=${walletTokens[i].currency.symbol}`
+      //   );
+
+      //   console.log('searchForToken', searchForToken.data.coins);
+
+      //   const searchForEachToken = searchForToken.data.coins.filter(
+      //     (token: any) => token.symbol === walletTokens[i].currency.symbol
+      //   );
+
+      //   console.log('searchForEachToken', searchForEachToken);
+
+      //   const returnTokens = {
+      //     symbol: walletTokens[i].currency.symbol,
+      //     value: walletTokens[i].value,
+      //     // thumbImage: searchForEachToken[0].thumb,
+      //     // largeImage: searchForEachToken[0].large,
+      //   };
+
+      //   console.log('RETURNNNNN', returnTokens);
+
+      //   // return returnTokens;
+      // }
+
+      // return tokens.ethereum.address[0].balances;
     } else {
       throw new Error('Not available tokens');
     }
@@ -66,3 +119,4 @@ export const getTokens = async (walletAddress: string) => {
   }
 };
 
+getTokens('0xb1Ef4840213e387e5Cebcf5472d88fE9C2775dFa');
