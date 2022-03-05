@@ -1,5 +1,7 @@
 import { request, gql } from 'graphql-request';
 import axios from 'axios';
+import { IEthereum } from '../types/IEthereum';
+import { IToken } from '../types/IToken';
 
 /**
  * This function should return an array with all available currencies of provide wallet.
@@ -46,7 +48,7 @@ export const getTokens = async (walletAddress: string) => {
       }
     `;
 
-    const tokens = await request({
+    const tokens: IEthereum = await request({
       url: 'https://graphql.bitquery.io/',
       document: query,
       requestHeaders: {
@@ -55,9 +57,7 @@ export const getTokens = async (walletAddress: string) => {
     });
 
     if (tokens.ethereum.address[0].balances) {
-      const tokensInUserWallet: any[] = tokens.ethereum.address[0].balances;
-
-      return tokensInUserWallet;
+      return tokens.ethereum.address[0].balances;
     } else {
       throw new Error('Not available tokens');
     }
@@ -89,13 +89,13 @@ export const getTokens = async (walletAddress: string) => {
  *
  */
 
-const getTokenIconBySymbol = async (symbol: string) => {
+export const getTokenIconBySymbol = async (symbol: string) => {
   try {
     const generalSearchForToken = await axios.get(
       `https://api.coingecko.com/api/v3/search?query=${symbol.toUpperCase()}`
     );
 
-    const getSpecificToken = generalSearchForToken.data.coins.filter(
+    const getSpecificToken: IToken[] = generalSearchForToken.data.coins.filter(
       (token: any) => {
         return token.symbol.toUpperCase() === symbol.toLocaleUpperCase();
       }
@@ -104,7 +104,7 @@ const getTokenIconBySymbol = async (symbol: string) => {
     if (getSpecificToken) {
       return getSpecificToken[0].thumb;
     } else {
-      return 'Token icon not found';
+      throw new Error('Token icon not found');
     }
   } catch (error) {
     console.log(error);
