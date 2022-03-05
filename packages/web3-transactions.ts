@@ -1,4 +1,5 @@
 import { web3Provider } from '../provider/web3Provider';
+import { TransactionReceipt } from 'web3-core';
 
 /**
  * This function should send a value to address provided.
@@ -53,7 +54,7 @@ export const sendTransactions = async (
   try {
     return web3Provider.eth
       .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
-      .then((result) => result);
+      .then((result: TransactionReceipt) => result);
   } catch (error) {
     console.log(`${error}`);
   }
