@@ -23,7 +23,7 @@ import { networks } from '../networks/networks';
  * @returns void.
  */
 
-export const changeNetwork = async (chainId) => {
+export const changeNetwork = async (chainId: number) => {
   let provider;
 
   for (let i = 0; i < networks.length; i++) {

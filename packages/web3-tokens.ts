@@ -1,7 +1,7 @@
 import { request, gql } from 'graphql-request';
-import ERC20Abi from '../abi/erc20.json';
-import { web3Provider } from '../provider/web3Provider';
-import { contractInstance } from '../utils/contractInstance';
+import axios from 'axios';
+import { IEthereum } from '../types/IEthereum';
+import { IToken } from '../types/IToken';
 
 /**
  * This function should return an array with all available currencies of provide wallet.
@@ -29,7 +29,7 @@ import { contractInstance } from '../utils/contractInstance';
  *
  */
 
-export const getTokens = async (walletAddress) => {
+export const getTokens = async (walletAddress: string) => {
   try {
     const query = gql`
       {
@@ -48,7 +48,7 @@ export const getTokens = async (walletAddress) => {
       }
     `;
 
-    const { ethereum } = await request({
+    const tokens: IEthereum = await request({
       url: 'https://graphql.bitquery.io/',
       document: query,
       requestHeaders: {
@@ -56,19 +56,59 @@ export const getTokens = async (walletAddress) => {
       },
     });
 
-    if (ethereum.address[0].balances) {
-      return ethereum.address[0].balances;
+    if (tokens.ethereum.address[0].balances) {
+      return tokens.ethereum.address[0].balances;
     } else {
-      return new Error('Not available tokens');
+      throw new Error('Not available tokens');
     }
   } catch (error) {
     console.log(error);
   }
 };
 
+/**
+ * This function should return an object with 2 parameters that will be the thumb image  url and large image url
+ * 
+ * @param symbol
+ * 
+ * Use example: 
+ * 
+ * ```
+ * <image src={getTokenIconBySymbol('eth')} />
+ * ```
+ * 
+ * Example of return object:
+ * 
+ * ```
+ * 
+  {
+    thumbImage: 'https://assets.coingecko.com/coins/images/279/thumb/ethereum.png',
+    largeImage: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' 
+  }
+```
+ *
+ */
 
-// console.log(
-//   getTokens('0xc43db41aa6649ddda4ef0ef20fd4f16be43144f7').then((r) =>
-//     console.log(r)
-//   )
-// );
+export const getTokenIconBySymbol = async (symbol: string) => {
+  try {
+    const generalSearchForToken = await axios.get(
+      `https://api.coingecko.com/api/v3/search?query=${symbol.toUpperCase()}`
+    );
+
+    const getSpecificToken: IToken[] = generalSearchForToken.data.coins.filter(
+      (token: any) => {
+        return token.symbol.toUpperCase() === symbol.toLocaleUpperCase();
+      }
+    );
+
+    if (getSpecificToken) {
+      return getSpecificToken[0].thumb;
+    } else {
+      throw new Error('Token icon not found');
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+getTokenIconBySymbol('eth');

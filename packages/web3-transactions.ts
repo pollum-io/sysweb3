@@ -35,9 +35,9 @@ import { web3Provider } from '../provider/web3Provider';
  */
 
 export const sendTransactions = async (
-  fromPrivateKey,
-  toAddress,
-  value
+  fromPrivateKey: string,
+  toAddress: string,
+  value: number
 ) => {
   const signedTransaction = await web3Provider.eth.accounts.signTransaction(
     {
@@ -53,7 +53,7 @@ export const sendTransactions = async (
   try {
     return web3Provider.eth
       .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
-      .then((result) => console.log(result));
+      .then((result) => result);
   } catch (error) {
     console.log(`${error}`);
   }
