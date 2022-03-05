@@ -102,9 +102,7 @@ const getTokenIconBySymbol = async (symbol: string) => {
     );
 
     if (getSpecificToken) {
-      const { thumb, large } = getSpecificToken[0];
-
-      return { thumbImage: thumb, largeImage: large };
+      return getSpecificToken[0].thumb;
     } else {
       return 'Token icon not found';
     }
@@ -112,3 +110,5 @@ const getTokenIconBySymbol = async (symbol: string) => {
     console.log(error);
   }
 };
+
+getTokenIconBySymbol('eth');
