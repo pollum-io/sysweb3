@@ -1,7 +1,5 @@
 import { web3Provider } from '../provider/web3Provider';
 import CryptoJS from 'crypto-js';
-import { mnemonicToSeed } from 'bip39';
-import { hdkey } from 'ethereumjs-wallet';
 import { ethers } from 'ethers';
 
 /**
@@ -30,7 +28,10 @@ import { ethers } from 'ethers';
  *
  */
 
-export const importAccount = (mnemonicOrPrivateKey: string, pwdAccount: string) => {
+export const importAccount = (
+  mnemonicOrPrivateKey: string,
+  pwdAccount: string
+) => {
   if (web3Provider.utils.isHexStrict(mnemonicOrPrivateKey)) {
     return web3Provider.eth.accounts.privateKeyToAccount(mnemonicOrPrivateKey);
   } else {
@@ -47,7 +48,6 @@ export const importAccount = (mnemonicOrPrivateKey: string, pwdAccount: string) 
     return web3MnemonicAccount;
   }
 };
-
 
 // importAccount Function using Hd wallet
 
