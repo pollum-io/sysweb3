@@ -8,7 +8,7 @@ describe('web3Provider', () => {
     // 5700 = testnet chainId
     await changeNetwork(5700);
 
-    const provider = web3Provider().currentProvider;
+    const provider = web3Provider.currentProvider;
     const { HttpProvider } = Web3.providers;
     expect(provider).toBeInstanceOf(HttpProvider);
 
