@@ -30,7 +30,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.web3Provider = exports.changeNetwork = void 0;
 //@ts-nocheck
-const Web3 = __importStar(require("web3"));
+const Web3 = require("web3");
 const networks_1 = require("../networks/networks");
 /**
  * This function should change the current network.
