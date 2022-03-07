@@ -1,16 +1,18 @@
-import { web3Provider } from '../provider/web3Provider';
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createAccount = void 0;
+const web3Provider_1 = require("../provider/web3Provider");
 /**
  * This function should return an Account Object.
- * 
- * Use example: 
- * 
+ *
+ * Use example:
+ *
  * ```
  * <button onClick={createAccount()}>Create your Account!</button>
  * ```
- * 
+ *
  * Example of @returns object:
- * 
+ *
  * ```
  *      {
         address: '0x00000000000000000000000',
@@ -22,5 +24,5 @@ import { web3Provider } from '../provider/web3Provider';
 ```
  *
  */
-
-export const createAccount = () => web3Provider.eth.accounts.create();
+const createAccount = () => web3Provider_1.web3Provider.eth.accounts.create();
+exports.createAccount = createAccount;
