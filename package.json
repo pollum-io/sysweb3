@@ -1,10 +1,10 @@
 {
-  "name": "@pollum-io-test/syscoin-web3-sdk",
+  "name": "@pollum-io/sysweb3",
   "version": "1.0.0",
   "description": "",
   "main": "src/index.ts",
   "scripts": {
-    "babel": "node_modules/.bin/babel provider --out-dir lib --extensions '.ts' ",
+    "babel": "node_modules/.bin/babel packages --out-dir lib --extensions '.ts' ",
     "start-account": "ts-node packages/web3-account.ts",
     "start-import": "ts-node packages/web3-import.ts",
     "start-balance": "ts-node packages/web3-balance.ts",
@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Pollum-io/syscoin-web3.js.git"
+    "url": "git+https://github.com/Pollum-io/sysweb3.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Pollum-io/syscoin-web3.js/issues"
+    "url": "https://github.com/Pollum-io/sysweb3/issues"
   },
-  "homepage": "https://github.com/Pollum-io/syscoin-web3.js#readme",
+  "homepage": "https://github.com/Pollum-io/syscweb3#readme",
   "devDependencies": {
     "@types/crypto-js": "^4.1.0",
     "@types/lodash": "^4.14.178",
