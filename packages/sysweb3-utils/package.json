@@ -1,5 +1,5 @@
 {
-  "name": "@pollum-io/sysweb3-keyring",
+  "name": "@pollum-io/sysweb3-utils",
   "version": "1.0.0",
   "description": "A wallet management tool for multi-chain accounts.",
   "main": "cjs/index.js",
@@ -9,12 +9,6 @@
   "private": false,
   "dependencies": {
     "axios": "^0.26.1",
-    "bip39": "^3.0.4",
-    "crypto-js": "^4.1.1",
-    "ethereumjs-wallet": "^1.0.2",
-    "ethers": "^5.5.4",
-    "graphql-request": "^4.0.0",
-    "lodash": "^4.17.21",
     "web3": "^1.7.1"
   }
 }
