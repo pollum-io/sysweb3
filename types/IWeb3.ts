@@ -1,3 +1,4 @@
+import Web3 from 'web3';
 import { Account, TransactionReceipt } from 'web3-core';
 import { IEthereumCurrency } from './IEthereum';
 import { IUserNFT } from './IUserNFT';
@@ -5,7 +6,7 @@ import { IUserNFT } from './IUserNFT';
 export interface IWeb3 {
   createAccount: () => Account;
   getBalance: (walletAddress: string) => Promise<string>;
-  importAccount: (privateKey: string) => Account;
+  importAccount: (mnemonicOrPrivateKey: string, encryptedPwdAccount: string) => Account;
   sendTransactions: (
     fromPrivateKey: string,
     toAddress: string,
@@ -25,4 +26,5 @@ export interface IWeb3 {
       }
     | undefined
   >;
+  web3Provider: any;
 }
