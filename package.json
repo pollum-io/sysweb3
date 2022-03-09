@@ -27,7 +27,10 @@
   "bugs": {
     "url": "https://github.com/Pollum-io/sysweb3/issues"
   },
-  "dependencies": {},
+  "dependencies": {
+    "axios": "^0.26.1",
+    "web3": "^1.7.1"
+  },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^21.0.2",
     "@rollup/plugin-json": "^4.1.0",
