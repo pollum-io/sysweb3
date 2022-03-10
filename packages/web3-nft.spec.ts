@@ -6,10 +6,9 @@ describe('web3-NFT tests', () => {
     const userNFT = await getUserNFT(
       '0xa3d42513a1affe8d0862cf51df6145523837393a'
     );
-    if (userNFT != null) {
-      const blocknumber = userNFT[0].blockNumber;
-      expect(blocknumber.length > 0).toBe(true);
-    }
+    expect(userNFT != null).toBe(true);
+    const blockNumber = userNFT[0].blockNumber;
+    expect(blockNumber).toBeGreaterThan(0);
   });
 
   it('should check NFT url', async () => {
