@@ -5,6 +5,7 @@ describe('web3-tokens tests', () => {
     const tokens = await getTokens(
       '0xa3d42513a1affe8d0862cf51df6145523837393a'
     );
+    expect(tokens != null).toBe(true);
     if (tokens?.length > 0) {
       const firstTokenValue = tokens[0].value;
       expect(typeof firstTokenValue).toBe('number');
