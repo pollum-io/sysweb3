@@ -1,0 +1,20 @@
+{
+  "name": "@pollum-io/sysweb3-keyring",
+  "version": "1.0.0",
+  "description": "A wallet management tool for multi-chain accounts.",
+  "main": "cjs/index.js",
+  "repository": "https://github.com/Pollum-io/sysweb3",
+  "author": "Pali Wallet",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "axios": "^0.26.1",
+    "bip39": "^3.0.4",
+    "crypto-js": "^4.1.1",
+    "ethereumjs-wallet": "^1.0.2",
+    "ethers": "^5.5.4",
+    "graphql-request": "^4.0.0",
+    "lodash": "^4.17.21",
+    "web3": "^1.7.1"
+  }
+}
