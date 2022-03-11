@@ -14,7 +14,7 @@ describe('web3-transactions test', () => {
       '0x6a92eF94F6Db88098625a30396e0fde7255E97d5',
       0.01
     );
-    await console.log(transaction);
+
     const blockNumber = transaction.blockNumber;
     expect(typeof blockNumber).toBe('number');
   });
