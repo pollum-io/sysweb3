@@ -23,7 +23,6 @@ describe('import account', () => {
     ).toString();
 
     const importedAccount = importAccount(encryptedMnemonic, FAKE_PASSWORD);
-    console.log(importedAccount);
 
     expect(importedAccount).toBeTruthy();
     expect(importedAccount.address).toBeTruthy();
