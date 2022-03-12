@@ -1,4 +1,4 @@
-import { web3Provider } from "../../sysweb3-networks/index";
+import { web3Provider } from "../../sysweb3-networks/src/index";
 
 
 export const RpcVerifier = () => {
