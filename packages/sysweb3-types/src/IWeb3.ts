@@ -28,5 +28,6 @@ export interface IWeb3 {
       }
     | undefined
   >;
+  RpcVerifier: () => Promise<boolean>;
   web3Provider: any;
 }
