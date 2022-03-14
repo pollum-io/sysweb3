@@ -1,0 +1,23 @@
+{
+  "name": "@syspollum/sysweb3-types",
+  "version": "1.0.2",
+  "description": "",
+  "main": "cjs/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pollum-io/sysweb3.git"
+  },
+  "author": "Pali Wallet",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "prebuild": "rimraf dist/",
+    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "rollup": "rollup -c ../../scripts/config/rollup.config.js",
+    "prerelease": "npm run build && npm version patch",
+    "copy": "node ../../scripts/package/copy",
+    "release:npm": "npm publish ./dist --access=public",
+    "release:preflight": "npm pack ./dist --dry-run",
+    "publish": "npm run prebuild && npm run build && npm run rollup && npm run prerelease && npm run copy && npm run release:npm"
+  }
+}

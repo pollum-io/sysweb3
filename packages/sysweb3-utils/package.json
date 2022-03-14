@@ -1,0 +1,32 @@
+{
+  "name": "@syspollum/sysweb3-utils",
+  "version": "1.0.3",
+  "description": "A helper for multi-chain accounts.",
+  "main": "cjs/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pollum-io/sysweb3.git"
+  },
+  "author": "Pali Wallet",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "prebuild": "rimraf dist/",
+    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "rollup": "rollup -c ../../scripts/config/rollup.config.js",
+    "prerelease": "npm run build && npm version patch",
+    "copy": "node ../../scripts/package/copy",
+    "release:npm": "npm publish ./dist --access=public",
+    "release:preflight": "npm pack ./dist --dry-run",
+    "publish": "npm run prebuild && npm run build && npm run rollup && npm run prerelease && npm run copy && npm run release:npm"
+  },
+  "dependencies": {
+    "@syspollum/sysweb3-network": "^1.0.3",
+    "@syspollum/sysweb3-types": "^1.0.2",
+    "@types/crypto-js": "^4.1.1",
+    "axios": "^0.26.1",
+    "crypto-js": "^4.1.1",
+    "ts-node": "^10.7.0",
+    "web3": "^1.7.1"
+  }
+}
