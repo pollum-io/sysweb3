@@ -35,4 +35,8 @@ export type IEthereumNft = {
   confirmations: string;
 }
 
-
+export type IErc20Token = {
+  name: string;
+  symbol: string;
+  decimals: number;
+}

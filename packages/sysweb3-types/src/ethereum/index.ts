@@ -31,6 +31,7 @@ export type web3 = {
     | undefined
   >;
   web3Provider: any;
+  validateCurrentRpc: () => Promise<boolean>;
 }
 
 export enum ISysWeb3 {

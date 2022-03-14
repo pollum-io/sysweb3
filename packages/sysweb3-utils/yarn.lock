@@ -223,6 +223,11 @@
     "tslib" "^2.3.1"
     "web3" "^1.7.1"
 
+"@syspollum/sysweb3-types@^1.0.2":
+  "integrity" "sha512-Xk4epWe1ichp9yWGEMY91FairpHYh8c6Qd1w8hyy5x3Y7OPl3THSDCdBSox+rZPuVbr5O/mnFnloUEvHQ9U1Lw=="
+  "resolved" "https://registry.npmjs.org/@syspollum/sysweb3-types/-/sysweb3-types-1.0.2.tgz"
+  "version" "1.0.2"
+
 "@szmarczak/http-timer@^1.1.2":
   "integrity" "sha512-XIB2XbzHTN6ieIjfIMV9hlVcfPU26s2vafYWQcZHWXHOxiaRZYEDKEwdl129Zyg50+foYV2jCgtrqSA6qNuNSA=="
   "resolved" "https://registry.npmjs.org/@szmarczak/http-timer/-/http-timer-1.1.2.tgz"
