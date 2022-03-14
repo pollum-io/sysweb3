@@ -13,5 +13,5 @@ export const RpcVerifier = () => {
         message: 'The current RPC is working correctly.',
         valid: res,
       });
-    }).then((result) => result);
+    });
   };
