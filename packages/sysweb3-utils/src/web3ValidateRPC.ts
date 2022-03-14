@@ -9,7 +9,7 @@ export const RpcVerifier = () => {
           valid: res === undefined ? false : null,
         });
       }
-      return console.log({
+      console.log({
         message: 'The current RPC is working correctly.',
         valid: res,
       });
