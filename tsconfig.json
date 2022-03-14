@@ -4,7 +4,8 @@
     "baseUrl": "src",
     "outDir": "dist/esm",
     "declarationDir": "dist/types",
-    "composite": false
+    "composite": false,
+    "resolveJsonModule": true
   },
   "include": [
     "src"

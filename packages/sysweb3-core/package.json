@@ -1,28 +1,24 @@
 {
-  "name": "@pollum-io/sysweb3-core",
-  "version": "1.0.0",
-  "description": "Syscoin HyperGraph JavaScript API",
-  "author": "Pali Wallet",
-  "license": "MIT",
-  "email": "pali@pollum.io",
+  "name": "@syspollum/sysweb3-core",
+  "version": "1.0.2",
+  "description": "",
+  "main": "cjs/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Pollum-io/sysweb3.git"
   },
-  "bugs": {
-    "url": "https://github.com/Pollum-io/sysweb3/issues"
-  },
-  "homepage": "https://github.com/Pollum-io/sysweb3#readme",
-  "main": "cjs/index.js",
-  "module": "esm/index.js",
-  "typings": "types/index.d.ts",
+  "author": "Pali Wallet",
+  "license": "MIT",
+  "private": false,
   "scripts": {
     "prebuild": "rimraf dist/",
     "build": "tsc && tsc -p tsconfig.cjs.json",
+    "rollup": "rollup -c ../../scripts/config/rollup.config.js",
     "prerelease": "npm run build && npm version patch",
-    "release": "node ../../scripts/package/copy && npm run release:npm",
-    "release:npm": "npm publish ./dist -access public",
-    "release:preflight": "npm pack ./dist --dry-run"
+    "copy": "node ../../scripts/package/copy",
+    "release:npm": "npm publish ./dist --access=public",
+    "release:preflight": "npm pack ./dist --dry-run",
+    "publish": "npm run prebuild && npm run build && npm run rollup && npm run prerelease && npm run copy && npm run release:npm"
   },
   "dependencies": {
     "rimraf": "^3.0.2"
