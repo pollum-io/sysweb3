@@ -1,5 +1,6 @@
 import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
+// @ts-ignore
 import * as sysweb3 from '@syspollum/sysweb3-core';
 import { IKeyringAccountState, IWalletState } from '@syspollum/sysweb3-types';
 import { encryptor } from '@syspollum/sysweb3-utils';

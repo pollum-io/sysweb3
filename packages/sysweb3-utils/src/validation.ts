@@ -1,3 +1,4 @@
+// @ts-ignore
 import { web3Provider } from '@syspollum/sysweb3-network';
 import { IErc20Token } from '@syspollum/sysweb3-types';
 import abi from './abi/erc20.json';

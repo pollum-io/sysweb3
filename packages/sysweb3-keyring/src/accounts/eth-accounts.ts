@@ -1,3 +1,4 @@
+// @ts-ignore
 import { networks, web3Provider } from '@syspollum/sysweb3-network';
 import axios from 'axios';
 import crypto from 'crypto-js';
