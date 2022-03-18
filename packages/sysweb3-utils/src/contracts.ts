@@ -1,6 +1,6 @@
-import { web3Provider } from "@syspollum/sysweb3-network";
-import { AbiItem } from "web3-utils";
-import { Contract, ContractOptions } from "web3-eth-contract";
+import { web3Provider } from '@syspollum/sysweb3-network';
+import { Contract, ContractOptions } from 'web3-eth-contract';
+import { AbiItem } from 'web3-utils';
 
 export const createContractUsingAbi = async (
   AbiContract: AbiItem[] | AbiItem | object,

@@ -1,12 +1,12 @@
 import { ObservableStore } from '@metamask/obs-store';
-import { MainWallet } from './wallets/main';
-import { encryptor } from '@syspollum/sysweb3-utils';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
-import { IKeyringAccountState, IWalletState } from '@syspollum/sysweb3-types';
 import * as sysweb3 from '@syspollum/sysweb3-core';
-import CryptoJS from 'crypto-js';
+import { IKeyringAccountState, IWalletState } from '@syspollum/sysweb3-types';
+import { encryptor } from '@syspollum/sysweb3-utils';
 import { generateMnemonic } from 'bip39';
+import CryptoJS from 'crypto-js';
 import { initialWalletState } from './initialState';
+import { MainWallet } from './wallets/main';
 
 export const KeyringManager = () => {
   const eventEmitter = new SafeEventEmitter();
@@ -102,6 +102,9 @@ export const KeyringManager = () => {
   const createVault = async ({
     encryptedPassword,
     networkId,
+  }: {
+    encryptedPassword: string;
+    networkId: string;
   }): Promise<IKeyringAccountState> => {
     _clearWallet();
 
@@ -175,7 +178,7 @@ export const KeyringManager = () => {
 
   const removeAccount = () => {};
 
-  const signTransaction = (tx, accountId: number, options = {}) => {
+  const signTransaction = (tx: any, accountId: number, options = {}) => {
     const account = getAccountById(accountId);
 
     account?.signTransaction(account, tx, options);

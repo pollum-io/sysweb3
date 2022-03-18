@@ -15,7 +15,7 @@ export type ISyscoinToken = {
   balance: number;
   totalReceived: string;
   totalSent: string;
-}
+};
 
 export type IAddressMap = {
   changeAddress: string;

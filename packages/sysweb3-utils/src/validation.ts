@@ -1,10 +1,10 @@
-import { web3Provider } from "@syspollum/sysweb3-network";
-import { createContractUsingAbi } from ".";
-import abi from "./abi/erc20.json";
-import { IErc20Token } from "@syspollum/sysweb3-types";
+import { web3Provider } from '@syspollum/sysweb3-network';
+import { IErc20Token } from '@syspollum/sysweb3-types';
+import abi from './abi/erc20.json';
+import { createContractUsingAbi } from '.';
 
 export const validateCurrentRpcUrl = () => {
-  return web3Provider.eth.net.isListening((error, response) => {
+  return web3Provider.eth.net.isListening((error: any, response: any) => {
     return {
       valid: Boolean(error),
       response,
@@ -28,8 +28,10 @@ export const validateToken = async (address: string) => {
         symbol,
         decimals,
       };
+    } else {
+      throw new Error();
     }
   } catch (error) {
-    throw new Error("Token not found, verify the Token Contract Address.");
+    throw new Error('Token not found, verify the Token Contract Address.');
   }
 };

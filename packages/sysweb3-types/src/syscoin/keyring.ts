@@ -1,4 +1,10 @@
-import { INetwork, INetworkType, ISyscoinToken, IEthereumTransaction, ISyscoinTransaction } from ".";
+import {
+  INetwork,
+  INetworkType,
+  ISyscoinToken,
+  IEthereumTransaction,
+  ISyscoinTransaction,
+} from '.';
 
 export enum IKeyringAccountType {
   Trezor,
@@ -40,7 +46,7 @@ export interface IWalletState {
 export type IKeyringBalances = {
   [INetworkType.Syscoin]: number;
   [INetworkType.Ethereum]: number;
-}
+};
 
 export interface IKeyringAccountState {
   address: string;

@@ -1,5 +1,5 @@
-import { ISyscoinToken } from ".";
-import { INetworkType } from "./network";
+import { INetworkType } from './network';
+import { ISyscoinToken } from '.';
 
 export type ISyscoinVIn = {
   txid: string;
@@ -9,7 +9,7 @@ export type ISyscoinVIn = {
   addresses: string[];
   isAddress: boolean;
   value: number;
-}
+};
 
 export type ISyscoinVOut = {
   value: number;
@@ -18,13 +18,13 @@ export type ISyscoinVOut = {
   hex: string;
   addresses: string[];
   isAddress: boolean;
-}
+};
 
 export type ISyscoinTokenTxInfo = {
   tokenId: string;
   value: number;
   valueStr: string;
-}
+};
 
 export type ISyscoinTransaction = {
   [txid: string]: {
@@ -42,11 +42,11 @@ export type ISyscoinTransaction = {
     vin: ISyscoinVIn[];
     vout: ISyscoinVOut[];
   };
-}
+};
 
 export type IEthereumTransaction = {
   [INetworkType.Ethereum]: any;
-}
+};
 
 export type ITxid = { txid: string };
 
@@ -57,7 +57,7 @@ export type ITransactionInfo = {
   rbf: boolean;
   toAddress: string;
   token: ISyscoinToken | null;
-}
+};
 
 export type INotaryDetails = {
   endpoint?: string | null;
@@ -153,7 +153,7 @@ export type IETHTxConfig = {
   memo?: string;
   nonce?: number;
   txData?: string;
-}
+};
 
 export type IETHNetwork = 'testnet' | 'mainnet';
 

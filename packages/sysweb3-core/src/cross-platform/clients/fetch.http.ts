@@ -1,10 +1,10 @@
-declare let window;
-const defaultFetch = typeof window !== 'undefined' ? window.fetch.bind(window) : undefined;
+declare let window: any;
+const defaultFetch = window?.fetch.bind(window) ?? undefined;
 
 export const FetchRestService = (httpClient: any = defaultFetch) => {
-  const invoke = (options: RestApiOptionsRequest): Promise<any> => {
+  const invoke = (options: RestApiOptionsRequest) => {
     return makeServiceRequest(buildRequest(options));
-  }
+  };
 
   const buildRequest = (options: RestApiOptionsRequest) => {
     const paramStr = options.queryParams && serialize(options.queryParams);
@@ -32,8 +32,7 @@ export const FetchRestService = (httpClient: any = defaultFetch) => {
       const contentType = httpHeaders['Content-Type'];
       if (contentType === 'application/x-www-form-urlencoded') {
         options.body = serialize(options.body);
-      }
-      else if (contentType === 'application/json') {
+      } else if (contentType === 'application/json') {
         options.body = JSON.stringify(options.body);
       }
     }
@@ -45,13 +44,12 @@ export const FetchRestService = (httpClient: any = defaultFetch) => {
       method: options.method,
       transformResponse: options.transformResponse,
     };
-  }
+  };
 
-  // eslint-disable-next-line class-methods-use-this
   const makeServiceRequest = (options: RestApiOptionsRequest) => {
     return new Promise((resolve, reject) => {
       httpClient(options.url, options)
-        .then( async (res) => {
+        .then(async (res: any) => {
           if (res.status !== 200) {
             const text = await res.text();
 
@@ -64,24 +62,24 @@ export const FetchRestService = (httpClient: any = defaultFetch) => {
           }
           return res.text();
         })
-        .then(body => {
+        .then((body: any) => {
           try {
             body = JSON.parse(body);
-          } catch {}
+          } catch {
+            // ? empty catch?
+          }
           if (options.transformResponse) {
             resolve(options.transformResponse(body));
           } else {
             resolve(body);
           }
         })
-        .catch(err => {
+        .catch((err: any) => {
           reject(err);
-        }
-      );
+        });
     });
-  }
+  };
 
-  // eslint-disable-next-line class-methods-use-this
   const serialize = (obj: any) => {
     if (obj) {
       const keyMap = Object.keys(obj).map((key) => {
@@ -91,8 +89,8 @@ export const FetchRestService = (httpClient: any = defaultFetch) => {
       return keyMap.join('&');
     }
     return '';
-  }
-}
+  };
+};
 
 interface RestApiOptionsRequest {
   baseUrl?: string;

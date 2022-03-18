@@ -1,19 +1,11 @@
-
 import { crossPlatformDi } from '../cross-platform-di';
-import {IHttpClient} from '../i-http-client';
+import { IHttpClient } from '../i-http-client';
 
 export const RestConfig = () => {
-  let serviceBaseUrl;
-  let serviceAuthToken;
-  let serviceProtocolClient;
-  let errorHookCallback: (error) => void;
-
-  const services = {
-    serviceAuthToken,
-    serviceBaseUrl,
-    serviceProtocolClient,
-    errorHookCallback,
-  }
+  let serviceBaseUrl: string;
+  let serviceAuthToken: string;
+  let serviceProtocolClient: IHttpClient;
+  let errorHookCallback: (error: any) => void;
 
   const baseUrl = (val?: string) => {
     if (val === undefined) {
@@ -23,8 +15,8 @@ export const RestConfig = () => {
 
     serviceBaseUrl = val;
 
-    return services;
-  }
+    return serviceBaseUrl;
+  };
 
   const authToken = (val?: string) => {
     if (!val) {
@@ -33,8 +25,8 @@ export const RestConfig = () => {
 
     serviceAuthToken = val;
 
-    return services;
-  }
+    return serviceAuthToken;
+  };
 
   const protocolClient = (val?: IHttpClient) => {
     if (!val) {
@@ -43,29 +35,29 @@ export const RestConfig = () => {
 
     serviceProtocolClient = val;
 
-    return services;
-  }
+    return serviceProtocolClient;
+  };
 
-  const errorHook = (callback?: (error) => void): any => {
+  const errorHook = (callback?: (error: any) => void): any => {
     if (!callback) {
       return errorHookCallback;
     }
 
     errorHookCallback = callback;
 
-    return services;
-  }
+    return errorHookCallback;
+  };
 
   return {
     errorHook,
     protocolClient,
     authToken,
-    baseUrl
-  }
-}
+    baseUrl,
+  };
+};
 
 export interface IRestConfig {
-  errorHook(callback?: (error) => void): any;
+  errorHook(callback?: (error: any) => void): any;
   protocolClient(val?: IHttpClient): any;
   authToken(val?: string): any;
   baseUrl(val?: string): any;
