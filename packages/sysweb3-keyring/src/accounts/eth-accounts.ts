@@ -79,30 +79,48 @@ export const Web3Accounts = () => {
     }
   };
 
-  const sendTransaction = async (
-    sender: string,
-    receiver: string,
-    value: number
-  ): Promise<any> => {
+  export const sendTransaction = async (
+    fromAddress: string,
+    fromPrivateKey: string,
+    toAddress: string,
+    value: number,
+    gasFee?: string
+  ) => {
+    const lastBlockValue: any = await web3Provider.eth.getBlock('latest');
+    const editGasFee =
+      gasFee === 'low' ? lastBlockValue * 0.8 : lastBlockValue * 1.2;
+  
+    const signedTransaction = await web3Provider.eth.accounts.signTransaction(
+      {
+        from: fromAddress,
+        to: toAddress,
+        value: web3Provider.utils.toWei(value.toString(), 'ether'),
+        gas: gasFee
+          ? editGasFee
+          : await web3Provider.eth.estimateGas({
+              to: toAddress,
+            }),
+        nonce: await web3Provider.eth.getTransactionCount(fromAddress, "latest")
+      },
+      fromPrivateKey
+    );
+  
+    console.log('EDIT GAS FEE', editGasFee);
+  
+    console.log(
+      'NORMAL GAS FEE',
+      await web3Provider.eth.estimateGas({
+        to: toAddress,
+      })
+    );
+    console.log('nonce', await web3Provider.eth.getTransactionCount(fromAddress, "latest"))
+  
     try {
-      const signedTransaction = await web3Provider.eth.accounts.signTransaction(
-        {
-          to: receiver,
-          value: web3Provider.utils.toWei(value.toString(), "ether"),
-          gas: await web3Provider.eth.estimateGas({
-            to: receiver,
-          }),
-          nonce: await web3Provider.eth.getTransactionCount(sender, "latest"),
-        },
-        sender
-      );
-
       return web3Provider.eth
         .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
-        .then((result) => result);
+        .then((result: any) => result);
     } catch (error) {
-      // todo: handle
-      throw new Error(error);
+      console.log(`${error}`);
     }
   };
 
