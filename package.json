@@ -18,7 +18,8 @@
     "prerelease": "npm run build && npm version patch --no-git-tag-version",
     "release": "node ./scripts/package/copy && npm run release:npm",
     "release:npm": "npm publish ./dist -access public",
-    "release:preflight": "npm pack ./dist --dry-run"
+    "release:preflight": "npm pack ./dist --dry-run",
+    "type-check": "tsc --pretty --noEmit"
   },
   "repository": {
     "type": "git",
