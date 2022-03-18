@@ -1,9 +1,9 @@
 import { networks, web3Provider } from "@syspollum/sysweb3-network";
-import _ from 'lodash';
-import axios from 'axios';
-import { request, gql } from 'graphql-request';
-import crypto from 'crypto-js'
-import { ethers } from 'ethers';
+import _ from "lodash";
+import axios from "axios";
+import { request, gql } from "graphql-request";
+import crypto from "crypto-js";
+import { ethers } from "ethers";
 import Web3 from "web3";
 import { Account } from "web3-core";
 
@@ -14,28 +14,28 @@ export const Web3Accounts = () => {
     try {
       const balance = await web3Provider.eth.getBalance(address);
       const formattedBalance = web3Provider.utils.fromWei(balance);
-  
+
       const roundedBalance = _.floor(parseFloat(formattedBalance), 4);
-  
+
       return roundedBalance;
     } catch (error) {
       // todo: handle error
       console.log(`${error}`);
-  
+
       return 0;
     }
   };
 
-  const getNftsByAddress = async (address: string): Promise<object | null>=> {
+  const getNftsByAddress = async (address: string): Promise<object | null> => {
     try {
       const { data } = await axios.get(
         `https://api.etherscan.io/api?module=account&action=tokennfttx&address=${address}&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH`
       );
-  
+
       if (data.message === "OK" && data.result !== []) {
         return data.result;
       }
-      
+
       return null;
     } catch (error) {
       // todo: handle error
@@ -63,19 +63,19 @@ export const Web3Accounts = () => {
 
     try {
       const { ethereum } = await request({
-        url: 'https://graphql.bitquery.io/',
+        url: "https://graphql.bitquery.io/",
         document: query,
         requestHeaders: {
-          'X-API-KEY': 'BQYvhnv04csZHaprIBZNwtpRiDIwEIW9',
+          "X-API-KEY": "BQYvhnv04csZHaprIBZNwtpRiDIwEIW9",
         },
       });
-  
+
       if (ethereum.address[0].balances) {
         return ethereum.address[0].balances;
       }
     } catch (error) {
       // todo: handle error
-      throw new Error('Not available tokens');
+      throw new Error("Not available tokens");
     }
   };
 
@@ -92,16 +92,17 @@ export const Web3Accounts = () => {
           gas: await web3Provider.eth.estimateGas({
             to: receiver,
           }),
+          nonce: await web3Provider.eth.getTransactionCount(sender, "latest"),
         },
         sender
       );
-    
+
       return web3Provider.eth
-      .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
-      .then((result) => result);
+        .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
+        .then((result) => result);
     } catch (error) {
       // todo: handle
-      throw new Error(error)
+      throw new Error(error);
     }
   };
 
@@ -109,18 +110,16 @@ export const Web3Accounts = () => {
     try {
       if (web3Provider.utils.isHexStrict(mnemonic)) {
         return web3Provider.eth.accounts.privateKeyToAccount(mnemonic);
-      } 
-  
-      const decryptedMnemonic = crypto.AES.decrypt(
-        mnemonic,
-        password
-      ).toString(crypto.enc.Utf8);
-  
+      }
+
+      const decryptedMnemonic = crypto.AES.decrypt(mnemonic, password).toString(
+        crypto.enc.Utf8
+      );
+
       const { privateKey } = ethers.Wallet.fromMnemonic(decryptedMnemonic);
-  
-      const account =
-        web3Provider.eth.accounts.privateKeyToAccount(privateKey);
-  
+
+      const account = web3Provider.eth.accounts.privateKeyToAccount(privateKey);
+
       return account;
     } catch (error) {
       // todo: handle
@@ -129,28 +128,28 @@ export const Web3Accounts = () => {
   };
 
   /**
-   * 
-   * Available networks: 
+   *
+   * Available networks:
    * - Syscoin Mainnet (57) and Testnet (5700)
    * - Ethereum Mainnet (1)
    * - Ethereum Rinkeby (4)
    * - Polygon Mainnet (137) and Testnet (80001)
-   * 
+   *
    * @param chainId chain id of the network to set as active
    * @returns void
-   * 
+   *
    */
   const setActiveNetwork = (chainId: number): void => {
     const network = networks[chainId];
 
     if (network) {
       const { HttpProvider } = Web3.providers;
-  
+
       web3Provider.setProvider(new HttpProvider(network.url));
 
       return;
     }
-   
+
     throw new Error("Network not found, try again with a correct one!");
   };
 
@@ -161,6 +160,6 @@ export const Web3Accounts = () => {
     getTokens,
     sendTransaction,
     importAccount,
-    setActiveNetwork
-  }
-}
+    setActiveNetwork,
+  };
+};
