@@ -1,7 +1,9 @@
+import { IStateStorageClient } from './clients/state-storage-db';
 
 export interface IKeyValueDb {
-  setPrefix (prefix: string);
-  set (key: string, value: any);
-  get (key: string): any;
-  deleteItem (key: string);
+  setClient(client?: IStateStorageClient): void;
+  setPrefix(prefix: string): void;
+  set(key: string, value: any): void;
+  get(key: string): any;
+  deleteItem(key: string): void;
 }

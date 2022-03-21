@@ -3,9 +3,20 @@
     "module": "commonjs",
     "sourceMap": true,
     "declaration": true,
-    "strict": false,
     "target": "ESNext",
     "lib": [ "ESNext" ],
-    "noUnusedLocals": false
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true 
   }
 }

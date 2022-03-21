@@ -3,7 +3,6 @@
   "compilerOptions": {
     "outDir": "dist/cjs",
     "lib": [ "esnext", "dom" ],
-    "declarationDir": "dist/types",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
   },
