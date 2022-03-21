@@ -1,0 +1,38 @@
+{
+  "name": "@syspollum/sysweb3-network",
+  "version": "1.0.3",
+  "description": "A network management tool for multi-chain accounts.",
+  "main": "cjs/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pollum-io/sysweb3.git"
+  },
+  "author": "Pali Wallet",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "prebuild": "rimraf dist/",
+    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "rollup": "rollup -c ../../scripts/config/rollup.config.js",
+    "prerelease": "npm run build && npm version patch",
+    "copy": "node ../../scripts/package/copy",
+    "release:npm": "npm publish ./dist --access=public",
+    "release:preflight": "npm pack ./dist --dry-run",
+    "type-check": "tsc --pretty --noEmit"
+  },
+  "dependencies": {
+    "@types/web3": "^1.2.2",
+    "axios": "^0.26.1",
+    "node-fetch": "^3.2.3",
+    "rimraf": "^3.0.2",
+    "tslib": "^2.3.1",
+    "web3": "^1.7.1"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^8.3.1"
+  },
+  "bugs": {
+    "url": "https://github.com/Pollum-io/sysweb3/issues"
+  },
+  "homepage": "https://github.com/Pollum-io/sysweb3#readme"
+}
