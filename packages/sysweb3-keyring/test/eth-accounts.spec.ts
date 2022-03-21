@@ -1,6 +1,8 @@
-import { createAccount } from "./web3-account";
+import { Web3Accounts } from '../src/accounts/eth-accounts';
 
-describe('web3-account', () => {
+const { createAccount } = Web3Accounts();
+
+describe('Web3Accounts', () => {
   it('should create an account', () => {
     const newAccount = createAccount();
 
