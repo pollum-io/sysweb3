@@ -1,3 +1,5 @@
+import { web3Provider } from '@syspollum/sysweb3-network';
+import Web3 from 'web3';
 import {
   FAKE_ADDRESS,
   FAKE_PASSWORD,
@@ -67,6 +69,20 @@ describe('Web3Accounts', () => {
       const firstTokenValue = tokens[0].value;
       expect(typeof firstTokenValue).toBe('number');
     }
+  });
+
+  //* setActiveNetwork
+  it('should change the network', () => {
+    // 5700 = testnet chainId
+    setActiveNetwork(5700);
+
+    const provider = web3Provider.currentProvider;
+    const { HttpProvider } = Web3.providers;
+
+    expect(provider).toBeInstanceOf(HttpProvider);
+    if (!(provider instanceof HttpProvider)) return;
+
+    expect(provider.host).toBe('https://rpc.tanenbaum.io/');
   });
 
   jest.setTimeout(15000);
