@@ -1,4 +1,4 @@
-import { getTokenIconBySymbol, getTokens } from './web3-tokens';
+import { getTokens } from './web3-tokens';
 
 describe('web3-tokens tests', () => {
   it('should get tokens', async () => {
@@ -10,10 +10,5 @@ describe('web3-tokens tests', () => {
       const firstTokenValue = tokens[0].value;
       expect(typeof firstTokenValue).toBe('number');
     }
-  });
-
-  it('should get token icon by symbol', async () => {
-    const token = await getTokenIconBySymbol('eth');
-    expect(token.startsWith('https://')).toBe(true);
   });
 });
