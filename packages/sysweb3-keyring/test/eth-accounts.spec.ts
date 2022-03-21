@@ -7,8 +7,13 @@ import {
 import { Web3Accounts } from '../src/accounts/eth-accounts';
 
 describe('Web3Accounts', () => {
-  const { getBalance, createAccount, importAccount, getNftsByAddress } =
-    Web3Accounts();
+  const {
+    getBalance,
+    createAccount,
+    importAccount,
+    getNftsByAddress,
+    getTokens,
+  } = Web3Accounts();
 
   it('should create an account', () => {
     const newAccount = createAccount();
@@ -49,5 +54,16 @@ describe('Web3Accounts', () => {
     expect(userNFT).not.toBeNull();
     const blockNumber = userNFT[0].blockNumber;
     expect(blockNumber.length).toBeGreaterThan(0);
+  });
+
+  it('should get tokens', async () => {
+    const tokens = await getTokens(
+      '0xa3d42513a1affe8d0862cf51df6145523837393a'
+    );
+    expect(tokens).not.toBeNull();
+    if (tokens?.length > 0) {
+      const firstTokenValue = tokens[0].value;
+      expect(typeof firstTokenValue).toBe('number');
+    }
   });
 });
