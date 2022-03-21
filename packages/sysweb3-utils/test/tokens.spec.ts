@@ -1,5 +1,5 @@
 // import { changeNetwork } from '../provider/web3Provider';
-import { getNftImage } from '../src/tokens';
+import { getNftImage, getTokenIconBySymbol } from '../src/tokens';
 
 describe('web3-NFT tests', () => {
   it('should check NFT url', async () => {
@@ -10,5 +10,10 @@ describe('web3-NFT tests', () => {
     );
 
     expect(NFTUrl.startsWith('https://ipfs.io/ipfs/')).toBe(true);
+  });
+
+  it('should get token icon by symbol', async () => {
+    const token = await getTokenIconBySymbol('eth');
+    expect(token.startsWith('https://')).toBe(true);
   });
 });
