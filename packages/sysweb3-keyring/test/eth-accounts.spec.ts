@@ -1,4 +1,5 @@
 import { web3Provider } from '@syspollum/sysweb3-network';
+import { AES } from 'crypto-js';
 import Web3 from 'web3';
 import { Web3Accounts } from '../src/accounts/eth-accounts';
 import {
@@ -40,7 +41,7 @@ describe('Web3Accounts', () => {
 
   it('should import an account using a seed phrase (mnemonic)', async () => {
     //* encrypt the mnemonic
-    const encryptedMnemonic = CryptoJS.AES.encrypt(
+    const encryptedMnemonic = AES.encrypt(
       FAKE_SEED_PHRASE,
       FAKE_PASSWORD
     ).toString();
