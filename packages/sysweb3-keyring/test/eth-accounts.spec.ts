@@ -29,7 +29,7 @@ describe('Web3Accounts', () => {
   });
 
   //* getBalance
-  it('should get balance', async () => {
+  it('should get an account balance', async () => {
     const balance = await getBalance(FAKE_ADDRESS);
     expect(typeof balance).toBe('number');
   });
@@ -56,7 +56,7 @@ describe('Web3Accounts', () => {
   });
 
   //* getNftsByAddress
-  it('should get user NFTs', async () => {
+  it('should get all NFTs from an account', async () => {
     const userNFT = await getNftsByAddress(
       '0xa3d42513a1affe8d0862cf51df6145523837393a'
     );
@@ -66,7 +66,7 @@ describe('Web3Accounts', () => {
   });
 
   //* getTokens
-  it('should get tokens', async () => {
+  it('should get the tokens from an account', async () => {
     const tokens = await getTokens(
       '0xa3d42513a1affe8d0862cf51df6145523837393a'
     );
