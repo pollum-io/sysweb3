@@ -1,6 +1,6 @@
 {
-  "name": "@syspollum/sysweb3-core",
-  "version": "1.0.2",
+  "name": "@pollum-io/sysweb3-core",
+  "version": "1.0.0",
   "description": "",
   "main": "cjs/index.js",
   "repository": {

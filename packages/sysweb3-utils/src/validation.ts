@@ -1,6 +1,6 @@
 // @ts-ignore
-import { web3Provider } from '@syspollum/sysweb3-network';
-import { IErc20Token } from '@syspollum/sysweb3-types';
+import { web3Provider } from '@pollum-io/sysweb3-network';
+import { IErc20Token } from '@pollum-io/sysweb3-types';
 import abi from './abi/erc20.json';
 import { createContractUsingAbi } from '.';
 
@@ -36,3 +36,9 @@ export const validateToken = async (address: string) => {
     throw new Error('Token not found, verify the Token Contract Address.');
   }
 };
+
+export const isBase64 = (string: string) => {
+  const base64 = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$/;
+
+  return base64.test(string);
+}

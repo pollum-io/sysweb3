@@ -1,4 +1,4 @@
-import { INetworkType, IWalletState } from '@syspollum/sysweb3-types';
+import { INetworkType, IWalletState } from '@pollum-io/sysweb3-types';
 
 export const initialActiveAccountState = {
   address: '',
@@ -14,9 +14,9 @@ export const initialActiveAccountState = {
   trezorId: -1,
   xprv: '',
   xpub: '',
-  saveTokenInfo() {},
-  signTransaction() {},
-  signMessage() {},
+  saveTokenInfo() { },
+  signTransaction() { },
+  signMessage() { },
   getPrivateKey: () => initialActiveAccountState.xprv,
 };
 

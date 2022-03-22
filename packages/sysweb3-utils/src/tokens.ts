@@ -53,3 +53,17 @@ export const getTokenIconBySymbol = async (symbol: string) => {
     throw new Error('Token icon not found');
   }
 };
+
+export const isNFT = (guid: number) => {
+  const assetGuid = BigInt.asUintN(64, BigInt(guid));
+
+  return assetGuid >> BigInt(32) > 0;
+};
+
+export const getHost = (url: string) => {
+  if (typeof url === 'string' && url !== '') {
+    return new URL(url).host;
+  }
+
+  return url;
+};

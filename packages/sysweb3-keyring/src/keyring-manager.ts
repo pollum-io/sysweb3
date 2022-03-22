@@ -1,9 +1,9 @@
 import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
 // @ts-ignore
-import * as sysweb3 from '@syspollum/sysweb3-core';
-import { IKeyringAccountState, IWalletState } from '@syspollum/sysweb3-types';
-import { encryptor } from '@syspollum/sysweb3-utils';
+import * as sysweb3 from '@pollum-io/sysweb3-core';
+import { IKeyringAccountState, IWalletState } from '@pollum-io/sysweb3-types';
+import { encryptor } from '@pollum-io/sysweb3-utils';
 import { generateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
 import { initialWalletState } from './initialState';
@@ -177,7 +177,7 @@ export const KeyringManager = () => {
     return wallet;
   };
 
-  const removeAccount = () => {};
+  const removeAccount = () => { };
 
   const signTransaction = (tx: any, accountId: number, options = {}) => {
     const account = getAccountById(accountId);

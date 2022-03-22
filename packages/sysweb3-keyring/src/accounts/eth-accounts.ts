@@ -1,5 +1,5 @@
 // @ts-ignore
-import { networks, web3Provider } from '@syspollum/sysweb3-network';
+import { networks, web3Provider } from '@pollum-io/sysweb3-network';
 import axios from 'axios';
 import crypto from 'crypto-js';
 import { ethers } from 'ethers';

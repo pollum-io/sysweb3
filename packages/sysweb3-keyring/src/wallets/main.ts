@@ -1,4 +1,4 @@
-import { IKeyringAccountState } from '@syspollum/sysweb3-types';
+import { IKeyringAccountState } from '@pollum-io/sysweb3-types';
 import CryptoJS from 'crypto-js';
 // @ts-ignore
 import sys from 'syscoinjs-lib';

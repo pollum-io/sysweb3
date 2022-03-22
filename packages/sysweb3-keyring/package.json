@@ -1,6 +1,6 @@
 {
-  "name": "@syspollum/sysweb3-keyring",
-  "version": "1.0.2",
+  "name": "@pollum-io/sysweb3-keyring",
+  "version": "1.0.0",
   "description": "",
   "main": "cjs/index.js",
   "repository": {
@@ -24,9 +24,9 @@
   "dependencies": {
     "@metamask/obs-store": "^7.0.0",
     "@metamask/safe-event-emitter": "^2.0.0",
-    "@syspollum/sysweb3-core": "^1.0.2",
-    "@syspollum/sysweb3-types": "^1.0.1",
-    "@syspollum/sysweb3-utils": "^1.0.2",
+    "@pollum-io/sysweb3-core": "^1.0.2",
+    "@pollum-io/sysweb3-types": "^1.0.1",
+    "@pollum-io/sysweb3-utils": "^1.0.2",
     "@types/crypto-js": "^4.1.1",
     "axios": "^0.26.1",
     "bip39": "^3.0.4",
