@@ -1,37 +1,40 @@
-declare let window;
-const defaultStorage = typeof window !== 'undefined' ? window.localStorage : undefined;
+import { IKeyValueDb } from 'cross-platform/i-key-value-db';
 
-export const StateStorageDb = (storageClient: IStateStorageClient = defaultStorage) => {
+declare let window: any;
+const defaultStorage = window?.localStorage ?? undefined;
+
+export const StateStorageDb = (
+  storageClient: IStateStorageClient = defaultStorage
+): IKeyValueDb => {
   let keyPrefix = 'sysweb3-';
 
-  const setClient = (client: IStateStorageClient) => {
+  const setClient = (client?: IStateStorageClient) => {
     storageClient = client || defaultStorage;
-  }
+  };
 
   const setPrefix = (prefix: string) => {
     if (!prefix) {
       prefix = 'sysweb3-';
-    }
-    else if (prefix.charAt(prefix.length - 1) !== '-') {
+    } else if (prefix.charAt(prefix.length - 1) !== '-') {
       prefix += '-';
     }
     keyPrefix = prefix;
-  }
+  };
 
   const set = (key: string, value: any) => {
     storageClient.setItem(keyPrefix + key, JSON.stringify(value));
-  }
+  };
 
   const get = (key: string): any => {
     const value = storageClient.getItem(keyPrefix + key);
     if (value) {
       return JSON.parse(value);
     }
-  }
+  };
 
   const deleteItem = (key: string) => {
     storageClient.removeItem(keyPrefix + key);
-  }
+  };
 
   return {
     setClient,
@@ -39,8 +42,8 @@ export const StateStorageDb = (storageClient: IStateStorageClient = defaultStora
     set,
     get,
     deleteItem,
-  }
-}
+  };
+};
 
 export interface IStateStorageClient {
   getItem(key: string): string | null;
@@ -49,7 +52,7 @@ export interface IStateStorageClient {
 }
 
 export interface IStateStorageDb {
-  setClient(client: IStateStorageClient): void;
+  setClient(client?: IStateStorageClient): void;
   setPrefix(prefix: string): void;
   set(key: string, value: any): void;
   get(key: string): JSON;

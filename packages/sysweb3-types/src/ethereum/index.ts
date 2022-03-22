@@ -2,15 +2,13 @@ import { Account, TransactionReceipt } from 'web3-core';
 import { IEthereumToken, IEthereumNft } from '.';
 
 export * from './tokens';
-export * from './transactions';
+// export * from './transactions';
 export * from './accounts';
 
 export type web3 = {
   createAccount: () => Account;
   getBalance: (address: string) => Promise<string>;
-  importAccount: (
-    mnemonic: string, password: string
-  ) => Account;
+  importAccount: (mnemonic: string, password: string) => Account;
   sendTransaction: (
     sender: string,
     receiver: string,
@@ -32,7 +30,7 @@ export type web3 = {
   >;
   web3Provider: any;
   validateCurrentRpc: () => Promise<boolean>;
-}
+};
 
 export enum ISysWeb3 {
   web3,

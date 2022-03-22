@@ -1,21 +1,15 @@
-import abi from './abi/erc721.json'
-
-import { createContractUsingAbi } from "./index";
-import axios from "axios";
+import axios from 'axios';
+import abi from './abi/erc721.json';
+import { createContractUsingAbi } from './index';
 
 export const getNftImage = async (contract: string, tokenId: number) => {
   try {
-    const nft = await (
-      await createContractUsingAbi(abi, contract)
-    ).methods
+    const nft = await (await createContractUsingAbi(abi, contract)).methods
       .tokenURI(tokenId)
       .call();
 
     if (nft) {
-      const ipfsUrl = String(nft).replace(
-        "ipfs://",
-        "https://ipfs.io/ipfs/"
-      );
+      const ipfsUrl = String(nft).replace('ipfs://', 'https://ipfs.io/ipfs/');
 
       const url = await axios.get(ipfsUrl);
 
@@ -23,19 +17,17 @@ export const getNftImage = async (contract: string, tokenId: number) => {
        * 'https://gateway.pinata.cloud/ipfs/Qmc4DqK9xeoSvtVmTcS6YG3DiWHyfiwQsnwQfzcqAvtmHj'
        */
 
-      return String(url.data.image).replace(
-        "ipfs://",
-        "https://ipfs.io/ipfs/"
-      );
+      return String(url.data.image).replace('ipfs://', 'https://ipfs.io/ipfs/');
     }
 
-    return new Error("NFTinfo not found.");
+    return new Error('NFTinfo not found.');
   } catch (error) {
     console.log(
-      "Verify current network. Set the same network of NFT contract."
+      'Verify current network. Set the same network of NFT contract.'
     );
+    throw error;
   }
-}
+};
 
 export const getTokenIconBySymbol = async (symbol: string) => {
   try {
@@ -43,11 +35,9 @@ export const getTokenIconBySymbol = async (symbol: string) => {
       `https://api.coingecko.com/api/v3/search?query=${symbol.toUpperCase()}`
     );
 
-    const tokens = response.data.coins.filter(
-      (token: any) => {
-        return token.symbol.toUpperCase() === symbol.toLocaleUpperCase();
-      }
-    );
+    const tokens = response.data.coins.filter((token: any) => {
+      return token.symbol.toUpperCase() === symbol.toLocaleUpperCase();
+    });
 
     if (tokens) {
       /**
@@ -60,6 +50,6 @@ export const getTokenIconBySymbol = async (symbol: string) => {
     }
   } catch (error) {
     // todo: handle
-    throw new Error("Token icon not found");
+    throw new Error('Token icon not found');
   }
 };

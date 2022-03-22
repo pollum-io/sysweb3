@@ -1,12 +1,17 @@
+import { IKeyringAccountState } from '@syspollum/sysweb3-types';
 import CryptoJS from 'crypto-js';
+// @ts-ignore
 import sys from 'syscoinjs-lib';
-import { IKeyringAccountState, ISyscoinToken, ISyscoinTransaction } from '@syspollum/sysweb3-types';
 
 export const MainWallet = () => {
   let hdSigner: any = null;
   let mainSigner: any = null;
 
-  const _getBackendAccountData = async (signer, xpub, isHardwareWallet) => {
+  const _getBackendAccountData = async (
+    signer: any,
+    xpub: string,
+    isHardwareWallet: boolean
+  ) => {
     console.log('[create] get backend account signer', signer, xpub);
     const { tokensAsset, balance, transactions } =
       await sys.utils.fetchBackendAccount(
@@ -20,7 +25,7 @@ export const MainWallet = () => {
 
     console.log('[create] backend account fetch sys', transactions, balance);
 
-    const tokens: ISyscoinToken | {} = {};
+    const tokens: any = {};
 
     if (tokensAsset) {
       for (const token of tokensAsset) {
@@ -37,7 +42,7 @@ export const MainWallet = () => {
       }
     }
 
-    const txs: ISyscoinTransaction | {} = {};
+    const txs: any = {};
 
     if (transactions) {
       for (const transaction of transactions.slice(0, 20)) {
@@ -66,8 +71,8 @@ export const MainWallet = () => {
   };
 
   const getAccountInfo = async (
-    isHardwareWallet?: boolean,
-    xpub?: any
+    isHardwareWallet = false,
+    xpub: string
   ): Promise<any> => {
     console.log('[create] fetching backend account...');
 
@@ -86,7 +91,7 @@ export const MainWallet = () => {
     return backendAccountData;
   };
 
-  const getEncryptedPrivateKey = (signer, encryptedPassword) => {
+  const getEncryptedPrivateKey = (signer: any, encryptedPassword: string) => {
     const privateKey = CryptoJS.AES.encrypt(
       signer.Signer.Signer.accounts[
         signer.Signer.Signer.accountIndex
@@ -103,7 +108,13 @@ export const MainWallet = () => {
     return xpub;
   };
 
-  const _getInitialAccountData = ({ label, signer, createdAccount, xprv }) => {
+  // TODO: better input type
+  const _getInitialAccountData = ({
+    label,
+    signer,
+    createdAccount,
+    xprv,
+  }: any) => {
     const { balance, transactions, tokens, address } = createdAccount;
     const xpub = getAccountXpub();
 
@@ -120,9 +131,9 @@ export const MainWallet = () => {
       address,
       tokens,
       isTrezorWallet: false,
-      saveTokenInfo: () => { },
-      signTransaction: () => { },
-      signMessage: () => { },
+      saveTokenInfo: () => undefined,
+      signTransaction: () => undefined,
+      signMessage: () => undefined,
       getPrivateKey: () => xprv,
     };
 
@@ -162,7 +173,7 @@ export const MainWallet = () => {
     return await mainSigner.Signer.getNewReceivingAddress(true);
   };
 
-  const _getSyscoinSigner = (_, mnemonic) => {
+  const _getSyscoinSigner = (mnemonic: string) => {
     if (mainSigner) return mainSigner;
 
     hdSigner = _getSyscoinHdSigner({
@@ -189,8 +200,13 @@ export const MainWallet = () => {
     encryptedPassword,
     networkId,
     mnemonic,
+  }: {
+    encryptedPassword: string;
+    networkId: string;
+    mnemonic: string;
   }): Promise<IKeyringAccountState> => {
-    const signer = _getSyscoinSigner(networkId, mnemonic);
+    // const signer = _getSyscoinSigner(networkId, mnemonic);
+    const signer = _getSyscoinSigner(mnemonic);
     const xprv = getEncryptedPrivateKey(signer.mainSigner, encryptedPassword);
     const xpub = getAccountXpub();
 

@@ -1,8 +1,8 @@
-import { IEthereumAddress } from "./accounts"
+import { IEthereumAddress } from './accounts';
 
 export type IEthereumTokensResponse = {
   ethereum: IEthereumAddress;
-}
+};
 
 export type IEthereumToken = {
   id: string;
@@ -11,7 +11,7 @@ export type IEthereumToken = {
   market_cap_rank: number;
   thumb: string;
   large: string;
-}
+};
 
 export type IEthereumNft = {
   blockNumber: string;
@@ -33,10 +33,10 @@ export type IEthereumNft = {
   cumulativeGasUsed: string;
   input: string;
   confirmations: string;
-}
+};
 
 export type IErc20Token = {
   name: string;
   symbol: string;
   decimals: number;
-}
+};

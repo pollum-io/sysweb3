@@ -17,7 +17,8 @@
     "prerelease": "npm run build && npm version patch",
     "copy": "node ../../scripts/package/copy",
     "release:npm": "npm publish ./dist --access=public",
-    "release:preflight": "npm pack ./dist --dry-run"
+    "release:preflight": "npm pack ./dist --dry-run",
+    "type-check": "tsc --pretty --noEmit"
   },
   "dependencies": {
     "@types/web3": "^1.2.2",

@@ -1,7 +1,11 @@
+import { MemoryStorageClient } from './clients/memory-storage-client';
+import {
+  IStateStorageClient,
+  IStateStorageDb,
+  StateStorageDb,
+} from './clients/state-storage-db';
 import { IHttpClient } from './i-http-client';
-import {IKeyValueDb} from './i-key-value-db';
-import {IStateStorageClient, StateStorageDb, IStateStorageDb} from './clients/state-storage-db';
-import {MemoryStorageClient} from './clients/memory-storage-client';
+import { IKeyValueDb } from './i-key-value-db';
 
 export const CrossPlatformDi = () => {
   //======================
@@ -14,32 +18,32 @@ export const CrossPlatformDi = () => {
   const registerHttpClient = (client: IHttpClient, baseUrl?: string) => {
     httpClient = client;
     httpClientBaseUrl = baseUrl || '';
-  }
+  };
 
   const getHttpClient = (): IHttpClient => {
     return httpClient;
-  }
+  };
 
   const getHttpClientBaseUrl = (): string => {
     return httpClientBaseUrl;
-  }
+  };
 
   //======================
   //= State Storage =
   //======================
-  let stateStorageDb: IStateStorageDb = StateStorageDb(MemoryStorageClient());
+  const stateStorageDb: IStateStorageDb = StateStorageDb(MemoryStorageClient());
 
   const useBrowserLocalStorage = () => {
-    stateStorageDb.setClient(null);
-  }
+    stateStorageDb.setClient();
+  };
 
-  const registerStorageClient = (client: IStateStorageClient) => {
+  const registerStorageClient = (client?: IStateStorageClient) => {
     stateStorageDb.setClient(client);
-  }
+  };
 
   const getStateStorageDb = (): IKeyValueDb => {
     return stateStorageDb;
-  }
+  };
 
   return {
     registerHttpClient,
@@ -47,9 +51,8 @@ export const CrossPlatformDi = () => {
     getHttpClientBaseUrl,
     useBrowserLocalStorage,
     registerStorageClient,
-    getStateStorageDb
-  }
-}
+    getStateStorageDb,
+  };
+};
 
 export const crossPlatformDi = CrossPlatformDi();
-
