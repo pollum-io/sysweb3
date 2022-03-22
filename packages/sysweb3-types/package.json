@@ -1,6 +1,6 @@
 {
   "name": "@syspollum/sysweb3-types",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "main": "cjs/index.js",
   "repository": {
@@ -19,5 +19,10 @@
     "release:npm": "npm publish ./dist --access=public",
     "release:preflight": "npm pack ./dist --dry-run",
     "publish": "npm run prebuild && npm run build && npm run rollup && npm run prerelease && npm run copy && npm run release:npm"
+  },
+  "dependencies": {
+    "bip32": "^3.0.1",
+    "bitcoinjs-lib": "^6.0.1",
+    "syscoinjs-lib": "^1.0.209"
   }
 }

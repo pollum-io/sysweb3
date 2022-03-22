@@ -16,9 +16,9 @@ export interface IWalletState {
     [id: number]: IKeyringAccountState;
   };
   activeAccount: IKeyringAccountState;
+  activeToken: string;
   hasEncryptedVault: boolean;
   lastLogin: number;
-  migrateWalletz?: any;
   networks: {
     [INetworkType.Ethereum]: {
       [chainId: number]: INetwork;
@@ -33,7 +33,7 @@ export interface IWalletState {
   };
   timer: number;
   version: string;
-  activeNetwork: number;
+  activeNetwork: INetwork;
   getState: () => IWalletState;
 }
 

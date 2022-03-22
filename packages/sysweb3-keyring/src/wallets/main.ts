@@ -120,9 +120,9 @@ export const MainWallet = () => {
       address,
       tokens,
       isTrezorWallet: false,
-      saveTokenInfo: () => {},
-      signTransaction: () => {},
-      signMessage: () => {},
+      saveTokenInfo: () => { },
+      signTransaction: () => { },
+      signMessage: () => { },
       getPrivateKey: () => xprv,
     };
 
@@ -136,7 +136,14 @@ export const MainWallet = () => {
     networks,
     SLIP44,
     pubTypes,
-  }: any) => {
+  }: {
+    walletMnemonic: string,
+    walletPassword?: string,
+    isTestnet: boolean,
+    networks: any /*BitcoinNetwork*/,
+    SLIP44: number,
+    pubTypes: /* ISyscoinPubTypes */ any
+  }): any /** SyscoinHDSigner */ => {
     if (hdSigner) return hdSigner;
 
     hdSigner = new sys.utils.HDSigner(
@@ -208,7 +215,7 @@ export const MainWallet = () => {
 
     return account;
   };
-  
+
   return {
     getNewReceivingAddress,
     createWallet,
