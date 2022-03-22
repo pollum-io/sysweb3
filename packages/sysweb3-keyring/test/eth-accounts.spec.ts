@@ -1,12 +1,12 @@
 import { web3Provider } from '@syspollum/sysweb3-network';
 import Web3 from 'web3';
+import { Web3Accounts } from '../src/accounts/eth-accounts';
 import {
   FAKE_ADDRESS,
   FAKE_PASSWORD,
   FAKE_PRIV_KEY,
   FAKE_SEED_PHRASE,
-} from '../../../test/constants';
-import { Web3Accounts } from '../src/accounts/eth-accounts';
+} from './constants';
 
 describe('Web3Accounts', () => {
   const {
