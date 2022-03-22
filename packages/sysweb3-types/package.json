@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-types",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A type management tool for Syscoin multi-chain accounts",
   "repository": {
     "type": "git",
@@ -9,7 +9,11 @@
   "author": "Pali Wallet",
   "license": "MIT",
   "private": false,
-  "keywords": ["syscoin", "web3", "wallet"],
+  "keywords": [
+    "syscoin",
+    "web3",
+    "wallet"
+  ],
   "scripts": {
     "prebuild": "rimraf dist/",
     "build": "tsc && tsc -p tsconfig.cjs.json",
