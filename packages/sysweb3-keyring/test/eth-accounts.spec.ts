@@ -20,6 +20,7 @@ describe('Web3Accounts', () => {
     setActiveNetwork,
   } = Web3Accounts();
 
+  //* createAccount
   it('should create an account', () => {
     const newAccount = createAccount();
 
@@ -27,6 +28,7 @@ describe('Web3Accounts', () => {
     expect(newAccount.address).toBeTruthy();
   });
 
+  //* getBalance
   it('should get balance', async () => {
     const balance = await getBalance(FAKE_ADDRESS);
     expect(typeof balance).toBe('number');
@@ -39,8 +41,9 @@ describe('Web3Accounts', () => {
     expect(importedAccount.address).toEqual(FAKE_ADDRESS);
   });
 
+  //* importAccount
   it('should import an account using a seed phrase (mnemonic)', async () => {
-    //* encrypt the mnemonic
+    // encrypt the mnemonic
     const encryptedMnemonic = AES.encrypt(
       FAKE_SEED_PHRASE,
       FAKE_PASSWORD
@@ -52,6 +55,7 @@ describe('Web3Accounts', () => {
     expect(importedAccount.address).toBeTruthy();
   });
 
+  //* getNftsByAddress
   it('should get user NFTs', async () => {
     const userNFT = await getNftsByAddress(
       '0xa3d42513a1affe8d0862cf51df6145523837393a'
@@ -61,6 +65,7 @@ describe('Web3Accounts', () => {
     expect(blockNumber.length).toBeGreaterThan(0);
   });
 
+  //* getTokens
   it('should get tokens', async () => {
     const tokens = await getTokens(
       '0xa3d42513a1affe8d0862cf51df6145523837393a'
@@ -88,6 +93,7 @@ describe('Web3Accounts', () => {
 
   jest.setTimeout(15000);
 
+  //* sendTransaction
   it('should send a transaction', async () => {
     // change to Rinkeby network
     setActiveNetwork(4);
