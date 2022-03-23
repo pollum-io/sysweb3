@@ -1,4 +1,4 @@
-import { IKeyValueDb } from 'cross-platform/i-key-value-db';
+import { IKeyValueDb } from './../i-key-value-db';
 
 declare let window: any;
 const defaultStorage = window?.localStorage ?? undefined;
