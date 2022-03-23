@@ -88,8 +88,16 @@ export const FetchRestService = (httpClient: any = defaultFetch) => {
 
       return keyMap.join('&');
     }
+
     return '';
   };
+
+  return {
+    invoke,
+    buildRequest,
+    serialize,
+    makeServiceRequest,
+  }
 };
 
 interface RestApiOptionsRequest {
