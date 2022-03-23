@@ -20,7 +20,7 @@ export const getNftImage = async (contract: string, tokenId: number) => {
       return String(url.data.image).replace('ipfs://', 'https://ipfs.io/ipfs/');
     }
 
-    return new Error('NFTinfo not found.');
+    throw new Error('NFTinfo not found.');
   } catch (error) {
     console.log(
       'Verify current network. Set the same network of NFT contract.'

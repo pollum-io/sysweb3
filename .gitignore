@@ -10,3 +10,6 @@ bak/
 node_modules/
 
 scratch/
+
+# jest coverage report folder
+coverage/

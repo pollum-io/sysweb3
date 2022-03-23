@@ -1,11 +1,10 @@
 // @ts-ignore
-import { networks, web3Provider } from '@pollum-io/sysweb3-network';
+import { web3Provider } from '@pollum-io/sysweb3-network';
 import axios from 'axios';
 import crypto from 'crypto-js';
 import { ethers } from 'ethers';
 import { request, gql } from 'graphql-request';
 import _ from 'lodash';
-import Web3 from 'web3';
 import { Account } from 'web3-core';
 
 export const Web3Accounts = () => {
@@ -133,32 +132,6 @@ export const Web3Accounts = () => {
     }
   };
 
-  /**
-   *
-   * Available networks:
-   * - Syscoin Mainnet (57) and Testnet (5700)
-   * - Ethereum Mainnet (1)
-   * - Ethereum Rinkeby (4)
-   * - Polygon Mainnet (137) and Testnet (80001)
-   *
-   * @param chainId chain id of the network to set as active
-   * @returns void
-   *
-   */
-  const setActiveNetwork = (chainId: number): void => {
-    const network = networks[chainId];
-
-    if (network) {
-      const { HttpProvider } = Web3.providers;
-
-      web3Provider.setProvider(new HttpProvider(network.url));
-
-      return;
-    }
-
-    throw new Error('Network not found, try again with a correct one!');
-  };
-
   return {
     createAccount,
     getBalance,
@@ -166,6 +139,5 @@ export const Web3Accounts = () => {
     getTokens,
     sendTransaction,
     importAccount,
-    setActiveNetwork,
   };
 };

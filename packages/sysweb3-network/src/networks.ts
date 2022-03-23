@@ -1,4 +1,10 @@
-export const networks = {
+interface IWeb3Network {
+  chainId: number;
+  networkName: string;
+  url: string;
+}
+
+export const networks: { [chainId: number]: IWeb3Network } = {
   57: {
     chainId: 57,
     networkName: 'Syscoin Mainnet',
