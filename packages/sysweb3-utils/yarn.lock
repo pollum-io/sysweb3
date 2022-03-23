@@ -225,10 +225,10 @@
     tslib "^2.3.1"
     web3 "^1.7.1"
 
-"@pollum-io/sysweb3-types@^1.0.6":
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-types/-/sysweb3-types-1.0.6.tgz#852ce3d926c2c2ddfb29e9d044e65326525e3cd2"
-  integrity sha512-aTkAeyS/PB8Ytr/ikekTXnrrvkFW1dVbYEdi5Et1P7TZQnum5DGY+wDZx75aRLicxjQobLbuWsbdCTBw0tCsnQ==
+"@pollum-io/sysweb3-types@^1.0.12":
+  version "1.0.12"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-types/-/sysweb3-types-1.0.12.tgz#645472391775bd76ff3f64e33257630ff04efa79"
+  integrity sha512-SKIo+g3VXFvvGYnS/1KfD5tC4hDWj6mcNsJXsxQwuG24dr+0wwpFjmoA5gKcnxUqipVl5O/DsBVj8D12fJeqgA==
   dependencies:
     bip32 "^3.0.1"
     bitcoinjs-lib "^6.0.1"
@@ -330,6 +330,11 @@
   version "12.20.47"
   resolved "https://registry.npmjs.org/@types/node/-/node-12.20.47.tgz"
   integrity sha512-BzcaRsnFuznzOItW1WpQrDHM7plAa7GIDMZ6b5pnMbkqEtM/6WCOhvZar39oeMQP79gwvFUWjjptE7/KGcNqFg==
+
+"@types/node@^17.0.23":
+  version "17.0.23"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-17.0.23.tgz#3b41a6e643589ac6442bdbd7a4a3ded62f33f7da"
+  integrity sha512-UxDxWn7dl97rKVeVS61vErvw086aCYhDLyvRQZ5Rk65rZKepaFdm53GeqXaKBuOhED4e9uWq34IC3TdSdJJ2Gw==
 
 "@types/pbkdf2@^3.0.0":
   version "3.1.0"
@@ -622,9 +627,9 @@ bitcoinjs-lib@^6.0.1:
   dependencies:
     nanoassert "^1.0.0"
 
-"blake2b@git+https://github.com/BitGo/blake2b.git#6268e6dd678661e0acc4359e9171b97eb1ebf8ac":
+"blake2b@https://github.com/BitGo/blake2b#6268e6dd678661e0acc4359e9171b97eb1ebf8ac":
   version "2.1.3"
-  resolved "git+https://github.com/BitGo/blake2b.git#6268e6dd678661e0acc4359e9171b97eb1ebf8ac"
+  resolved "https://github.com/BitGo/blake2b#6268e6dd678661e0acc4359e9171b97eb1ebf8ac"
   dependencies:
     blake2b-wasm "https://github.com/BitGo/blake2b-wasm#193cdb71656c1a6c7f89b05d0327bb9b758d071b"
     nanoassert "^1.0.0"
@@ -1294,9 +1299,9 @@ eth-lib@^0.1.26:
     ws "^3.0.0"
     xhr-request-promise "^0.1.2"
 
-eth-object@^1.0.3, "eth-object@git+https://github.com/syscoin/eth-object.git":
+eth-object@^1.0.3, "eth-object@https://github.com/syscoin/eth-object.git":
   version "1.0.3"
-  resolved "git+https://github.com/syscoin/eth-object.git#b5ff300f57c136138b31d6e570c816a147e0f1c9"
+  resolved "https://github.com/syscoin/eth-object.git#b5ff300f57c136138b31d6e570c816a147e0f1c9"
   dependencies:
     eth-util-lite "^1.0.1"
 

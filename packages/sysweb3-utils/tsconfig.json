@@ -5,7 +5,12 @@
     "baseUrl": "src",
     "outDir": "dist/esm",
     "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "declarationDir": "dist",
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "**/*.spec.ts",
+    "node_modules/**/*"
+  ]
 }

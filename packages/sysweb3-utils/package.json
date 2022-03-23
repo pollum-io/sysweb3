@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-utils",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "A helper for multi-chain accounts.",
   "main": "cjs/index.js",
   "repository": {
@@ -9,6 +9,7 @@
   },
   "author": "Pali Wallet",
   "license": "MIT",
+  "types": "./dist/index.d.ts",
   "private": false,
   "scripts": {
     "prebuild": "rimraf dist/",
@@ -23,11 +24,14 @@
   },
   "dependencies": {
     "@pollum-io/sysweb3-network": "^1.0.3",
-    "@pollum-io/sysweb3-types": "^1.0.6",
     "@types/crypto-js": "^4.1.1",
+    "@types/node": "^17.0.23",
     "axios": "^0.26.1",
     "crypto-js": "^4.1.1",
     "ts-node": "^10.7.0",
-    "web3": "^1.7.1"
+    "web3": "^1.7.1",
+    "bip32": "^3.0.1",
+    "bitcoinjs-lib": "^6.0.1",
+    "syscoinjs-lib": "^1.0.209"
   }
 }
