@@ -2,7 +2,7 @@ import { Account, TransactionReceipt } from 'web3-core';
 import { IEthereumToken, IEthereumNft } from '.';
 
 export * from './tokens';
-// export * from './transactions';
+export * from './transactions';
 export * from './accounts';
 
 export type web3 = {
@@ -23,9 +23,9 @@ export type web3 = {
   ) => Promise<IEthereumToken | undefined>;
   getTokenIconBySymbol: (symbol: string) => Promise<
     | {
-        thumbImage: string;
-        largeImage: string;
-      }
+      thumbImage: string;
+      largeImage: string;
+    }
     | undefined
   >;
   web3Provider: any;
