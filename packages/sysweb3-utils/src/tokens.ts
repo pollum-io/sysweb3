@@ -68,7 +68,10 @@ export const getHost = (url: string) => {
   return url;
 };
 
-export const getTokenPrice = async (tokenName: string, fiat: string) => {
+export const getFiatCurrencyByToken = async (
+  tokenName: string,
+  fiat: string
+) => {
   try {
     const tokenRequest = await axios
       .get(`https://api.coingecko.com/api/v3/coins/${tokenName}`)
