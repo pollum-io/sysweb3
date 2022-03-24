@@ -11,9 +11,8 @@ export const SysWeb3Di = () => {
   };
 
   const useFetchHttpClient = (fetchClient?: any) => {
-    // ? calling 'new' o a function ??
     // @ts-ignore
-    registerHttpClient(new FetchRestService(fetchClient));
+    registerHttpClient(FetchRestService(fetchClient));
   };
 
   const useLocalStorageClient = (storageClient?: IStateStorageClient) => {

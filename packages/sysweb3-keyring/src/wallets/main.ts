@@ -1,4 +1,4 @@
-import { IKeyringAccountState } from '@pollum-io/sysweb3-types';
+import { BitcoinNetwork, IKeyringAccountState, ISyscoinPubTypes, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
 // @ts-ignore
 import sys from 'syscoinjs-lib';
@@ -151,10 +151,10 @@ export const MainWallet = () => {
     walletMnemonic: string,
     walletPassword?: string,
     isTestnet: boolean,
-    networks: any /*BitcoinNetwork*/,
-    SLIP44: number,
-    pubTypes: /* ISyscoinPubTypes */ any
-  }): any /** SyscoinHDSigner */ => {
+    networks?: BitcoinNetwork,
+    SLIP44?: number,
+    pubTypes?: ISyscoinPubTypes
+  }): SyscoinHDSigner => {
     if (hdSigner) return hdSigner;
 
     hdSigner = new sys.utils.HDSigner(
@@ -176,11 +176,7 @@ export const MainWallet = () => {
   const _getSyscoinSigner = (mnemonic: string) => {
     if (mainSigner) return mainSigner;
 
-    hdSigner = _getSyscoinHdSigner({
-      walletMnemonic: mnemonic,
-      walletPassword: null,
-      isTestnet: false,
-    });
+    hdSigner = _getSyscoinHdSigner({ walletMnemonic: mnemonic, isTestnet: false });
 
     if (hdSigner) {
       mainSigner = new sys.SyscoinJSLib(
@@ -198,14 +194,11 @@ export const MainWallet = () => {
 
   const createWallet = async ({
     encryptedPassword,
-    networkId,
     mnemonic,
   }: {
     encryptedPassword: string;
-    networkId: string;
     mnemonic: string;
   }): Promise<IKeyringAccountState> => {
-    // const signer = _getSyscoinSigner(networkId, mnemonic);
     const signer = _getSyscoinSigner(mnemonic);
     const xprv = getEncryptedPrivateKey(signer.mainSigner, encryptedPassword);
     const xpub = getAccountXpub();

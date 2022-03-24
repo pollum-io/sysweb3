@@ -566,22 +566,10 @@
   resolved "https://registry.yarnpkg.com/@metamask/safe-event-emitter/-/safe-event-emitter-2.0.0.tgz#af577b477c683fad17c619a78208cede06f9605c"
   integrity sha512-/kSXhY692qiV1MXu6EeOZvg5nECLclxNXcKCxJ3cXQgYuRymRHpdx/t7JXfsK+JLjwA1e1c1/SBrlQYpusC29Q==
 
-"@sindresorhus/is@^0.14.0":
-  version "0.14.0"
-  resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
-  integrity sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==
-
-"@pollum-io/sysweb3-core@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-core/-/sysweb3-core-1.0.2.tgz#b82192b173011d464723a84a1a71d71089c2d0c2"
-  integrity sha512-5h6aa95qvijAXYQKoIplQdJ3siVVIkG5RVWbTBUE4bVhiJTj/L9vOpgzrWFXVLGh3sETv/seQhuW6uGx7Wko8Q==
-  dependencies:
-    rimraf "^3.0.2"
-
 "@pollum-io/sysweb3-network@^1.0.3":
   version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-network/-/sysweb3-network-1.0.3.tgz#d5df372f21526993dae2feaf3e2bdcfd2806fc55"
-  integrity sha512-8PtXvw/02TCeVGArQ8Bo05frJHEnX6OcBHNppfbYJn/V4h3yS/m3qINTEYhXUjacWhhZzoQjHhmuHN5e8pJr8A==
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-network/-/sysweb3-network-1.0.3.tgz#0fc80af3643db77f3460a728c229532928199cc3"
+  integrity sha512-HliJmlDJ0/HPLpctumbz1bmM3c213yIUtPJq0oZjvVGAMaC+UPBp9stYyfFLZZjLAiwjLwQPRFO9+Cgrf0zRmQ==
   dependencies:
     "@types/web3" "^1.2.2"
     axios "^0.26.1"
@@ -590,22 +578,26 @@
     tslib "^2.3.1"
     web3 "^1.7.1"
 
-"@pollum-io/sysweb3-types@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-types/-/sysweb3-types-1.0.1.tgz#57d32476574457302b0d2b34972c726852921b84"
-  integrity sha512-tc+JksUxRDHsO/G66/WVO1U/91GQ1zJGyKX97PonjqrhGTPEGDIdAT4w3iuvxZK4zBrcLbOXwfgTbTFxLnedGQ==
-
-"@pollum-io/sysweb3-utils@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.0.2.tgz#79aee5ee3f845eb8566fb16c9090f1533950ced4"
-  integrity sha512-UsqyZ9gcqyGT7kgRaUKTtjHTubieIptvhxkS04BlWSvivA09rfmmmgdjeAxTAElweE3fG/L+JFORc+1q70K1aQ==
+"@pollum-io/sysweb3-utils@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.0.3.tgz#2c80cc4251e19026d1635c68931e361a9d017aad"
+  integrity sha512-zLgqr7nMhS7osw7OKiNPYrB9pPat8fTyZ4MPCYmgcx4CK5UxOmAUAPk+DOcLHRde5RXbt0+Kih6CshF6fXA/AA==
   dependencies:
     "@pollum-io/sysweb3-network" "^1.0.3"
     "@types/crypto-js" "^4.1.1"
+    "@types/node" "^17.0.23"
     axios "^0.26.1"
+    bip32 "^3.0.1"
+    bitcoinjs-lib "^6.0.1"
     crypto-js "^4.1.1"
+    syscoinjs-lib "^1.0.209"
     ts-node "^10.7.0"
     web3 "^1.7.1"
+
+"@sindresorhus/is@^0.14.0":
+  version "0.14.0"
+  resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
+  integrity sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==
 
 "@szmarczak/http-timer@^1.1.2":
   version "1.1.2"
@@ -703,6 +695,11 @@
   version "12.20.47"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-12.20.47.tgz#ca9237d51f2a2557419688511dab1c8daf475188"
   integrity sha512-BzcaRsnFuznzOItW1WpQrDHM7plAa7GIDMZ6b5pnMbkqEtM/6WCOhvZar39oeMQP79gwvFUWjjptE7/KGcNqFg==
+
+"@types/node@^17.0.23":
+  version "17.0.23"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-17.0.23.tgz#3b41a6e643589ac6442bdbd7a4a3ded62f33f7da"
+  integrity sha512-UxDxWn7dl97rKVeVS61vErvw086aCYhDLyvRQZ5Rk65rZKepaFdm53GeqXaKBuOhED4e9uWq34IC3TdSdJJ2Gw==
 
 "@types/pbkdf2@^3.0.0":
   version "3.1.0"
@@ -882,6 +879,11 @@ bech32@1.1.4, bech32@^1.1.2:
   resolved "https://registry.yarnpkg.com/bech32/-/bech32-1.1.4.tgz#e38c9f37bf179b8eb16ae3a772b40c356d4832e9"
   integrity sha512-s0IrSOzLlbvX7yp4WBfPITzpAU8sqQcpsmwXDiKwrG4r491vwCO/XpejasRNl0piBMe/DvP4Tz0mIS/X1DPJBQ==
 
+bech32@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/bech32/-/bech32-2.0.0.tgz#078d3686535075c8c79709f054b1b226a133b355"
+  integrity sha512-LcknSilhIGatDAsY1ak2I8VtGaHNhgMSYVxFrGLXv+xLHytaKZKcaUJJUE7qmBr7h33o5YQwP55pMI0xmkpJwg==
+
 bigi@^1.1.0, bigi@^1.4.0:
   version "1.4.2"
   resolved "https://registry.yarnpkg.com/bigi/-/bigi-1.4.2.tgz#9c665a95f88b8b08fc05cfd731f561859d725825"
@@ -914,6 +916,18 @@ bip32@^2.0.4:
     create-hash "^1.2.0"
     create-hmac "^1.1.7"
     tiny-secp256k1 "^1.1.3"
+    typeforce "^1.11.5"
+    wif "^2.0.6"
+
+bip32@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/bip32/-/bip32-3.0.1.tgz#1d1121469cce6e910e0ec3a5a1990dd62687e2a3"
+  integrity sha512-Uhpp9aEx3iyiO7CpbNGFxv9WcMIVdGoHG04doQ5Ln0u60uwDah7jUSc3QMV/fSZGm/Oo01/OeAmYevXV+Gz5jQ==
+  dependencies:
+    "@types/node" "10.12.18"
+    bs58check "^2.1.1"
+    create-hash "^1.2.0"
+    create-hmac "^1.1.7"
     typeforce "^1.11.5"
     wif "^2.0.6"
 
@@ -967,6 +981,19 @@ bitcoinjs-lib@^5.0.3, bitcoinjs-lib@^5.2.0:
     tiny-secp256k1 "^1.1.1"
     typeforce "^1.11.3"
     varuint-bitcoin "^1.0.4"
+    wif "^2.0.1"
+
+bitcoinjs-lib@^6.0.1:
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/bitcoinjs-lib/-/bitcoinjs-lib-6.0.1.tgz#4fa9438bb86a0449451ac58607e83d9b5a7732e6"
+  integrity sha512-x/7D4jDj/MMkmO6t3p2CSDXTqpwZ/jRsRiJDmaiXabrR9XRo7jwby8HRn7EyK1h24rKFFI7vI0ay4czl6bDOZQ==
+  dependencies:
+    bech32 "^2.0.0"
+    bip174 "^2.0.1"
+    bs58check "^2.1.2"
+    create-hash "^1.1.0"
+    typeforce "^1.11.3"
+    varuint-bitcoin "^1.1.2"
     wif "^2.0.1"
 
 "blake2b-wasm@https://github.com/BitGo/blake2b-wasm#193cdb71656c1a6c7f89b05d0327bb9b758d071b":
@@ -1890,9 +1917,9 @@ fast-json-stable-stringify@^2.0.0:
   integrity sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==
 
 fetch-blob@^3.1.2, fetch-blob@^3.1.4:
-  version "3.1.4"
-  resolved "https://registry.yarnpkg.com/fetch-blob/-/fetch-blob-3.1.4.tgz#e8c6567f80ad7fc22fd302e7dcb72bafde9c1717"
-  integrity sha512-Eq5Xv5+VlSrYWEqKrusxY1C3Hm/hjeAsCGVG3ft7pZahlUAChpGZT/Ms1WmSLnEAisEXszjzu/s+ce6HZB2VHA==
+  version "3.1.5"
+  resolved "https://registry.yarnpkg.com/fetch-blob/-/fetch-blob-3.1.5.tgz#0077bf5f3fcdbd9d75a0b5362f77dbb743489863"
+  integrity sha512-N64ZpKqoLejlrwkIAnb9iLSA3Vx/kjgzpcDhygcqJ2KKjky8nCgUQ+dzXtbrLaWZGZNmNfQTsiQ0weZ1svglHg==
   dependencies:
     node-domexception "^1.0.0"
     web-streams-polyfill "^3.0.3"

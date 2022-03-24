@@ -1,4 +1,4 @@
-import { INetworkType, IWalletState } from '@pollum-io/sysweb3-types';
+import { INetworkType, IWalletState } from '@pollum-io/sysweb3-utils';
 
 export const initialActiveAccountState = {
   address: '',
@@ -57,6 +57,12 @@ export const initialWalletState: IWalletState = {
     executing: false,
     type: '',
   },
-  activeNetwork: 0,
+  activeNetwork: {
+    chainId: 57,
+    label: 'Syscoin Mainnet',
+    url: 'https://blockbook.elint.services/',
+    default: true,
+  },
   getState: () => initialWalletState,
+  activeToken: 'SYS',
 };

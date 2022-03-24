@@ -2,7 +2,7 @@ import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
 // @ts-ignore
 import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { IKeyringAccountState, IWalletState } from '@pollum-io/sysweb3-types';
+import { IKeyringAccountState, IWalletState } from '@pollum-io/sysweb3-utils';
 import { encryptor } from '@pollum-io/sysweb3-utils';
 import { generateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
@@ -102,16 +102,13 @@ export const KeyringManager = () => {
 
   const createVault = async ({
     encryptedPassword,
-    networkId,
   }: {
     encryptedPassword: string;
-    networkId: string;
   }): Promise<IKeyringAccountState> => {
     _clearWallet();
 
     const wallet: IKeyringAccountState = await createWallet({
       encryptedPassword,
-      networkId,
       mnemonic: _mnemonic,
     });
 
