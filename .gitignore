@@ -13,3 +13,5 @@ scratch/
 
 # jest coverage report folder
 coverage/
+
+yarn-error.log
