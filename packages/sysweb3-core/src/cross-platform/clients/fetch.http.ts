@@ -1,5 +1,5 @@
 declare let window: any;
-const defaultFetch = window?.fetch.bind(window) ?? undefined;
+const defaultFetch = window.fetch.bind(window) ? window.fetch.bind(window) : undefined;
 
 export const FetchRestService = (httpClient: any = defaultFetch) => {
   const invoke = (options: RestApiOptionsRequest) => {

@@ -1,7 +1,7 @@
 import { IKeyValueDb } from './../i-key-value-db';
 
 declare let window: any;
-const defaultStorage = window?.localStorage ?? undefined;
+const defaultStorage = window.localStorage ? window?.localStorage : undefined;
 
 export const StateStorageDb = (
   storageClient: IStateStorageClient = defaultStorage
