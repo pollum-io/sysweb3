@@ -176,7 +176,7 @@ export const KeyringManager = () => {
 
   const removeAccount = () => { };
 
-  const signTransaction = (tx: any, accountId: number, options = {}) => {
+  const signTransaction = (tx: any, accountId: number, options = {}): void => {
     const account = getAccountById(accountId);
 
     account.signTransaction(account, tx, options);
@@ -185,10 +185,10 @@ export const KeyringManager = () => {
   const signMessage = (
     msgParams: { accountId: number; data: string },
     opts?: any
-  ) => {
+  ): void => {
     const account = getAccountById(msgParams.accountId);
 
-    return account?.signMessage(account, msgParams.data, opts);
+    account.signMessage(account, msgParams.data, opts);
   };
 
   return {
