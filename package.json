@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "Syscoin Web3 JavaScript API",
   "author": "Pali Wallet",
   "email": "pali@pollum.io",
@@ -21,7 +21,7 @@
     "release:preflight": "npm pack ./dist --dry-run",
     "test": "jest",
     "type-check": "tsc --pretty --noEmit",
-    "publish": "npm run prebuild && npm run build && npm run build-rollup  && npm run build-all && npm run prerelease && npm run release && npm run release:npm"
+    "publish": "npm run prebuild && npm run build && npm run build-rollup  && npm run build-all && npm run prerelease && npm run release"
   },
   "repository": {
     "type": "git",
