@@ -1,4 +1,4 @@
-import { web3Provider } from '@syspollum/sysweb3-network';
+import { web3Provider, setActiveNetwork } from '@pollum-io/sysweb3-network';
 import { AES } from 'crypto-js';
 import Web3 from 'web3';
 import { Web3Accounts } from '../src/accounts/eth-accounts';
@@ -17,7 +17,6 @@ describe('Web3Accounts', () => {
     getNftsByAddress,
     getTokens,
     sendTransaction,
-    setActiveNetwork,
   } = Web3Accounts();
 
   //* createAccount
@@ -71,7 +70,7 @@ describe('Web3Accounts', () => {
       '0xa3d42513a1affe8d0862cf51df6145523837393a'
     );
     expect(tokens).not.toBeNull();
-    if (tokens?.length > 0) {
+    if (tokens.length > 0) {
       const firstTokenValue = tokens[0].value;
       expect(typeof firstTokenValue).toBe('number');
     }

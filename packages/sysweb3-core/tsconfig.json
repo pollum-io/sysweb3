@@ -5,7 +5,8 @@
     "baseUrl": "src",
     "outDir": "dist/esm",
     "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "noEmit": false
   },
   "include": ["src"]
 }
