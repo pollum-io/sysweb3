@@ -1,10 +1,9 @@
 import { IKeyValueDb } from './../i-key-value-db';
 
-declare let window: any;
 const defaultStorage = window.localStorage ? window?.localStorage : undefined;
 
 export const StateStorageDb = (
-  storageClient: IStateStorageClient = defaultStorage
+  storageClient: IStateStorageClient | undefined = defaultStorage
 ): IKeyValueDb => {
   let keyPrefix = 'sysweb3-';
 
@@ -22,10 +21,14 @@ export const StateStorageDb = (
   };
 
   const set = (key: string, value: any) => {
-    storageClient.setItem(keyPrefix + key, JSON.stringify(value));
+    if (!storageClient) return;
+
+    storageClient.setItem(keyPrefix + key, JSON.stringify(value))
   };
 
   const get = (key: string): any => {
+    if (!storageClient) return;
+
     const value = storageClient.getItem(keyPrefix + key);
     if (value) {
       return JSON.parse(value);
@@ -33,6 +36,8 @@ export const StateStorageDb = (
   };
 
   const deleteItem = (key: string) => {
+    if (!storageClient) return;
+
     storageClient.removeItem(keyPrefix + key);
   };
 
