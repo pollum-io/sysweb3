@@ -67,3 +67,25 @@ export const getHost = (url: string) => {
 
   return url;
 };
+
+/**
+ * Converts a token to a fiat value
+ * @param token example `syscoin`
+ * @param fiat example `usd`. 3 letter code. All lower case
+ */
+export const getFiatValueByToken = async (token: string, fiat: string) => {
+  try {
+    const response = await axios.get(
+      `https://api.coingecko.com/api/v3/coins/${token}`
+    );
+
+    const { price_change_24h, current_price } = response.data.market_data;
+
+    return {
+      price: current_price[fiat],
+      priceChange: price_change_24h,
+    };
+  } catch (error) {
+    throw new Error(`Unable to find a value of ${token} as ${fiat}`);
+  }
+};
