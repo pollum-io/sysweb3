@@ -179,7 +179,7 @@ export const KeyringManager = () => {
   const signTransaction = (tx: any, accountId: number, options = {}) => {
     const account = getAccountById(accountId);
 
-    account?.signTransaction(account, tx, options);
+    account.signTransaction(account, tx, options);
   };
 
   const signMessage = (
