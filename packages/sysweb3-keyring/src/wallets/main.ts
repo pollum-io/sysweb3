@@ -13,6 +13,7 @@ export const MainWallet = () => {
     isHardwareWallet: boolean
   ) => {
     console.log('[create] get backend account signer', signer, xpub);
+
     const { tokensAsset, balance, transactions } =
       await sys.utils.fetchBackendAccount(
         signer.blockbookURL,
@@ -108,19 +109,18 @@ export const MainWallet = () => {
     return xpub;
   };
 
-  // TODO: better input type
   const _getInitialAccountData = ({
     label,
     signer,
     createdAccount,
     xprv,
-  }: any) => {
+  }: { label?: string, signer: any, createdAccount: any, xprv: string }) => {
     const { balance, transactions, tokens, address } = createdAccount;
     const xpub = getAccountXpub();
 
     const account: IKeyringAccountState = {
       id: signer.Signer.Signer.accountIndex,
-      label: label ?? `Account ${signer.Signer.Signer.accountIndex + 1}`,
+      label: label ? label : `Account ${signer.Signer.Signer.accountIndex + 1}`,
       balances: {
         syscoin: balance,
         ethereum: 0,
@@ -217,7 +217,6 @@ export const MainWallet = () => {
       signer: signer.mainSigner,
       createdAccount,
       xprv,
-      label: null,
     });
 
     signer.mainSigner.Signer.setAccountIndex(account.id);

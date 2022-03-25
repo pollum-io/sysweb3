@@ -35,12 +35,12 @@ export const KeyringManager = () => {
     return encryptedMnemonic;
   };
 
-  const getAccountById = (id: number): IKeyringAccountState | null =>
+  const getAccountById = (id: number): IKeyringAccountState =>
     Object.values(wallet.accounts).find(
       (account: IKeyringAccountState) => account.id === id
-    ) || null;
+    ) || {} as IKeyringAccountState;
 
-  const getPrivateKeyByAccountId = (id: number) => {
+  const getPrivateKeyByAccountId = (id: number): string | null => {
     const account = Object.values(wallet.accounts).find(
       (account: IKeyringAccountState) => account.id === id
     );
@@ -68,7 +68,7 @@ export const KeyringManager = () => {
     });
   };
 
-  const _persistWallet = async (password: string = _password) => {
+  const _persistWallet = (password: string = _password): CryptoJS.lib.CipherParams | Error => {
     if (typeof password !== 'string') {
       return new Error('KeyringManager - password is not a string');
     }
@@ -94,8 +94,8 @@ export const KeyringManager = () => {
     eventEmitter.emit('update', _memStore.getState());
   };
 
-  const _fullUpdate = async () => {
-    await _persistWallet(_password);
+  const _fullUpdate = () => {
+    _persistWallet(_password);
     _updateMemStoreWallet();
     _notifyUpdate();
   };
@@ -124,9 +124,9 @@ export const KeyringManager = () => {
   };
 
   const addTokenToAccount = (accountId: number, address: string) => {
-    const account: IKeyringAccountState | null = getAccountById(accountId);
+    const account: IKeyringAccountState = getAccountById(accountId);
 
-    account?.saveTokenInfo(address);
+    account.saveTokenInfo(address);
 
     _fullUpdate();
 
