@@ -913,14 +913,14 @@
   resolved "https://registry.yarnpkg.com/@metamask/safe-event-emitter/-/safe-event-emitter-2.0.0.tgz#af577b477c683fad17c619a78208cede06f9605c"
   integrity sha512-/kSXhY692qiV1MXu6EeOZvg5nECLclxNXcKCxJ3cXQgYuRymRHpdx/t7JXfsK+JLjwA1e1c1/SBrlQYpusC29Q==
 
-"@pollum-io/sysweb3-keyring@^1.0.8":
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-keyring/-/sysweb3-keyring-1.0.8.tgz#4c7778eb5f823f33c7df8f4dc87bfa39bde678f5"
-  integrity sha512-luVe5b9Z81ECT3maaAiPLhoFr5MOgim+GqMUB0g8ArMqUJ6Ju2XSGPw3X/TviAaSyG+21qSvPi8VhVo+1jXvEw==
+"@pollum-io/sysweb3-keyring@^1.0.10":
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-keyring/-/sysweb3-keyring-1.0.10.tgz#10cc994c9a1ef779455702237e88423ad005e3cc"
+  integrity sha512-g+UP8MyktJu2jgu/tUDfV1ImMq2am03LFaXiG9D4v15a0msCe/iqM602yZ33g0j+/xPbfFE4iR4KfFpSown/YA==
   dependencies:
     "@metamask/obs-store" "^7.0.0"
     "@metamask/safe-event-emitter" "^2.0.0"
-    "@pollum-io/sysweb3-utils" "^1.0.7"
+    "@pollum-io/sysweb3-utils" "^1.0.9"
     "@types/crypto-js" "^4.1.1"
     axios "^0.26.1"
     bip39 "^3.0.4"
@@ -933,14 +933,14 @@
     web3 "^1.7.1"
     web3-utils "^1.7.1"
 
-"@pollum-io/sysweb3-keyring@^1.0.9":
-  version "1.0.9"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-keyring/-/sysweb3-keyring-1.0.9.tgz#12ba7c9ff12ac7470879d13b8063c9c398cb93f2"
-  integrity sha512-MSpYdknvJShj436McHyRErFa6Hxe+4pyyONBvIRWzbiZEKffk80KTTLODDFdnIJTmroDC04l3/C32xp5GUBFLg==
+"@pollum-io/sysweb3-keyring@^1.0.8":
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-keyring/-/sysweb3-keyring-1.0.8.tgz#4c7778eb5f823f33c7df8f4dc87bfa39bde678f5"
+  integrity sha512-luVe5b9Z81ECT3maaAiPLhoFr5MOgim+GqMUB0g8ArMqUJ6Ju2XSGPw3X/TviAaSyG+21qSvPi8VhVo+1jXvEw==
   dependencies:
     "@metamask/obs-store" "^7.0.0"
     "@metamask/safe-event-emitter" "^2.0.0"
-    "@pollum-io/sysweb3-utils" "^1.0.9"
+    "@pollum-io/sysweb3-utils" "^1.0.7"
     "@types/crypto-js" "^4.1.1"
     axios "^0.26.1"
     bip39 "^3.0.4"

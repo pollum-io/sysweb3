@@ -42,7 +42,7 @@ export const SyscoinTransactions = () => {
       const interval = setInterval(async () => {
         const createdTokenTransaction = await getRawTransaction(txid);
 
-        if (createdTokenTransaction?.confirmations > 1) {
+        if (createdTokenTransaction && createdTokenTransaction.confirmations > 1) {
           const changeAddress = await hd.getNewChangeAddress(true);
 
           try {
@@ -346,7 +346,7 @@ export const SyscoinTransactions = () => {
   }) => {
     if (parentTokenTransaction.confirmations >= 1) {
       const tokenMap = getTokenMap({
-        guid: parentToken?.guid,
+        guid: parentToken.guid,
         changeAddress: '',
         amount: new sys.utils.BN(1 * 10 ** precision),
         receivingAddress,
@@ -379,7 +379,7 @@ export const SyscoinTransactions = () => {
     receivingAddress: string;
   }) => {
     const feeRate = new sys.utils.BN(10);
-    const guid = parentToken?.guid;
+    const guid = parentToken.guid;
     const tokenOptions = { updatecapabilityflags: '0' };
     const txOptions = { rbf: true };
 
@@ -423,7 +423,7 @@ export const SyscoinTransactions = () => {
 
     const parentToken = await _createParentToken({ tokenOptions, feeRate });
 
-    if (parentToken?.guid) {
+    if (parentToken.guid) {
       try {
         return await new Promise((resolve) => {
           const interval = setInterval(async () => {
@@ -592,7 +592,7 @@ export const SyscoinTransactions = () => {
       });
 
       // todo: move to pali
-      // if (account.currentAccount?.isTrezorWallet) {
+      // if (account.currentAccount.isTrezorWallet) {
       //   return await window.controller.trezor.confirmTokenSend({
       //     txOptions,
       //     tokenOptions,
@@ -658,7 +658,7 @@ export const SyscoinTransactions = () => {
     }
 
     // todo: move to pali
-    // if (account.currentAccount?.isTrezorWallet) {
+    // if (account.currentAccount.isTrezorWallet) {
     //   return await window.controller.trezor.confirmNativeTokenSend({
     //     txOptions,
     //     outputs,

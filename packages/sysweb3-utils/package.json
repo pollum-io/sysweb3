@@ -23,7 +23,7 @@
     "type-check": "tsc --pretty --noEmit"
   },
   "dependencies": {
-    "@pollum-io/sysweb3-keyring": "^1.0.9",
+    "@pollum-io/sysweb3-keyring": "^1.0.10",
     "@pollum-io/sysweb3-network": "^1.0.3",
     "@types/crypto-js": "^4.1.1",
     "@types/node": "^17.0.23",
