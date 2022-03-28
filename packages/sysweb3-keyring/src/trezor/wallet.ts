@@ -72,14 +72,7 @@ export const TrezorWallet = () => {
     return accountInfo;
   };
 
-  const createWallet = async (network: any): Promise<IKeyringAccountState> => {
-    // todo: test with derivation path
-    const isTestnet = network === 'testnet';
-
-    if (isTestnet) {
-      throw new Error("Can't create hardware wallet on testnet");
-    }
-
+  const createWallet = async (): Promise<IKeyringAccountState> => {
     try {
       const trezorSigner = new sys.utils.TrezorSigner();
 
@@ -104,8 +97,21 @@ export const TrezorWallet = () => {
 
   const forgetWallet = () => { };
 
+  const getAddress = (trezor, kdPath) => {
+    return new Promise(function (resolve, reject) {
+      trezor.ethereumGetAddress(kdPath, (response) => {
+        if (response.success) {
+          return resolve(response);
+        }
+
+        return reject(response.error);
+      });
+    });
+  }
+
   return {
     createWallet,
     forgetWallet,
+    getAddress,
   }
 }

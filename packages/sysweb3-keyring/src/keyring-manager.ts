@@ -6,11 +6,9 @@ import { IKeyringAccountState, IWalletState, initialWalletState } from '@pollum-
 import { encryptor } from '@pollum-io/sysweb3-utils';
 import { generateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
-import { Signer } from './signer';
 import { MainWallet } from './wallets/main';
 
 export const KeyringManager = () => {
-  const eventEmitter = new SafeEventEmitter();
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
   const { createWallet } = MainWallet();
@@ -94,6 +92,8 @@ export const KeyringManager = () => {
   };
 
   const _notifyUpdate = () => {
+    const eventEmitter = new SafeEventEmitter();
+
     eventEmitter.emit('update', _memStore.getState());
   };
 
@@ -137,6 +137,8 @@ export const KeyringManager = () => {
   };
 
   const logout = () => {
+    const eventEmitter = new SafeEventEmitter();
+
     _password = '';
     _memStore.updateState({ isUnlocked: false });
     eventEmitter.emit('lock');
@@ -144,6 +146,8 @@ export const KeyringManager = () => {
   };
 
   const _updateUnlocked = () => {
+    const eventEmitter = new SafeEventEmitter();
+
     _memStore.updateState({ isUnlocked: true });
     eventEmitter.emit('unlock');
   };
@@ -194,8 +198,6 @@ export const KeyringManager = () => {
     account.signMessage(account, msgParams.data, opts);
   };
 
-  const signer = Signer();
-
   return {
     createVault,
     setWalletPassword,
@@ -215,6 +217,5 @@ export const KeyringManager = () => {
     generatePhrase,
     getEncryptedMnemonic,
     getDecryptedMnemonic,
-    signer,
   };
 };
