@@ -1,10 +1,10 @@
-import { BitcoinNetwork, ISyscoinPubTypes, SyscoinHDSigner } from './types';
-const sys = require('syscoinjs-lib');
+import { BitcoinNetwork, ISyscoinPubTypes, SyscoinHDSigner } from "./types";
+const sys = require("syscoinjs-lib");
 
-let mainSigner = null;
+let mainSigner: any = null;
 let hdSigner: SyscoinHDSigner | null = null;
 
-const getMainSigner = ({ SignerIn, blockbookURL, network }) => {
+export const getMainSigner = ({ SignerIn, blockbookURL, network }: any) => {
   if (!mainSigner) {
     mainSigner = new sys.SyscoinJSLib(SignerIn, blockbookURL, network);
   }
@@ -12,7 +12,7 @@ const getMainSigner = ({ SignerIn, blockbookURL, network }) => {
   return mainSigner;
 };
 
-const getHdSigner = ({
+export const getHdSigner = ({
   walletMnemonic,
   walletPassword,
   isTestnet,
@@ -39,9 +39,4 @@ const getHdSigner = ({
   }
 
   return hdSigner;
-};
-
-return {
-  getMainSigner,
-  getHdSigner,
 };
