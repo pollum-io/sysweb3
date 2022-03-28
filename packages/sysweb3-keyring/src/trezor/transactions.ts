@@ -1,19 +1,20 @@
-import { ITokenMap, ITxid, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
+import { ITokenMap, ITxid } from '@pollum-io/sysweb3-utils';
 import sys from 'syscoinjs-lib';
+import { Signer } from '../signer';
 
-const TrezorTransactions = (syscoin: { hdsigner: SyscoinHDSigner }) => {
-  const { hdsigner } = syscoin;
+const TrezorTransactions = () => {
+  const { hd, main } = Signer();
 
   const confirmTokenMint = async ({
     tokenOptions,
     feeRate,
   }: { tokenOptions: ITokenMap, feeRate: number }): Promise<ITxid> => {
-    const pendingTransaction = await syscoin.assetSend(
+    const pendingTransaction = await main.assetSend(
       { rbf: true },
       tokenOptions,
-      await hdsigner.getNewChangeAddress(true),
+      await hd.getNewChangeAddress(true),
       feeRate,
-      hdsigner.getAccountXpub()
+      hd.getAccountXpub()
     );
 
     if (!pendingTransaction) {
@@ -24,10 +25,10 @@ const TrezorTransactions = (syscoin: { hdsigner: SyscoinHDSigner }) => {
 
     const trezorSigner = new sys.utils.TrezorSigner();
 
-    new sys.SyscoinJSLib(trezorSigner, syscoin.blockbookURL);
+    new sys.SyscoinJSLib(trezorSigner, main.blockbookURL);
 
     try {
-      const txid = await syscoin.signAndSend(
+      const txid = await main.signAndSend(
         pendingTransaction.psbt,
         pendingTransaction.assets,
         trezorSigner
@@ -48,12 +49,12 @@ const TrezorTransactions = (syscoin: { hdsigner: SyscoinHDSigner }) => {
     tokenOptions: ITokenMap;
     feeRate: number;
   }): Promise<ITxid> => {
-    const pendingTransaction = await syscoin.assetAllocationSend(
+    const pendingTransaction = await main.assetAllocationSend(
       txOptions,
       tokenOptions,
-      await hdsigner.getNewChangeAddress(true),
+      await hd.getNewChangeAddress(true),
       feeRate,
-      hdsigner.getAccountXpub()
+      hd.getAccountXpub()
     );
 
     if (!pendingTransaction) {
@@ -64,10 +65,10 @@ const TrezorTransactions = (syscoin: { hdsigner: SyscoinHDSigner }) => {
 
     const trezorSigner = new sys.utils.TrezorSigner();
 
-    new sys.SyscoinJSLib(trezorSigner, syscoin.blockbookURL);
+    new sys.SyscoinJSLib(trezorSigner, main.blockbookURL);
 
     try {
-      const txid = await syscoin.signAndSend(
+      const txid = await main.signAndSend(
         pendingTransaction.psbt,
         pendingTransaction.assets,
         trezorSigner
@@ -91,12 +92,12 @@ const TrezorTransactions = (syscoin: { hdsigner: SyscoinHDSigner }) => {
     }>;
     feeRate: number;
   }): Promise<ITxid> => {
-    const pendingTransaction = await syscoin.createTransaction(
+    const pendingTransaction = await main.createTransaction(
       txOptions,
-      await hdsigner.getNewChangeAddress(true),
+      await hd.getNewChangeAddress(true),
       outputs,
       feeRate,
-      hdsigner.getAccountXpub()
+      hd.getAccountXpub()
     );
 
     if (!pendingTransaction) {
@@ -107,10 +108,10 @@ const TrezorTransactions = (syscoin: { hdsigner: SyscoinHDSigner }) => {
 
     const trezorSigner = new sys.utils.TrezorSigner();
 
-    new sys.SyscoinJSLib(trezorSigner, syscoin.blockbookURL);
+    new sys.SyscoinJSLib(trezorSigner, main.blockbookURL);
 
     try {
-      const txid = await syscoin.signAndSend(
+      const txid = await main.signAndSend(
         pendingTransaction.psbt,
         pendingTransaction.assets,
         trezorSigner

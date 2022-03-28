@@ -4,3 +4,4 @@ export * from './tokens';
 export * from './validation';
 export * from './types';
 export * from './initialState';
+export * from './fee';

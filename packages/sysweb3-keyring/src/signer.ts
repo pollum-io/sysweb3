@@ -6,7 +6,7 @@ export const Signer = () => {
   let hd: any = null;
   let main: any = null;
 
-  const { getDecryptedMnemonic, encryptedPassword } = KeyringManager();
+  const { getDecryptedMnemonic } = KeyringManager();
 
   const _mnemonic = getDecryptedMnemonic().toString();
 
