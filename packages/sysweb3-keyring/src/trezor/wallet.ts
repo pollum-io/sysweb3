@@ -1,14 +1,19 @@
 import { IKeyringAccountState } from '@pollum-io/sysweb3-utils';
+import { Signer } from '../signer';
 import sys from 'syscoinjs-lib';
 import { fromZPub } from 'bip84';
 
-export const TrezorWallet = (syscoin: any) => {
+export const TrezorWallet = () => {
+  const signer = Signer();
+
+  console.log('signer syscoin', signer);
+
   const getAccountInfo = async (
     xpub: string,
     sysjs: any,
     trezorId: number
   ): Promise<IKeyringAccountState> => {
-    const { pubtypes, networks } = sysjs.Signer.Signer;
+    const { pubtypes, networks } = signer;
 
     const { tokens, transactions, assets, balance } =
       await sys.utils.fetchBackendAccount(
@@ -80,14 +85,14 @@ export const TrezorWallet = (syscoin: any) => {
 
       await trezorSigner.createAccount();
 
-      const signer = new sys.SyscoinJSLib(
-        syscoin,
-        syscoin.signer.blockbookURL
+      const syscoin = new sys.SyscoinJSLib(
+        signer,
+        signer.signer.blockbookURL
       );
 
       const accountInfo: IKeyringAccountState = await getAccountInfo(
-        signer.getAccountXpub(),
-        signer,
+        syscoin.HDSigner.getAccountXpub(),
+        syscoin,
         0
       );
 
