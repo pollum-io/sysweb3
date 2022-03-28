@@ -4,7 +4,6 @@ const sys = require('syscoinjs-lib');
 let mainSigner = null;
 let hdSigner: SyscoinHDSigner | null = null;
 
-const getPrimaryAccount = () => {};
 
 const getMainSigner = ({ SignerIn, blockbookURL, network }) => {
   if (!mainSigner) {
