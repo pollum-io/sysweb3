@@ -2,6 +2,7 @@ import { IKeyringAccountState } from '@pollum-io/sysweb3-utils';
 import { Signer } from '../signer';
 import sys from 'syscoinjs-lib';
 import { fromZPub } from 'bip84';
+import TrezorTransactions from './transactions';
 
 export const TrezorWallet = () => {
   const signer = Signer();
@@ -109,9 +110,12 @@ export const TrezorWallet = () => {
     });
   }
 
+  const tx = TrezorTransactions();
+
   return {
     createWallet,
     forgetWallet,
     getAddress,
+    tx,
   }
 }
