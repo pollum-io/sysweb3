@@ -43,7 +43,6 @@ const getHdSigner = ({
 };
 
 return {
-  getPrimaryAccount,
   getMainSigner,
   getHdSigner,
 };
