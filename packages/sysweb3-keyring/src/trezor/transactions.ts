@@ -1,7 +1,7 @@
 export const TrezorTransactions = () => {
   const sendNativeToken = () => { };
 
-  const sentCustomToken = () => { };
+  const sendCustomToken = () => { };
 
   const mintToken = () => { };
 
@@ -9,7 +9,7 @@ export const TrezorTransactions = () => {
 
   return {
     sendNativeToken,
-    sentCustomToken,
+    sendCustomToken,
     mintToken,
     sendTransaction,
   }
