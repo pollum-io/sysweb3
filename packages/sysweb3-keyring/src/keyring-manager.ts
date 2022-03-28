@@ -2,11 +2,10 @@ import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
 // @ts-ignore
 import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { IKeyringAccountState, IWalletState } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState, IWalletState, initialWalletState } from '@pollum-io/sysweb3-utils';
 import { encryptor } from '@pollum-io/sysweb3-utils';
 import { generateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
-import { initialWalletState } from './initialState';
 import { MainWallet } from './wallets/main';
 
 export const KeyringManager = () => {
