@@ -1,5 +1,5 @@
 import { BitcoinNetwork, ISyscoinPubTypes, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
-import { KeyringManager } from 'keyring-manager';
+import { KeyringManager } from './keyring-manager';
 import sys from 'syscoinjs-lib';
 
 export const Signer = () => {

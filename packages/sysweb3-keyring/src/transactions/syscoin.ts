@@ -1,14 +1,27 @@
 import sys from 'syscoinjs-lib';
 import {
   INewNFT,
-  // estimateSysTransactionFee,
-  isBase64, ITokenMint, ITokenSend, ITokenUpdate, ITxid,
+  txUtils,
+  isBase64,
+  ITokenMint,
+  ITokenSend,
+  ITokenUpdate,
+  ITxid,
+  feeUtils,
 } from '@pollum-io/sysweb3-utils';
 import syscointx from 'syscointx-js';
 import { Signer } from '../signer';
 
 export const SyscoinTransactions = () => {
   const { main, hd } = Signer();
+
+  const {
+    getFeeRate,
+    getRawTransaction,
+    getTokenMap,
+  } = txUtils();
+
+  const { estimateSysTransactionFee } = feeUtils();
 
   const _createMintedToken = async ({
     txid,
@@ -195,8 +208,14 @@ export const SyscoinTransactions = () => {
   };
 
   const confirmTokenCreation = async (
-    temporaryTransaction: NewToken
-  ): Promise<TokenCreationResponse> => {
+    // todo: type
+    temporaryTransaction: any
+  ): Promise<{
+    transactionData: any;
+    txid: string;
+    confirmations: number;
+    guid: string;
+  }> => {
     const { precision, initialSupply, maxsupply, fee, receiver } =
       temporaryTransaction;
 
@@ -247,21 +266,21 @@ export const SyscoinTransactions = () => {
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    const { decimals } = await getToken(assetGuid);
+    // const { decimals } = await getToken(assetGuid);
 
     const receivingAddress = await hd.getNewReceivingAddress(true);
     const txOptions = { rbf: true };
 
     const tokenMap = getTokenMap({
       guid: assetGuid,
-      changeAddress: await signer.getNewChangeAddress(true),
-      amount: new sys.utils.BN(amount * 10 ** decimals),
+      changeAddress: await hd.getNewChangeAddress(true),
+      amount: new sys.utils.BN(amount * 10 ** 8),
       receivingAddress,
     });
 
     // todo: trezor handler in pali
 
-    const pendingTransaction = await signer.assetSend(
+    const pendingTransaction = await main.assetSend(
       txOptions,
       tokenMap,
       await hd.getNewChangeAddress(true),
@@ -328,7 +347,7 @@ export const SyscoinTransactions = () => {
     if (parentTokenTransaction.confirmations >= 1) {
       const tokenMap = getTokenMap({
         guid: parentToken?.guid,
-        changeAddress: null,
+        changeAddress: '',
         amount: new sys.utils.BN(1 * 10 ** precision),
         receivingAddress,
       });
@@ -366,7 +385,7 @@ export const SyscoinTransactions = () => {
 
     const tokenMap = getTokenMap({
       guid,
-      changeAddress: null,
+      changeAddress: '',
       amount: new sys.utils.BN(0),
       receivingAddress,
     });
@@ -551,23 +570,23 @@ export const SyscoinTransactions = () => {
     temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
     const { amount, rbf, receivingAddress, fee, token } = temporaryTransaction;
-    const { decimals } = await getToken(token);
+    // const { decimals } = await getToken(token);
 
     const txOptions = { rbf };
-    const value = new sys.utils.BN(amount * 10 ** decimals);
-    const valueDecimals = countDecimals(amount);
+    const value = new sys.utils.BN(amount * 10 ** 8);
+    // const valueDecimals = countDecimals(amount);
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    if (valueDecimals > decimals) {
-      throw new Error(
-        `This token has ${decimals} decimals and you are trying to send a value with ${valueDecimals} decimals, please check your tx`
-      );
-    }
+    // if (valueDecimals > 8) {
+    //   throw new Error(
+    //     `This token has ${8} decimals and you are trying to send a value with ${8} decimals, please check your tx`
+    //   );
+    // }
 
     try {
       const tokenOptions = getTokenMap({
         guid: token,
-        changeAddress: null,
+        changeAddress: '',
         amount: value,
         receivingAddress,
       });
@@ -627,7 +646,6 @@ export const SyscoinTransactions = () => {
         changeAddress: await hd.getNewChangeAddress(true),
         feeRate,
       },
-      main,
     );
 
     if (value.add(txFee).gte(backendAccount.balance)) {
@@ -681,14 +699,14 @@ export const SyscoinTransactions = () => {
   ): Promise<ITxid> => {
     const { fee, amount, assetGuid }: any = temporaryTransaction;
 
-    const { decimals } = await getToken(assetGuid);
+    // const { decimals } = await getToken(assetGuid);
     const feeRate = new sys.utils.BN(fee * 1e8);
     const txOptions = { rbf: true };
 
     const tokenMap = getTokenMap({
       guid: assetGuid,
       changeAddress: await hd.getNewChangeAddress(true),
-      amount: new sys.utils.BN(amount * 10 ** decimals),
+      amount: new sys.utils.BN(amount * 10 ** 8),
       receivingAddress: await hd.getNewReceivingAddress(
         true
       ),

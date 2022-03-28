@@ -6,11 +6,8 @@
     "outDir": "dist/esm",
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "declarationDir": "dist",
+    "declarationDir": "dist/types"
   },
   "include": ["src"],
-  "exclude": [
-    "**/*.spec.ts",
-    "node_modules/**/*"
-  ]
+  "exclude": ["**/*.spec.ts", "node_modules/**/*"]
 }

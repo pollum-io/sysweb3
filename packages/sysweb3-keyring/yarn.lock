@@ -566,6 +566,26 @@
   resolved "https://registry.yarnpkg.com/@metamask/safe-event-emitter/-/safe-event-emitter-2.0.0.tgz#af577b477c683fad17c619a78208cede06f9605c"
   integrity sha512-/kSXhY692qiV1MXu6EeOZvg5nECLclxNXcKCxJ3cXQgYuRymRHpdx/t7JXfsK+JLjwA1e1c1/SBrlQYpusC29Q==
 
+"@pollum-io/sysweb3-keyring@^1.0.8":
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-keyring/-/sysweb3-keyring-1.0.8.tgz#4c7778eb5f823f33c7df8f4dc87bfa39bde678f5"
+  integrity sha512-luVe5b9Z81ECT3maaAiPLhoFr5MOgim+GqMUB0g8ArMqUJ6Ju2XSGPw3X/TviAaSyG+21qSvPi8VhVo+1jXvEw==
+  dependencies:
+    "@metamask/obs-store" "^7.0.0"
+    "@metamask/safe-event-emitter" "^2.0.0"
+    "@pollum-io/sysweb3-utils" "^1.0.7"
+    "@types/crypto-js" "^4.1.1"
+    axios "^0.26.1"
+    bip39 "^3.0.4"
+    crypto-js "^4.1.1"
+    ethereumjs-wallet "^1.0.2"
+    ethers "^5.6.0"
+    lodash "^4.17.21"
+    syscoinjs-lib "^1.0.209"
+    syscointx-js "^1.0.101"
+    web3 "^1.7.1"
+    web3-utils "^1.7.1"
+
 "@pollum-io/sysweb3-network@^1.0.3":
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-network/-/sysweb3-network-1.0.3.tgz#0fc80af3643db77f3460a728c229532928199cc3"
@@ -578,10 +598,10 @@
     tslib "^2.3.1"
     web3 "^1.7.1"
 
-"@pollum-io/sysweb3-utils@^1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.0.4.tgz#53efb64da2435e69f9aac63f3282def7c9130f71"
-  integrity sha512-jymsUIwMy+VPwi7FclwbozPvL7SuAvlh4H3jeaN3fHIy1hb6h/f5fULPEyTxWnw+iAk1FeFnGT+K0VpIjKq91Q==
+"@pollum-io/sysweb3-utils@^1.0.7":
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.0.7.tgz#e4ac8e05a07c613a3d07e56cc79c7cfe3b4325ff"
+  integrity sha512-AsPWmkuBKtyJd9X88xZZrq9YFLMtcMZq8LKfqGYmxCXvCQ4vohQfE7sUkWEud3TDbmUwQoJZTs8262oyrc6g0g==
   dependencies:
     "@pollum-io/sysweb3-network" "^1.0.3"
     "@types/crypto-js" "^4.1.1"
@@ -591,6 +611,25 @@
     bitcoinjs-lib "^6.0.1"
     crypto-js "^4.1.1"
     syscoinjs-lib "^1.0.209"
+    ts-node "^10.7.0"
+    web3 "^1.7.1"
+
+"@pollum-io/sysweb3-utils@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.0.9.tgz#61cdc3e60d23bd15813c2504a0f26123b73cc931"
+  integrity sha512-43igeoa1Q5QMTJCHBz9+aBfNANcRYpPbHoGhj2As3C/BYBN/453OCzQmlt2jSQh/ugrEqkMupTONnunTOs8qcw==
+  dependencies:
+    "@pollum-io/sysweb3-keyring" "^1.0.8"
+    "@pollum-io/sysweb3-network" "^1.0.3"
+    "@types/crypto-js" "^4.1.1"
+    "@types/node" "^17.0.23"
+    axios "^0.26.1"
+    bip84 "^0.2.7"
+    bitcoinjs-lib "^6.0.1"
+    coinselectsyscoin "^1.0.77"
+    crypto-js "^4.1.1"
+    syscoinjs-lib "^1.0.209"
+    syscointx-js "^1.0.101"
     ts-node "^10.7.0"
     web3 "^1.7.1"
 
