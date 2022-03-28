@@ -1,24 +1,19 @@
-// import store from 'state/store';
-// import { getConnectedAccount, openNotificationsPopup } from '../utils';
-import { ITokenMap, ITxid, address } from '@pollum-io/sysweb3-utils';
+import { ITokenMap, ITxid, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
 import sys from 'syscoinjs-lib';
-// import IWalletState, { IAccountState } from 'state/wallet/types';
-// import { createAccount } from 'state/vault';
-// import { fromZPub } from 'bip84';
-// import { IKeyringAccountState } from '../sysweb3/keyring';
-// import { ISysTrezorController, ITxid } from 'types/controllers';
 
-const TrezorTransactions = ({ signer, tokens }) => {
+const TrezorTransactions = (syscoin: { hdsigner: SyscoinHDSigner }) => {
+  const { hdsigner } = syscoin;
+
   const confirmTokenMint = async ({
     tokenOptions,
     feeRate,
   }: { tokenOptions: ITokenMap, feeRate: number }): Promise<ITxid> => {
-    const pendingTransaction = await signer.assetSend(
+    const pendingTransaction = await syscoin.assetSend(
       { rbf: true },
       tokenOptions,
-      await address.getNewChangeAddress(true),
+      await hdsigner.getNewChangeAddress(true),
       feeRate,
-      signer.getAccountXpub()
+      hdsigner.getAccountXpub()
     );
 
     if (!pendingTransaction) {
@@ -29,10 +24,10 @@ const TrezorTransactions = ({ signer, tokens }) => {
 
     const trezorSigner = new sys.utils.TrezorSigner();
 
-    new sys.SyscoinJSLib(trezorSigner, signer.blockbookURL);
+    new sys.SyscoinJSLib(trezorSigner, syscoin.blockbookURL);
 
     try {
-      const txid = await signer.signAndSend(
+      const txid = await syscoin.signAndSend(
         pendingTransaction.psbt,
         pendingTransaction.assets,
         trezorSigner
@@ -53,12 +48,12 @@ const TrezorTransactions = ({ signer, tokens }) => {
     tokenOptions: ITokenMap;
     feeRate: number;
   }): Promise<ITxid> => {
-    const pendingTransaction = await signer.assetAllocationSend(
+    const pendingTransaction = await syscoin.assetAllocationSend(
       txOptions,
       tokenOptions,
-      await signer.getNewChangeAddress(true),
+      await hdsigner.getNewChangeAddress(true),
       feeRate,
-      signer.getAccountXpub()
+      hdsigner.getAccountXpub()
     );
 
     if (!pendingTransaction) {
@@ -69,10 +64,10 @@ const TrezorTransactions = ({ signer, tokens }) => {
 
     const trezorSigner = new sys.utils.TrezorSigner();
 
-    new sys.SyscoinJSLib(trezorSigner, signer.blockbookURL);
+    new sys.SyscoinJSLib(trezorSigner, syscoin.blockbookURL);
 
     try {
-      const txid = await signer.signAndSend(
+      const txid = await syscoin.signAndSend(
         pendingTransaction.psbt,
         pendingTransaction.assets,
         trezorSigner
@@ -88,13 +83,20 @@ const TrezorTransactions = ({ signer, tokens }) => {
     txOptions,
     outputs,
     feeRate,
+  }: {
+    txOptions: { rbf?: boolean };
+    outputs: Array<{
+      address: string;
+      value: number;
+    }>;
+    feeRate: number;
   }): Promise<ITxid> => {
-    const pendingTransaction = await account.signer.createTransaction(
+    const pendingTransaction = await syscoin.createTransaction(
       txOptions,
-      await window.controller.address.getNewChangeAddress(true),
+      await hdsigner.getNewChangeAddress(true),
       outputs,
       feeRate,
-      account.currentAccount?.xpub
+      hdsigner.getAccountXpub()
     );
 
     if (!pendingTransaction) {
@@ -105,20 +107,14 @@ const TrezorTransactions = ({ signer, tokens }) => {
 
     const trezorSigner = new sys.utils.TrezorSigner();
 
-    new sys.SyscoinJSLib(trezorSigner, account.signer.blockbookURL);
+    new sys.SyscoinJSLib(trezorSigner, syscoin.blockbookURL);
 
     try {
-      const txid = await account.signer.signAndSend(
+      const txid = await syscoin.signAndSend(
         pendingTransaction.psbt,
         pendingTransaction.assets,
         trezorSigner
       );
-
-      account.tx.watchMemPool(account.currentAccount);
-
-      account.setAccountTransactions(txid, account.currentAccount);
-
-      account.tx.clearTemporaryTransaction('sendAsset');
 
       return { txid };
     } catch (error) {
@@ -127,7 +123,6 @@ const TrezorTransactions = ({ signer, tokens }) => {
   };
 
   return {
-    getAccountInfo,
     confirmTokenMint,
     confirmTokenSend,
     confirmNativeTokenSend,
