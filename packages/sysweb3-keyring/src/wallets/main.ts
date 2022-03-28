@@ -1,6 +1,5 @@
-import { BitcoinNetwork, IKeyringAccountState } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
-// @ts-ignore
 import sys from 'syscoinjs-lib';
 import { Signer } from '../signer';
 
