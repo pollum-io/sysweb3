@@ -1,126 +1,14 @@
 import sys from 'syscoinjs-lib';
 import {
-  estimateSysTransactionFee,
-  isBase64,
+  INewNFT,
+  // estimateSysTransactionFee,
+  isBase64, ITokenMint, ITokenSend, ITokenUpdate, ITxid,
 } from '@pollum-io/sysweb3-utils';
 import syscointx from 'syscointx-js';
+import { Signer } from '../signer';
 
-const SysTransactionsController = ({
-  account,
-  signer,
-}): ISysTransactionsController => {
-  const watchMemPool = (accountId: number): boolean => {
-    const intervalId = setInterval(() => {
-      account.getLatestUpdate();
-
-      const { accounts }: IWalletState = store.getState().vault;
-
-      const activeAccount = accounts[accountId];
-
-      if (
-        !activeAccount ||
-        !activeAccount?.transactions ||
-        !activeAccount?.transactions.filter(
-          (tx: Transaction) => tx.confirmations > 0
-        ).length
-      ) {
-        clearInterval(intervalId);
-
-        return false;
-      }
-    }, 30 * 1000);
-
-    return true;
-  };
-
-  const temporaryTransaction: TemporaryTransaction = {
-    newAsset: null,
-    mintAsset: null,
-    newNFT: null,
-    updateAsset: null,
-    transferAsset: null,
-    sendAsset: null,
-    signPSBT: null,
-    signAndSendPSBT: null,
-    mintNFT: null,
-  };
-
-  const getTemporaryTransaction = (type: string): TemporaryTransaction =>
-    temporaryTransaction[type];
-
-  const clearTemporaryTransaction = (type: string): void => {
-    temporaryTransaction[type] = null;
-  };
-
-  const setTemporaryTransaction = ({
-    tx,
-    type,
-  }: {
-    tx: TemporaryTransaction;
-    type: string;
-  }): void => {
-    temporaryTransaction[type] = { ...tx };
-  };
-
-  const confirmTemporaryTransaction = ({
-    type,
-    callback,
-  }: {
-    type: string;
-    callback: any;
-  }): Promise<any> =>
-    new Promise((resolve, reject) => {
-      try {
-        const { accounts, activeAccountId }: IWalletState =
-          store.getState().wallet;
-
-        const activeAccount = accounts.find(
-          (account: IAccountState) => account.id === activeAccountId
-        );
-
-        const response = handleTransactions({
-          temporaryTransaction: getTemporaryTransaction(type),
-          callback,
-          signer,
-          activeAccount,
-          condition: null,
-        });
-
-        resolve(response);
-      } catch (error: any) {
-        reject(error);
-      }
-    });
-
-  const getRawTransaction = (txid: string) =>
-    sys.utils.fetchBackendRawTx(signer.blockbookURL, txid);
-
-  const getPsbtFromJson = (psbt: JSON): string =>
-    sys.utils.importPsbtFromJson(psbt);
-
-  const _getTokenMap = ({
-    guid,
-    changeAddress,
-    amount,
-    receivingAddress,
-  }): ITokenMap => {
-    return new Map([
-      [
-        String(guid),
-        {
-          changeAddress,
-          outputs: [
-            {
-              value: amount,
-              address: receivingAddress,
-            },
-          ],
-        },
-      ],
-    ]);
-  };
-
-  const _getFeeRate = (fee: number): BigInt => new sys.utils.BN(fee * 1e8);
+export const SyscoinTransactions = () => {
+  const { main, hd } = Signer();
 
   const _createMintedToken = async ({
     txid,
@@ -129,16 +17,23 @@ const SysTransactionsController = ({
     precision,
     receivingAddress,
     fee,
+  }: {
+    txid: string;
+    guid: string;
+    initialSupply: number;
+    precision: number;
+    receivingAddress: string;
+    fee: number;
   }) => {
     return await new Promise((resolve: any, reject: any) => {
       const interval = setInterval(async () => {
         const createdTokenTransaction = await getRawTransaction(txid);
 
         if (createdTokenTransaction?.confirmations > 1) {
-          const changeAddress = await signer.getNewChangeAddress(true);
+          const changeAddress = await hd.getNewChangeAddress(true);
 
           try {
-            const tokenMap = _getTokenMap({
+            const tokenMap = getTokenMap({
               guid,
               changeAddress,
               amount: new sys.utils.BN(initialSupply * 10 ** precision),
@@ -146,32 +41,18 @@ const SysTransactionsController = ({
             });
             const txOptions = { rbf: true };
 
-            const pendingTransaction = await signer.assetSend(
+            const pendingTransaction = await main.assetSend(
               txOptions,
               tokenMap,
               receivingAddress,
-              _getFeeRate(fee)
+              getFeeRate(fee)
             );
 
             if (!pendingTransaction) {
-              createError(
-                404,
-                'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-              );
+              throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.');
             }
 
             const txid = pendingTransaction.extractTransaction().getId();
-
-            account.setAccountTransactions(txid, account.currentAccount);
-
-            const connectedAccount = getConnectedAccount();
-
-            const { activeAccount } = store.getState().vault;
-
-            watchMemPool(
-              connectedAccount ? connectedAccount.id : activeAccount.id
-            );
-            clearInterval(interval);
 
             resolve({
               createdTokenTransaction,
@@ -213,7 +94,7 @@ const SysTransactionsController = ({
     if (notaryAddress) {
       const notaryPayment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: notaryAddress,
-        network: signer.network,
+        network: main.network,
       });
 
       tokenOptions = {
@@ -231,7 +112,7 @@ const SysTransactionsController = ({
     if (payoutAddress) {
       const payment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: payoutAddress,
-        network: signer.network,
+        network: main.network,
       });
 
       const auxFeeKeyID = Buffer.from(payment.hash.toString('hex'), 'hex');
@@ -278,7 +159,7 @@ const SysTransactionsController = ({
     if (notaryAddress) {
       const notaryPayment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: notaryAddress,
-        network: signer.network,
+        network: main.network,
       });
 
       tokenOptions = {
@@ -296,7 +177,7 @@ const SysTransactionsController = ({
     if (payoutAddress) {
       const payment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: payoutAddress,
-        network: signer.network,
+        network: main.network,
       });
 
       const auxFeeKeyID = Buffer.from(payment.hash.toString('hex'), 'hex');
@@ -321,26 +202,18 @@ const SysTransactionsController = ({
 
     const amount = maxsupply * 10 ** precision;
 
-    if (getConnectedAccount()?.isTrezorWallet) {
-      throw new Error("Trezor don't support burning of coins");
-    }
-
-    signer.setAccountIndex(getConnectedAccount()?.id);
-
     const tokenOptions = _getTokenCreationOptions(temporaryTransaction);
     const txOptions = { rbf: true };
 
-    const pendingTransaction = await signer.assetNew(
+    const pendingTransaction = await main.assetNew(
       tokenOptions,
       txOptions,
-      await signer.getNewChangeAddress(true),
+      await hd.getNewChangeAddress(true),
       receiver,
       new sys.utils.BN(fee * 1e8)
     );
 
     const txid = pendingTransaction.extractTransaction().getId();
-
-    account.setAccountTransactions(txid, account.currentAccount);
 
     const transactionData = await getRawTransaction(txid);
     const assets = syscointx.getAssetsFromTx(
@@ -368,66 +241,54 @@ const SysTransactionsController = ({
   };
 
   const confirmTokenMint = async (
-    temporaryTransaction: TokenMint
+    temporaryTransaction: ITokenMint
   ): Promise<ITxid> => {
     const { fee, assetGuid, amount } = temporaryTransaction;
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    if (!getConnectedAccount()?.isTrezorWallet) {
-      signer.setAccountIndex(getConnectedAccount()?.id);
-    }
+    const { decimals } = await getToken(assetGuid);
 
-    const { decimals } = await account.tokens.getToken(assetGuid);
-    const receivingAddress = await signer.getNewReceivingAddress(true);
+    const receivingAddress = await hd.getNewReceivingAddress(true);
     const txOptions = { rbf: true };
 
-    const tokenMap = _getTokenMap({
+    const tokenMap = getTokenMap({
       guid: assetGuid,
       changeAddress: await signer.getNewChangeAddress(true),
       amount: new sys.utils.BN(amount * 10 ** decimals),
       receivingAddress,
     });
 
-    if (getConnectedAccount()?.isTrezorWallet) {
-      return await window.controller.trezor.confirmTokenMint({
-        tokenOptions: tokenMap,
-        feeRate,
-      });
-    }
+    // todo: trezor handler in pali
 
     const pendingTransaction = await signer.assetSend(
       txOptions,
       tokenMap,
-      await signer.getNewChangeAddress(true),
+      await hd.getNewChangeAddress(true),
       feeRate
     );
 
     if (!pendingTransaction) {
-      createError(
-        404,
-        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-      );
+      throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.');
     }
 
     const txid = pendingTransaction.extractTransaction().getId();
 
-    account.setAccountTransactions(txid, account.currentAccount);
-
-    watchMemPool(account.currentAccount);
-
     return { txid };
   };
 
-  const _createParentToken = async ({ tokenOptions, feeRate }) => {
-    if (!account.currentAccount.isTrezorWallet) {
-      signer.setAccountIndex(account.currentAccount.id);
-    }
-
-    const tokenChangeAddress = await signer.getNewChangeAddress(true);
+  const _createParentToken = async ({ tokenOptions, feeRate }: {
+    tokenOptions: {
+      precision: number;
+      symbol: string;
+      maxsupply: number;
+      description: string;
+    }, feeRate: number
+  }) => {
+    const tokenChangeAddress = await hd.getNewChangeAddress(true);
     const txOptions = { rbf: true };
 
-    const pendingTransaction = await signer.assetNew(
+    const pendingTransaction = await main.assetNew(
       tokenOptions,
       txOptions,
       tokenChangeAddress,
@@ -436,10 +297,7 @@ const SysTransactionsController = ({
     );
 
     if (!pendingTransaction) {
-      createError(
-        404,
-        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-      );
+      throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.');
     }
 
     const tokensFromTransaction = syscointx.getAssetsFromTx(
@@ -459,9 +317,16 @@ const SysTransactionsController = ({
     precision,
     receivingAddress,
     feeRate,
+  }: {
+    // todo: create types
+    parentTokenTransaction: any,
+    parentToken: any,
+    precision: number,
+    receivingAddress: string,
+    feeRate: number,
   }) => {
     if (parentTokenTransaction.confirmations >= 1) {
-      const tokenMap = _getTokenMap({
+      const tokenMap = getTokenMap({
         guid: parentToken?.guid,
         changeAddress: null,
         amount: new sys.utils.BN(1 * 10 ** precision),
@@ -470,7 +335,7 @@ const SysTransactionsController = ({
 
       try {
         const txOptions = { rbf: true };
-        const pendingTransaction = await signer.assetSend(
+        const pendingTransaction = await main.assetSend(
           txOptions,
           tokenMap,
           null,
@@ -478,37 +343,35 @@ const SysTransactionsController = ({
         );
 
         if (!pendingTransaction) {
-          createError(
-            404,
-            'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-          );
+          throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.')
         }
 
         const txid = pendingTransaction.extractTransaction().getId();
 
-        account.setAccountTransactions(txid, account.currentAccount);
-
         return txid;
-      } catch (error) {
-        createError(404, error);
+      } catch (error: any) {
+        throw new Error(error);
       }
     }
   };
 
-  const _updateParentToken = async ({ parentToken, receivingAddress }) => {
+  const _updateParentToken = async ({ parentToken, receivingAddress }: {
+    parentToken: any;
+    receivingAddress: string;
+  }) => {
     const feeRate = new sys.utils.BN(10);
     const guid = parentToken?.guid;
     const tokenOptions = { updatecapabilityflags: '0' };
     const txOptions = { rbf: true };
 
-    const tokenMap = _getTokenMap({
+    const tokenMap = getTokenMap({
       guid,
       changeAddress: null,
       amount: new sys.utils.BN(0),
       receivingAddress,
     });
 
-    const txid = await signer.assetUpdate(
+    const txid = await main.assetUpdate(
       guid,
       tokenOptions,
       txOptions,
@@ -518,28 +381,19 @@ const SysTransactionsController = ({
     );
 
     if (!txid) {
-      createError(
-        404,
-        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-      );
+      throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.')
     }
 
     return txid;
   };
 
   const confirmNftCreation = async (
-    temporaryTransaction: NewNFT
+    temporaryTransaction: INewNFT
   ): Promise<ITxid> => {
     const { fee, symbol, description, receivingAddress, precision } =
       temporaryTransaction;
 
     const feeRate = new sys.utils.BN(fee * 1e8);
-
-    if (account.currentAccount.isTrezorWallet) {
-      throw new Error("Bad Request: Trezor doesn't support NFT creation.");
-    }
-
-    signer.setAccountIndex(account.currentAccount.id);
 
     const tokenOptions = {
       precision,
@@ -624,13 +478,11 @@ const SysTransactionsController = ({
 
   const signTransaction = async (
     data: { psbt: string; assets: string },
-    isSendOnly: boolean
+    isSendOnly: boolean,
+    isTrezor?: boolean,
   ): Promise<JSON> => {
     if (!isBase64(data.psbt) || typeof data.assets !== 'string') {
-      createError(
-        404,
-        'Bad Request: PSBT must be in Base64 format and assets must be a JSON string. Please check the documentation to see the correct formats.'
-      );
+      throw new Error('Bad Request: PSBT must be in Base64 format and assets must be a JSON string. Please check the documentation to see the correct formats.')
     }
 
     try {
@@ -638,19 +490,19 @@ const SysTransactionsController = ({
 
       const trezorSigner = new sys.utils.TrezorSigner();
 
-      new sys.SyscoinJSLib(trezorSigner, signer.blockbookURL);
+      new sys.SyscoinJSLib(trezorSigner, main.blockbookURL);
 
       if (isSendOnly) {
         return await _sendSignedPsbt({
           psbt: response.psbt,
-          signer: account.currentAccount.isTrezorWallet ? trezorSigner : signer,
+          signer: isTrezor ? trezorSigner : main,
         });
       }
 
       return await _signAndSendPsbt({
         psbt: response.psbt,
         assets: response.assets,
-        signer: account.currentAccount.isTrezorWallet ? trezorSigner : null,
+        signer: isTrezor ? trezorSigner : null,
       });
     } catch (error) {
       throw new Error('Bad Request: Could not create transaction.');
@@ -658,27 +510,23 @@ const SysTransactionsController = ({
   };
 
   const confirmUpdateToken = async (
-    temporaryTransaction: TokenUpdate
+    temporaryTransaction: ITokenUpdate
   ): Promise<ITxid> => {
     const { fee, assetGuid, assetWhiteList } = temporaryTransaction;
 
     const txOptions = { rbf: true, assetWhiteList };
 
     try {
-      const tokenMap = _getTokenMap({
+      const tokenMap = getTokenMap({
         guid: assetGuid,
-        changeAddress: await signer.getNewChangeAddress(true),
+        changeAddress: await hd.getNewChangeAddress(true),
         amount: new sys.utils.BN(0),
-        receivingAddress: await signer.getNewReceivingAddress(true),
+        receivingAddress: await hd.getNewReceivingAddress(true),
       });
 
       const tokenOptions = _getTokenUpdateOptions(temporaryTransaction);
 
-      if (!account.currentAccount.isTrezorWallet) {
-        signer.setAccountIndex(account.currentAccount.id);
-      }
-
-      const pendingTransaction = await signer.assetUpdate(
+      const pendingTransaction = await main.assetUpdate(
         assetGuid,
         tokenOptions,
         txOptions,
@@ -690,15 +538,8 @@ const SysTransactionsController = ({
       const txid = pendingTransaction.extractTransaction().getId();
 
       if (!pendingTransaction || !txid) {
-        createError(
-          404,
-          'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-        );
+        throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.')
       }
-
-      account.setAccountTransactions(txid, account.currentAccount);
-
-      watchMemPool(account.currentAccount);
 
       return { txid };
     } catch (error) {
@@ -707,10 +548,10 @@ const SysTransactionsController = ({
   };
 
   const _confirmCustomTokenSend = async (
-    temporaryTransaction: TokenSend
+    temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
     const { amount, rbf, receivingAddress, fee, token } = temporaryTransaction;
-    const { decimals } = await account.tokens.getToken(token);
+    const { decimals } = await getToken(token);
 
     const txOptions = { rbf };
     const value = new sys.utils.BN(amount * 10 ** decimals);
@@ -724,24 +565,23 @@ const SysTransactionsController = ({
     }
 
     try {
-      const tokenOptions = _getTokenMap({
+      const tokenOptions = getTokenMap({
         guid: token,
-        changeAddress: account.currentAccount?.isTrezorWallet
-          ? await window.controller.address.getNewChangeAddress(true)
-          : null,
+        changeAddress: null,
         amount: value,
         receivingAddress,
       });
 
-      if (account.currentAccount?.isTrezorWallet) {
-        return await window.controller.trezor.confirmTokenSend({
-          txOptions,
-          tokenOptions,
-          feeRate,
-        });
-      }
+      // todo: move to pali
+      // if (account.currentAccount?.isTrezorWallet) {
+      //   return await window.controller.trezor.confirmTokenSend({
+      //     txOptions,
+      //     tokenOptions,
+      //     feeRate,
+      //   });
+      // }
 
-      const pendingTransaction = await signer.assetAllocationSend(
+      const pendingTransaction = await main.assetAllocationSend(
         txOptions,
         tokenOptions,
         null,
@@ -750,8 +590,6 @@ const SysTransactionsController = ({
 
       const txid = pendingTransaction.extractTransaction().getId();
 
-      account.setAccountTransactions(txid, account.currentAccount);
-
       return { txid };
     } catch (error) {
       throw new Error('Bad Request: Could not create transaction.');
@@ -759,15 +597,15 @@ const SysTransactionsController = ({
   };
 
   const _confirmNativeTokenSend = async (
-    temporaryTransaction: TokenSend
+    temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
     const { receivingAddress, amount, fee } = temporaryTransaction;
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
     const backendAccount = await sys.utils.fetchBackendAccount(
-      signer.blockbookURL,
-      account.currentAccount?.xpub,
+      main.blockbookURL,
+      hd.getAccountXpub(),
       {},
       true
     );
@@ -786,11 +624,10 @@ const SysTransactionsController = ({
     const txFee = await estimateSysTransactionFee(
       {
         outputs,
-        changeAddress: await signer.Signer.getNewChangeAddress(true),
+        changeAddress: await hd.getNewChangeAddress(true),
         feeRate,
       },
-      signer,
-      account.currentAccount
+      main,
     );
 
     if (value.add(txFee).gte(backendAccount.balance)) {
@@ -802,25 +639,24 @@ const SysTransactionsController = ({
       ];
     }
 
-    if (account.currentAccount?.isTrezorWallet) {
-      return await window.controller.trezor.confirmNativeTokenSend({
-        txOptions,
-        outputs,
-        feeRate,
-      });
-    }
+    // todo: move to pali
+    // if (account.currentAccount?.isTrezorWallet) {
+    //   return await window.controller.trezor.confirmNativeTokenSend({
+    //     txOptions,
+    //     outputs,
+    //     feeRate,
+    //   });
+    // }
 
     try {
-      const pendingTransaction = await signer.createTransaction(
+      const pendingTransaction = await main.createTransaction(
         txOptions,
-        await signer.Signer.getNewChangeAddress(true),
+        await hd.getNewChangeAddress(true),
         outputs,
         feeRate
       );
 
       const txid = pendingTransaction.extractTransaction().getId();
-
-      account.setAccountTransactions(txid, account.currentAccount);
 
       return { txid };
     } catch (error) {
@@ -829,7 +665,7 @@ const SysTransactionsController = ({
   };
 
   const sendTransaction = async (
-    temporaryTransaction: TokenSend
+    temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
     const { isToken, token } = temporaryTransaction;
 
@@ -841,32 +677,28 @@ const SysTransactionsController = ({
   };
 
   const confirmMintNFT = async (
-    temporaryTransaction: TokenMint
+    temporaryTransaction: ITokenMint
   ): Promise<ITxid> => {
     const { fee, amount, assetGuid }: any = temporaryTransaction;
 
-    const { decimals } = await account.tokens.getToken(assetGuid);
+    const { decimals } = await getToken(assetGuid);
     const feeRate = new sys.utils.BN(fee * 1e8);
     const txOptions = { rbf: true };
 
-    const tokenMap = _getTokenMap({
+    const tokenMap = getTokenMap({
       guid: assetGuid,
-      changeAddress: await window.controller.address.getNewChangeAddress(true),
+      changeAddress: await hd.getNewChangeAddress(true),
       amount: new sys.utils.BN(amount * 10 ** decimals),
-      receivingAddress: await window.controller.address.getNewReceivingAddress(
+      receivingAddress: await hd.getNewReceivingAddress(
         true
       ),
     });
 
     try {
-      if (!account.currentAccount.isTrezorWallet) {
-        signer.setAccountIndex(account.currentAccount.id);
-      }
-
-      const pendingTransaction = await signer.assetSend(
+      const pendingTransaction = await main.assetSend(
         txOptions,
         tokenMap,
-        await window.controller.address.getNewChangeAddress(true),
+        await hd.getNewChangeAddress(true),
         feeRate
       );
 
@@ -878,8 +710,6 @@ const SysTransactionsController = ({
 
       const txid = pendingTransaction.extractTransaction().getId();
 
-      account.setAccountTransactions(txid, account.currentAccount);
-
       return { txid };
     } catch (error) {
       throw new Error(
@@ -888,17 +718,7 @@ const SysTransactionsController = ({
     }
   };
 
-  const getRecommendedFee = async (): Promise<number> =>
-    (await sys.utils.fetchEstimateFee(signer.blockbookURL, 1)) / 10 ** 8;
-
   return {
-    watchMemPool,
-    confirmTemporaryTransaction,
-    clearTemporaryTransaction,
-    setTemporaryTransaction,
-    getTemporaryTransaction,
-    getRawTransaction,
-    getPsbtFromJson,
     confirmTokenCreation,
     confirmTokenMint,
     confirmNftCreation,
@@ -906,8 +726,5 @@ const SysTransactionsController = ({
     confirmUpdateToken,
     sendTransaction,
     confirmMintNFT,
-    getRecommendedFee,
   };
 };
-
-export default SysTransactionsController;
