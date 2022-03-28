@@ -97,9 +97,9 @@ export const TrezorWallet = () => {
 
   const forgetWallet = () => { };
 
-  const getAddress = (trezor, kdPath) => {
+  const getAddress = (trezor: any, kdPath: any) => {
     return new Promise(function (resolve, reject) {
-      trezor.ethereumGetAddress(kdPath, (response) => {
+      trezor.ethereumGetAddress(kdPath, (response: any) => {
         if (response.success) {
           return resolve(response);
         }

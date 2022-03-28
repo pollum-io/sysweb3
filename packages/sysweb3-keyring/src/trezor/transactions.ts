@@ -187,7 +187,7 @@ const TrezorTransactions = () => {
   //   });
   // }
 
-  const signMessage = (trezor, kdPath, txData) => {
+  const signMessage = (trezor: any, kdPath: any, txData: any) => {
     return new Promise(function (resolve, reject) {
       const { success, payload } = trezor.ethereumSignMessage({
         path: kdPath,
@@ -204,8 +204,8 @@ const TrezorTransactions = () => {
     });
   }
 
-  const verifyMessage = (trezor, kdPath, txData) => {
-    trezor.ethereumVerifyMessage(kdPath, txData.signature, txData.Messsage, (response) => {
+  const verifyMessage = (trezor: any, kdPath: any, txData: any) => {
+    trezor.ethereumVerifyMessage(kdPath, txData.signature, txData.Messsage, (response: any) => {
       return response;
     });
   }
