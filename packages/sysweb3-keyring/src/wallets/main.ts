@@ -1,14 +1,13 @@
-import { BitcoinNetwork, IKeyringAccountState, ISyscoinPubTypes, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
+import { BitcoinNetwork, IKeyringAccountState } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
 // @ts-ignore
 import sys from 'syscoinjs-lib';
+import { Signer } from '../signer';
 
 export const MainWallet = () => {
-  let hdSigner: any = null;
-  let mainSigner: any = null;
+  const signer = Signer();
 
   const _getBackendAccountData = async (
-    signer: any,
     xpub: string,
     isHardwareWallet: boolean
   ) => {
@@ -78,7 +77,6 @@ export const MainWallet = () => {
     console.log('[create] fetching backend account...');
 
     const backendAccountData = await _getBackendAccountData(
-      mainSigner,
       xpub,
       isHardwareWallet
     );
@@ -86,7 +84,7 @@ export const MainWallet = () => {
     console.log(
       '[create] getting backend account data',
       backendAccountData,
-      mainSigner
+      signer
     );
 
     return backendAccountData;
@@ -104,7 +102,7 @@ export const MainWallet = () => {
   };
 
   const getAccountXpub = () => {
-    const xpub = mainSigner.Signer.getAccountXpub();
+    const xpub = signer.main.Signer.getAccountXpub();
 
     return xpub;
   };
@@ -140,66 +138,16 @@ export const MainWallet = () => {
     return account;
   };
 
-  const _getSyscoinHdSigner = ({
-    walletMnemonic,
-    walletPassword,
-    isTestnet,
-    networks,
-    SLIP44,
-    pubTypes,
-  }: {
-    walletMnemonic: string,
-    walletPassword?: string,
-    isTestnet: boolean,
-    networks?: BitcoinNetwork,
-    SLIP44?: number,
-    pubTypes?: ISyscoinPubTypes
-  }): SyscoinHDSigner => {
-    if (hdSigner) return hdSigner;
-
-    hdSigner = new sys.utils.HDSigner(
-      walletMnemonic,
-      walletPassword,
-      isTestnet,
-      networks,
-      SLIP44,
-      pubTypes
-    );
-
-    return hdSigner;
-  };
-
   const getNewReceivingAddress = async () => {
-    return await mainSigner.Signer.getNewReceivingAddress(true);
-  };
-
-  const _getSyscoinSigner = (mnemonic: string) => {
-    if (mainSigner) return mainSigner;
-
-    hdSigner = _getSyscoinHdSigner({ walletMnemonic: mnemonic, isTestnet: false });
-
-    if (hdSigner) {
-      mainSigner = new sys.SyscoinJSLib(
-        hdSigner,
-        'https://blockbook.elint.services/',
-        'mainnet'
-      );
-    }
-
-    return {
-      mainSigner,
-      hdSigner,
-    };
+    return await signer.main.Signer.getNewReceivingAddress(true);
   };
 
   const createWallet = async ({
     encryptedPassword,
-    mnemonic,
   }: {
     encryptedPassword: string;
     mnemonic: string;
   }): Promise<IKeyringAccountState> => {
-    const signer = _getSyscoinSigner(mnemonic);
     const xprv = getEncryptedPrivateKey(signer.mainSigner, encryptedPassword);
     const xpub = getAccountXpub();
 
@@ -214,12 +162,12 @@ export const MainWallet = () => {
     );
 
     const account: IKeyringAccountState = _getInitialAccountData({
-      signer: signer.mainSigner,
+      signer: signer.main,
       createdAccount,
       xprv,
     });
 
-    signer.mainSigner.Signer.setAccountIndex(account.id);
+    signer.main.Signer.setAccountIndex(account.id);
 
     return account;
   };

@@ -6,6 +6,7 @@ import { IKeyringAccountState, IWalletState, initialWalletState } from '@pollum-
 import { encryptor } from '@pollum-io/sysweb3-utils';
 import { generateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
+import { Signer } from './signer';
 import { MainWallet } from './wallets/main';
 
 export const KeyringManager = () => {
@@ -25,13 +26,16 @@ export const KeyringManager = () => {
     return _mnemonic;
   };
 
-  const getEncryptedMnemonic = (
-    mnemonic: string,
-    encryptedPassword: string
-  ) => {
-    const encryptedMnemonic = CryptoJS.AES.encrypt(mnemonic, encryptedPassword);
+  const getEncryptedMnemonic = () => {
+    const encryptedMnemonic = CryptoJS.AES.encrypt(_mnemonic, _password);
 
     return encryptedMnemonic;
+  };
+
+  const getDecryptedMnemonic = () => {
+    const decryptedMnemonic = CryptoJS.AES.decrypt(getEncryptedMnemonic(), _password);
+
+    return decryptedMnemonic;
   };
 
   const getAccountById = (id: number): IKeyringAccountState =>
@@ -190,9 +194,12 @@ export const KeyringManager = () => {
     account.signMessage(account, msgParams.data, opts);
   };
 
+  const signer = Signer();
+
   return {
     createVault,
     setWalletPassword,
+    encryptedPassword: CryptoJS.SHA3(_password, getEncryptedMnemonic()),
     address: null,
     addTokenToAccount,
     getState,
@@ -207,5 +214,7 @@ export const KeyringManager = () => {
     signTransaction,
     generatePhrase,
     getEncryptedMnemonic,
+    getDecryptedMnemonic,
+    signer,
   };
 };
