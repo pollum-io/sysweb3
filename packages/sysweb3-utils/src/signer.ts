@@ -1,5 +1,5 @@
 import { BitcoinNetwork, ISyscoinPubTypes, SyscoinHDSigner } from './types';
-const sys = require('syscoinjs-lib');
+import sys from 'syscoinjs-lib';
 
 let mainSigner: any = null;
 let hdSigner: SyscoinHDSigner | null = null;
