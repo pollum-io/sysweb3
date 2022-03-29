@@ -49,4 +49,4 @@ export const getHdSigner = ({
   return hdSigner;
 };
 
-export const mainSigner = () => ({ hd: getHdSigner(), main: getMainSigner() });
+export const MainSigner = () => ({ hd: getHdSigner(), main: getMainSigner() });
