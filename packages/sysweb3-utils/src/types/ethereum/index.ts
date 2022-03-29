@@ -1,18 +1,20 @@
-import { Account, TransactionReceipt } from 'web3-core';
-import { IEthereumToken, IEthereumNft } from '.';
+import { Account, TransactionReceipt } from "web3-core";
+import { IEthereumToken, IEthereumNft } from ".";
 
-export * from './tokens';
-export * from './transactions';
-export * from './accounts';
+export * from "./tokens";
+export * from "./transactions";
+export * from "./accounts";
 
 export type web3 = {
   createAccount: () => Account;
   getBalance: (address: string) => Promise<string>;
   importAccount: (mnemonic: string, password: string) => Account;
   sendTransaction: (
-    sender: string,
-    receiver: string,
-    value: number
+    fromAddress: string,
+    fromPrivateKey: string,
+    toAddress: string,
+    value: number,
+    gasFee?: string
   ) => Promise<TransactionReceipt>;
   setActiveNetwork: (chainId: number) => void;
   getNFTImage: (address: string, tokenId: number) => Promise<string | void>;
@@ -23,9 +25,9 @@ export type web3 = {
   ) => Promise<IEthereumToken | undefined>;
   getTokenIconBySymbol: (symbol: string) => Promise<
     | {
-      thumbImage: string;
-      largeImage: string;
-    }
+        thumbImage: string;
+        largeImage: string;
+      }
     | undefined
   >;
   web3Provider: any;

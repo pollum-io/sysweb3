@@ -34,7 +34,8 @@
     "@pollum-io/sysweb3-core": "^1.0.1",
     "@pollum-io/sysweb3-keyring": "^1.0.4",
     "@pollum-io/sysweb3-network": "^1.0.3",
-    "@pollum-io/sysweb3-utils": "^1.0.3"
+    "@pollum-io/sysweb3-utils": "^1.0.3",
+    "graphql-request": "^4.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.17.4",
@@ -62,7 +63,6 @@
     "node-fetch": "^3.2.2",
     "prettier": "^2.6.0",
     "prettier-eslint": "^13.0.0",
-    "rimraf": "^3.0.2",
     "rollup": "^2.70.0",
     "rollup-plugin-node-builtins": "^2.1.2",
     "rollup-plugin-node-globals": "^1.4.0",
