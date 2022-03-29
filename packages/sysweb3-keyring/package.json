@@ -24,7 +24,7 @@
   "dependencies": {
     "@metamask/obs-store": "^7.0.0",
     "@metamask/safe-event-emitter": "^2.0.0",
-    "@pollum-io/sysweb3-utils": "^1.1.11",
+    "@pollum-io/sysweb3-utils": "1.1.14",
     "@types/crypto-js": "^4.1.1",
     "axios": "^0.26.1",
     "bip39": "^3.0.4",

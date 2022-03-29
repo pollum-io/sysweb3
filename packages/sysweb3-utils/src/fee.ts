@@ -19,7 +19,7 @@ export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
       main.network
     );
 
-    // 0 feerate to create tx, then find bytes and multiply feeRate by bytes to get estimated txfee
+    // 0 feerate to create tx, then find bytes and multiply feeRate by bytes to get estimated txfee 
     const tx = await syscointx.createTransaction(
       txOpts,
       utxosSanitized,
