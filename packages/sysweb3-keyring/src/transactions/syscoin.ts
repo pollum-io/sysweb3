@@ -8,20 +8,20 @@ import {
   ITokenUpdate,
   ITxid,
   feeUtils,
+  MainSigner,
 } from '@pollum-io/sysweb3-utils';
 import syscointx from 'syscointx-js';
-import { Signer } from '../signer';
 
-export const SyscoinTransactions = () => {
-  const { main, hd } = Signer();
+export const SyscoinTransactions = (data: any /** SignerInfo */) => {
+  const { main, hd } = MainSigner(data);
 
   const {
     getFeeRate,
     getRawTransaction,
     getTokenMap,
-  } = txUtils();
+  } = txUtils(main);
 
-  const { estimateSysTransactionFee } = feeUtils();
+  const { estimateSysTransactionFee } = feeUtils(main);
 
   const _createMintedToken = async ({
     txid,

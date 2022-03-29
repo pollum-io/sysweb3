@@ -1,11 +1,9 @@
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
 import coinSelectSyscoin from 'coinselectsyscoin';
-import { Signer } from '@pollum-io/sysweb3-keyring';
+import { SyscoinHDSigner } from 'types';
 
-export const feeUtils = () => {
-  const { main, hd } = Signer();
-
+export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
   const estimateSysTransactionFee = async (items: any) => {
     const { outputsArray, changeAddress, feeRateBN } = items;
 

@@ -1,10 +1,7 @@
 import sys from 'syscoinjs-lib';
-import { Signer } from '@pollum-io/sysweb3-keyring';
 import { ITokenMap } from './types';
 
-export const txUtils = () => {
-  const { main } = Signer();
-
+export const txUtils = (main: any) => {
   const getRawTransaction = (txid: string) =>
     sys.utils.fetchBackendRawTx(main.blockbookURL, txid);
 
