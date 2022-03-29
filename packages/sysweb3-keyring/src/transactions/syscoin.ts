@@ -1,14 +1,14 @@
 import sys from 'syscoinjs-lib';
 import {
   INewNFT,
-  txUtils,
   isBase64,
   ITokenMint,
   ITokenSend,
   ITokenUpdate,
   ITxid,
-  feeUtils,
   MainSigner,
+  feeUtils,
+  txUtils,
 } from '@pollum-io/sysweb3-utils';
 import syscointx from 'syscointx-js';
 
@@ -21,7 +21,7 @@ export const SyscoinTransactions = (data: any /** SignerInfo */) => {
     getTokenMap,
   } = txUtils(main);
 
-  const { estimateSysTransactionFee } = feeUtils(main);
+  const { estimateSysTransactionFee } = feeUtils(hd, main);
 
   const _createMintedToken = async ({
     txid,

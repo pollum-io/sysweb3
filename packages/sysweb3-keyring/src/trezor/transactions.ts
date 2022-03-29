@@ -1,10 +1,7 @@
-import { ITokenMap, ITxid } from '@pollum-io/sysweb3-utils';
+import { ITokenMap, ITxid, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
 import sys from 'syscoinjs-lib';
-import { Signer } from '../signer';
 
-const TrezorTransactions = () => {
-  const { hd, main } = Signer();
-
+const TrezorTransactions = ({ hd, main }: { hd: SyscoinHDSigner, main: any }) => {
   const confirmTokenMint = async ({
     tokenOptions,
     feeRate,

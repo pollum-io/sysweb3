@@ -1,20 +1,20 @@
 import { IKeyringAccountState } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
-import { Signer } from '../signer';
+import { TrezorWallet } from 'trezor';
 
-export const MainWallet = () => {
-  const signer = Signer();
+export const MainWallet = (data: any /** SignerInfo */) => {
+  const { hd, main } = MainSigner(data);
 
   const _getBackendAccountData = async (
     xpub: string,
     isHardwareWallet: boolean
   ) => {
-    console.log('[create] get backend account signer', signer, xpub);
+    console.log('[create] get backend account signer', main, xpub);
 
     const { tokensAsset, balance, transactions } =
       await sys.utils.fetchBackendAccount(
-        signer.blockbookURL,
+        main.blockbookURL,
         xpub,
         isHardwareWallet
           ? 'tokens=nonzero&details=txs'
@@ -56,7 +56,7 @@ export const MainWallet = () => {
       }
     }
 
-    const address = await signer.Signer.getNewReceivingAddress(true);
+    const address = await hd.getNewReceivingAddress(true);
     const lastTransactions = Object.values(txs).slice(0, 20);
 
     console.log('[create] txs', txs, lastTransactions);
@@ -83,7 +83,7 @@ export const MainWallet = () => {
     console.log(
       '[create] getting backend account data',
       backendAccountData,
-      signer
+      main
     );
 
     return backendAccountData;
@@ -100,11 +100,7 @@ export const MainWallet = () => {
     return privateKey;
   };
 
-  const getAccountXpub = () => {
-    const xpub = signer.main.Signer.getAccountXpub();
-
-    return xpub;
-  };
+  const getAccountXpub = () => hd.getAccountXpub();
 
   const _getInitialAccountData = ({
     label,
@@ -138,7 +134,7 @@ export const MainWallet = () => {
   };
 
   const getNewReceivingAddress = async () => {
-    return await signer.main.Signer.getNewReceivingAddress(true);
+    return await hd.getNewReceivingAddress(true);
   };
 
   const createWallet = async ({
@@ -147,10 +143,10 @@ export const MainWallet = () => {
     encryptedPassword: string;
     mnemonic: string;
   }): Promise<IKeyringAccountState> => {
-    const xprv = getEncryptedPrivateKey(signer.mainSigner, encryptedPassword);
+    const xprv = getEncryptedPrivateKey(main, encryptedPassword);
     const xpub = getAccountXpub();
 
-    console.log('[create] getting signer', signer, xpub);
+    console.log('[create] getting signer', main, xpub);
 
     const createdAccount = await getAccountInfo(false, xpub);
 
@@ -161,15 +157,17 @@ export const MainWallet = () => {
     );
 
     const account: IKeyringAccountState = _getInitialAccountData({
-      signer: signer.main,
+      signer: main,
       createdAccount,
       xprv,
     });
 
-    signer.main.Signer.setAccountIndex(account.id);
+    hd.setAccountIndex(account.id);
 
     return account;
   };
+
+  const trezor = TrezorWallet({ hd, main });
 
   return {
     getNewReceivingAddress,
@@ -177,5 +175,6 @@ export const MainWallet = () => {
     getAccountXpub,
     getAccountInfo,
     getEncryptedPrivateKey,
+    trezor,
   };
 };
