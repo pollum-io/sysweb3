@@ -1,11 +1,11 @@
 // @ts-ignore
-import { web3Provider } from '@pollum-io/sysweb3-network';
-import axios from 'axios';
-import crypto from 'crypto-js';
-import { ethers } from 'ethers';
-import { request, gql } from 'graphql-request';
-import _ from 'lodash';
-import { Account } from 'web3-core';
+import { web3Provider } from "@pollum-io/sysweb3-network";
+import axios from "axios";
+import crypto from "crypto-js";
+import { ethers } from "ethers";
+import { request, gql } from "graphql-request";
+import _ from "lodash";
+import { Account, TransactionReceipt } from "web3-core";
 
 export const Web3Accounts = () => {
   const createAccount = (): Account => web3Provider.eth.accounts.create();
@@ -34,7 +34,7 @@ export const Web3Accounts = () => {
         `https://api.etherscan.io/api?module=account&action=tokennfttx&address=${address}&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH`
       );
 
-      if (data.message === 'OK' && data.result !== []) {
+      if (data.message === "OK" && data.result !== []) {
         return data.result;
       }
 
@@ -66,10 +66,10 @@ export const Web3Accounts = () => {
 
     try {
       const { ethereum } = await request({
-        url: 'https://graphql.bitquery.io/',
+        url: "https://graphql.bitquery.io/",
         document: query,
         requestHeaders: {
-          'X-API-KEY': 'BQYvhnv04csZHaprIBZNwtpRiDIwEIW9',
+          "X-API-KEY": "BQYvhnv04csZHaprIBZNwtpRiDIwEIW9",
         },
       });
 
@@ -78,35 +78,65 @@ export const Web3Accounts = () => {
       }
     } catch (error) {
       // todo: handle error
-      throw new Error('Not available tokens');
+      throw new Error("Not available tokens");
     }
   };
 
   const sendTransaction = async (
-    sender: string,
-    receiver: string,
-    value: number
-  ): Promise<any> => {
-    try {
-      const signedTransaction = await web3Provider.eth.accounts.signTransaction(
-        {
-          to: receiver,
-          value: web3Provider.utils.toWei(value.toString(), 'ether'),
-          gas: await web3Provider.eth.estimateGas({
-            to: receiver,
-          }),
-          nonce: await web3Provider.eth.getTransactionCount(sender, 'latest'),
-        },
-        sender
-      );
+    fromAddress: string,
+    fromPrivateKey: string,
+    toAddress: string,
+    value: number,
+    gasFee?: string
+  ) => {
+    const gasPrice = (await web3Provider.eth.getGasPrice()).toString();
 
-      return web3Provider.eth.sendSignedTransaction(
-        `${signedTransaction.rawTransaction}`
-      );
+    let editGasFee: any;
+
+    switch (gasFee) {
+      case "low":
+        editGasFee = web3Provider.utils
+          .toBN(gasPrice)
+          .mul(web3Provider.utils.toBN(8))
+          .div(web3Provider.utils.toBN(10))
+          .toString();
+
+        break;
+      case "high":
+        editGasFee = web3Provider.utils
+          .toBN(gasPrice)
+          .mul(web3Provider.utils.toBN(11))
+          .div(web3Provider.utils.toBN(10))
+          .toString();
+        break;
+      default:
+        editGasFee = gasPrice;
+        break;
+    }
+
+    const signedTransaction = await web3Provider.eth.accounts.signTransaction(
+      {
+        from: fromAddress,
+        to: toAddress,
+        value: web3Provider.utils.toWei(value.toString(), "ether"),
+        gas: await web3Provider.eth.estimateGas({
+          to: toAddress,
+        }),
+        gasPrice: editGasFee,
+        nonce: await web3Provider.eth.getTransactionCount(
+          fromAddress,
+          "latest"
+        ),
+      },
+      fromPrivateKey
+    );
+
+    try {
+      return web3Provider.eth
+        .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
+        .then((result: TransactionReceipt) => result);
     } catch (error) {
-      // todo: handle
-      console.log(error);
-      throw error;
+      console.log(`${error}`);
     }
   };
 

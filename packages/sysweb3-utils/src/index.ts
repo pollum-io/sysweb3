@@ -7,3 +7,4 @@ export * from './initialState';
 export * from './fee';
 export * from './transactions';
 export * from './trezor';
+export * from './signer';
