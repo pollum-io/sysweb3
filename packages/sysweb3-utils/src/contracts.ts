@@ -1,4 +1,3 @@
-// @ts-ignore
 import { web3Provider } from '@pollum-io/sysweb3-network';
 import { Contract, ContractOptions } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
