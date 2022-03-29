@@ -9,9 +9,9 @@ export const getMainSigner = ({
   blockbookURL,
   network,
 }: {
-  SignerIn: any;
-  blockbookURL: string;
-  network: any;
+  SignerIn?: any;
+  blockbookURL?: string;
+  network?: any;
 }) => {
   if (!mainSigner) {
     mainSigner = new sys.SyscoinJSLib(SignerIn, blockbookURL, network);
@@ -48,3 +48,5 @@ export const getHdSigner = ({
 
   return hdSigner;
 };
+
+export const mainSigner = () => ({ hd: getHdSigner(), main: getMainSigner() });
