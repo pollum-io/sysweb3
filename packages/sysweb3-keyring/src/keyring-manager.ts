@@ -11,12 +11,17 @@ import { MainWallet } from './wallets/main';
 export const KeyringManager = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
-  const { createWallet } = MainWallet();
-
   let _password = '';
   let _mnemonic = '';
 
   let wallet: IWalletState = initialWalletState;
+
+  const { createWallet } = MainWallet({
+    walletMnemonic: _mnemonic,
+    isTestnet: /* wallet.activeNetwork.isTestnet */ false,
+    network: wallet.activeNetwork.url,
+    blockbookURL: wallet.activeNetwork.url
+  });
 
   const generatePhrase = () => {
     if (!_mnemonic) _mnemonic = generateMnemonic();
