@@ -1,4 +1,4 @@
-import { IKeyringAccountState } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState, MainSigner } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 import { TrezorWallet } from 'trezor';

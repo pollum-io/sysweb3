@@ -1,4 +1,4 @@
-import { INetworkType, IWalletState } from '@pollum-io/sysweb3-utils';
+import { INetworkType, IWalletState } from './';
 
 export const initialActiveAccountState = {
   address: '',
@@ -22,22 +22,22 @@ export const initialActiveAccountState = {
 
 export const initialNetworksState = {
   syscoin: {
-    0: {
-      chainId: 0,
+    57: {
+      chainId: 57,
       label: 'Syscoin Mainnet',
       url: 'https://blockbook.elint.services/',
       default: true,
     },
-    1: {
-      chainId: 1,
+    5700: {
+      chainId: 5700,
       label: 'Syscoin Testnet',
       url: 'https://blockbook-dev.elint.services/',
       default: true,
     },
   },
   ethereum: {
-    0: {
-      chainId: 0,
+    1: {
+      chainId: 1,
       label: 'Kovan',
       url: 'https://blockbook-dev.elint.services/',
       default: true,
