@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-utils",
-  "version": "1.1.15",
+  "version": "1.1.23",
   "description": "A helper for multi-chain accounts.",
   "main": "cjs/index.js",
   "repository": {
@@ -9,7 +9,7 @@
   },
   "author": "Pali Wallet",
   "license": "MIT",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/esm/index.d.ts",
   "private": false,
   "scripts": {
     "prebuild": "rimraf dist/",

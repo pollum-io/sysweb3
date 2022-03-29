@@ -1,15 +1,20 @@
-import { IKeyringAccountState, MainSigner } from '@pollum-io/sysweb3-utils';
+import { MainSigner, IKeyringAccountState, SignerInfo } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
-import { TrezorWallet } from 'trezor';
+import { TrezorWallet } from '../trezor';
 
-export const MainWallet = (data: any /** SignerInfo */) => {
+export const MainWallet = (data: SignerInfo) => {
   const { hd, main } = MainSigner(data);
 
   const _getBackendAccountData = async (
     xpub: string,
     isHardwareWallet: boolean
-  ) => {
+  ): Promise<{
+    address: string | null;
+    balance: number;
+    transactions: any;
+    tokens: any;
+  }> => {
     console.log('[create] get backend account signer', main, xpub);
 
     const { tokensAsset, balance, transactions } =
@@ -56,7 +61,7 @@ export const MainWallet = (data: any /** SignerInfo */) => {
       }
     }
 
-    const address = await hd.getNewReceivingAddress(true);
+    const address = hd ? await hd.getNewReceivingAddress(true) : null;
     const lastTransactions = Object.values(txs).slice(0, 20);
 
     console.log('[create] txs', txs, lastTransactions);
@@ -100,7 +105,7 @@ export const MainWallet = (data: any /** SignerInfo */) => {
     return privateKey;
   };
 
-  const getAccountXpub = () => hd.getAccountXpub();
+  const getAccountXpub = (): string => hd ? hd.getAccountXpub() : '';
 
   const _getInitialAccountData = ({
     label,
@@ -134,7 +139,7 @@ export const MainWallet = (data: any /** SignerInfo */) => {
   };
 
   const getNewReceivingAddress = async () => {
-    return await hd.getNewReceivingAddress(true);
+    return hd ? hd.getNewReceivingAddress(true) : '';
   };
 
   const createWallet = async ({
@@ -162,7 +167,7 @@ export const MainWallet = (data: any /** SignerInfo */) => {
       xprv,
     });
 
-    hd.setAccountIndex(account.id);
+    hd && hd.setAccountIndex(account.id);
 
     return account;
   };
