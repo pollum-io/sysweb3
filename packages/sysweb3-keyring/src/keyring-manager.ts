@@ -2,23 +2,26 @@ import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
 // @ts-ignore
 import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { IKeyringAccountState, IWalletState } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState, IWalletState, initialWalletState } from '@pollum-io/sysweb3-utils';
 import { encryptor } from '@pollum-io/sysweb3-utils';
 import { generateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
-import { initialWalletState } from './initialState';
 import { MainWallet } from './wallets/main';
 
 export const KeyringManager = () => {
-  const eventEmitter = new SafeEventEmitter();
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
-
-  const { createWallet } = MainWallet();
 
   let _password = '';
   let _mnemonic = '';
 
   let wallet: IWalletState = initialWalletState;
+
+  const { createWallet } = MainWallet({
+    walletMnemonic: _mnemonic,
+    isTestnet: /* wallet.activeNetwork.isTestnet */ false,
+    network: wallet.activeNetwork.url,
+    blockbookURL: wallet.activeNetwork.url
+  });
 
   const generatePhrase = () => {
     if (!_mnemonic) _mnemonic = generateMnemonic();
@@ -26,13 +29,16 @@ export const KeyringManager = () => {
     return _mnemonic;
   };
 
-  const getEncryptedMnemonic = (
-    mnemonic: string,
-    encryptedPassword: string
-  ) => {
-    const encryptedMnemonic = CryptoJS.AES.encrypt(mnemonic, encryptedPassword);
+  const getEncryptedMnemonic = () => {
+    const encryptedMnemonic = CryptoJS.AES.encrypt(_mnemonic, _password);
 
     return encryptedMnemonic;
+  };
+
+  const getDecryptedMnemonic = () => {
+    const decryptedMnemonic = CryptoJS.AES.decrypt(getEncryptedMnemonic(), _password);
+
+    return decryptedMnemonic;
   };
 
   const getAccountById = (id: number): IKeyringAccountState =>
@@ -91,6 +97,8 @@ export const KeyringManager = () => {
   };
 
   const _notifyUpdate = () => {
+    const eventEmitter = new SafeEventEmitter();
+
     eventEmitter.emit('update', _memStore.getState());
   };
 
@@ -134,6 +142,8 @@ export const KeyringManager = () => {
   };
 
   const logout = () => {
+    const eventEmitter = new SafeEventEmitter();
+
     _password = '';
     _memStore.updateState({ isUnlocked: false });
     eventEmitter.emit('lock');
@@ -141,6 +151,8 @@ export const KeyringManager = () => {
   };
 
   const _updateUnlocked = () => {
+    const eventEmitter = new SafeEventEmitter();
+
     _memStore.updateState({ isUnlocked: true });
     eventEmitter.emit('unlock');
   };
@@ -194,6 +206,7 @@ export const KeyringManager = () => {
   return {
     createVault,
     setWalletPassword,
+    encryptedPassword: CryptoJS.SHA3(_password, getEncryptedMnemonic()),
     address: null,
     addTokenToAccount,
     getState,
@@ -208,5 +221,6 @@ export const KeyringManager = () => {
     signTransaction,
     generatePhrase,
     getEncryptedMnemonic,
+    getDecryptedMnemonic,
   };
 };
