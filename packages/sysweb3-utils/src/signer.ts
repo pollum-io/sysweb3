@@ -12,8 +12,8 @@ export const MainSigner = ({
   network: string;
   blockbookURL: string;
 }) => {
-  let mainSigner: any = null;
-  let hdSigner: SyscoinHDSigner | null = null;
+  let mainSigner: any;
+  let hdSigner: SyscoinHDSigner;
 
   const getMainSigner = ({
     SignerIn,
@@ -45,7 +45,7 @@ export const MainSigner = ({
     pubTypes?: ISyscoinPubTypes;
     walletMnemonic: string;
     walletPassword?: string;
-  }): SyscoinHDSigner | null => {
+  }): SyscoinHDSigner => {
     if (!hdSigner) {
       hdSigner = new sys.utils.HDSigner(
         walletMnemonic,

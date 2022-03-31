@@ -1,7 +1,7 @@
 import { IKeyringAccountState, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
 import sys from 'syscoinjs-lib';
 import { fromZPub } from 'bip84';
-import TrezorTransactions from 'trezor/transactions';
+import TrezorTransactions from './transactions';
 
 export const TrezorWallet = ({ hd, main }: { hd: SyscoinHDSigner, main: any }) => {
   const getAccountInfo = async (

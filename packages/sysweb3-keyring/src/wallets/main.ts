@@ -1,10 +1,10 @@
-import { IKeyringAccountState } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState, MainSigner, SignerInfo } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
-import { SyscoinTransactions } from 'transactions';
-import { TrezorWallet } from 'trezor';
+import { SyscoinTransactions } from '../transactions';
+import { TrezorWallet } from '../trezor';
 
-export const MainWallet = (data: any /** SignerInfo */) => {
+export const MainWallet = (data: SignerInfo) => {
   const { hd, main } = MainSigner(data);
 
   const _getBackendAccountData = async (

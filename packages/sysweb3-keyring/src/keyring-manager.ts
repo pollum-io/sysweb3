@@ -18,7 +18,7 @@ export const KeyringManager = () => {
 
   const { createWallet } = MainWallet({
     walletMnemonic: _mnemonic,
-    isTestnet: /* wallet.activeNetwork.isTestnet */ false,
+    isTestnet: wallet.activeNetwork.isTestnet,
     network: wallet.activeNetwork.url,
     blockbookURL: wallet.activeNetwork.url
   });
@@ -74,20 +74,18 @@ export const KeyringManager = () => {
     });
   };
 
-  const _persistWallet = (password: string = _password): CryptoJS.lib.CipherParams | Error => {
+  const _persistWallet = (password: string = _password): string | Error => {
     if (typeof password !== 'string') {
       return new Error('KeyringManager - password is not a string');
     }
+
+    console.log("trying to persist wallet", wallet, JSON.stringify(wallet));
 
     _password = password;
 
     const serializedWallet = JSON.stringify(wallet);
 
-    const encryptedWallet = encryptor.encrypt(serializedWallet, _password);
-
-    storage.set('vault', encryptedWallet);
-
-    return encryptedWallet;
+    return serializedWallet;
   };
 
   const _updateMemStoreWallet = () => {

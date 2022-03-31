@@ -5,3 +5,5 @@ export * from './keyring';
 export * from './hdsigner';
 export * from './psbt';
 export * from './spsbt';
+export * from './signerInfo';
+export * from './sysweb3di';
