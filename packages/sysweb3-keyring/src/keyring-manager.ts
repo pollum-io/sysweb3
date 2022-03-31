@@ -116,7 +116,7 @@ export const KeyringManager = () => {
       mnemonic: _mnemonic,
     });
 
-    console.log('[keyring] creating wallet:', wallet);
+    console.log('[keyring file test] creating wallet:', wallet);
 
     await _fullUpdate();
 

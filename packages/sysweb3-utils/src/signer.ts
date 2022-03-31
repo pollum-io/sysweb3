@@ -1,8 +1,8 @@
 import { BitcoinNetwork } from '.';
 import sys from 'syscoinjs-lib';
 
-import { BIP32Interface } from "bip32";
-import { Psbt } from "bitcoinjs-lib";
+import { BIP32Interface } from 'bip32';
+import { Psbt } from 'bitcoinjs-lib';
 
 export const MainSigner = ({
   walletMnemonic,
@@ -79,6 +79,140 @@ export interface Bip84FromMnemonic {
 }
 
 export interface SyscoinHDSigner {
+  Signer: {
+    isTestnet: boolean;
+    networks: {
+      mainnet: {
+        messagePrefix: string;
+        bech32: string;
+        bip32: {
+          public: number;
+          private: number
+        };
+        pubKeyHash: number;
+        scriptHash: number;
+        wif: number;
+      };
+      testnet: {
+        messagePrefix: string;
+        bech32: string;
+        bip32: {
+          public: number;
+          private: number
+        };
+        pubKeyHash: number;
+        scriptHash: number;
+        wif: number;
+      }
+    };
+    password: string | null;
+    SLIP44: number;
+    network: {
+      messagePrefix: string;
+      bech32: string;
+      bip32: {
+        public: number;
+        private: number
+      };
+      pubKeyHash: number;
+      scriptHash: number;
+      wif: number;
+    };
+    pubTypes: {
+      mainnet: {
+        zprv: string;
+        zpub: string;
+      };
+      testnet: {
+        vprv: string;
+        vpub: string;
+      }
+    };
+    accounts: [
+      {
+        pubTypes: {
+          mainnet: {
+            zprv: string;
+            zpub: string;
+          };
+          testnet: {
+            vprv: string;
+            vpub: string;
+          }
+        };
+        networks: {
+          mainnet: {
+            messagePrefix: string;
+            bech32: string;
+            bip32: {
+              public: number;
+              private: number
+            };
+            pubKeyHash: number;
+            scriptHash: number;
+            wif: number;
+          };
+          testnet: {
+            messagePrefix: string;
+            bech32: string;
+            bip32: {
+              public: number;
+              private: number
+            };
+            pubKeyHash: number;
+            scriptHash: number;
+            wif: number;
+          }
+        };
+        network: {
+          messagePrefix: string;
+          bech32: string;
+          bip32: {
+            public: number;
+            private: number
+          };
+          pubKeyHash: number;
+          scriptHash: number;
+          wif: number;
+        };
+        isTestnet: boolean;
+        zprv: string;
+      }
+    ];
+    changeIndex: number;
+    receivingIndex: number;
+    accountIndex: number;
+    setIndexFlag: number;
+    blockbookURL: string;
+  };
+  mnemonic: string;
+  fromMnemonic: {
+    seed: Buffer;
+    isTestnet: boolean;
+    coinType: number;
+    pubTypes: {
+      mainnet: {
+        zprv: string;
+        zpub: string;
+      };
+      testnet: {
+        vprv: string;
+        vpub: string;
+      }
+    };
+    network: {
+      messagePrefix: string;
+      bech32: string;
+      bip32: {
+        public: number;
+        private: number
+      };
+      pubKeyHash: number;
+      scriptHash: number;
+      wif: number;
+    }
+  };
+  blockbookURL: string;
   signPSBT: (psbt: Psbt, pathIn?: string) => Psbt;
   sign: (psbt: Psbt, pathIn?: string) => Psbt;
   getMasterFingerprint: () => Buffer;
@@ -104,4 +238,20 @@ export interface SyscoinHDSigner {
 export type ISyscoinPubTypes = {
   mainnet: { zprv: string, zpub: string },
   testnet: { vprv: string, vpub: string }
+}
+
+export type SyscoinMainSigner = {
+  blockbookURL: string,
+  Signer: SyscoinHDSigner,
+  network: {
+    messagePrefix: string,
+    bech32: string,
+    bip32: {
+      public: number,
+      private: number
+    },
+    pubKeyHash: number,
+    scriptHash: number,
+    wif: number
+  }
 }
