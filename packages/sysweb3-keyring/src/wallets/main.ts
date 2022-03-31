@@ -1,4 +1,4 @@
-import { IKeyringAccountState, MainSigner, SignerInfo } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState, MainSigner, SignerInfo, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 import { SyscoinTransactions } from '../transactions';
@@ -148,7 +148,7 @@ export const MainWallet = (data: SignerInfo) => {
   }: {
     encryptedPassword: string;
     mnemonic: string;
-  }): Promise<IKeyringAccountState> => {
+  }): Promise<{ account: IKeyringAccountState, hd: SyscoinHDSigner, main: any }> => {
     const xprv = getEncryptedPrivateKey(main, encryptedPassword);
     const xpub = getAccountXpub();
 
@@ -170,7 +170,11 @@ export const MainWallet = (data: SignerInfo) => {
 
     hd && hd.setAccountIndex(account.id);
 
-    return account;
+    return {
+      account,
+      hd,
+      main,
+    };
   };
 
   const trezor = TrezorWallet({ hd, main });
