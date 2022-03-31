@@ -2,6 +2,7 @@
   "extends": "../../tsconfig-package-esm.json",
   "compilerOptions": {
     "outDir": "dist/esm",
+    "declarationDir": "dist/types"
   },
   "include": [
     "src"
