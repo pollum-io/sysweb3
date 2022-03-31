@@ -1,6 +1,6 @@
 // @ts-ignore
 import { web3Provider } from '@pollum-io/sysweb3-network';
-import { IErc20Token } from './types';
+import { IErc20Token } from '.';
 import abi from './abi/erc20.json';
 import { createContractUsingAbi } from '.';
 

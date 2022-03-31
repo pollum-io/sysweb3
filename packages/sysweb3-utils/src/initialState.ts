@@ -1,11 +1,11 @@
-import { INetworkType, IWalletState } from './types';
+import { IWalletState } from '.';
 
 export const initialActiveAccountState = {
   address: '',
   tokens: {},
   balances: {
-    [INetworkType.Ethereum]: 0,
-    [INetworkType.Syscoin]: 0,
+    ethereum: 0,
+    syscoin: 0,
   },
   id: -1,
   isTrezorWallet: false,

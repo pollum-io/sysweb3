@@ -10,7 +10,12 @@ export const MainWallet = (data: SignerInfo) => {
   const _getBackendAccountData = async (
     xpub: string,
     isHardwareWallet: boolean
-  ) => {
+  ): Promise<{
+    address: string | null;
+    balance: number;
+    transactions: any;
+    tokens: any;
+  }> => {
     console.log('[create] get backend account signer', main, xpub);
 
     const { tokensAsset, balance, transactions } =
@@ -57,7 +62,7 @@ export const MainWallet = (data: SignerInfo) => {
       }
     }
 
-    const address = await hd.getNewReceivingAddress(true);
+    const address = hd ? await hd.getNewReceivingAddress(true) : null;
     const lastTransactions = Object.values(txs).slice(0, 20);
 
     console.log('[create] txs', txs, lastTransactions);
@@ -101,7 +106,7 @@ export const MainWallet = (data: SignerInfo) => {
     return privateKey;
   };
 
-  const getAccountXpub = () => hd.getAccountXpub();
+  const getAccountXpub = (): string => hd ? hd.getAccountXpub() : '';
 
   const _getInitialAccountData = ({
     label,
@@ -135,7 +140,7 @@ export const MainWallet = (data: SignerInfo) => {
   };
 
   const getNewReceivingAddress = async () => {
-    return await hd.getNewReceivingAddress(true);
+    return hd ? hd.getNewReceivingAddress(true) : '';
   };
 
   const createWallet = async ({
@@ -163,7 +168,7 @@ export const MainWallet = (data: SignerInfo) => {
       xprv,
     });
 
-    hd.setAccountIndex(account.id);
+    hd && hd.setAccountIndex(account.id);
 
     return account;
   };

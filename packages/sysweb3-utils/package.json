@@ -9,7 +9,7 @@
   },
   "author": "Pali Wallet",
   "license": "MIT",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/esm/index.d.ts",
   "private": false,
   "scripts": {
     "prebuild": "rimraf dist/",

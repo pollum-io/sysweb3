@@ -4,10 +4,8 @@
     "rootDir": "src",
     "baseUrl": "src",
     "outDir": "dist/esm",
-    "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "declarationDir": "dist"
   },
-  "include": ["src"],
-  "exclude": ["**/*.spec.ts", "node_modules/**/*"]
+  "include": ["src"]
 }
