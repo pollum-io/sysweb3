@@ -6,12 +6,13 @@ import {
   ITokenSend,
   ITokenUpdate,
   ITxid,
+  SyscoinHDSigner,
+  feeUtils,
+  txUtils,
 } from '@pollum-io/sysweb3-utils';
 import syscointx from 'syscointx-js';
 
-export const SyscoinTransactions = (data: any /** SignerInfo */) => {
-  const { main, hd } = MainSigner(data);
-
+export const SyscoinTransactions = ({ hd, main }: { hd: SyscoinHDSigner, main: any }) => {
   const {
     getFeeRate,
     getRawTransaction,

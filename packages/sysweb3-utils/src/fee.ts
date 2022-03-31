@@ -1,7 +1,7 @@
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
 import coinSelectSyscoin from 'coinselectsyscoin';
-import { SyscoinHDSigner } from './types';
+import { SyscoinHDSigner } from '.';
 
 export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
   const estimateSysTransactionFee = async (items: any) => {

@@ -8,4 +8,6 @@ export type INetwork = {
   url: string;
   default?: boolean;
   label: string;
+  isTestnet: boolean;
+  currency?: string;
 };

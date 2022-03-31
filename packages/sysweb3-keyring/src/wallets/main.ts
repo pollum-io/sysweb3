@@ -1,15 +1,21 @@
-import { IKeyringAccountState } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState, MainSigner, SignerInfo, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
-import { TrezorWallet } from 'trezor';
+import { SyscoinTransactions } from '../transactions';
+import { TrezorWallet } from '../trezor';
 
-export const MainWallet = (data: any /** SignerInfo */) => {
+export const MainWallet = (data: SignerInfo) => {
   const { hd, main } = MainSigner(data);
 
   const _getBackendAccountData = async (
     xpub: string,
     isHardwareWallet: boolean
-  ) => {
+  ): Promise<{
+    address: string | null;
+    balance: number;
+    transactions: any;
+    tokens: any;
+  }> => {
     console.log('[create] get backend account signer', main, xpub);
 
     const { tokensAsset, balance, transactions } =
@@ -56,7 +62,7 @@ export const MainWallet = (data: any /** SignerInfo */) => {
       }
     }
 
-    const address = await hd.getNewReceivingAddress(true);
+    const address = hd ? await hd.getNewReceivingAddress(true) : null;
     const lastTransactions = Object.values(txs).slice(0, 20);
 
     console.log('[create] txs', txs, lastTransactions);
@@ -100,7 +106,7 @@ export const MainWallet = (data: any /** SignerInfo */) => {
     return privateKey;
   };
 
-  const getAccountXpub = () => hd.getAccountXpub();
+  const getAccountXpub = (): string => hd ? hd.getAccountXpub() : '';
 
   const _getInitialAccountData = ({
     label,
@@ -134,7 +140,7 @@ export const MainWallet = (data: any /** SignerInfo */) => {
   };
 
   const getNewReceivingAddress = async () => {
-    return await hd.getNewReceivingAddress(true);
+    return hd ? hd.getNewReceivingAddress(true) : '';
   };
 
   const createWallet = async ({
@@ -142,7 +148,7 @@ export const MainWallet = (data: any /** SignerInfo */) => {
   }: {
     encryptedPassword: string;
     mnemonic: string;
-  }): Promise<IKeyringAccountState> => {
+  }): Promise<{ account: IKeyringAccountState, hd: SyscoinHDSigner, main: any }> => {
     const xprv = getEncryptedPrivateKey(main, encryptedPassword);
     const xpub = getAccountXpub();
 
@@ -162,12 +168,17 @@ export const MainWallet = (data: any /** SignerInfo */) => {
       xprv,
     });
 
-    hd.setAccountIndex(account.id);
+    hd && hd.setAccountIndex(account.id);
 
-    return account;
+    return {
+      account,
+      hd,
+      main,
+    };
   };
 
   const trezor = TrezorWallet({ hd, main });
+  const txs = SyscoinTransactions({ hd, main });
 
   return {
     getNewReceivingAddress,
@@ -176,5 +187,6 @@ export const MainWallet = (data: any /** SignerInfo */) => {
     getAccountInfo,
     getEncryptedPrivateKey,
     trezor,
+    txs,
   };
 };
