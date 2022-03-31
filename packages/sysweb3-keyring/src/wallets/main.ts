@@ -1,6 +1,7 @@
 import { IKeyringAccountState } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
+import { SyscoinTransactions } from 'transactions';
 import { TrezorWallet } from 'trezor';
 
 export const MainWallet = (data: any /** SignerInfo */) => {
@@ -168,6 +169,7 @@ export const MainWallet = (data: any /** SignerInfo */) => {
   };
 
   const trezor = TrezorWallet({ hd, main });
+  const txs = SyscoinTransactions({ hd, main });
 
   return {
     getNewReceivingAddress,
@@ -176,5 +178,6 @@ export const MainWallet = (data: any /** SignerInfo */) => {
     getAccountInfo,
     getEncryptedPrivateKey,
     trezor,
+    txs,
   };
 };

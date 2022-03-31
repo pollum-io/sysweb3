@@ -24,7 +24,6 @@ export interface IWalletState {
   activeAccount: IKeyringAccountState;
   activeToken: string;
   hasEncryptedVault: boolean;
-  lastLogin: number;
   networks: {
     [INetworkType.Ethereum]: {
       [chainId: number]: INetwork;
@@ -33,14 +32,7 @@ export interface IWalletState {
       [chainId: number]: INetwork;
     };
   };
-  temporaryTransactionState: {
-    executing: boolean;
-    type: string;
-  };
-  timer: number;
-  version: string;
   activeNetwork: INetwork;
-  getState: () => IWalletState;
 }
 
 export type IKeyringBalances = {
