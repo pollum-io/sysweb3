@@ -2,7 +2,7 @@ import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
 // @ts-ignore
 import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { IKeyringAccountState, IWalletState, initialWalletState } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState, IWalletState, initialWalletState, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
 import { encryptor } from '@pollum-io/sysweb3-utils';
 import { generateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
@@ -108,10 +108,10 @@ export const KeyringManager = () => {
     encryptedPassword,
   }: {
     encryptedPassword: string;
-  }): Promise<IKeyringAccountState> => {
+  }): Promise<{ account: IKeyringAccountState, hd: SyscoinHDSigner, main: any }> => {
     _clearWallet();
 
-    const wallet: IKeyringAccountState = await createWallet({
+    const vault: { account: IKeyringAccountState, hd: SyscoinHDSigner, main: any } = await createWallet({
       encryptedPassword,
       mnemonic: _mnemonic,
     });
@@ -120,7 +120,7 @@ export const KeyringManager = () => {
 
     await _fullUpdate();
 
-    return wallet;
+    return vault;
   };
 
   const setWalletPassword = (pwd: string) => {
