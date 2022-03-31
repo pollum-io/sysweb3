@@ -7,6 +7,8 @@ import {
   ITokenUpdate,
   ITxid,
   SyscoinHDSigner,
+  feeUtils,
+  txUtils,
 } from '@pollum-io/sysweb3-utils';
 import syscointx from 'syscointx-js';
 
