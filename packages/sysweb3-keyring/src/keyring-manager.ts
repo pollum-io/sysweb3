@@ -91,9 +91,7 @@ export const KeyringManager = () => {
   };
 
   const _updateMemStoreWallet = () => {
-    const walletState = wallet.getState();
-
-    return _memStore.updateState({ wallet: walletState });
+    return _memStore.updateState({ wallet });
   };
 
   const _notifyUpdate = () => {
