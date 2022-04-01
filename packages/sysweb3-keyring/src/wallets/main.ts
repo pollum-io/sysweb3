@@ -1,10 +1,14 @@
+import { networks, setActiveNetwork } from '@pollum-io/sysweb3-network';
 import { IKeyringAccountState, INetwork, IWalletState, MainSigner, SyscoinHDSigner, SyscoinMainSigner } from '@pollum-io/sysweb3-utils';
+import { Web3Accounts } from 'accounts';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 import { SyscoinTransactions } from '../transactions';
 import { TrezorWallet } from '../trezor';
 
 export const MainWallet = () => {
+  const web3Wallet = Web3Accounts();
+
   let hd: SyscoinHDSigner = {} as SyscoinHDSigner;
   let main: SyscoinMainSigner = {} as SyscoinMainSigner;
 
@@ -187,33 +191,49 @@ export const MainWallet = () => {
     };
   };
 
+  const _getAccountForNetwork = async ({ isSyscoinChain, encryptedPassword, mnemonic, network }: { isSyscoinChain: boolean, encryptedPassword: string, mnemonic: string, network: INetwork }) => {
+    if (isSyscoinChain) {
+      const { hd: _hd, main: _main } = MainSigner({
+        walletMnemonic: mnemonic,
+        isTestnet: network.isTestnet,
+        network: network.url,
+        blockbookURL: network.url
+      });
+
+      hd = _hd;
+      main = _main;
+
+      const xprv = getEncryptedPrivateKey(hd, encryptedPassword);
+      const xpub = getAccountXpub();
+
+      console.log('[switch network] getting signer', main, xpub);
+
+      const updatedAccountInfo = await getAccountInfo(false, xpub);
+
+      console.log('[switch network] getting created account', updatedAccountInfo, updatedAccountInfo.address);
+
+      const account = _getInitialAccountData({
+        signer: main,
+        createdAccount: updatedAccountInfo,
+        xprv,
+      });
+
+      hd && hd.setAccountIndex(account.id);
+
+      return account;
+    }
+
+    return web3Wallet.importAccount(mnemonic, encryptedPassword);
+  }
+
   const setSignerNetwork = async ({ encryptedPassword, mnemonic, network }: { encryptedPassword: string, mnemonic: string, network: INetwork }) => {
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const isSyscoinChain = Boolean(networks.syscoin[network.chainId]);
 
-    hd = _hd;
-    main = _main;
+    if (!isSyscoinChain) {
+      setActiveNetwork('ethereum', network.chainId);
+    }
 
-    const xprv = getEncryptedPrivateKey(hd, encryptedPassword);
-    const xpub = getAccountXpub();
-
-    console.log('[switch network] getting signer', main, xpub);
-
-    const updatedAccountInfo = await getAccountInfo(false, xpub);
-
-    console.log('[switch network] getting created account', updatedAccountInfo, updatedAccountInfo.address);
-
-    const account = _getInitialAccountData({
-      signer: main,
-      createdAccount: updatedAccountInfo,
-      xprv,
-    });
-
-    hd && hd.setAccountIndex(account.id);
+    const account = await _getAccountForNetwork({ isSyscoinChain, encryptedPassword, mnemonic, network });
 
     return {
       account,

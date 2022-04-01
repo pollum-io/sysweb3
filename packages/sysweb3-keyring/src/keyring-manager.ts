@@ -8,6 +8,11 @@ import CryptoJS from 'crypto-js';
 import { fromZPrv } from 'bip84';
 import { MainWallet } from './wallets/main';
 
+export interface VaultResponse {
+  account: IKeyringAccountState;
+  hd: SyscoinHDSigner;
+};
+
 export const KeyringManager = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
@@ -197,14 +202,16 @@ export const KeyringManager = () => {
     account.signMessage(account, msgParams.data, opts);
   };
 
-  const setActiveNetworkForSigner = async ({ encryptedPassword, network }: { encryptedPassword: string, network: INetwork }) => {
-    const vault = await setSignerNetwork({
+  const _getVaultForActiveNetwork = async ({ network, encryptedPassword }: { encryptedPassword: string, network: INetwork }) => {
+    return await setSignerNetwork({
       encryptedPassword,
       mnemonic: _mnemonic,
       network,
     });
+  }
 
-    console.log('[keyring] setting network wallet:', vault);
+  const setActiveNetworkForSigner = async ({ encryptedPassword, network }: { encryptedPassword: string, network: INetwork }) => {
+    const vault = _getVaultForActiveNetwork({ network, encryptedPassword });
 
     _fullUpdate();
 
