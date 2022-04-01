@@ -1,7 +1,6 @@
 // @ts-ignore
 import { web3Provider } from "@pollum-io/sysweb3-network";
 import axios from "axios";
-import crypto from "crypto-js";
 import { ethers } from "ethers";
 import { request, gql } from "graphql-request";
 import _ from "lodash";
@@ -140,17 +139,13 @@ export const Web3Accounts = () => {
     }
   };
 
-  const importAccount = (mnemonic: string, password: string): Account => {
+  const importAccount = (mnemonic: string): Account => {
     try {
       if (web3Provider.utils.isHexStrict(mnemonic)) {
         return web3Provider.eth.accounts.privateKeyToAccount(mnemonic);
       }
 
-      const decryptedMnemonic = crypto.AES.decrypt(mnemonic, password).toString(
-        crypto.enc.Utf8
-      );
-
-      const { privateKey } = ethers.Wallet.fromMnemonic(decryptedMnemonic);
+      const { privateKey } = ethers.Wallet.fromMnemonic(mnemonic);
 
       const account = web3Provider.eth.accounts.privateKeyToAccount(privateKey);
 

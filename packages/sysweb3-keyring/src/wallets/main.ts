@@ -1,6 +1,6 @@
 import { networks, setActiveNetwork } from '@pollum-io/sysweb3-network';
 import { IKeyringAccountState, INetwork, IWalletState, MainSigner, SyscoinHDSigner, SyscoinMainSigner } from '@pollum-io/sysweb3-utils';
-import { Web3Accounts } from 'accounts';
+import { Web3Accounts } from '../accounts';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 import { SyscoinTransactions } from '../transactions';
@@ -223,7 +223,7 @@ export const MainWallet = () => {
       return account;
     }
 
-    return web3Wallet.importAccount(mnemonic, encryptedPassword);
+    return web3Wallet.importAccount(mnemonic);
   }
 
   const setSignerNetwork = async ({ encryptedPassword, mnemonic, network }: { encryptedPassword: string, mnemonic: string, network: INetwork }) => {
