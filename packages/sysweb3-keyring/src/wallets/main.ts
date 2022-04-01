@@ -1,4 +1,4 @@
-import { IKeyringAccountState, IWalletState, MainSigner, SyscoinHDSigner, SyscoinMainSigner } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState, INetwork, IWalletState, MainSigner, SyscoinHDSigner, SyscoinMainSigner } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 import { SyscoinTransactions } from '../transactions';
@@ -187,6 +187,40 @@ export const MainWallet = () => {
     };
   };
 
+  const setSignerNetwork = async ({ encryptedPassword, mnemonic, network }: { encryptedPassword: string, mnemonic: string, network: INetwork }) => {
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
+    hd = _hd;
+    main = _main;
+
+    const xprv = getEncryptedPrivateKey(hd, encryptedPassword);
+    const xpub = getAccountXpub();
+
+    console.log('[switch network] getting signer', main, xpub);
+
+    const updatedAccountInfo = await getAccountInfo(false, xpub);
+
+    console.log('[switch network] getting created account', updatedAccountInfo, updatedAccountInfo.address);
+
+    const account = _getInitialAccountData({
+      signer: main,
+      createdAccount: updatedAccountInfo,
+      xprv,
+    });
+
+    hd && hd.setAccountIndex(account.id);
+
+    return {
+      account,
+      hd,
+    }
+  }
+
   const trezor = TrezorWallet({ hd, main });
   const txs = SyscoinTransactions({ hd, main });
 
@@ -198,5 +232,6 @@ export const MainWallet = () => {
     getEncryptedPrivateKey,
     trezor,
     txs,
+    setSignerNetwork,
   };
 };
