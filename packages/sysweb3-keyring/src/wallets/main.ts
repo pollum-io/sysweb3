@@ -1,11 +1,12 @@
-import { IKeyringAccountState, MainSigner, SignerInfo, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState, IWalletState, MainSigner, SignerInfo, SyscoinHDSigner, SyscoinMainSigner } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 import { SyscoinTransactions } from '../transactions';
 import { TrezorWallet } from '../trezor';
 
-export const MainWallet = (data: SignerInfo) => {
-  const { hd, main } = MainSigner(data);
+export const MainWallet = () => {
+  let hd: SyscoinHDSigner = {} as SyscoinHDSigner;
+  let main: SyscoinMainSigner = {} as SyscoinMainSigner;
 
   const _getBackendAccountData = async (
     xpub: string,
@@ -95,10 +96,10 @@ export const MainWallet = (data: SignerInfo) => {
     return backendAccountData;
   };
 
-  const getEncryptedPrivateKey = (signer: any, encryptedPassword: string) => {
+  const getEncryptedPrivateKey = ({ Signer: { accountIndex, accounts } }: SyscoinHDSigner, encryptedPassword: string) => {
     const privateKey = CryptoJS.AES.encrypt(
-      signer.Signer.Signer.accounts[
-        signer.Signer.Signer.accountIndex
+      accounts[
+        accountIndex
       ].getAccountPrivateKey(),
       encryptedPassword
     ).toString();
@@ -143,13 +144,22 @@ export const MainWallet = (data: SignerInfo) => {
     return hd ? hd.getNewReceivingAddress(true) : '';
   };
 
-  const createWallet = async ({
-    encryptedPassword,
-  }: {
+  const createWallet = async ({ encryptedPassword, mnemonic, wallet }: {
     encryptedPassword: string;
     mnemonic: string;
+    wallet: IWalletState;
   }): Promise<{ account: IKeyringAccountState, hd: SyscoinHDSigner, main: any }> => {
-    const xprv = getEncryptedPrivateKey(main, encryptedPassword);
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: wallet.activeNetwork.isTestnet,
+      network: wallet.activeNetwork.url,
+      blockbookURL: wallet.activeNetwork.url
+    });
+
+    hd = _hd;
+    main = _main;
+
+    const xprv = getEncryptedPrivateKey(hd, encryptedPassword);
     const xpub = getAccountXpub();
 
     console.log('[create] getting signer', main, xpub);

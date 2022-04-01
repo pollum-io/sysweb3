@@ -2,6 +2,7 @@ import { BitcoinNetwork } from '.';
 import sys from 'syscoinjs-lib';
 
 import { BIP32Interface } from 'bip32';
+import { } from 'bip84';
 import { Psbt } from 'bitcoinjs-lib';
 
 export const MainSigner = ({
@@ -71,6 +72,73 @@ export const MainSigner = ({
     main,
   }
 }
+export type SyscoinHdAccount = {
+  pubTypes: {
+    mainnet: {
+      zprv: string;
+      zpub: string;
+    };
+    testnet: {
+      vprv: string;
+      vpub: string;
+    }
+  };
+  networks: {
+    mainnet: {
+      messagePrefix: string;
+      bech32: string;
+      bip32: {
+        public: number;
+        private: number
+      };
+      pubKeyHash: number;
+      scriptHash: number;
+      wif: number;
+    };
+    testnet: {
+      messagePrefix: string;
+      bech32: string;
+      bip32: {
+        public: number;
+        private: number
+      };
+      pubKeyHash: number;
+      scriptHash: number;
+      wif: number;
+    }
+  };
+  network: {
+    messagePrefix: string;
+    bech32: string;
+    bip32: {
+      public: number;
+      private: number
+    };
+    pubKeyHash: number;
+    scriptHash: number;
+    wif: number;
+  };
+  isTestnet: boolean;
+  zprv: string;
+}
+
+export interface SyscoinFromZprvAccount extends SyscoinHdAccount {
+  toNode: (zprv: string) => string;
+  getAccountPrivateKey: () => string;
+  getAccountPublicKey: () => string;
+  getPrivateKey: () => string;
+  getPublicKey: () => string;
+  getAddress: () => string;
+  getKeypair: () => string;
+}
+
+export interface SyscoinFromZpubAccount extends SyscoinHdAccount {
+  toNode: (zprv: string) => string;
+  getAccountPublicKey: () => string;
+  getPublicKey: () => string;
+  getAddress: () => string;
+  getPayment: () => string;
+}
 
 export interface Bip84FromMnemonic {
   getRootPrivateKey: () => string;
@@ -128,57 +196,7 @@ export interface SyscoinHDSigner {
         vpub: string;
       }
     };
-    accounts: [
-      {
-        pubTypes: {
-          mainnet: {
-            zprv: string;
-            zpub: string;
-          };
-          testnet: {
-            vprv: string;
-            vpub: string;
-          }
-        };
-        networks: {
-          mainnet: {
-            messagePrefix: string;
-            bech32: string;
-            bip32: {
-              public: number;
-              private: number
-            };
-            pubKeyHash: number;
-            scriptHash: number;
-            wif: number;
-          };
-          testnet: {
-            messagePrefix: string;
-            bech32: string;
-            bip32: {
-              public: number;
-              private: number
-            };
-            pubKeyHash: number;
-            scriptHash: number;
-            wif: number;
-          }
-        };
-        network: {
-          messagePrefix: string;
-          bech32: string;
-          bip32: {
-            public: number;
-            private: number
-          };
-          pubKeyHash: number;
-          scriptHash: number;
-          wif: number;
-        };
-        isTestnet: boolean;
-        zprv: string;
-      }
-    ];
+    accounts: SyscoinFromZpubAccount[] | SyscoinFromZprvAccount[];
     changeIndex: number;
     receivingIndex: number;
     accountIndex: number;
