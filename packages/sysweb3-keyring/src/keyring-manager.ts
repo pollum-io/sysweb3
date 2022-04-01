@@ -201,7 +201,6 @@ export const KeyringManager = () => {
     const vault = await setSignerNetwork({
       encryptedPassword,
       mnemonic: _mnemonic,
-      wallet,
       network,
     });
 
