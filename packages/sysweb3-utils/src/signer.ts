@@ -196,7 +196,7 @@ export interface SyscoinHDSigner {
         vpub: string;
       }
     };
-    accounts: SyscoinFromZpubAccount[] | SyscoinFromZprvAccount[];
+    accounts: SyscoinFromZprvAccount[];
     changeIndex: number;
     receivingIndex: number;
     accountIndex: number;

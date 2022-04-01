@@ -1,4 +1,4 @@
-import { IKeyringAccountState, IWalletState, MainSigner, SignerInfo, SyscoinHDSigner, SyscoinMainSigner } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState, IWalletState, MainSigner, SyscoinHDSigner, SyscoinMainSigner } from '@pollum-io/sysweb3-utils';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 import { SyscoinTransactions } from '../transactions';

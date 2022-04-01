@@ -15,12 +15,7 @@ export const KeyringManager = () => {
 
   let wallet: IWalletState = initialWalletState;
 
-  const { createWallet } = MainWallet({
-    walletMnemonic: _mnemonic,
-    isTestnet: wallet.activeNetwork.isTestnet,
-    network: wallet.activeNetwork.url,
-    blockbookURL: wallet.activeNetwork.url
-  });
+  const { createWallet } = MainWallet();
 
   const generatePhrase = () => {
     if (!_mnemonic) _mnemonic = generateMnemonic();
@@ -113,6 +108,7 @@ export const KeyringManager = () => {
     const vault: { account: IKeyringAccountState, hd: SyscoinHDSigner, main: any } = await createWallet({
       encryptedPassword,
       mnemonic: _mnemonic,
+      wallet,
     });
 
     console.log('[keyring file test] creating wallet:', wallet);
