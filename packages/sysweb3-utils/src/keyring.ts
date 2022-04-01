@@ -1,3 +1,4 @@
+import { EncryptedKeystoreV3Json, Sign, SignedTransaction, TransactionConfig } from 'web3-core';
 import {
   INetwork,
   INetworkType,
@@ -40,6 +41,17 @@ export type IKeyringBalances = {
   [INetworkType.Ethereum]: number;
 };
 
+export interface Web3Account extends IKeyringAccountState {
+  address: string;
+  privateKey: string;
+  signTransaction: (
+    transactionConfig: TransactionConfig,
+    callback?: (signTransaction: SignedTransaction) => void
+  ) => Promise<SignedTransaction>;
+  sign: (data: string) => Sign;
+  encrypt: (password: string) => EncryptedKeystoreV3Json;
+}
+
 export interface IKeyringAccountState {
   address: string;
   tokens: {
@@ -55,8 +67,4 @@ export interface IKeyringAccountState {
   xprv: string;
   balances: IKeyringBalances;
   xpub: string;
-  saveTokenInfo(address: string): void;
-  signTransaction(account: IKeyringAccountState, tx: any, options: any): void;
-  signMessage(account: IKeyringAccountState, msg: any, options: any): void;
-  getPrivateKey(signer: any): string;
 }

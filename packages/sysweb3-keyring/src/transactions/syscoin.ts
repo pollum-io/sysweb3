@@ -9,6 +9,7 @@ import {
   SyscoinHDSigner,
   feeUtils,
   txUtils,
+  IKeyringAccountState,
 } from '@pollum-io/sysweb3-utils';
 import syscointx from 'syscointx-js';
 
@@ -497,7 +498,7 @@ export const SyscoinTransactions = ({ hd, main }: { hd: SyscoinHDSigner, main: a
     data: { psbt: string; assets: string },
     isSendOnly: boolean,
     isTrezor?: boolean,
-  ): Promise<JSON> => {
+  ): Promise<any> => {
     if (!isBase64(data.psbt) || typeof data.assets !== 'string') {
       throw new Error('Bad Request: PSBT must be in Base64 format and assets must be a JSON string. Please check the documentation to see the correct formats.')
     }
@@ -734,6 +735,8 @@ export const SyscoinTransactions = ({ hd, main }: { hd: SyscoinHDSigner, main: a
     }
   };
 
+  const signMessage = (account: IKeyringAccountState, tx: any, options: any) => console.log(account, tx, options);
+
   return {
     confirmTokenCreation,
     confirmTokenMint,
@@ -742,5 +745,6 @@ export const SyscoinTransactions = ({ hd, main }: { hd: SyscoinHDSigner, main: a
     confirmUpdateToken,
     sendTransaction,
     confirmMintNFT,
+    signMessage,
   };
 };

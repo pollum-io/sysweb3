@@ -135,10 +135,6 @@ export const MainWallet = () => {
       address,
       tokens,
       isTrezorWallet: false,
-      saveTokenInfo: () => undefined,
-      signTransaction: () => undefined,
-      signMessage: () => undefined,
-      getPrivateKey: () => xprv,
     };
 
     return account;
@@ -241,6 +237,8 @@ export const MainWallet = () => {
     }
   }
 
+  const saveTokenInfo = (address: string) => console.log('token address', address);
+
   const trezor = TrezorWallet({ hd, main });
   const txs = SyscoinTransactions({ hd, main });
 
@@ -253,5 +251,6 @@ export const MainWallet = () => {
     trezor,
     txs,
     setSignerNetwork,
+    saveTokenInfo,
   };
 };

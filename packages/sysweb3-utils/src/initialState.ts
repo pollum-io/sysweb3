@@ -14,10 +14,6 @@ export const initialActiveAccountState = {
   trezorId: -1,
   xprv: '',
   xpub: '',
-  saveTokenInfo() { },
-  signTransaction() { },
-  signMessage() { },
-  getPrivateKey: () => initialActiveAccountState.xprv,
 };
 
 export const initialNetworksState = {

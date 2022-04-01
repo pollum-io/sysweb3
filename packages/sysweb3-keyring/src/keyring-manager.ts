@@ -21,7 +21,7 @@ export const KeyringManager = () => {
 
   let wallet: IWalletState = initialWalletState;
 
-  const { createWallet, setSignerNetwork } = MainWallet();
+  const { createWallet, setSignerNetwork, saveTokenInfo, txs: { signTransaction, signMessage: _signMessage } } = MainWallet();
 
   const generatePhrase = () => {
     if (!_mnemonic) _mnemonic = generateMnemonic();
@@ -43,7 +43,7 @@ export const KeyringManager = () => {
 
   const getAccountById = (id: number): IKeyringAccountState =>
     Object.values(wallet.accounts).find(
-      (account: IKeyringAccountState) => account.id === id
+      (account) => account.id === id
     ) || {} as IKeyringAccountState;
 
   const getPrivateKeyByAccountId = (id: number): string | null => {
@@ -135,7 +135,7 @@ export const KeyringManager = () => {
   const addTokenToAccount = (accountId: number, address: string) => {
     const account: IKeyringAccountState = getAccountById(accountId);
 
-    account.saveTokenInfo(address);
+    saveTokenInfo(address);
 
     _fullUpdate();
 
@@ -187,19 +187,13 @@ export const KeyringManager = () => {
 
   const removeAccount = () => { };
 
-  const signTransaction = (tx: any, accountId: number, options = {}): void => {
-    const account = getAccountById(accountId);
-
-    account.signTransaction(account, tx, options);
-  };
-
   const signMessage = (
     msgParams: { accountId: number; data: string },
     opts?: any
   ): void => {
     const account = getAccountById(msgParams.accountId);
 
-    account.signMessage(account, msgParams.data, opts);
+    _signMessage(account, msgParams.data, opts);
   };
 
   const _getVaultForActiveNetwork = async ({ network, encryptedPassword }: { encryptedPassword: string, network: INetwork }) => {
