@@ -1,6 +1,6 @@
-import { IEthereumAddress, createContractUsingAbi } from '.';
-import axios from 'axios';
-import abi from './abi/erc721.json';
+import { IEthereumAddress, createContractUsingAbi } from ".";
+import axios from "axios";
+import abi from "./abi/erc721.json";
 
 export const getNftImage = async (contract: string, tokenId: number) => {
   try {
@@ -9,7 +9,7 @@ export const getNftImage = async (contract: string, tokenId: number) => {
       .call();
 
     if (nft) {
-      const ipfsUrl = String(nft).replace('ipfs://', 'https://ipfs.io/ipfs/');
+      const ipfsUrl = String(nft).replace("ipfs://", "https://ipfs.io/ipfs/");
 
       const url = await axios.get(ipfsUrl);
 
@@ -17,13 +17,13 @@ export const getNftImage = async (contract: string, tokenId: number) => {
        * 'https://gateway.pinata.cloud/ipfs/Qmc4DqK9xeoSvtVmTcS6YG3DiWHyfiwQsnwQfzcqAvtmHj'
        */
 
-      return String(url.data.image).replace('ipfs://', 'https://ipfs.io/ipfs/');
+      return String(url.data.image).replace("ipfs://", "https://ipfs.io/ipfs/");
     }
 
-    throw new Error('NFTinfo not found.');
+    throw new Error("NFTinfo not found.");
   } catch (error) {
     console.log(
-      'Verify current network. Set the same network of NFT contract.'
+      "Verify current network. Set the same network of NFT contract."
     );
     throw error;
   }
@@ -50,7 +50,7 @@ export const getTokenIconBySymbol = async (symbol: string) => {
     }
   } catch (error) {
     // todo: handle
-    throw new Error('Token icon not found');
+    throw new Error("Token icon not found");
   }
 };
 
@@ -61,7 +61,7 @@ export const isNFT = (guid: number) => {
 };
 
 export const getHost = (url: string) => {
-  if (typeof url === 'string' && url !== '') {
+  if (typeof url === "string" && url !== "") {
     return new URL(url).host;
   }
 
@@ -88,6 +88,18 @@ export const getFiatValueByToken = async (token: string, fiat: string) => {
   } catch (error) {
     throw new Error(`Unable to find a value of ${token} as ${fiat}`);
   }
+};
+
+/**
+ * Get token symbol by chain
+ * @param chain string example `ethereum`
+ */
+export const getSymbolByChain = async (chain: string) => {
+  const { data } = await axios.get(
+    `https://api.coingecko.com/api/v3/coins/${chain}`
+  );
+
+  return data.symbol.toString().toUpperCase();
 };
 
 export type IEthereumTokensResponse = {
@@ -132,9 +144,9 @@ export type IErc20Token = {
 };
 
 export enum IKeyringTokenType {
-  SYS = 'SYS',
-  ETH = 'ETH',
-  ERC20 = 'ERC20',
+  SYS = "SYS",
+  ETH = "ETH",
+  ERC20 = "ERC20",
 }
 
 export type ISyscoinToken = {
