@@ -42,8 +42,6 @@ export type IKeyringBalances = {
 };
 
 export interface Web3Account extends IKeyringAccountState {
-  address: string;
-  privateKey: string;
   signTransaction: (
     transactionConfig: TransactionConfig,
     callback?: (signTransaction: SignedTransaction) => void

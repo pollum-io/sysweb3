@@ -219,7 +219,23 @@ export const MainWallet = () => {
       return account;
     }
 
-    return web3Wallet.importAccount(mnemonic);
+    const web3Account = web3Wallet.importAccount(mnemonic);
+
+    return {
+      ...web3Account,
+      tokens: {},
+      id: hd.Signer.accountIndex,
+      isTrezorWallet: false,
+      label: `Account ${hd.Signer.accountIndex}`,
+      transactions: {},
+      trezorId: -1,
+      xprv: '',
+      balances: {
+        ethereum: web3Wallet.getBalance(web3Account.address),
+        syscoin: 0,
+      },
+      xpub: '',
+    };
   }
 
   const setSignerNetwork = async ({ encryptedPassword, mnemonic, network }: { encryptedPassword: string, mnemonic: string, network: INetwork }) => {
