@@ -5,8 +5,9 @@ import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 import { SyscoinTransactions } from '../transactions';
 import { TrezorWallet } from '../trezor';
+import { fromZPrv } from 'bip84';
 
-export const MainWallet = () => {
+export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPassword: (pwd: string) => boolean } }) => {
   const web3Wallet = Web3Accounts();
 
   let hd: SyscoinHDSigner = {} as SyscoinHDSigner;
@@ -100,12 +101,12 @@ export const MainWallet = () => {
     return backendAccountData;
   };
 
-  const getEncryptedPrivateKey = ({ Signer: { accountIndex, accounts } }: SyscoinHDSigner, encryptedPassword: string) => {
+  const getEncryptedPrivateKey = ({ Signer: { accountIndex, accounts } }: SyscoinHDSigner, password: string) => {
     const privateKey = CryptoJS.AES.encrypt(
       accounts[
         accountIndex
       ].getAccountPrivateKey(),
-      encryptedPassword
+      password
     ).toString();
 
     return privateKey;
@@ -144,11 +145,11 @@ export const MainWallet = () => {
     return hd ? hd.getNewReceivingAddress(true) : '';
   };
 
-  const createWallet = async ({ encryptedPassword, mnemonic, wallet }: {
-    encryptedPassword: string;
+  const createWallet = async ({ password, mnemonic, wallet }: {
+    password: string;
     mnemonic: string;
     wallet: IWalletState;
-  }): Promise<{ account: IKeyringAccountState, hd: SyscoinHDSigner, main: any }> => {
+  }): Promise<IKeyringAccountState> => {
     const { hd: _hd, main: _main } = MainSigner({
       walletMnemonic: mnemonic,
       isTestnet: wallet.activeNetwork.isTestnet,
@@ -159,7 +160,7 @@ export const MainWallet = () => {
     hd = _hd;
     main = _main;
 
-    const xprv = getEncryptedPrivateKey(hd, encryptedPassword);
+    const xprv = getEncryptedPrivateKey(hd, password);
     const xpub = getAccountXpub();
 
     console.log('[create] getting signer', main, xpub);
@@ -180,14 +181,10 @@ export const MainWallet = () => {
 
     hd && hd.setAccountIndex(account.id);
 
-    return {
-      account,
-      hd,
-      main,
-    };
+    return account;
   };
 
-  const _getAccountForNetwork = async ({ isSyscoinChain, encryptedPassword, mnemonic, network }: { isSyscoinChain: boolean, encryptedPassword: string, mnemonic: string, network: INetwork }) => {
+  const _getAccountForNetwork = async ({ isSyscoinChain, password, mnemonic, network }: { isSyscoinChain: boolean, password: string, mnemonic: string, network: INetwork }) => {
     if (isSyscoinChain) {
       const { hd: _hd, main: _main } = MainSigner({
         walletMnemonic: mnemonic,
@@ -199,7 +196,7 @@ export const MainWallet = () => {
       hd = _hd;
       main = _main;
 
-      const xprv = getEncryptedPrivateKey(hd, encryptedPassword);
+      const xprv = getEncryptedPrivateKey(hd, password);
       const xpub = getAccountXpub();
 
       console.log('[switch network] getting signer', main, xpub);
@@ -238,14 +235,14 @@ export const MainWallet = () => {
     };
   }
 
-  const setSignerNetwork = async ({ encryptedPassword, mnemonic, network }: { encryptedPassword: string, mnemonic: string, network: INetwork }) => {
+  const setSignerNetwork = async ({ password, mnemonic, network }: { password: string, mnemonic: string, network: INetwork }) => {
     const isSyscoinChain = Boolean(networks.syscoin[network.chainId]);
 
     if (!isSyscoinChain) {
       setActiveNetwork('ethereum', network.chainId);
     }
 
-    const account = await _getAccountForNetwork({ isSyscoinChain, encryptedPassword, mnemonic, network });
+    const account = await _getAccountForNetwork({ isSyscoinChain, password, mnemonic, network });
 
     return {
       account,
@@ -254,6 +251,28 @@ export const MainWallet = () => {
   }
 
   const saveTokenInfo = (address: string) => console.log('token address', address);
+
+  const getSeed = (pwd: string) => (checkPassword(pwd) ? hd.mnemonic : null);
+
+  const hasHdMnemonic = () => Boolean(hd.mnemonic);
+
+  const forgetSigners = () => {
+    hd = {} as SyscoinHDSigner;
+    main = {} as SyscoinMainSigner;
+  }
+
+  const setAccountIndexForDerivedAccount = (accountId: number) => {
+    const childAccount = hd.deriveAccount(accountId);
+
+    const derivedAccount = new fromZPrv(
+      childAccount,
+      hd.Signer.pubTypes,
+      hd.Signer.networks
+    );
+
+    hd.Signer.accounts.push(derivedAccount);
+    hd.setAccountIndex(accountId);
+  }
 
   const trezor = TrezorWallet({ hd, main });
   const txs = SyscoinTransactions({ hd, main });
@@ -268,5 +287,9 @@ export const MainWallet = () => {
     txs,
     setSignerNetwork,
     saveTokenInfo,
+    getSeed,
+    hasHdMnemonic,
+    forgetSigners,
+    setAccountIndexForDerivedAccount
   };
 };

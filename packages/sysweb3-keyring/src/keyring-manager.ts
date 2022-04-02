@@ -1,16 +1,10 @@
 import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { IKeyringAccountState, IWalletState, initialWalletState, SyscoinHDSigner, INetwork } from '@pollum-io/sysweb3-utils';
-import { generateMnemonic } from 'bip39';
+import { IKeyringAccountState, IWalletState, initialWalletState, INetwork } from '@pollum-io/sysweb3-utils';
+import { generateMnemonic, validateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
-import { fromZPrv } from 'bip84';
 import { MainWallet } from './wallets/main';
-
-export interface VaultResponse {
-  account: IKeyringAccountState;
-  hd: SyscoinHDSigner;
-};
 
 export const KeyringManager = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
@@ -20,22 +14,26 @@ export const KeyringManager = () => {
 
   let wallet: IWalletState = initialWalletState;
 
-  const { createWallet, setSignerNetwork, saveTokenInfo, txs: { signTransaction, signMessage: _signMessage } } = MainWallet();
+  const checkPassword = (pwd: string) => _password === pwd;
 
-  const generatePhrase = () => {
+  const { createWallet, setSignerNetwork, saveTokenInfo, txs: { signTransaction, signMessage: _signMessage }, getSeed, hasHdMnemonic, forgetSigners, setAccountIndexForDerivedAccount } = MainWallet({ actions: { checkPassword } });
+
+  const createSeed = () => {
     if (!_mnemonic) _mnemonic = generateMnemonic();
 
     return _mnemonic;
   };
 
+  const isUnlocked = () => Boolean((_mnemonic || hasHdMnemonic()) && _password);
+
   const getEncryptedMnemonic = () => {
     const encryptedMnemonic = CryptoJS.AES.encrypt(_mnemonic, _password);
 
-    return encryptedMnemonic;
+    return String(encryptedMnemonic);
   };
 
   const getDecryptedMnemonic = () => {
-    const decryptedMnemonic = CryptoJS.AES.decrypt(getEncryptedMnemonic(), _password);
+    const decryptedMnemonic = CryptoJS.AES.decrypt(getEncryptedMnemonic(), _password).toString();
 
     return decryptedMnemonic;
   };
@@ -107,15 +105,11 @@ export const KeyringManager = () => {
     _notifyUpdate();
   };
 
-  const createVault = async ({
-    encryptedPassword,
-  }: {
-    encryptedPassword: string;
-  }): Promise<{ account: IKeyringAccountState, hd: SyscoinHDSigner, main: any }> => {
+  const createVault = async (): Promise<IKeyringAccountState> => {
     _clearWallet();
 
-    const vault: { account: IKeyringAccountState, hd: SyscoinHDSigner, main: any } = await createWallet({
-      encryptedPassword,
+    const vault = await createWallet({
+      password: _password,
       mnemonic: _mnemonic,
       wallet,
     });
@@ -144,9 +138,12 @@ export const KeyringManager = () => {
   const logout = () => {
     const eventEmitter = new SafeEventEmitter();
 
-    _password = '';
+    _clearTemporaryLocalKeys();
+
     _memStore.updateState({ isUnlocked: false });
+
     eventEmitter.emit('lock');
+
     _notifyUpdate();
   };
 
@@ -158,10 +155,14 @@ export const KeyringManager = () => {
   };
 
   const login = async (password: string) => {
+    if (!checkPassword(password)) return new Error('Invalid password');
+
     wallet = await _unlockWallet(password);
 
     _updateUnlocked();
     _notifyUpdate();
+
+    return wallet;
   };
 
   const _unlockWallet = async (password: string): Promise<IWalletState> => {
@@ -195,39 +196,48 @@ export const KeyringManager = () => {
     _signMessage(account, msgParams.data, opts);
   };
 
-  const _getVaultForActiveNetwork = async ({ network, encryptedPassword }: { encryptedPassword: string, network: INetwork }) => {
+  const _getVaultForActiveNetwork = async ({ network, password }: { password: string, network: INetwork }) => {
     return await setSignerNetwork({
-      encryptedPassword,
+      password,
       mnemonic: _mnemonic,
       network,
     });
   }
 
-  const setActiveNetworkForSigner = async ({ encryptedPassword, network }: { encryptedPassword: string, network: INetwork }) => {
-    const vault = _getVaultForActiveNetwork({ network, encryptedPassword });
+  const setActiveNetworkForSigner = async ({ network }: { network: INetwork }) => {
+    const vault = _getVaultForActiveNetwork({ network, password: _password });
 
     _fullUpdate();
 
     return vault;
   }
 
-  const setAccountIndexForDerivedAccount = (hd: SyscoinHDSigner, accountId: number) => {
-    const childAccount = hd.deriveAccount(accountId);
-
-    const derivedAccount = new fromZPrv(
-      childAccount,
-      hd.Signer.pubTypes,
-      hd.Signer.networks
-    );
-
-    hd.Signer.accounts.push(derivedAccount);
-    hd.setAccountIndex(accountId);
+  const _clearTemporaryLocalKeys = () => {
+    _mnemonic = '';
+    _password = '';
   }
+
+  const forgetWallet = () => {
+    _clearTemporaryLocalKeys();
+
+    forgetSigners();
+  }
+
+  const getEncryptedXprv = () => CryptoJS.AES.encrypt(wallet.activeAccount.xprv, _password).toString();
+
+  const validateSeed = (seedphrase: string) => {
+    if (validateMnemonic(seedphrase)) {
+      _mnemonic = seedphrase;
+
+      return true;
+    }
+
+    return false;
+  };
 
   return {
     createVault,
     setWalletPassword,
-    encryptedPassword: CryptoJS.SHA3(_password, getEncryptedMnemonic()),
     address: null,
     addTokenToAccount,
     getState,
@@ -240,10 +250,16 @@ export const KeyringManager = () => {
     removeAccount,
     signMessage,
     signTransaction,
-    generatePhrase,
+    createSeed,
     getEncryptedMnemonic,
     getDecryptedMnemonic,
     setAccountIndexForDerivedAccount,
     setActiveNetworkForSigner,
+    checkPassword,
+    getSeed,
+    isUnlocked,
+    forgetWallet,
+    getEncryptedXprv,
+    validateSeed
   };
 };
