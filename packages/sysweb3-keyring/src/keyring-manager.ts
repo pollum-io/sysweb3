@@ -16,7 +16,7 @@ export const KeyringManager = () => {
 
   const checkPassword = (pwd: string) => _password === pwd;
 
-  const { createWallet, setSignerNetwork, saveTokenInfo, txs: { signTransaction, signMessage: _signMessage }, getSeed, hasHdMnemonic, forgetSigners, setAccountIndexForDerivedAccount } = MainWallet({ actions: { checkPassword } });
+  const { getEncryptedPrivateKeyFromHd, createWallet, setSignerNetwork, saveTokenInfo, txs: { signTransaction, signMessage: _signMessage }, getSeed, hasHdMnemonic, forgetSigners, setAccountIndexForDerivedAccount } = MainWallet({ actions: { checkPassword } });
 
   const createSeed = () => {
     if (!_mnemonic) _mnemonic = generateMnemonic();
@@ -223,7 +223,10 @@ export const KeyringManager = () => {
     forgetSigners();
   }
 
-  const getEncryptedXprv = () => CryptoJS.AES.encrypt(wallet.activeAccount.xprv, _password).toString();
+  const getEncryptedXprv = () => CryptoJS.AES.encrypt(
+    getEncryptedPrivateKeyFromHd(),
+    _password
+  ).toString();
 
   const validateSeed = (seedphrase: string) => {
     if (validateMnemonic(seedphrase)) {

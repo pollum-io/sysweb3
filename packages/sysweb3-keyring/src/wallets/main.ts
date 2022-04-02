@@ -274,6 +274,8 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
     hd.setAccountIndex(accountId);
   }
 
+  const getEncryptedPrivateKeyFromHd = () => hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
+
   const trezor = TrezorWallet({ hd, main });
   const txs = SyscoinTransactions({ hd, main });
 
@@ -290,6 +292,7 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
     getSeed,
     hasHdMnemonic,
     forgetSigners,
-    setAccountIndexForDerivedAccount
+    setAccountIndexForDerivedAccount,
+    getEncryptedPrivateKeyFromHd
   };
 };
