@@ -16,7 +16,7 @@ export const KeyringManager = () => {
 
   const checkPassword = (pwd: string) => _password === pwd;
 
-  const { getEncryptedPrivateKeyFromHd, createWallet, setSignerNetwork, saveTokenInfo, txs: { signTransaction, signMessage: _signMessage }, getSeed, hasHdMnemonic, forgetSigners, setAccountIndexForDerivedAccount, txs } = MainWallet({ actions: { checkPassword } });
+  const mainWallet = MainWallet({ actions: { checkPassword } });
 
   const createSeed = () => {
     if (!_mnemonic) _mnemonic = generateMnemonic();
@@ -24,7 +24,7 @@ export const KeyringManager = () => {
     return _mnemonic;
   };
 
-  const isUnlocked = () => Boolean((_mnemonic || hasHdMnemonic()) && _password);
+  const isUnlocked = () => Boolean((_mnemonic || mainWallet.hasHdMnemonic()) && _password);
 
   const getEncryptedMnemonic = () => {
     const encryptedMnemonic = CryptoJS.AES.encrypt(_mnemonic, _password);
@@ -108,7 +108,7 @@ export const KeyringManager = () => {
   const createVault = async (): Promise<IKeyringAccountState> => {
     _clearWallet();
 
-    const vault = await createWallet({
+    const vault = await mainWallet.createWallet({
       password: _password,
       mnemonic: _mnemonic,
       wallet,
@@ -128,7 +128,7 @@ export const KeyringManager = () => {
   const addTokenToAccount = (accountId: number, address: string) => {
     const account: IKeyringAccountState = getAccountById(accountId);
 
-    saveTokenInfo(address);
+    mainWallet.saveTokenInfo(address);
 
     _fullUpdate();
 
@@ -193,11 +193,11 @@ export const KeyringManager = () => {
   ): void => {
     const account = getAccountById(msgParams.accountId);
 
-    _signMessage(account, msgParams.data, opts);
+    mainWallet.txs.signMessage(account, msgParams.data, opts);
   };
 
   const _getVaultForActiveNetwork = async ({ network, password }: { password: string, network: INetwork }) => {
-    return await setSignerNetwork({
+    return await mainWallet.setSignerNetwork({
       password,
       mnemonic: _mnemonic,
       network,
@@ -220,11 +220,11 @@ export const KeyringManager = () => {
   const forgetWallet = () => {
     _clearTemporaryLocalKeys();
 
-    forgetSigners();
+    mainWallet.forgetSigners();
   }
 
   const getEncryptedXprv = () => CryptoJS.AES.encrypt(
-    getEncryptedPrivateKeyFromHd(),
+    mainWallet.getEncryptedPrivateKeyFromHd(),
     _password
   ).toString();
 
@@ -241,7 +241,6 @@ export const KeyringManager = () => {
   return {
     createVault,
     setWalletPassword,
-    address: null,
     addTokenToAccount,
     getState,
     getNetwork,
@@ -252,18 +251,15 @@ export const KeyringManager = () => {
     getAccounts,
     removeAccount,
     signMessage,
-    signTransaction,
     createSeed,
     getEncryptedMnemonic,
     getDecryptedMnemonic,
-    setAccountIndexForDerivedAccount,
     setActiveNetworkForSigner,
     checkPassword,
-    getSeed,
     isUnlocked,
     forgetWallet,
     getEncryptedXprv,
     validateSeed,
-    txs
+    ...mainWallet,
   };
 };
