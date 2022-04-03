@@ -16,7 +16,7 @@ export const KeyringManager = () => {
 
   const checkPassword = (pwd: string) => _password === pwd;
 
-  const { getEncryptedPrivateKeyFromHd, createWallet, setSignerNetwork, saveTokenInfo, txs: { signTransaction, signMessage: _signMessage }, getSeed, hasHdMnemonic, forgetSigners, setAccountIndexForDerivedAccount } = MainWallet({ actions: { checkPassword } });
+  const { getEncryptedPrivateKeyFromHd, createWallet, setSignerNetwork, saveTokenInfo, txs: { signTransaction, signMessage: _signMessage }, getSeed, hasHdMnemonic, forgetSigners, setAccountIndexForDerivedAccount, txs } = MainWallet({ actions: { checkPassword } });
 
   const createSeed = () => {
     if (!_mnemonic) _mnemonic = generateMnemonic();
@@ -263,6 +263,7 @@ export const KeyringManager = () => {
     isUnlocked,
     forgetWallet,
     getEncryptedXprv,
-    validateSeed
+    validateSeed,
+    txs
   };
 };

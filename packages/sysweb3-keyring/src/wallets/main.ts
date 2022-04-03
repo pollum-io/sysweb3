@@ -5,7 +5,8 @@ import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 import { SyscoinTransactions } from '../transactions';
 import { TrezorWallet } from '../trezor';
-import { fromZPrv } from 'bip84';
+import { fromZPrv, fromZPub } from 'bip84';
+import { SyscoinAddress } from '../address';
 
 export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPassword: (pwd: string) => boolean } }) => {
   const web3Wallet = Web3Accounts();
@@ -275,8 +276,143 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
 
   const getEncryptedPrivateKeyFromHd = () => hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
 
+  const _fetchAccountInfo = async (isHardwareWallet?: boolean, xpub?: any) => {
+    let response: any = null;
+    let address: string | null = null;
+
+    const options = 'tokens=nonzero&details=txs';
+
+    if (isHardwareWallet) {
+      response = await sys.utils.fetchBackendAccount(
+        main.blockbookURL,
+        xpub,
+        options,
+        true
+      );
+
+      const account = new fromZPub(
+        xpub,
+        main.Signer.Signer.pubTypes,
+        main.Signer.Signer.networks
+      );
+      let receivingIndex = -1;
+
+      if (response.tokens) {
+        response.tokens.forEach((token: any) => {
+          if (token.path) {
+            const splitPath = token.path.split('/');
+
+            if (splitPath.length >= 6) {
+              const change = parseInt(splitPath[4], 10);
+              const index = parseInt(splitPath[5], 10);
+
+              if (change === 1) return;
+
+              if (index > receivingIndex) {
+                receivingIndex = index;
+              }
+            }
+          }
+        });
+      }
+
+      address = account.getAddress(receivingIndex + 1);
+    } else {
+      response = await sys.utils.fetchBackendAccount(
+        main.blockbookURL,
+        main.Signer.getAccountXpub(),
+        options,
+        true
+      );
+    }
+
+    return {
+      address,
+      response,
+    };
+  };
+
+  const _getAccountInfo = async (
+    isHardwareWallet?: boolean,
+    xpub?: any
+  ): Promise<any> => {
+    const { address, response } = await _fetchAccountInfo(
+      isHardwareWallet,
+      xpub
+    );
+
+    const tokens: any = {};
+    const transactions: any = {};
+
+    // if (response.transactions) {
+    //   transactions = response.transactions.slice(0, 20);
+    // }
+
+    // if (response.tokensAsset) {
+    //   // TODO: review this reduce
+    //   const transform = response.tokensAsset.reduce(
+    //     (item: any, { type, assetGuid, symbol, balance, decimals }: any) => {
+    //       item[assetGuid] = <any>{
+    //         type,
+    //         assetGuid,
+    //         symbol: symbol
+    //           ? Buffer.from(symbol, 'base64').toString('utf-8')
+    //           : '',
+    //         balance:
+    //           (item[assetGuid] ? item[assetGuid].balance : 0) + Number(balance),
+    //         decimals,
+    //       };
+
+    //       return item;
+    //     },
+    //     {}
+    //   );
+
+    //   for (const key in transform) {
+    //     tokens.push(transform[key]);
+    //   }
+    // }
+
+    const accountData = {
+      balances: {
+        syscoin: response.balance / 1e8,
+        ethereum: 0,
+      },
+      tokens,
+      transactions,
+    };
+
+    if (address) {
+      return {
+        ...accountData,
+        address,
+      };
+    }
+
+    return accountData;
+  };
+
+  const getLatestUpdateForAccount = async (
+    activeAccount: IKeyringAccountState
+  ) => {
+    if (activeAccount.isTrezorWallet) {
+      const trezorData = await _getAccountInfo(true, activeAccount.xpub);
+
+      if (!trezorData) return;
+
+      return trezorData;
+    }
+
+    const accLatestInfo = await _getAccountInfo();
+
+    if (!accLatestInfo) return;
+
+    return accLatestInfo;
+  };
+
   const trezor = TrezorWallet({ hd, main });
   const txs = SyscoinTransactions({ hd, main });
+  const address = SyscoinAddress({ hd });
 
   return {
     getNewReceivingAddress,
@@ -286,12 +422,14 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
     getEncryptedPrivateKey,
     trezor,
     txs,
+    address,
     setSignerNetwork,
     saveTokenInfo,
     getSeed,
     hasHdMnemonic,
     forgetSigners,
     setAccountIndexForDerivedAccount,
-    getEncryptedPrivateKeyFromHd
+    getEncryptedPrivateKeyFromHd,
+    getLatestUpdateForAccount
   };
 };
