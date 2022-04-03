@@ -218,6 +218,8 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
 
     const web3Account = web3Wallet.importAccount(mnemonic);
 
+    const balance = await web3Wallet.getBalance(web3Account.address);
+
     return {
       ...web3Account,
       tokens: {},
@@ -228,14 +230,14 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
       trezorId: -1,
       xprv: '',
       balances: {
-        ethereum: web3Wallet.getBalance(web3Account.address),
+        ethereum: balance,
         syscoin: 0,
       },
       xpub: '',
-    };
+    } as IKeyringAccountState;
   }
 
-  const setSignerNetwork = async ({ password, mnemonic, network }: { password: string, mnemonic: string, network: INetwork }) => {
+  const setSignerNetwork = async ({ password, mnemonic, network }: { password: string, mnemonic: string, network: INetwork }): Promise<IKeyringAccountState> => {
     const isSyscoinChain = Boolean(networks.syscoin[network.chainId]);
 
     if (!isSyscoinChain) {
@@ -244,10 +246,7 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
 
     const account = await _getAccountForNetwork({ isSyscoinChain, password, mnemonic, network });
 
-    return {
-      account,
-      hd,
-    }
+    return account;
   }
 
   const saveTokenInfo = (address: string) => console.log('token address', address);
