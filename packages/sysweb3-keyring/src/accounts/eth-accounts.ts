@@ -325,11 +325,33 @@ export const Web3Accounts = () => {
     }
   };
 
+  export const getUserTransactions = async (
+    address: string
+  ): Promise<any[]> => {
+    try {
+      const userTxs = await axios.get(
+        `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10&sort=asc&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH`
+      );
+
+      if (userTxs.data.message === 'OK') {
+        if (userTxs.data.result !== []) {
+          return userTxs.data.result;
+        }
+        return null;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return {
     createAccount,
     getBalance,
     getNftsByAddress,
     getTokens,
+    getUserTransactions,
     sendTransaction,
     importAccount,
   };
