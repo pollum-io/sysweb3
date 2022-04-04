@@ -2,9 +2,6 @@ import { EncryptedKeystoreV3Json, Sign, SignedTransaction, TransactionConfig } f
 import {
   INetwork,
   INetworkType,
-  ISyscoinToken,
-  IEthereumTransaction,
-  ISyscoinTransaction,
 } from '.';
 
 export enum IKeyringAccountType {
@@ -23,8 +20,6 @@ export interface IWalletState {
     [id: number]: IKeyringAccountState;
   };
   activeAccount: IKeyringAccountState;
-  activeToken: string;
-  hasEncryptedVault: boolean;
   networks: {
     [INetworkType.Ethereum]: {
       [chainId: number]: INetwork;
@@ -52,15 +47,9 @@ export interface Web3Account extends IKeyringAccountState {
 
 export interface IKeyringAccountState {
   address: string;
-  tokens: {
-    [tokenId: string]: ISyscoinToken;
-  };
   id: number;
   isTrezorWallet: boolean;
   label: string;
-  transactions: {
-    [txid: string]: ISyscoinTransaction | IEthereumTransaction;
-  };
   trezorId?: number;
   xprv: string;
   balances: IKeyringBalances;

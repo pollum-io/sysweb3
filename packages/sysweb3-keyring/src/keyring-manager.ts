@@ -13,10 +13,11 @@ export const KeyringManager = () => {
   let _mnemonic = '';
 
   let wallet: IWalletState = initialWalletState;
-
   const checkPassword = (pwd: string) => _password === pwd;
 
   const mainWallet = MainWallet({ actions: { checkPassword } });
+
+
 
   const createSeed = () => {
     if (!_mnemonic) _mnemonic = generateMnemonic();
@@ -24,7 +25,7 @@ export const KeyringManager = () => {
     return _mnemonic;
   };
 
-  const isUnlocked = () => Boolean((_mnemonic || mainWallet.hasHdMnemonic()) && _password);
+  const isUnlocked = () => Boolean(_mnemonic && mainWallet.hasHdMnemonic() && _password);
 
   const getEncryptedMnemonic = () => {
     const encryptedMnemonic = CryptoJS.AES.encrypt(_mnemonic, _password);
@@ -59,10 +60,13 @@ export const KeyringManager = () => {
     isUnlocked: boolean;
     wallet: IWalletState;
   }>({
-    isUnlocked: Boolean(_password && _mnemonic),
+    isUnlocked: Boolean(_password && _mnemonic && mainWallet.hasHdMnemonic()),
     wallet: initialWalletState,
   });
 
+  _memStore.subscribe((value) => {
+    console.log('saw value:', value);
+  });
   const _clearWallet = () => {
     wallet = initialWalletState;
 
@@ -76,7 +80,7 @@ export const KeyringManager = () => {
       return new Error('KeyringManager - password is not a string');
     }
 
-    console.log("trying to persist wallet", wallet, JSON.stringify(wallet));
+    console.log("trying to persist wallet");
 
     _password = password;
 
@@ -85,6 +89,8 @@ export const KeyringManager = () => {
     // todo: encrypt serialized state
     /** set vault in storage so we can get back the state when logging in */
     storage.set('vault', serializedWallet);
+
+    console.log('vault stored in our storage', storage.get('vault'));
 
     return serializedWallet;
   };
@@ -105,14 +111,19 @@ export const KeyringManager = () => {
     _notifyUpdate();
   };
 
-  const createVault = async (): Promise<IKeyringAccountState> => {
+  const createKeyringVault = async (): Promise<IKeyringAccountState> => {
     _clearWallet();
 
-    const vault = await mainWallet.createWallet({
+    const vault = await mainWallet.createMainWallet({
       password: _password,
       mnemonic: _mnemonic,
       wallet,
     });
+
+    wallet = {
+      ...wallet,
+      activeAccount: vault,
+    }
 
     console.log('[keyring file test] creating wallet:', wallet);
 
@@ -128,7 +139,7 @@ export const KeyringManager = () => {
   const addTokenToAccount = (accountId: number, address: string) => {
     const account: IKeyringAccountState = getAccountById(accountId);
 
-    mainWallet.saveTokenInfo(address);
+    // mainWallet.saveTokenInfo(address);
 
     _fullUpdate();
 
@@ -154,7 +165,7 @@ export const KeyringManager = () => {
     eventEmitter.emit('unlock');
   };
 
-  const login = async (password: string) => {
+  const login = async (password: string): Promise<IKeyringAccountState | Error> => {
     if (!checkPassword(password)) return new Error('Invalid password');
 
     wallet = await _unlockWallet(password);
@@ -162,7 +173,7 @@ export const KeyringManager = () => {
     _updateUnlocked();
     _notifyUpdate();
 
-    return wallet;
+    return wallet.activeAccount;
   };
 
   const _unlockWallet = async (password: string): Promise<IWalletState> => {
@@ -217,7 +228,7 @@ export const KeyringManager = () => {
     _password = '';
   }
 
-  const forgetWallet = () => {
+  const forgetMainWallet = () => {
     _clearTemporaryLocalKeys();
 
     mainWallet.forgetSigners();
@@ -239,27 +250,27 @@ export const KeyringManager = () => {
   };
 
   return {
-    createVault,
+    validateSeed,
     setWalletPassword,
+    createSeed,
+    createKeyringVault,
+    getAccountById,
+    checkPassword,
+    isUnlocked,
+    getEncryptedMnemonic,
+    getDecryptedMnemonic,
     addTokenToAccount,
     getState,
     getNetwork,
-    getAccountById,
     getPrivateKeyByAccountId,
     logout,
     login,
     getAccounts,
     removeAccount,
     signMessage,
-    createSeed,
-    getEncryptedMnemonic,
-    getDecryptedMnemonic,
     setActiveNetworkForSigner,
-    checkPassword,
-    isUnlocked,
-    forgetWallet,
+    forgetMainWallet,
     getEncryptedXprv,
-    validateSeed,
     ...mainWallet,
   };
 };

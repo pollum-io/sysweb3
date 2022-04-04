@@ -157,6 +157,8 @@ export const Web3Accounts = () => {
     }
   };
 
+  const getRecommendedFee = () => { };
+
   return {
     createAccount,
     getBalance,
@@ -164,5 +166,6 @@ export const Web3Accounts = () => {
     getTokens,
     sendTransaction,
     importAccount,
+    getRecommendedFee,
   };
 };

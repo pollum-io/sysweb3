@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-utils",
-  "version": "1.1.46",
+  "version": "1.1.49",
   "description": "A helper for multi-chain accounts.",
   "main": "cjs/index.js",
   "repository": {
@@ -23,8 +23,9 @@
     "type-check": "tsc --pretty --noEmit"
   },
   "dependencies": {
-    "@pollum-io/sysweb3-keyring": "^1.0.35",
+    "@pollum-io/sysweb3-keyring": "^1.0.45",
     "@pollum-io/sysweb3-network": "^1.0.4",
+    "ethers": "^5.6.2",
     "syscoinjs-lib": "^1.0.209",
     "syscointx-js": "^1.0.101"
   },

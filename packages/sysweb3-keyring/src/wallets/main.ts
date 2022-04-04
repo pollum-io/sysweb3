@@ -5,7 +5,7 @@ import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 import { SyscoinTransactions } from '../transactions';
 import { TrezorWallet } from '../trezor';
-import { fromZPrv, fromZPub } from 'bip84';
+import { fromZPrv } from 'bip84';
 import { SyscoinAddress } from '../address';
 
 export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPassword: (pwd: string) => boolean } }) => {
@@ -14,89 +14,54 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
   let hd: SyscoinHDSigner = {} as SyscoinHDSigner;
   let main: SyscoinMainSigner = {} as SyscoinMainSigner;
 
+  /** set/get account info */
+
   const _getBackendAccountData = async (
     xpub: string,
-    isHardwareWallet: boolean
   ): Promise<{
     address: string | null;
     balance: number;
     transactions: any;
     tokens: any;
   }> => {
-    console.log('[create] get backend account signer', main, xpub);
+    console.log('[_getBackendAccountData]', { hd, main, xpub });
 
-    const { tokensAsset, balance, transactions } =
+    const response =
       await sys.utils.fetchBackendAccount(
         main.blockbookURL,
         xpub,
-        isHardwareWallet
-          ? 'tokens=nonzero&details=txs'
-          : 'tokens=nonzero&details=txs',
+        'tokens=nonzero&details=txs',
         true
       );
 
-    console.log('[create] backend account fetch sys', transactions, balance);
 
-    const tokens: any = {};
-
-    if (tokensAsset) {
-      for (const token of tokensAsset) {
-        const tokenId = token.assetGuid;
-
-        tokens[tokenId] = {
-          ...token,
-          tokenId,
-          balance:
-            (tokens[tokenId] ? Number(tokens[tokenId].balance) : 0) +
-            Number(token.balance),
-          symbol: token.symbol ? atob(String(token.symbol)) : '',
-        };
-      }
-    }
-
-    const txs: any = {};
-
-    if (transactions) {
-      for (const transaction of transactions.slice(0, 20)) {
-        const { fees, txid, value, blockHeight, valueIn } = transaction;
-        txs[txid] = {
-          ...transaction,
-          fees: Number(fees),
-          value: Number(value),
-          blockHeight: Number(blockHeight),
-          valueIn: Number(valueIn),
-        };
-      }
-    }
-
-    const address = hd ? await hd.getNewReceivingAddress(true) : null;
-    const lastTransactions = Object.values(txs).slice(0, 20);
-
-    console.log('[create] txs', txs, lastTransactions);
+    console.log('[_getBackendAccountData] response', { hd, main, xpub, response });
 
     return {
-      address,
-      balance: balance / 1e8,
+      address: '',
+      balance: 0 / 1e8,
       transactions: txs,
-      tokens,
+      tokens: {},
     };
   };
 
   const getAccountInfo = async (
-    isHardwareWallet = false,
     xpub: string
   ): Promise<any> => {
-    console.log('[create] fetching backend account...');
+    console.log('[getAccountInfo] getting backend account...');
 
     const backendAccountData = await _getBackendAccountData(
       xpub,
-      isHardwareWallet
     );
 
     console.log(
-      '[create] getting backend account data',
-      backendAccountData,
-      main
+      '[getAccountInfo] backend account data',
+      {
+        backendAccountData,
+        main,
+        xpub,
+        hd,
+      }
     );
 
     return backendAccountData;
@@ -121,7 +86,7 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
     createdAccount,
     xprv,
   }: { label?: string, signer: any, createdAccount: any, xprv: string }) => {
-    const { balance, transactions, tokens, address } = createdAccount;
+    const { balance, address } = createdAccount;
     const xpub = getAccountXpub();
 
     const account: IKeyringAccountState = {
@@ -131,59 +96,26 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
         syscoin: balance,
         ethereum: 0,
       },
-      transactions,
       xpub,
       xprv,
       address,
-      tokens,
       isTrezorWallet: false,
     };
 
     return account;
   };
 
-  const getNewReceivingAddress = async () => {
-    return hd ? hd.getNewReceivingAddress(true) : '';
+  const getEncryptedPrivateKeyFromHd = () => hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
+
+  const getLatestUpdateForAccount = async (
+    activeAccount: IKeyringAccountState
+  ) => {
+    return await getAccountInfo(activeAccount.xpub);
   };
 
-  const createWallet = async ({ password, mnemonic, wallet }: {
-    password: string;
-    mnemonic: string;
-    wallet: IWalletState;
-  }): Promise<IKeyringAccountState> => {
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: wallet.activeNetwork.isTestnet,
-      network: wallet.activeNetwork.url,
-      blockbookURL: wallet.activeNetwork.url
-    });
+  /** end */
 
-    hd = _hd;
-    main = _main;
-
-    const xprv = getEncryptedPrivateKey(hd, password);
-    const xpub = getAccountXpub();
-
-    console.log('[create] getting signer', main, xpub);
-
-    const createdAccount = await getAccountInfo(false, xpub);
-
-    console.log(
-      '[create] getting created account',
-      createdAccount,
-      createdAccount.address
-    );
-
-    const account: IKeyringAccountState = _getInitialAccountData({
-      signer: main,
-      createdAccount,
-      xprv,
-    });
-
-    hd && hd.setAccountIndex(account.id);
-
-    return account;
-  };
+  /** set/get networks */
 
   const _getAccountForNetwork = async ({ isSyscoinChain, password, mnemonic, network }: { isSyscoinChain: boolean, password: string, mnemonic: string, network: INetwork }) => {
     if (isSyscoinChain) {
@@ -202,7 +134,7 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
 
       console.log('[switch network] getting signer', main, xpub);
 
-      const updatedAccountInfo = await getAccountInfo(false, xpub);
+      const updatedAccountInfo = await getAccountInfo(xpub);
 
       console.log('[switch network] getting created account', updatedAccountInfo, updatedAccountInfo.address);
 
@@ -250,7 +182,48 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
     return account;
   }
 
-  const saveTokenInfo = (address: string) => console.log('token address', address);
+  /** end */
+
+  /** create/forget wallet */
+
+  const createMainWallet = async ({ password, mnemonic, wallet }: {
+    password: string;
+    mnemonic: string;
+    wallet: IWalletState;
+  }): Promise<IKeyringAccountState> => {
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: wallet.activeNetwork.isTestnet,
+      network: wallet.activeNetwork.url,
+      blockbookURL: wallet.activeNetwork.url
+    });
+
+    hd = _hd;
+    main = _main;
+
+    const xprv = getEncryptedPrivateKey(hd, password);
+    const xpub = getAccountXpub();
+
+    console.log('[create] getting signer', main, xpub);
+
+    const createdAccount = await getAccountInfo(xpub);
+
+    console.log(
+      '[create] getting created account',
+      createdAccount,
+      createdAccount.address
+    );
+
+    const account: IKeyringAccountState = _getInitialAccountData({
+      signer: main,
+      createdAccount,
+      xprv,
+    });
+
+    hd && hd.setAccountIndex(account.id);
+
+    return account;
+  };
 
   const getSeed = (pwd: string) => (checkPassword(pwd) ? hd.mnemonic : null);
 
@@ -274,149 +247,18 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
     hd.setAccountIndex(accountId);
   }
 
-  const getEncryptedPrivateKeyFromHd = () => hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
+  /** end */
 
-  const _fetchAccountInfo = async (isHardwareWallet?: boolean, xpub?: any) => {
-    let response: any = null;
-    let address: string | null = null;
-
-    const options = 'tokens=nonzero&details=txs';
-
-    if (isHardwareWallet) {
-      response = await sys.utils.fetchBackendAccount(
-        main.blockbookURL,
-        xpub,
-        options,
-        true
-      );
-
-      const account = new fromZPub(
-        xpub,
-        main.Signer.Signer.pubTypes,
-        main.Signer.Signer.networks
-      );
-      let receivingIndex = -1;
-
-      if (response.tokens) {
-        response.tokens.forEach((token: any) => {
-          if (token.path) {
-            const splitPath = token.path.split('/');
-
-            if (splitPath.length >= 6) {
-              const change = parseInt(splitPath[4], 10);
-              const index = parseInt(splitPath[5], 10);
-
-              if (change === 1) return;
-
-              if (index > receivingIndex) {
-                receivingIndex = index;
-              }
-            }
-          }
-        });
-      }
-
-      address = account.getAddress(receivingIndex + 1);
-    } else {
-      response = await sys.utils.fetchBackendAccount(
-        main.blockbookURL,
-        main.Signer.getAccountXpub(),
-        options,
-        true
-      );
-    }
-
-    return {
-      address,
-      response,
-    };
-  };
-
-  const _getAccountInfo = async (
-    isHardwareWallet?: boolean,
-    xpub?: any
-  ): Promise<any> => {
-    const { address, response } = await _fetchAccountInfo(
-      isHardwareWallet,
-      xpub
-    );
-
-    const tokens: any = {};
-    const transactions: any = {};
-
-    // if (response.transactions) {
-    //   transactions = response.transactions.slice(0, 20);
-    // }
-
-    // if (response.tokensAsset) {
-    //   // TODO: review this reduce
-    //   const transform = response.tokensAsset.reduce(
-    //     (item: any, { type, assetGuid, symbol, balance, decimals }: any) => {
-    //       item[assetGuid] = <any>{
-    //         type,
-    //         assetGuid,
-    //         symbol: symbol
-    //           ? Buffer.from(symbol, 'base64').toString('utf-8')
-    //           : '',
-    //         balance:
-    //           (item[assetGuid] ? item[assetGuid].balance : 0) + Number(balance),
-    //         decimals,
-    //       };
-
-    //       return item;
-    //     },
-    //     {}
-    //   );
-
-    //   for (const key in transform) {
-    //     tokens.push(transform[key]);
-    //   }
-    // }
-
-    const accountData = {
-      balances: {
-        syscoin: response.balance / 1e8,
-        ethereum: 0,
-      },
-      tokens,
-      transactions,
-    };
-
-    if (address) {
-      return {
-        ...accountData,
-        address,
-      };
-    }
-
-    return accountData;
-  };
-
-  const getLatestUpdateForAccount = async (
-    activeAccount: IKeyringAccountState
-  ) => {
-    if (activeAccount.isTrezorWallet) {
-      const trezorData = await _getAccountInfo(true, activeAccount.xpub);
-
-      if (!trezorData) return;
-
-      return trezorData;
-    }
-
-    const accLatestInfo = await _getAccountInfo();
-
-    if (!accLatestInfo) return;
-
-    return accLatestInfo;
-  };
+  /** controllers */
 
   const trezor = TrezorWallet({ hd, main });
   const txs = SyscoinTransactions({ hd, main });
   const address = SyscoinAddress({ hd });
 
+  /** end */
+
   return {
-    getNewReceivingAddress,
-    createWallet,
+    createMainWallet,
     getAccountXpub,
     getAccountInfo,
     getEncryptedPrivateKey,
@@ -424,7 +266,6 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
     txs,
     address,
     setSignerNetwork,
-    saveTokenInfo,
     getSeed,
     hasHdMnemonic,
     forgetSigners,

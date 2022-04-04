@@ -2,7 +2,6 @@ import { IWalletState } from '.';
 
 export const initialActiveAccountState = {
   address: '',
-  tokens: {},
   balances: {
     ethereum: 0,
     syscoin: 0,
@@ -10,7 +9,6 @@ export const initialActiveAccountState = {
   id: -1,
   isTrezorWallet: false,
   label: 'Account 1',
-  transactions: {},
   trezorId: -1,
   xprv: '',
   xpub: '',
@@ -83,7 +81,6 @@ export const initialWalletState: IWalletState = {
   accounts: {},
   activeAccount: initialActiveAccountState,
   networks: initialNetworksState,
-  hasEncryptedVault: false,
   activeNetwork: {
     chainId: 57,
     label: 'Syscoin Mainnet',
@@ -91,5 +88,4 @@ export const initialWalletState: IWalletState = {
     default: true,
     isTestnet: false,
   },
-  activeToken: 'SYS',
 };
