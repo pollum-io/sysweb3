@@ -17,11 +17,10 @@ For use this library, is nice to have:
 - [Node.js](https://nodejs.org) 10 or later installed
 - [Yarn](https://yarnpkg.com) v1 or v2 installed
 
-For install, you can follow this command:
+For install, you can follow these commands:
 
-- `yarn add @pollum-io/sysweb3-keyring`.
-or
-- `npm install @pollum-io/sysweb3-keyring`.
+- `yarn add @pollum-io/sysweb3-keyring`
+- `npm install @pollum-io/sysweb3-keyring`
 
 ## Usage
 
