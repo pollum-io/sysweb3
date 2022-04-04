@@ -1,7 +1,13 @@
+// @ts-nocheck
 import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { IKeyringAccountState, IWalletState, initialWalletState, INetwork } from '@pollum-io/sysweb3-utils';
+import {
+  IKeyringAccountState,
+  IWalletState,
+  initialWalletState,
+  INetwork,
+} from '@pollum-io/sysweb3-utils';
 import { generateMnemonic, validateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
 import { MainWallet } from './wallets/main';
@@ -24,7 +30,8 @@ export const KeyringManager = () => {
     return _mnemonic;
   };
 
-  const isUnlocked = () => Boolean((_mnemonic || mainWallet.hasHdMnemonic()) && _password);
+  const isUnlocked = () =>
+    Boolean((_mnemonic || mainWallet.hasHdMnemonic()) && _password);
 
   const getEncryptedMnemonic = () => {
     const encryptedMnemonic = CryptoJS.AES.encrypt(_mnemonic, _password);
@@ -33,15 +40,17 @@ export const KeyringManager = () => {
   };
 
   const getDecryptedMnemonic = () => {
-    const decryptedMnemonic = CryptoJS.AES.decrypt(getEncryptedMnemonic(), _password).toString();
+    const decryptedMnemonic = CryptoJS.AES.decrypt(
+      getEncryptedMnemonic(),
+      _password
+    ).toString();
 
     return decryptedMnemonic;
   };
 
   const getAccountById = (id: number): IKeyringAccountState =>
-    Object.values(wallet.accounts).find(
-      (account) => account.id === id
-    ) || {} as IKeyringAccountState;
+    Object.values(wallet.accounts).find((account) => account.id === id) ||
+    ({} as IKeyringAccountState);
 
   const getPrivateKeyByAccountId = (id: number): string | null => {
     const account = Object.values(wallet.accounts).find(
@@ -76,7 +85,7 @@ export const KeyringManager = () => {
       return new Error('KeyringManager - password is not a string');
     }
 
-    console.log("trying to persist wallet", wallet, JSON.stringify(wallet));
+    console.log('trying to persist wallet', wallet, JSON.stringify(wallet));
 
     _password = password;
 
@@ -185,7 +194,7 @@ export const KeyringManager = () => {
     return wallet;
   };
 
-  const removeAccount = () => { };
+  const removeAccount = () => {};
 
   const signMessage = (
     msgParams: { accountId: number; data: string },
@@ -196,37 +205,48 @@ export const KeyringManager = () => {
     mainWallet.txs.signMessage(account, msgParams.data, opts);
   };
 
-  const _getVaultForActiveNetwork = async ({ network, password }: { password: string, network: INetwork }) => {
+  const _getVaultForActiveNetwork = async ({
+    network,
+    password,
+  }: {
+    password: string;
+    network: INetwork;
+  }) => {
     return await mainWallet.setSignerNetwork({
       password,
       mnemonic: _mnemonic,
       network,
     });
-  }
+  };
 
-  const setActiveNetworkForSigner = async ({ network }: { network: INetwork }) => {
+  const setActiveNetworkForSigner = async ({
+    network,
+  }: {
+    network: INetwork;
+  }) => {
     const vault = _getVaultForActiveNetwork({ network, password: _password });
 
     _fullUpdate();
 
     return vault;
-  }
+  };
 
   const _clearTemporaryLocalKeys = () => {
     _mnemonic = '';
     _password = '';
-  }
+  };
 
   const forgetWallet = () => {
     _clearTemporaryLocalKeys();
 
     mainWallet.forgetSigners();
-  }
+  };
 
-  const getEncryptedXprv = () => CryptoJS.AES.encrypt(
-    mainWallet.getEncryptedPrivateKeyFromHd(),
-    _password
-  ).toString();
+  const getEncryptedXprv = () =>
+    CryptoJS.AES.encrypt(
+      mainWallet.getEncryptedPrivateKeyFromHd(),
+      _password
+    ).toString();
 
   const validateSeed = (seedphrase: string) => {
     if (validateMnemonic(seedphrase)) {

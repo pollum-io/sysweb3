@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { networks, setActiveNetwork } from '@pollum-io/sysweb3-network';
 import { IKeyringAccountState, INetwork, IWalletState, MainSigner, SyscoinHDSigner, SyscoinMainSigner } from '@pollum-io/sysweb3-utils';
 import { Web3Accounts } from '../accounts';
