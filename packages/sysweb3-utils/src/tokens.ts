@@ -2,6 +2,26 @@ import { IEthereumAddress, createContractUsingAbi } from ".";
 import axios from "axios";
 import abi from "./abi/erc721.json";
 
+/**
+ * This function should return a NFT image link.
+ *
+ * @param {string} contract
+ * @param {number} tokenId
+ *
+ * @example
+ *
+ * ```
+ * <button onClick={getNFTImage('0x0000000000000000000000000', 1234)}>Get NFT image link</button>
+ * ```
+ *
+ * @returns
+ *
+ * ```
+ * 'https://gateway.pinata.cloud/ipfs/Qmc4DqK9xeoSvtVmTcS6YG3DiWHyfiwQsnwQfzcqAvtmHj'
+ * ```
+ *
+ */
+
 export const getNftImage = async (contract: string, tokenId: number) => {
   try {
     const nft = await (await createContractUsingAbi(abi, contract)).methods
@@ -29,6 +49,29 @@ export const getNftImage = async (contract: string, tokenId: number) => {
   }
 };
 
+
+/**
+ * This function should return an object with 2 parameters that will be the thumb image  url and large image url
+ * 
+ * @param {string} symbol
+ * 
+ * @example
+ * 
+ * ```
+ * <image src={getTokenIconBySymbol('eth')} />
+ * ```
+ * 
+ * @returns
+ * 
+ * ```
+ * 
+  {
+    thumbImage: 'https://assets.coingecko.com/coins/images/279/thumb/ethereum.png',
+    largeImage: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' 
+  }
+```
+ *
+ */
 export const getTokenIconBySymbol = async (symbol: string) => {
   try {
     const response = await axios.get(
