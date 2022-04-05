@@ -352,7 +352,7 @@ export const Web3Accounts = () => {
 
   const eth_signTypedData_v4 = () => {
     const msgParams = JSON.stringify(typedDataV4());
-    const provider = window.ethereum;
+    const provider = window.pali.getProvider('ethereum');
 
     const from = provider.selectedAddress;
 
