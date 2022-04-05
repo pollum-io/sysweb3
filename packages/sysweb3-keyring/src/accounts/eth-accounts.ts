@@ -344,12 +344,16 @@ export const Web3Accounts = () => {
     }
   };
 
+  const getTransactionCount = async (address: string) =>
+    await web3Provider.eth.getTransactionCount(address);
+
   return {
     createAccount,
     getBalance,
     getNftsByAddress,
     getTokens,
     getUserTransactions,
+    getTransactionCount,
     sendTransaction,
     importAccount,
   };
