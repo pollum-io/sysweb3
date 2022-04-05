@@ -1,4 +1,4 @@
-export default {
+export const typedDataV4 = () => ({
   domain: {
     // Defining the chain aka Rinkeby testnet or Ethereum Main Net
     chainId: 1,
@@ -65,4 +65,4 @@ export default {
       { name: 'wallets', type: 'address[]' },
     ],
   },
-};
+});

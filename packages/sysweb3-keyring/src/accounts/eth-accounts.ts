@@ -6,8 +6,8 @@ import * as ethUtil from 'ethereumjs-util';
 import { ethers } from 'ethers';
 import { request, gql } from 'graphql-request';
 import _ from 'lodash';
-import typedDataV4 from 'typedDataV4';
 import { Account, TransactionReceipt } from 'web3-core';
+import { typedDataV4 } from '../typedDataV4';
 
 export const Web3Accounts = () => {
   /**
@@ -351,7 +351,7 @@ export const Web3Accounts = () => {
     await web3Provider.eth.getTransactionCount(address);
 
   const eth_signTypedData_v4 = () => {
-    const msgParams = JSON.stringify(typedDataV4);
+    const msgParams = JSON.stringify(typedDataV4());
     const provider = window.ethereum;
 
     const from = provider.selectedAddress;
@@ -365,7 +365,7 @@ export const Web3Accounts = () => {
         params,
         from,
       },
-      (err, result) => {
+      (err: any, result: any) => {
         if (err) return console.dir(err);
         if (result.error) {
           alert(result.error.message);
