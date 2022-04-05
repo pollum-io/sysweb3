@@ -17,8 +17,6 @@ export const KeyringManager = () => {
 
   const mainWallet = MainWallet({ actions: { checkPassword } });
 
-
-
   const createSeed = () => {
     if (!_mnemonic) _mnemonic = generateMnemonic();
 
@@ -122,6 +120,10 @@ export const KeyringManager = () => {
 
     wallet = {
       ...wallet,
+      accounts: {
+        ...wallet.accounts,
+        [vault.id]: vault
+      },
       activeAccount: vault,
     }
 
@@ -136,7 +138,7 @@ export const KeyringManager = () => {
     _password = pwd;
   };
 
-  const addTokenToAccount = (accountId: number, address: string) => {
+  const addTokenToAccount = (accountId: number) => {
     const account: IKeyringAccountState = getAccountById(accountId);
 
     // mainWallet.saveTokenInfo(address);
@@ -166,18 +168,22 @@ export const KeyringManager = () => {
   };
 
   const login = async (password: string): Promise<IKeyringAccountState | Error> => {
+    console.log('passwords', password, _password)
     if (!checkPassword(password)) return new Error('Invalid password');
 
     wallet = await _unlockWallet(password);
 
     _updateUnlocked();
     _notifyUpdate();
+    _updateMemStoreWallet();
 
     return wallet.activeAccount;
   };
 
   const _unlockWallet = async (password: string): Promise<IWalletState> => {
     const serializedWallet = storage.get('vault');
+
+    console.log('unlock wallet', serializedWallet)
 
     if (!serializedWallet) {
       _password = password;
@@ -212,13 +218,30 @@ export const KeyringManager = () => {
       password,
       mnemonic: _mnemonic,
       network,
+      index: wallet.activeAccount.id
     });
   }
 
   const setActiveNetworkForSigner = async ({ network }: { network: INetwork }) => {
-    const vault = _getVaultForActiveNetwork({ network, password: _password });
+    const vault = await _getVaultForActiveNetwork({ network, password: _password });
+
+    console.log('[changing network keyring] account', vault)
+
+    wallet = {
+      ...wallet,
+      accounts: {
+        ...wallet.accounts,
+        [vault.id]: vault,
+      },
+      activeNetwork: network,
+      activeAccount: vault,
+    }
+
+    console.log('[changing network keyring] wallet', wallet)
 
     _fullUpdate();
+
+    console.log('[changing network keyring] full update', wallet)
 
     return vault;
   }

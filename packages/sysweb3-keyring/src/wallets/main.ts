@@ -86,6 +86,7 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
     createdAccount,
     xprv,
   }: { label?: string, signer: any, createdAccount: any, xprv: string }) => {
+    console.log('[get initial account data] getting initial account...')
     const { balance, address } = createdAccount;
     const xpub = getAccountXpub();
 
@@ -117,7 +118,7 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
 
   /** set/get networks */
 
-  const _getAccountForNetwork = async ({ isSyscoinChain, password, mnemonic, network }: { isSyscoinChain: boolean, password: string, mnemonic: string, network: INetwork }) => {
+  const _getAccountForNetwork = async ({ isSyscoinChain, password, mnemonic, network, index }: { isSyscoinChain: boolean, password: string, mnemonic: string, network: INetwork, index: number }) => {
     if (isSyscoinChain) {
       const { hd: _hd, main: _main } = MainSigner({
         walletMnemonic: mnemonic,
@@ -143,6 +144,7 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
         createdAccount: updatedAccountInfo,
         xprv,
       });
+      console.log('[switch network] got created account', updatedAccountInfo, updatedAccountInfo.address);
 
       hd && hd.setAccountIndex(account.id);
 
@@ -156,9 +158,9 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
     return {
       ...web3Account,
       tokens: {},
-      id: hd.Signer.accountIndex,
+      id: index,
       isTrezorWallet: false,
-      label: `Account ${hd.Signer.accountIndex}`,
+      label: `Account ${index}`,
       transactions: {},
       trezorId: -1,
       xprv: '',
@@ -170,14 +172,15 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
     } as IKeyringAccountState;
   }
 
-  const setSignerNetwork = async ({ password, mnemonic, network }: { password: string, mnemonic: string, network: INetwork }): Promise<IKeyringAccountState> => {
+  const setSignerNetwork = async ({ password, mnemonic, network, index }: { password: string, mnemonic: string, network: INetwork, index: number }): Promise<IKeyringAccountState> => {
     const isSyscoinChain = Boolean(networks.syscoin[network.chainId]);
 
     if (!isSyscoinChain) {
       setActiveNetwork('ethereum', network.chainId);
     }
 
-    const account = await _getAccountForNetwork({ isSyscoinChain, password, mnemonic, network });
+    const account = await _getAccountForNetwork({ isSyscoinChain, password, mnemonic, network, index });
+
 
     return account;
   }
@@ -271,6 +274,6 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
     forgetSigners,
     setAccountIndexForDerivedAccount,
     getEncryptedPrivateKeyFromHd,
-    getLatestUpdateForAccount
+    getLatestUpdateForAccount,
   };
 };
