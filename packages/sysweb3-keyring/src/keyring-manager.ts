@@ -1,7 +1,13 @@
+// @ts-nocheck
 import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { IKeyringAccountState, IWalletState, initialWalletState, INetwork } from '@pollum-io/sysweb3-utils';
+import {
+  IKeyringAccountState,
+  IWalletState,
+  initialWalletState,
+  INetwork,
+} from '@pollum-io/sysweb3-utils';
 import { generateMnemonic, validateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
 import { MainWallet } from './wallets/main';
@@ -32,15 +38,17 @@ export const KeyringManager = () => {
   };
 
   const getDecryptedMnemonic = () => {
-    const decryptedMnemonic = CryptoJS.AES.decrypt(getEncryptedMnemonic(), _password).toString();
+    const decryptedMnemonic = CryptoJS.AES.decrypt(
+      getEncryptedMnemonic(),
+      _password
+    ).toString();
 
     return decryptedMnemonic;
   };
 
   const getAccountById = (id: number): IKeyringAccountState =>
-    Object.values(wallet.accounts).find(
-      (account) => account.id === id
-    ) || {} as IKeyringAccountState;
+    Object.values(wallet.accounts).find((account) => account.id === id) ||
+    ({} as IKeyringAccountState);
 
   const getPrivateKeyByAccountId = (id: number): string | null => {
     const account = Object.values(wallet.accounts).find(
@@ -213,14 +221,20 @@ export const KeyringManager = () => {
     mainWallet.txs.signMessage(account, msgParams.data, opts);
   };
 
-  const _getVaultForActiveNetwork = async ({ network, password }: { password: string, network: INetwork }) => {
+  const _getVaultForActiveNetwork = async ({
+    network,
+    password,
+  }: {
+    password: string;
+    network: INetwork;
+  }) => {
     return await mainWallet.setSignerNetwork({
       password,
       mnemonic: _mnemonic,
       network,
       index: wallet.activeAccount.id
     });
-  }
+  };
 
   const setActiveNetworkForSigner = async ({ network }: { network: INetwork }) => {
     const vault = await _getVaultForActiveNetwork({ network, password: _password });
@@ -244,23 +258,24 @@ export const KeyringManager = () => {
     console.log('[changing network keyring] full update', wallet)
 
     return vault;
-  }
+  };
 
   const _clearTemporaryLocalKeys = () => {
     _mnemonic = '';
     _password = '';
-  }
+  };
 
   const forgetMainWallet = () => {
     _clearTemporaryLocalKeys();
 
     mainWallet.forgetSigners();
-  }
+  };
 
-  const getEncryptedXprv = () => CryptoJS.AES.encrypt(
-    mainWallet.getEncryptedPrivateKeyFromHd(),
-    _password
-  ).toString();
+  const getEncryptedXprv = () =>
+    CryptoJS.AES.encrypt(
+      mainWallet.getEncryptedPrivateKeyFromHd(),
+      _password
+    ).toString();
 
   const validateSeed = (seedphrase: string) => {
     if (validateMnemonic(seedphrase)) {

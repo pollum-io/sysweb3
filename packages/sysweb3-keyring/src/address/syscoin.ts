@@ -1,4 +1,4 @@
-import { SyscoinHDSigner } from "@pollum-io/sysweb3-utils";
+import { SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
 
 export const SyscoinAddress = ({ hd }: { hd: SyscoinHDSigner }) => {
   /** get new receiving address passing true to skip increment,
@@ -13,4 +13,4 @@ export const SyscoinAddress = ({ hd }: { hd: SyscoinHDSigner }) => {
     getValidAddress,
     getChangeAddress,
   };
-}
+};
