@@ -1,9 +1,12 @@
 // @ts-ignore
 import { web3Provider } from '@pollum-io/sysweb3-network';
 import axios from 'axios';
+import * as sigUtil from 'eth-sig-util';
+import * as ethUtil from 'ethereumjs-util';
 import { ethers } from 'ethers';
 import { request, gql } from 'graphql-request';
 import _ from 'lodash';
+import typedDataV4 from 'typedDataV4';
 import { Account, TransactionReceipt } from 'web3-core';
 
 export const Web3Accounts = () => {
@@ -347,6 +350,48 @@ export const Web3Accounts = () => {
   const getTransactionCount = async (address: string) =>
     await web3Provider.eth.getTransactionCount(address);
 
+  const eth_signTypedData_v4 = () => {
+    const msgParams = JSON.stringify(typedDataV4);
+    const provider = window.ethereum;
+
+    const from = provider.selectedAddress;
+
+    const params = [from, msgParams];
+    const method = 'eth_signTypedData_v4';
+
+    return provider.request(
+      {
+        method,
+        params,
+        from,
+      },
+      (err, result) => {
+        if (err) return console.dir(err);
+        if (result.error) {
+          alert(result.error.message);
+        }
+        if (result.error) return console.error('ERROR', result);
+        console.log('TYPED SIGNED:' + JSON.stringify(result.result));
+
+        const recovered = sigUtil.recoverTypedSignature_v4({
+          data: JSON.parse(msgParams),
+          sig: result.result,
+        });
+
+        if (
+          ethUtil.toChecksumAddress(recovered) ===
+          ethUtil.toChecksumAddress(from)
+        ) {
+          alert('Successfully recovered signer as ' + from);
+        } else {
+          alert(
+            'Failed to verify signer when comparing ' + result + ' to ' + from
+          );
+        }
+      }
+    );
+  };
+
   return {
     createAccount,
     getBalance,
@@ -354,6 +399,7 @@ export const Web3Accounts = () => {
     getTokens,
     getUserTransactions,
     getTransactionCount,
+    eth_signTypedData_v4,
     sendTransaction,
     importAccount,
   };
