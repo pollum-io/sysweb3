@@ -257,7 +257,7 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
 
   const trezor = TrezorWallet({ hd, main });
   const txs = SyscoinTransactions({ hd, main });
-  const address = SyscoinAddress({ hd });
+  const address = SyscoinAddress({ mnemonic: _mnemonic, wallet });
 
   /** end */
 

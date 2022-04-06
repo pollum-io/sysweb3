@@ -1,6 +1,13 @@
-import { SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
+import { IWalletState, MainSigner } from '@pollum-io/sysweb3-utils';
 
-export const SyscoinAddress = ({ hd }: { hd: SyscoinHDSigner }) => {
+export const SyscoinAddress = ({ mnemonic, wallet: { activeNetwork } }: { mnemonic: string, wallet: IWalletState }) => {
+  const { hd } = MainSigner({
+    walletMnemonic: mnemonic,
+    isTestnet: activeNetwork.isTestnet,
+    network: activeNetwork.url,
+    blockbookURL: activeNetwork.url
+  });
+
   /** get new receiving address passing true to skip increment,
    *  this way we always receive a new unused and valid address for
    *  each transaction

@@ -4,7 +4,7 @@ import coinSelectSyscoin from 'coinselectsyscoin';
 import { SyscoinHDSigner } from '.';
 import { ethers } from 'ethers';
 
-const InfuraProvider = ethers.providers.InfuraProvider;
+// const InfuraProvider = ethers.providers.InfuraProvider;
 
 export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
   const estimateSysTransactionFee = async (items: any) => {
@@ -59,17 +59,17 @@ export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
     return ethers.utils.isAddress(address);
   }
 
-  const getTransactionCount = (address: string, chainId = 1) => {
-    const infuraProvider = new InfuraProvider();
+  // const getTransactionCount = (address: string, chainId = 1) => {
+  //   const infuraProvider = new InfuraProvider();
 
-    return infuraProvider.getTransactionCount(address, 'pending');
-  }
+  //   return infuraProvider.getTransactionCount(address, 'pending');
+  // }
 
   return {
     estimateSysTransactionFee,
     getRecommendedFee,
     estimateTokenTransferGasLimit,
     isValidEthereumAddress,
-    getTransactionCount,
+    // getTransactionCount,
   }
 }

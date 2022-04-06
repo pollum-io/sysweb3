@@ -19,6 +19,7 @@ export const KeyringManager = () => {
   let _mnemonic = '';
 
   let wallet: IWalletState = initialWalletState;
+
   const checkPassword = (pwd: string) => _password === pwd;
 
   const mainWallet = MainWallet({ actions: { checkPassword } });
