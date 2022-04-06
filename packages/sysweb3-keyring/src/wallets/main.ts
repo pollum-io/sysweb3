@@ -41,7 +41,7 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
     return {
       address: '',
       balance: 0 / 1e8,
-      transactions: txs,
+      transactions: {},
       tokens: {},
     };
   };

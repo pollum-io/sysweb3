@@ -8,10 +8,13 @@ import {
   initialWalletState,
   INetwork,
 } from '@pollum-io/sysweb3-utils';
-import { SyscoinAddress } from 'address';
+import { SyscoinAddress } from './address';
 import { generateMnemonic, validateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
 import { MainWallet } from './wallets/main';
+import TrezorTransactions from './trezor/transactions';
+import { TrezorWallet } from './trezor';
+import { SyscoinTransactions } from './transactions';
 
 export const KeyringManager = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
@@ -63,6 +66,17 @@ export const KeyringManager = () => {
   const getState = () => wallet;
   const getNetwork = () => wallet.activeNetwork;
   const getAccounts = () => Object.values(wallet.accounts);
+
+  /** controllers */
+
+  const controllersData = { mnemonic: _mnemonic, wallet };
+
+  const _trezorTxs = TrezorTransactions(controllersData);
+  const trezor = TrezorWallet({ ...controllersData, tx: _trezorTxs });
+  const txs = SyscoinTransactions(controllersData);
+  const address = SyscoinAddress(controllersData);
+
+  /** end */
 
   const _memStore = new ObservableStore<{
     isUnlocked: boolean;
@@ -220,7 +234,7 @@ export const KeyringManager = () => {
   ): void => {
     const account = getAccountById(msgParams.accountId);
 
-    mainWallet.txs.signMessage(account, msgParams.data, opts);
+    txs.signMessage(account, msgParams.data, opts);
   };
 
   const _getVaultForActiveNetwork = async ({
@@ -288,17 +302,6 @@ export const KeyringManager = () => {
 
     return false;
   };
-
-  /** controllers */
-
-  const controllersData = { mnemonic: _mnemonic, wallet };
-
-  const _trezorTxs = TrezorTransactions(controllersData);
-  const trezor = TrezorWallet({ ...controllersData, tx: _trezorTxs });
-  const txs = SyscoinTransactions(controllersData);
-  const address = SyscoinAddress(controllersData);
-
-  /** end */
 
   return {
     validateSeed,
