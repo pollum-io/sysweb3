@@ -1,7 +1,14 @@
-import { ITokenMap, ITxid, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
+import { ITokenMap, ITxid, IWalletState, MainSigner } from '@pollum-io/sysweb3-utils';
 import sys from 'syscoinjs-lib';
 
-const TrezorTransactions = ({ hd, main }: { hd: SyscoinHDSigner, main: any }) => {
+const TrezorTransactions = ({ mnemonic, wallet: { activeNetwork } }: { mnemonic: string, wallet: IWalletState }) => {
+  const { hd, main } = MainSigner({
+    walletMnemonic: mnemonic,
+    isTestnet: activeNetwork.isTestnet,
+    network: activeNetwork.url,
+    blockbookURL: activeNetwork.url
+  });
+
   const confirmTokenMint = async ({
     tokenOptions,
     feeRate,

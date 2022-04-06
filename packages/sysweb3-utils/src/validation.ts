@@ -1,8 +1,8 @@
 // @ts-ignore
 import { web3Provider } from '@pollum-io/sysweb3-network';
-import { IErc20Token } from '.';
+import { ethers } from 'ethers';
 import abi from './abi/erc20.json';
-import { createContractUsingAbi } from '.';
+import { IErc20Token, createContractUsingAbi } from '.';
 
 export const validateCurrentRpcUrl = () => {
   return web3Provider.eth.net.isListening((error: any, response: any) => {
@@ -38,7 +38,26 @@ export const validateToken = async (address: string) => {
 };
 
 export const isBase64 = (string: string) => {
-  const base64 = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$/;
+  const base64 =
+    /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$/;
 
   return base64.test(string);
-}
+};
+
+export const isValidEthereumAddress = (address: string) => {
+  return ethers.utils.isAddress(address);
+};
+
+const InfuraProvider = ethers.providers.InfuraProvider;
+
+export const isContractAddress = async (address: string, chainId = 1) => {
+  if (address) {
+    const provider = new InfuraProvider(
+      chainId,
+      'c42232a29f9d4bd89d53313eb16ec241'
+    );
+    const code = await provider.getCode(address);
+    return code !== '0x';
+  }
+  return false;
+};

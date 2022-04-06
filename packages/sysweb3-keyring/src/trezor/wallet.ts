@@ -1,9 +1,16 @@
-import { IKeyringAccountState, SyscoinHDSigner } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState, IWalletState, MainSigner } from '@pollum-io/sysweb3-utils';
 import sys from 'syscoinjs-lib';
 import { fromZPub } from 'bip84';
-import TrezorTransactions from './transactions';
 
-export const TrezorWallet = ({ hd, main }: { hd: SyscoinHDSigner, main: any }) => {
+export const TrezorWallet = ({ tx, mnemonic, wallet: { activeNetwork } }: { tx: any; mnemonic: string, wallet: IWalletState }) => {
+  const { main } = MainSigner({
+    walletMnemonic: mnemonic,
+    isTestnet: activeNetwork.isTestnet,
+    network: activeNetwork.url,
+    blockbookURL: activeNetwork.url
+  });
+
+
   const getAccountInfo = async (
     xpub: string,
     sysjs: any,
@@ -104,8 +111,6 @@ export const TrezorWallet = ({ hd, main }: { hd: SyscoinHDSigner, main: any }) =
       });
     });
   }
-
-  const tx = TrezorTransactions({ hd, main });
 
   return {
     createWallet,

@@ -6,14 +6,22 @@ import {
   ITokenSend,
   ITokenUpdate,
   ITxid,
-  SyscoinHDSigner,
   feeUtils,
   txUtils,
   IKeyringAccountState,
+  MainSigner,
+  IWalletState,
 } from '@pollum-io/sysweb3-utils';
 import syscointx from 'syscointx-js';
 
-export const SyscoinTransactions = ({ hd, main }: { hd: SyscoinHDSigner, main: any }) => {
+export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { mnemonic: string, wallet: IWalletState }) => {
+  const { hd, main } = MainSigner({
+    walletMnemonic: mnemonic,
+    isTestnet: activeNetwork.isTestnet,
+    network: activeNetwork.url,
+    blockbookURL: activeNetwork.url
+  });
+
   const {
     getFeeRate,
     getRawTransaction,

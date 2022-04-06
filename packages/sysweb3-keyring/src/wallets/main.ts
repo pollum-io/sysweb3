@@ -253,22 +253,11 @@ export const MainWallet = ({ actions: { checkPassword } }: { actions: { checkPas
 
   /** end */
 
-  /** controllers */
-
-  const trezor = TrezorWallet({ hd, main });
-  const txs = SyscoinTransactions({ hd, main });
-  const address = SyscoinAddress({ mnemonic: _mnemonic, wallet });
-
-  /** end */
-
   return {
     createMainWallet,
     getAccountXpub,
     getAccountInfo,
     getEncryptedPrivateKey,
-    trezor,
-    txs,
-    address,
     setSignerNetwork,
     getSeed,
     hasHdMnemonic,

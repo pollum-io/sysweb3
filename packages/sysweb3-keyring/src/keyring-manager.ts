@@ -8,6 +8,7 @@ import {
   initialWalletState,
   INetwork,
 } from '@pollum-io/sysweb3-utils';
+import { SyscoinAddress } from 'address';
 import { generateMnemonic, validateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
 import { MainWallet } from './wallets/main';
@@ -288,6 +289,17 @@ export const KeyringManager = () => {
     return false;
   };
 
+  /** controllers */
+
+  const controllersData = { mnemonic: _mnemonic, wallet };
+
+  const _trezorTxs = TrezorTransactions(controllersData);
+  const trezor = TrezorWallet({ ...controllersData, tx: _trezorTxs });
+  const txs = SyscoinTransactions(controllersData);
+  const address = SyscoinAddress(controllersData);
+
+  /** end */
+
   return {
     validateSeed,
     setWalletPassword,
@@ -310,6 +322,9 @@ export const KeyringManager = () => {
     setActiveNetworkForSigner,
     forgetMainWallet,
     getEncryptedXprv,
+    address,
+    txs,
+    trezor,
     ...mainWallet,
   };
 };
