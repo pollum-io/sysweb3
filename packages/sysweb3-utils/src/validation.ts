@@ -1,8 +1,8 @@
 // @ts-ignore
-import { web3Provider } from '@pollum-io/sysweb3-network';
-import { ethers } from 'ethers';
-import abi from './abi/erc20.json';
-import { IErc20Token, createContractUsingAbi } from '.';
+import { web3Provider } from "@pollum-io/sysweb3-network";
+import { ethers } from "ethers";
+import abi from "./abi/erc20.json";
+import { IErc20Token, createContractUsingAbi } from ".";
 
 export const validateCurrentRpcUrl = () => {
   return web3Provider.eth.net.isListening((error: any, response: any) => {
@@ -18,12 +18,14 @@ export const validateToken = async (address: string) => {
     const contract = await createContractUsingAbi(abi, address);
 
     const [decimals, name, symbol]: IErc20Token[] = await Promise.all([
-      contract.methods.symbol().call(),
       contract.methods.decimals().call(),
       contract.methods.name().call(),
+      contract.methods.symbol().call(),
     ]);
 
-    if (decimals && name && symbol) {
+    const validToken = decimals && name && symbol;
+
+    if (validToken) {
       return {
         name,
         symbol,
@@ -33,7 +35,7 @@ export const validateToken = async (address: string) => {
       throw new Error();
     }
   } catch (error) {
-    throw new Error('Token not found, verify the Token Contract Address.');
+    throw new Error("Token not found, verify the Token Contract Address.");
   }
 };
 
@@ -54,10 +56,10 @@ export const isContractAddress = async (address: string, chainId = 1) => {
   if (address) {
     const provider = new InfuraProvider(
       chainId,
-      'c42232a29f9d4bd89d53313eb16ec241'
+      "c42232a29f9d4bd89d53313eb16ec241"
     );
     const code = await provider.getCode(address);
-    return code !== '0x';
+    return code !== "0x";
   }
   return false;
 };
