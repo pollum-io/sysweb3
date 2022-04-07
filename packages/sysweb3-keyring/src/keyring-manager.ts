@@ -18,6 +18,7 @@ import { TrezorWallet } from './trezor';
 import { SyscoinTransactions } from './transactions';
 import { Web3Accounts } from './accounts';
 import { networks } from '@pollum-io/sysweb3-network';
+import { fromZPrv } from 'bip84';
 
 export const KeyringManager = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
@@ -75,7 +76,6 @@ export const KeyringManager = () => {
   const _trezorTxs = TrezorTransactions(controllersData);
   const trezor = TrezorWallet({ ...controllersData, tx: _trezorTxs });
   const txs = SyscoinTransactions(controllersData);
-  const address = SyscoinAddress(controllersData);
 
   /** end */
 
@@ -295,10 +295,11 @@ export const KeyringManager = () => {
   /** set/get account info */
 
   const _getBackendAccountData = async (): Promise<{
-    address: string | null;
+    xpub: string;
     balance: number;
     transactions: any;
     tokens: any;
+    receivingAddress: string;
   }> => {
     const { hd: _hd, main: _main } = MainSigner({
       walletMnemonic: _mnemonic,
@@ -322,9 +323,9 @@ export const KeyringManager = () => {
         true
       );
 
-    const receivingAddress = hd.getNewReceivingAddress(true);
+    const receivingAddress = await hd.getNewReceivingAddress(true);
 
-    console.log('[_getBackendAccountData] response', { hd, main, address });
+    console.log('[_ntData] response', { hd, main, address });
 
     return {
       receivingAddress,
@@ -344,10 +345,9 @@ export const KeyringManager = () => {
     xprv,
   }: { label?: string, signer: any, createdAccount: any, xprv: string }) => {
     console.log('[get initial account data] getting initial account...')
-    const { balance, address } = createdAccount;
-    const xpub = getAccountXpub();
+    const { balance, receivingAddress, xpub } = createdAccount;
 
-    const account: IKeyringAccountState = {
+    const account = {
       id: signer.Signer.Signer.accountIndex,
       label: label ? label : `Account ${signer.Signer.Signer.accountIndex + 1}`,
       balances: {
@@ -356,7 +356,7 @@ export const KeyringManager = () => {
       },
       xpub,
       xprv,
-      address,
+      address: receivingAddress,
       isTrezorWallet: false,
     };
 
@@ -446,7 +446,7 @@ export const KeyringManager = () => {
       setActiveNetwork('ethereum', network.chainId);
     }
 
-    const account = await _getAccountForNetwork({ isSyscoinChain });
+    const account = await _getAccountForNetwork({ isSyscoinChain, network });
 
     return account;
   }

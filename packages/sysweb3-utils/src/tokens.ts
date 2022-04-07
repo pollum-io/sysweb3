@@ -127,6 +127,19 @@ export const getSymbolByChain = async (chain: string) => {
   return data.symbol.toString().toUpperCase();
 };
 
+export const getTokenBySymbol = async (symbol: string) => {
+  const { data } = await axios.get(
+    `https://api.coingecko.com/api/v3/coins/${symbol}`
+  );
+
+  const symbolToUpperCase = data.symbol.toString().toUpperCase();
+
+  return {
+    symbol: symbolToUpperCase,
+    icon: getTokenIconBySymbol(symbolToUpperCase),
+  };
+};
+
 export type IEthereumTokensResponse = {
   ethereum: IEthereumAddress;
 };
