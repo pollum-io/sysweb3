@@ -55,3 +55,16 @@ export interface IKeyringAccountState {
   balances: IKeyringBalances;
   xpub: string;
 }
+
+export interface ISyscoinBackendAccount {
+  page: number,
+  totalPages: number,
+  itemsOnPage: number,
+  address: string,
+  balance: string,
+  totalReceived: string,
+  totalSent: string,
+  unconfirmedBalance: string,
+  unconfirmedTxs: number,
+  txs: number
+}
