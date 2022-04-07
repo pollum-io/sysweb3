@@ -128,16 +128,24 @@ export const getSymbolByChain = async (chain: string) => {
 };
 
 export const getTokenBySymbol = async (symbol: string) => {
-  const { data } = await axios.get(
-    `https://api.coingecko.com/api/v3/coins/${symbol}`
+  const { data: { symbol: _symbol, contract_address, description, image } } = await axios.get(
+    `https://api.coingecko.com/api/v3/search?query=${symbol}`
   );
 
-  const symbolToUpperCase = data.symbol.toString().toUpperCase();
+  const symbolToUpperCase = _symbol.toString().toUpperCase();
 
   return {
-    symbol: symbolToUpperCase,
-    icon: getTokenIconBySymbol(symbolToUpperCase),
+    cio: symbolToUpperCase,
+    icon: image.small,
+    description: description.en,
+    contract: contract_address,
   };
+};
+
+export const getSearch = async (query: string) => {
+  return await axios.get(
+    `https://api.coingecko.com/api/v3/search?query=${query}`
+  );
 };
 
 export type IEthereumTokensResponse = {
