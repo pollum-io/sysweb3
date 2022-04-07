@@ -18,6 +18,7 @@ import TrezorTransactions from './trezor/transactions';
 import { TrezorWallet } from './trezor';
 import { SyscoinTransactions } from './transactions';
 import { Web3Accounts } from './accounts';
+import { networks } from '@pollum-io/sysweb3-network';
 
 export const KeyringManager = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
