@@ -10,7 +10,6 @@ import {
   INetwork,
   MainSigner,
 } from '@pollum-io/sysweb3-utils';
-import { SyscoinAddress } from './address';
 import { generateMnemonic, validateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
 import { MainWallet } from './wallets/main';
@@ -315,7 +314,7 @@ export const KeyringManager = () => {
 
     console.log('[_getBackendAccountData]', { hd, main });
 
-    const response =
+    const { address } =
       await sys.utils.fetchBackendAccount(
         main.blockbookURL,
         getAccountXpub(),
@@ -323,11 +322,13 @@ export const KeyringManager = () => {
         true
       );
 
+    const receivingAddress = hd.getNewReceivingAddress(true);
 
-    console.log('[_getBackendAccountData] response', { hd, main, response });
+    console.log('[_getBackendAccountData] response', { hd, main, address });
 
     return {
-      address: '',
+      receivingAddress,
+      xpub: address,
       balance: 0 / 1e8,
       transactions: {},
       tokens: {},
@@ -538,7 +539,6 @@ export const KeyringManager = () => {
     setActiveNetworkForSigner,
     forgetMainWallet,
     getEncryptedXprv,
-    address,
     txs,
     trezor,
     createMainWallet,

@@ -250,8 +250,7 @@ export const Web3Accounts = () => {
         if (userTxs.data.result !== []) {
           return userTxs.data.result;
         }
-        return [];
-      } else {
+
         return [];
       }
     } catch (error) {
