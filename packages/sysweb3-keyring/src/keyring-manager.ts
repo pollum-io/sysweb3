@@ -2,6 +2,7 @@
 import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
+import sys from 'syscoinjs-lib';
 import {
   IKeyringAccountState,
   IWalletState,
@@ -233,12 +234,8 @@ export const KeyringManager = () => {
     txs.signMessage(account, msgParams.data, opts);
   };
 
-  const _getVaultForActiveNetwork = async () => {
-    return await setSignerNetwork();
-  };
-
-  const setActiveNetworkForSigner = async () => {
-    const vault = await _getVaultForActiveNetwork();
+  const setActiveNetworkForSigner = async (network: INetwork) => {
+    const vault = await setSignerNetwork(network);
 
     console.log('[changing network keyring] account', vault)
 
@@ -248,6 +245,7 @@ export const KeyringManager = () => {
         ...wallet.accounts,
         [vault.id]: vault,
       },
+      activeNetwork: network,
       activeAccount: vault,
     }
 
@@ -384,13 +382,13 @@ export const KeyringManager = () => {
 
   /** set/get networks */
 
-  const _getAccountForNetwork = async ({ isSyscoinChain }: { isSyscoinChain: boolean }) => {
+  const _getAccountForNetwork = async ({ isSyscoinChain, network }: { isSyscoinChain: boolean, network: INetwork }) => {
     if (isSyscoinChain) {
       const { hd: _hd, main: _main } = MainSigner({
         walletMnemonic: _mnemonic,
-        isTestnet: wallet.activeNetwork.isTestnet,
-        network: wallet.activeNetwork.url,
-        blockbookURL: wallet.activeNetwork.url
+        isTestnet: network.isTestnet,
+        network: network.url,
+        blockbookURL: network.url
       });
 
       hd = _hd;
@@ -439,11 +437,11 @@ export const KeyringManager = () => {
     } as IKeyringAccountState;
   }
 
-  const setSignerNetwork = async (): Promise<IKeyringAccountState> => {
-    const isSyscoinChain = Boolean(networks.syscoin[wallet.activeNetwork.chainId]);
+  const setSignerNetwork = async (network: INetwork): Promise<IKeyringAccountState> => {
+    const isSyscoinChain = Boolean(networks.syscoin[network.chainId]);
 
     if (!isSyscoinChain) {
-      setActiveNetwork('ethereum', wallet.activeNetwork.chainId);
+      setActiveNetwork('ethereum', network.chainId);
     }
 
     const account = await _getAccountForNetwork({ isSyscoinChain });
