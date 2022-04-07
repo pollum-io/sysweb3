@@ -17,7 +17,7 @@ import TrezorTransactions from './trezor/transactions';
 import { TrezorWallet } from './trezor';
 import { SyscoinTransactions } from './transactions';
 import { Web3Accounts } from './accounts';
-import { networks } from '@pollum-io/sysweb3-network';
+import { networks, setActiveNetwork } from '@pollum-io/sysweb3-network';
 import { fromZPrv } from 'bip84';
 
 export const KeyringManager = () => {
@@ -424,7 +424,7 @@ export const KeyringManager = () => {
 
     return {
       ...web3Account,
-      tokens: {},
+      assets: {},
       id,
       isTrezorWallet: false,
       label: `Account ${id}`,
