@@ -313,7 +313,7 @@ export const KeyringManager = () => {
       walletMnemonic: mnemonic,
       isTestnet: network.isTestnet,
       network: network.url,
-      blockbookURL: network.url
+      blockbookURL: network.isTestnet ? 'testnet' : 'main'
     });
 
     hd = _hd;
@@ -322,7 +322,7 @@ export const KeyringManager = () => {
     const { address, response } =
       await sys.utils.fetchBackendAccount(
         main.blockbookURL,
-        getAccountXpub(),
+        'zpub6rowqhwXmUCV5Dem7TFFWQSisgK9NwbdkJDYMqBi7JoRHK8fd9Zobr4bdJPGhzGvniAhfrCAbNetRqSDsbTQBXPdN4qzyNv5B1SMsWVtin2',
         'tokens=nonzero&details=txs',
         true
       );
@@ -336,7 +336,7 @@ export const KeyringManager = () => {
     return {
       receivingAddress,
       xpub: address,
-      balance: 0 / 1e8,
+      balance: response.balance / 1e8,
       transactions: {},
       assets: {},
     };
