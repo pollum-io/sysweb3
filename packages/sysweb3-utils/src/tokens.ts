@@ -151,6 +151,17 @@ export const getSearch = async (query: string) => {
   );
 };
 
+/**
+ * This function should return the tokens infos by token contract address to be used in import token at Pali.
+ *
+ * @param {string} tokenAddress
+ *
+ * @example
+ *
+ * ```
+ * <button onClick={importWeb3Token('0x00000000000000000000089000000000000000')}>import token</button>
+ * ```
+ */
 export const importWeb3Token = async (tokenAddress: string) => {
   try {
     const contract = await createContractUsingAbi(abi20, tokenAddress);
