@@ -7,7 +7,6 @@ import { ethers } from 'ethers';
 import { request, gql } from 'graphql-request';
 import _ from 'lodash';
 import { Account, TransactionReceipt } from 'web3-core';
-import { typedDataV4 } from '../typedDataV4';
 
 export const Web3Accounts = () => {
   /**
@@ -285,7 +284,7 @@ export const Web3Accounts = () => {
         console.log('TYPED SIGNED:' + JSON.stringify(result.result));
 
         const recovered = sigUtil.recoverTypedSignature_v4({
-          data: JSON.parse(msgParams),
+          data: JSON.parse(msg),
           sig: result.result,
         });
 
