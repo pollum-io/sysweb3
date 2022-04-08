@@ -55,10 +55,6 @@ export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
     }
   }
 
-  const isValidEthereumAddress = (address: string) => {
-    return ethers.utils.isAddress(address);
-  }
-
   // const getTransactionCount = (address: string, chainId = 1) => {
   //   const infuraProvider = new InfuraProvider();
 
@@ -69,7 +65,6 @@ export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
     estimateSysTransactionFee,
     getRecommendedFee,
     estimateTokenTransferGasLimit,
-    isValidEthereumAddress,
     // getTransactionCount,
   }
 }
