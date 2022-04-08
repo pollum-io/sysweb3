@@ -1,4 +1,5 @@
 import axios from 'axios';
+import abi20 from './abi/erc20.json';
 import abi from './abi/erc721.json';
 import { IEthereumAddress, createContractUsingAbi } from '.';
 
@@ -152,7 +153,7 @@ export const getSearch = async (query: string) => {
 
 export const importWeb3Token = async (tokenAddress: string) => {
   try {
-    const contract = await createContractUsingAbi(abi, tokenAddress);
+    const contract = await createContractUsingAbi(abi20, tokenAddress);
 
     const [tokenDecimals, tokenName, tokenSymbol]: IErc20Token[] =
       await Promise.all([
