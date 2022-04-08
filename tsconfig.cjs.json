@@ -5,6 +5,7 @@
     "outDir": "dist/cjs",
     "declarationDir": "dist/types",
     "composite": false,
+    "noImplicitReturns": false
   },
   "include": [
     "src"
