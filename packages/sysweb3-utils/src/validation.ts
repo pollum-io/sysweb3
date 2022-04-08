@@ -19,9 +19,9 @@ export const validateToken = async (address: string) => {
     const contract = await createContractUsingAbi(abi, address);
 
     const [decimals, name, symbol]: IErc20Token[] = await Promise.all([
-      contract.methods.symbol().call(),
       contract.methods.decimals().call(),
       contract.methods.name().call(),
+      contract.methods.symbol().call(),
     ]);
 
     if (decimals && name && symbol) {

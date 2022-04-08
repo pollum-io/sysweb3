@@ -24,7 +24,6 @@ export const KeyringManager = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
   let _password = '';
-  let _mnemonic = '';
 
   let wallet: IWalletState = initialWalletState;
 
@@ -92,7 +91,7 @@ export const KeyringManager = () => {
     isUnlocked: boolean;
     wallet: IWalletState;
   }>({
-    isUnlocked: Boolean(_password && hasHdMnemonic()),
+    isUnlocked: Boolean(_password && storage.get('signers-key').mnemonic && hasHdMnemonic()),
     wallet: initialWalletState,
   });
 
@@ -169,16 +168,6 @@ export const KeyringManager = () => {
     storage.set('vault-key', pwd);
   };
 
-  const addTokenToAccount = (accountId: number) => {
-    const account: IKeyringAccountState = getAccountById(accountId);
-
-    // saveTokenInfo(address);
-
-    _fullUpdate();
-
-    return account;
-  };
-
   const logout = () => {
     const eventEmitter = new SafeEventEmitter();
 
@@ -203,6 +192,7 @@ export const KeyringManager = () => {
 
     wallet = await _unlockWallet(password);
 
+    _clearTemporaryLocalKeys();
     _updateUnlocked();
     _notifyUpdate();
     _updateMemStoreWallet();
@@ -317,11 +307,13 @@ export const KeyringManager = () => {
     tokens: any;
     receivingAddress: string;
   }> => {
+    const { network, mnemonic } = storage.get('signers-key');
+
     const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: _mnemonic,
-      isTestnet: wallet.activeNetwork.isTestnet,
-      network: wallet.activeNetwork.url,
-      blockbookURL: wallet.activeNetwork.url
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
     });
 
     hd = _hd;
@@ -335,7 +327,7 @@ export const KeyringManager = () => {
         true
       );
 
-    const receivingAddress = await hd.getNewReceivingAddress(true);
+    const receivingAddress = await _hd.getNewReceivingAddress(true);
 
     console.log('[_getBackendAccountData] response', { hd, main, address, response });
 
@@ -404,7 +396,7 @@ export const KeyringManager = () => {
 
     if (isSyscoinChain) {
       const { hd: _hd, main: _main } = MainSigner({
-        walletMnemonic: _mnemonic,
+        walletMnemonic: mnemonic,
         isTestnet: network.isTestnet,
         network: network.url,
         blockbookURL: network.url
@@ -439,12 +431,12 @@ export const KeyringManager = () => {
       return account;
     }
 
-    const web3Account = web3Wallet.importAccount(_mnemonic);
+    const web3Account = web3Wallet.importAccount(mnemonic);
 
     const balance = await web3Wallet.getBalance(web3Account.address);
     const nfts = await web3Wallet.getNftsByAddress(web3Account.address);
     const tokens = await web3Wallet.getTokens(web3Account.address);
-    const txs = await web3Wallet.getUserTransactions(web3Account.address);
+    const txs = await web3Wallet.getUserTransactions(web3Account.address, 'rinkeby');
 
     console.log('response web3 fetch', { balance, nfts, tokens, txs, web3Account })
 
@@ -473,8 +465,10 @@ export const KeyringManager = () => {
 
     const transactions = {};
 
-    for (const transaction of txs) {
-      transactions[transaction.nonce] = transaction;
+    if (txs) {
+      for (const transaction of txs) {
+        transactions[transaction.nonce] = transaction;
+      }
     }
 
     return {
@@ -516,7 +510,7 @@ export const KeyringManager = () => {
     const { mnemonic, network } = storage.get('signers-key');
 
     const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: _mnemonic,
+      walletMnemonic: mnemonic,
       isTestnet: network.isTestnet,
       network: network.url,
       blockbookURL: network.url
@@ -592,7 +586,6 @@ export const KeyringManager = () => {
     isUnlocked,
     getEncryptedMnemonic,
     getDecryptedMnemonic,
-    addTokenToAccount,
     getState,
     getNetwork,
     getPrivateKeyByAccountId,
@@ -614,5 +607,6 @@ export const KeyringManager = () => {
     hasHdMnemonic,
     forgetSigners,
     setAccountIndexForDerivedAccount,
+    _getLatestUpdateForWeb3Accounts
   };
 };
