@@ -1,8 +1,9 @@
 // @ts-ignore
-import { web3Provider } from "@pollum-io/sysweb3-network";
-import { ethers } from "ethers";
-import abi from "./abi/erc20.json";
-import { IErc20Token, createContractUsingAbi } from ".";
+import { web3Provider } from '@pollum-io/sysweb3-network';
+import { ethers } from 'ethers';
+import abi from './abi/erc20.json';
+import { IErc20Token, createContractUsingAbi, INetwork } from '.';
+import { bech32 } from 'bech32';
 
 export const validateCurrentRpcUrl = () => {
   return web3Provider.eth.net.isListening((error: any, response: any) => {
@@ -61,5 +62,33 @@ export const isContractAddress = async (address: string, chainId = 1) => {
     const code = await provider.getCode(address);
     return code !== "0x";
   }
+  return false;
+};
+
+export const isValidSYSAddress = (
+  address: string,
+  network: INetwork,
+  verification = true
+) => {
+  if (!verification) return true;
+
+  // ? this if might be unnecessary
+  if (address && typeof address === 'string') {
+    try {
+      const decodedAddr = bech32.decode(address);
+
+      if (
+        (network.chainId === 57 && decodedAddr.prefix === 'sys') ||
+        (network.chainId === 5700 && decodedAddr.prefix === 'tsys')
+      ) {
+        const encode = bech32.encode(decodedAddr.prefix, decodedAddr.words);
+
+        return encode === address.toLowerCase();
+      }
+    } catch (error) {
+      return false;
+    }
+  }
+
   return false;
 };

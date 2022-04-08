@@ -1,6 +1,7 @@
-import axios from "axios";
-import abi from "./abi/erc721.json";
-import { IEthereumAddress, createContractUsingAbi } from ".";
+import axios from 'axios';
+import abi20 from './abi/erc20.json';
+import abi from './abi/erc721.json';
+import { IEthereumAddress, createContractUsingAbi } from '.';
 
 /**
  * This function should return a NFT image link.
@@ -22,7 +23,7 @@ export const getNftImage = async (contract: string, tokenId: number) => {
       .call();
 
     if (nft) {
-      const ipfsUrl = String(nft).replace("ipfs://", "https://ipfs.io/ipfs/");
+      const ipfsUrl = String(nft).replace('ipfs://', 'https://ipfs.io/ipfs/');
 
       const url = await axios.get(ipfsUrl);
 
@@ -30,13 +31,13 @@ export const getNftImage = async (contract: string, tokenId: number) => {
        * 'https://gateway.pinata.cloud/ipfs/Qmc4DqK9xeoSvtVmTcS6YG3DiWHyfiwQsnwQfzcqAvtmHj'
        */
 
-      return String(url.data.image).replace("ipfs://", "https://ipfs.io/ipfs/");
+      return String(url.data.image).replace('ipfs://', 'https://ipfs.io/ipfs/');
     }
 
-    throw new Error("NFTinfo not found.");
+    throw new Error('NFTinfo not found.');
   } catch (error) {
     console.log(
-      "Verify current network. Set the same network of NFT contract."
+      'Verify current network. Set the same network of NFT contract.'
     );
     throw error;
   }
@@ -75,7 +76,7 @@ export const getTokenIconBySymbol = async (symbol: string) => {
     }
   } catch (error) {
     // todo: handle
-    throw new Error("Token icon not found");
+    throw new Error('Token icon not found');
   }
 };
 
@@ -86,7 +87,7 @@ export const isNFT = (guid: number) => {
 };
 
 export const getHost = (url: string) => {
-  if (typeof url === "string" && url !== "") {
+  if (typeof url === 'string' && url !== '') {
     return new URL(url).host;
   }
 
@@ -163,7 +164,7 @@ export const getSearch = async (query: string) => {
  */
 export const importWeb3Token = async (tokenAddress: string) => {
   try {
-    const contract = await createContractUsingAbi(abi, tokenAddress);
+    const contract = await createContractUsingAbi(abi20, tokenAddress);
 
     const [tokenDecimals, tokenName, tokenSymbol]: IErc20Token[] =
       await Promise.all([
@@ -195,8 +196,10 @@ export const importWeb3Token = async (tokenAddress: string) => {
         contract: tokenAddress,
       };
     }
+
+    return {};
   } catch (error) {
-    throw new Error("Token not found, verify the Token Contract Address.");
+    throw new Error('Token not found, verify the Token Contract Address.');
   }
 };
 
@@ -242,9 +245,9 @@ export type IErc20Token = {
 };
 
 export enum IKeyringTokenType {
-  SYS = "SYS",
-  ETH = "ETH",
-  ERC20 = "ERC20",
+  SYS = 'SYS',
+  ETH = 'ETH',
+  ERC20 = 'ERC20',
 }
 
 export type ISyscoinToken = {

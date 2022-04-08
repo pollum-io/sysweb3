@@ -6,7 +6,8 @@
     "outDir": "dist/esm",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "declarationDir": "dist"
+    "declarationDir": "dist",
+    "noImplicitReturns": false
   },
   "include": ["src"]
 }

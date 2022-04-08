@@ -28,7 +28,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     getTokenMap,
   } = txUtils(main);
 
-  const { estimateSysTransactionFee } = feeUtils(hd, main);
+  const { estimateSysTransactionFee, getRecommendedFee } = feeUtils(hd, main);
 
   const _createMintedToken = async ({
     txid,
@@ -664,15 +664,6 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
       ];
     }
 
-    // todo: move to pali
-    // if (account.currentAccount.isTrezorWallet) {
-    //   return await window.controller.trezor.confirmNativeTokenSend({
-    //     txOptions,
-    //     outputs,
-    //     feeRate,
-    //   });
-    // }
-
     try {
       const pendingTransaction = await main.createTransaction(
         txOptions,
@@ -754,5 +745,6 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     sendTransaction,
     confirmMintNFT,
     signMessage,
+    getRecommendedFee,
   };
 };
