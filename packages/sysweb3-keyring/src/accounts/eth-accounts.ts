@@ -7,7 +7,6 @@ import { ethers } from 'ethers';
 import { request, gql } from 'graphql-request';
 import _ from 'lodash';
 import { Account, TransactionReceipt } from 'web3-core';
-import { typedDataV4 } from '../typedDataV4';
 
 export const Web3Accounts = () => {
   /**
@@ -239,7 +238,7 @@ export const Web3Accounts = () => {
     }
   };
 
-  const getRecommendedFee = () => { };
+  // const getRecommendedFee = () => { };
   const getUserTransactions = async (address: string): Promise<any> => {
     try {
       const userTxs = await axios.get(
@@ -261,13 +260,13 @@ export const Web3Accounts = () => {
   const getTransactionCount = async (address: string) =>
     await web3Provider.eth.getTransactionCount(address);
 
-  const eth_signTypedData_v4 = () => {
-    const msgParams = JSON.stringify(typedDataV4());
+  const eth_signTypedData_v4 = (msgParams: object) => {
+    const msg = JSON.stringify(msgParams);
     const provider = window.pali.getProvider('ethereum');
 
     const from = provider.selectedAddress;
 
-    const params = [from, msgParams];
+    const params = [from, msg];
     const method = 'eth_signTypedData_v4';
 
     return provider.request(
@@ -285,7 +284,7 @@ export const Web3Accounts = () => {
         console.log('TYPED SIGNED:' + JSON.stringify(result.result));
 
         const recovered = sigUtil.recoverTypedSignature_v4({
-          data: JSON.parse(msgParams),
+          data: JSON.parse(msg),
           sig: result.result,
         });
 
@@ -313,6 +312,6 @@ export const Web3Accounts = () => {
     eth_signTypedData_v4,
     sendTransaction,
     importAccount,
-    getRecommendedFee,
+    // getRecommendedFee,
   };
 };

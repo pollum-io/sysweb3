@@ -24,7 +24,9 @@ export const validateToken = async (address: string) => {
       contract.methods.symbol().call(),
     ]);
 
-    if (decimals && name && symbol) {
+    const validToken = decimals && name && symbol;
+
+    if (validToken) {
       return {
         name,
         symbol,
@@ -34,7 +36,7 @@ export const validateToken = async (address: string) => {
       throw new Error();
     }
   } catch (error) {
-    throw new Error('Token not found, verify the Token Contract Address.');
+    throw new Error("Token not found, verify the Token Contract Address.");
   }
 };
 
@@ -55,10 +57,10 @@ export const isContractAddress = async (address: string, chainId = 1) => {
   if (address) {
     const provider = new InfuraProvider(
       chainId,
-      'c42232a29f9d4bd89d53313eb16ec241'
+      "c42232a29f9d4bd89d53313eb16ec241"
     );
     const code = await provider.getCode(address);
-    return code !== '0x';
+    return code !== "0x";
   }
   return false;
 };
