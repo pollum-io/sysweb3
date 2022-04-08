@@ -184,6 +184,8 @@ export const importWeb3Token = async (tokenAddress: string) => {
         contract: tokenAddress,
       };
     }
+
+    return {};
   } catch (error) {
     throw new Error("Token not found, verify the Token Contract Address.");
   }
