@@ -42,8 +42,6 @@ export const KeyringManager = () => {
 
     storage.set('signers-key', { mnemonic: null, network: null });
     storage.set('signers', { _hd: null, _main: null });
-    storage.set('keyring', { wallet: initialWalletState, isUnlocked: false });
-    storage.set('vault-key', null);
   }
   /** end */
 
@@ -160,25 +158,24 @@ export const KeyringManager = () => {
   };
 
   const _unlockWallet = async (password: string): Promise<IWalletState> => {
-    const serializedWallet = storage.get('vault');
+    const { wallet: _wallet } = storage.get('keyring');
 
-    console.log('unlock wallet', serializedWallet)
+    console.log('unlock wallet', _wallet);
 
-    if (!serializedWallet) {
+    if (!_wallet) {
       _password = password;
 
-      return {} as IWalletState;
+      return {};
     }
 
     _clearWallet();
 
-    wallet = JSON.parse(serializedWallet);
-
+    wallet = _wallet;
     _password = password;
 
     _updateLocalStoreWallet();
 
-    return wallet;
+    return _wallet;
   };
 
   const _createMainWallet = async (): Promise<IKeyringAccountState> => {
@@ -398,7 +395,7 @@ export const KeyringManager = () => {
 
     const xpub = _hd.getAccountXpub();
 
-    const formattedBackendAccount = _getFormattedBackendAccount({ url });
+    const formattedBackendAccount = await _getFormattedBackendAccount({ url, xpub });
 
     const receivingAddress = await _hd.getNewReceivingAddress(true);
 
@@ -544,9 +541,12 @@ export const KeyringManager = () => {
 
     wallet = _wallet;
 
+
+
     _updateLocalStoreWallet();
 
     console.log('[getLatestUpdateForAccount] _wallet', _wallet)
+    const isSyscoinChain = Boolean(networks.syscoin[wallet.activeNetwork.chainId]);
     console.log('[getLatestUpdateForAccount] is syscoin chain', isSyscoinChain, wallet.activeNetwork.chainId)
 
     const latestUpdate = isSyscoinChain ? (await _getLatestUpdateForSysAccount()) : (await _getLatestUpdateForWeb3Accounts());
