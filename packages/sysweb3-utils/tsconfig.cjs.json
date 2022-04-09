@@ -5,6 +5,7 @@
     "lib": [ "esnext", "dom" ],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
+    "noImplicitReturns": false,
     "resolveJsonModule": true
   },
 

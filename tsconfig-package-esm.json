@@ -5,6 +5,7 @@
     "module": "esNext",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": false,
+    "noImplicitReturns": false,
     "target": "ES2020",
     "lib": [
       "esNext",
@@ -21,7 +22,6 @@
     "alwaysStrict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "esModuleInterop": true
