@@ -198,7 +198,7 @@ export const KeyringManager = () => {
 
     const xprv = getEncryptedXprv();
 
-    const createdAccount = await getLatestUpdateForAccount();
+    const createdAccount = await _getLatestUpdateForSysAccount();
 
     const account: IKeyringAccountState = _getInitialAccountData({
       signer: main,
@@ -213,10 +213,31 @@ export const KeyringManager = () => {
 
   const _getEncryptedPrivateKeyFromHd = () => hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
 
-  const _getLatestUpdateForWeb3Accounts = () => {
-    console.log("_getLatestUpdateForWeb3Accounts");
+  const _getLatestUpdateForWeb3Accounts = async () => {
+    const { mnemonic } = storage.get('signers-key');
 
-    return {}
+    const web3Account = web3Wallet.importAccount(mnemonic);
+    const balance = await web3Wallet.getBalance(web3Account.address);
+
+    const { id } = wallet.activeAccount;
+
+    const transactions = {};
+
+    return {
+      ...web3Account,
+      assets: {},
+      id,
+      isTrezorWallet: false,
+      label: `Account ${id}`,
+      transactions,
+      trezorId: -1,
+      xprv: '',
+      balances: {
+        ethereum: balance,
+        syscoin: 0,
+      },
+      xpub: '',
+    };
   }
 
   const _getInitialAccountData = ({
@@ -274,7 +295,7 @@ export const KeyringManager = () => {
 
       const xprv = getEncryptedXprv();
 
-      const updatedAccountInfo = await getLatestUpdateForAccount();
+      const updatedAccountInfo = await _getLatestUpdateForSysAccount();
 
       const account = _getInitialAccountData({
         signer: main,
@@ -289,61 +310,7 @@ export const KeyringManager = () => {
       return account;
     }
 
-    const web3Account = web3Wallet.importAccount(mnemonic);
-
-    const balance = await web3Wallet.getBalance(web3Account.address);
-    const nfts = await web3Wallet.getNftsByAddress(web3Account.address);
-    const tokens = await web3Wallet.getTokens(web3Account.address);
-    const txs = await web3Wallet.getUserTransactions(web3Account.address, 'rinkeby');
-
-    console.log('response web3 fetch', { balance, nfts, tokens, txs, web3Account })
-
-    const { id } = wallet.activeAccount;
-
-    // {
-    //     "blockNumber": "10451291",
-    //     "timeStamp": "1649160293",
-    //     "hash": "0x9cce7e6fec092bc89409fe897c8c50dc81735e46b946ef7a7a672e4f1bb26659",
-    //     "nonce": "16492",
-    //     "blockHash": "0xcff2e1032096a583f69aa8bfa649e44714f7d6983e09c31466d1b49fe46a54f6",
-    //     "transactionIndex": "3",
-    //     "from": "0x5ff40197c83c3a2705ba912333cf1a37ba249eb7",
-    //     "to": "0xe0650698ca96904dee7e48ef95b8e733705aa487",
-    //     "value": "100000000000000000",
-    //     "gas": "168000",
-    //     "gasPrice": "8000000352",
-    //     "isError": "0",
-    //     "txreceipt_status": "1",
-    //     "input": "0x",
-    //     "contractAddress": "",
-    //     "cumulativeGasUsed": "1400248",
-    //     "gasUsed": "21000",
-    //     "confirmations": "14336"
-    // }
-
-    const transactions = {};
-
-    if (txs) {
-      for (const transaction of txs) {
-        transactions[transaction.nonce] = transaction;
-      }
-    }
-
-    return {
-      ...web3Account,
-      assets: {},
-      id,
-      isTrezorWallet: false,
-      label: `Account ${id}`,
-      transactions,
-      trezorId: -1,
-      xprv: '',
-      balances: {
-        ethereum: balance,
-        syscoin: 0,
-      },
-      xpub: '',
-    } as IKeyringAccountState;
+    return await _getLatestUpdateForWeb3Accounts();
   }
 
   const _getFormattedBackendAccount = async ({ url, xpub }) => {
@@ -541,13 +508,9 @@ export const KeyringManager = () => {
 
     wallet = _wallet;
 
-
-
     _updateLocalStoreWallet();
 
-    console.log('[getLatestUpdateForAccount] _wallet', _wallet)
     const isSyscoinChain = Boolean(networks.syscoin[wallet.activeNetwork.chainId]);
-    console.log('[getLatestUpdateForAccount] is syscoin chain', isSyscoinChain, wallet.activeNetwork.chainId)
 
     const latestUpdate = isSyscoinChain ? (await _getLatestUpdateForSysAccount()) : (await _getLatestUpdateForWeb3Accounts());
 

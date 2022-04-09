@@ -29,7 +29,7 @@ export const Web3Accounts = () => {
    * @example
    *
    * ```
-   * <button onClick={getBalance('0x000000000000000')}>Get balance!</button>
+   * <button onClick={getBalance('0x000000000000000')}>Get balance</button>
    * ```
    */
 
@@ -69,7 +69,7 @@ export const Web3Accounts = () => {
         `https://api.etherscan.io/api?module=account&action=tokennfttx&address=${address}&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH`
       );
 
-      if (data.message === 'OK' && data.result !== []) {
+      if (data.message === "OK" && data.result !== []) {
         return data.result;
       }
 
@@ -114,10 +114,10 @@ export const Web3Accounts = () => {
 
     try {
       const { ethereum } = await request({
-        url: 'https://graphql.bitquery.io/',
+        url: "https://graphql.bitquery.io/",
         document: query,
         requestHeaders: {
-          'X-API-KEY': 'BQYvhnv04csZHaprIBZNwtpRiDIwEIW9',
+          "X-API-KEY": "BQYvhnv04csZHaprIBZNwtpRiDIwEIW9",
         },
       });
 
@@ -126,7 +126,7 @@ export const Web3Accounts = () => {
       }
     } catch (error) {
       // todo: handle error
-      throw new Error('Not available tokens');
+      throw new Error("Not available tokens");
     }
   };
 
@@ -161,7 +161,7 @@ export const Web3Accounts = () => {
     let editGasFee: any;
 
     switch (gasFee) {
-      case 'low':
+      case "low":
         editGasFee = web3Provider.utils
           .toBN(gasPrice)
           .mul(web3Provider.utils.toBN(8))
@@ -169,7 +169,7 @@ export const Web3Accounts = () => {
           .toString();
 
         break;
-      case 'high':
+      case "high":
         editGasFee = web3Provider.utils
           .toBN(gasPrice)
           .mul(web3Provider.utils.toBN(11))
@@ -185,14 +185,14 @@ export const Web3Accounts = () => {
       {
         from: fromAddress,
         to: toAddress,
-        value: web3Provider.utils.toWei(value.toString(), 'ether'),
+        value: web3Provider.utils.toWei(value.toString(), "ether"),
         gas: await web3Provider.eth.estimateGas({
           to: toAddress,
         }),
         gasPrice: editGasFee,
         nonce: await web3Provider.eth.getTransactionCount(
           fromAddress,
-          'latest'
+          "latest"
         ),
       },
       fromPrivateKey
@@ -245,7 +245,7 @@ export const Web3Accounts = () => {
         `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10&sort=asc&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH`
       );
 
-      if (userTxs.data.message === 'OK') {
+      if (userTxs.data.message === "OK") {
         if (userTxs.data.result !== []) {
           return userTxs.data.result;
         }
@@ -280,8 +280,8 @@ export const Web3Accounts = () => {
         if (result.error) {
           alert(result.error.message);
         }
-        if (result.error) return console.error('ERROR', result);
-        console.log('TYPED SIGNED:' + JSON.stringify(result.result));
+        if (result.error) return console.error("ERROR", result);
+        console.log("TYPED SIGNED:" + JSON.stringify(result.result));
 
         const recovered = sigUtil.recoverTypedSignature_v4({
           data: JSON.parse(msg),
@@ -292,10 +292,10 @@ export const Web3Accounts = () => {
           ethUtil.toChecksumAddress(recovered) ===
           ethUtil.toChecksumAddress(from)
         ) {
-          alert('Successfully recovered signer as ' + from);
+          alert("Successfully recovered signer as " + from);
         } else {
           alert(
-            'Failed to verify signer when comparing ' + result + ' to ' + from
+            "Failed to verify signer when comparing " + result + " to " + from
           );
         }
       }
