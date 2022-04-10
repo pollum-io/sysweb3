@@ -10,6 +10,7 @@
   "author": "Pali Wallet",
   "license": "MIT",
   "private": false,
+  "type": "module",
   "scripts": {
     "prebuild": "rimraf dist/",
     "build": "tsc && tsc -p tsconfig.cjs.json",

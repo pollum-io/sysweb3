@@ -1,22 +1,15 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import abi20 from './abi/erc20.json';
 import abi from './abi/erc721.json';
 import { IEthereumAddress, createContractUsingAbi } from '.';
 
 /**
- * This function should return a NFT image link.
- *
- * @param {string} contract
- * @param {number} tokenId
- *
- * @example
- *
- * ```
- * <button onClick={getNFTImage('0x0000000000000000000000000', 1234)}>Get NFT image link</button>
- * ```
+ * 
+ * @param contract Address of the token contract
+ * @param tokenId ID of the token
+ * @returns the link of the image for the given token
  */
-
-export const getNftImage = async (contract: string, tokenId: number) => {
+export const getNftImage = async (contract: string, tokenId: number): Promise<string> => {
   try {
     const nft = await (await createContractUsingAbi(abi, contract)).methods
       .tokenURI(tokenId)
@@ -26,10 +19,6 @@ export const getNftImage = async (contract: string, tokenId: number) => {
       const ipfsUrl = String(nft).replace('ipfs://', 'https://ipfs.io/ipfs/');
 
       const url = await axios.get(ipfsUrl);
-
-      /**
-       * 'https://gateway.pinata.cloud/ipfs/Qmc4DqK9xeoSvtVmTcS6YG3DiWHyfiwQsnwQfzcqAvtmHj'
-       */
 
       return String(url.data.image).replace('ipfs://', 'https://ipfs.io/ipfs/');
     }
@@ -43,19 +32,7 @@ export const getNftImage = async (contract: string, tokenId: number) => {
   }
 };
 
-/**
- * This function should return an object with 2 parameters that will be the thumb image  url and large image url
- *
- * @param {string} symbol
- *
- * @example
- *
- * ```
- * <image src={getTokenIconBySymbol('eth')} />
- * ```
- *
- */
-export const getTokenIconBySymbol = async (symbol: string) => {
+export const getTokenIconBySymbol = async (symbol: string): Promise<TokenIcon | undefined> => {
   try {
     const response = await axios.get(
       `https://api.coingecko.com/api/v3/search?query=${symbol.toUpperCase()}`
@@ -66,12 +43,6 @@ export const getTokenIconBySymbol = async (symbol: string) => {
     });
 
     if (tokens) {
-      /**
-       *   {
-              thumbImage: 'https://assets.coingecko.com/coins/images/279/thumb/ethereum.png',
-              largeImage: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' 
-            }
-       */
       return tokens[0].thumb;
     }
   } catch (error) {
@@ -96,10 +67,17 @@ export const getHost = (url: string) => {
 
 /**
  * Converts a token to a fiat value
- * @param token example `syscoin`
- * @param fiat example `usd`. 3 letter code. All lower case
+ * 
+ * Parameters should be all lower case and written by extense
+ * 
+ * @param token Token to get fiat price from
+ * @param fiat Fiat to convert token price to, should be a {@link [ISO 4217 code](https://docs.1010data.com/1010dataReferenceManual/DataTypesAndFormats/currencyUnitCodes.html)}
+ * @example 'syscoin' for token | 'usd' for fiat
  */
-export const getFiatValueByToken = async (token: string, fiat: string) => {
+export const getFiatValueByToken = async (token: string, fiat: string): Promise<{
+  price: number,
+  priceChange: number,
+}> => {
   try {
     const response = await axios.get(
       `https://api.coingecko.com/api/v3/coins/${token}`
@@ -118,9 +96,10 @@ export const getFiatValueByToken = async (token: string, fiat: string) => {
 
 /**
  * Get token symbol by chain
- * @param chain string example `ethereum`
+ * @param chain should be written in lower case and by extense
+ * @example 'ethereum' | 'syscoin'
  */
-export const getSymbolByChain = async (chain: string) => {
+export const getSymbolByChain = async (chain: string): Promise<string> => {
   const { data } = await axios.get(
     `https://api.coingecko.com/api/v3/coins/${chain}`
   );
@@ -128,7 +107,12 @@ export const getSymbolByChain = async (chain: string) => {
   return data.symbol.toString().toUpperCase();
 };
 
-export const getTokenBySymbol = async (symbol: string) => {
+export const getTokenBySymbol = async (symbol: string): Promise<{
+  symbol: string,
+  icon: string,
+  description: string,
+  contract: string,
+}> => {
   const {
     data: { symbol: _symbol, contract_address, description, image },
   } = await axios.get(
@@ -138,31 +122,24 @@ export const getTokenBySymbol = async (symbol: string) => {
   const symbolToUpperCase = _symbol.toString().toUpperCase();
 
   return {
-    cio: symbolToUpperCase,
+    symbol: symbolToUpperCase,
     icon: image.small,
     description: description.en,
     contract: contract_address,
   };
 };
 
-export const getSearch = async (query: string) => {
+export const getSearch = async (query: string): Promise<AxiosResponse> => {
   return await axios.get(
     `https://api.coingecko.com/api/v3/search?query=${query}`
   );
 };
 
 /**
- * This function should return the tokens infos by token contract address to be used in import token at Pali.
- *
- * @param {string} tokenAddress
- *
- * @example
- *
- * ```
- * <button onClick={importWeb3Token('0x00000000000000000000089000000000000000')}>import token</button>
- * ```
+ * 
+ * @param tokenAddress Contract address of the token to get info from
  */
-export const importWeb3Token = async (tokenAddress: string) => {
+export const importWeb3Token = async (tokenAddress: string): Promise<EthTokenDetails> => {
   try {
     const contract = await createContractUsingAbi(abi20, tokenAddress);
 
@@ -189,19 +166,59 @@ export const importWeb3Token = async (tokenAddress: string) => {
 
       return {
         id,
-        symbol: tokenSymbol,
-        name: tokenName,
-        decimals: tokenDecimals,
+        symbol: String(tokenSymbol),
+        name: String(tokenName),
+        decimals: Number(tokenDecimals),
         description,
         contract: tokenAddress,
       };
     }
 
-    return {};
+    return {} as EthTokenDetails;
   } catch (error) {
     throw new Error('Token not found, verify the Token Contract Address.');
   }
 };
+
+/**
+ * 
+ * @param address Contract address of the token to validate
+ */
+export const validateToken = async (address: string): Promise<IErc20Token | Error> => {
+  try {
+    const contract = await createContractUsingAbi(abi, address);
+
+    const [decimals, name, symbol]: IErc20Token[] = await Promise.all([
+      contract.methods.decimals().call(),
+      contract.methods.name().call(),
+      contract.methods.symbol().call(),
+    ]);
+
+    const validToken = decimals && name && symbol;
+
+    if (validToken) {
+      return {
+        name: String(name),
+        symbol: String(symbol),
+        decimals: Number(decimals),
+      };
+    }
+
+    return new Error('Invalid token');
+  } catch (error) {
+    throw new Error("Token not found, verify the Token Contract Address.");
+  }
+};
+
+/** types */
+export type EthTokenDetails = {
+  id: string,
+  symbol: string,
+  name: string,
+  decimals: number,
+  description: string,
+  contract: string,
+}
 
 export type IEthereumTokensResponse = {
   ethereum: IEthereumAddress;
@@ -215,6 +232,11 @@ export type IEthereumToken = {
   thumb: string;
   large: string;
 };
+
+export type TokenIcon = {
+  thumbImage: string;
+  largeImage: string;
+}
 
 export type IEthereumNft = {
   blockNumber: string;
@@ -274,3 +296,4 @@ export type IAddressMap = {
 };
 
 export type ITokenMap = Map<string, IAddressMap>;
+/** end */
