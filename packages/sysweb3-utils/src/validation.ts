@@ -3,7 +3,7 @@ import { web3Provider } from '@pollum-io/sysweb3-network';
 import { ethers } from 'ethers';
 import abi from './abi/erc20.json';
 import { IErc20Token, createContractUsingAbi, INetwork } from '.';
-import bech32 from 'bech32';
+import { bech32 } from 'bech32';
 
 export const validateCurrentRpcUrl = () => {
   return web3Provider.eth.net.isListening((error: any, response: any) => {
@@ -92,3 +92,10 @@ export const isValidSYSAddress = (
 
   return false;
 };
+
+export const isPrefixedFormattedHexString = (value: number | string) => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  return /^0x[1-9a-f]+[0-9a-f]*$/iu.test(value);
+}
