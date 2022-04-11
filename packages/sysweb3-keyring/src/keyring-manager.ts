@@ -415,6 +415,7 @@ export const KeyringManager = () => {
 
     wallet = await _unlockWallet(password);
 
+    setAccountIndexForDerivedAccount(wallet.activeAccount.id)
     _clearTemporaryLocalKeys();
     _updateUnlocked();
     _notifyUpdate();
@@ -560,6 +561,36 @@ export const KeyringManager = () => {
   }
   /** end */
 
+  const addNewAccount = async (label) => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = (0, sysweb3_utils_1.MainSigner)({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
+    const id = _hd.createAccount();
+
+    const latestUpdate = await getLatestUpdateForAccount();
+
+    const xprv = getEncryptedXprv();
+
+    const account = _getInitialAccountData({
+      label,
+      signer: main,
+      createdAccount: latestUpdate,
+      xprv,
+    });
+
+    _hd.setAccountIndex(id);
+
+    return {
+      ...account,
+      id,
+    };
+  }
+
   return {
     validateSeed,
     setWalletPassword,
@@ -590,5 +621,6 @@ export const KeyringManager = () => {
     hasHdMnemonic,
     forgetSigners,
     setAccountIndexForDerivedAccount,
+    addNewAccount,
   };
 };
