@@ -201,7 +201,7 @@ export const KeyringManager = () => {
     const createdAccount = await _getLatestUpdateForSysAccount();
 
     const account: IKeyringAccountState = _getInitialAccountData({
-      signer: main,
+      signer: _hd,
       createdAccount,
       xprv,
     });
@@ -250,8 +250,8 @@ export const KeyringManager = () => {
     const { balance, receivingAddress, xpub } = createdAccount;
 
     const account = {
-      id: signer.Signer.Signer.accountIndex,
-      label: label ? label : `Account ${signer.Signer.Signer.accountIndex + 1}`,
+      id: signer.Signer.accountIndex,
+      label: label ? label : `Account ${signer.Signer.accountIndex + 1}`,
       balances: {
         syscoin: balance,
         ethereum: 0,
@@ -298,7 +298,7 @@ export const KeyringManager = () => {
       const updatedAccountInfo = await _getLatestUpdateForSysAccount();
 
       const account = _getInitialAccountData({
-        signer: main,
+        signer: _hd,
         createdAccount: updatedAccountInfo,
         xprv,
       });
@@ -563,7 +563,7 @@ export const KeyringManager = () => {
 
   const addNewAccount = async (label) => {
     const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = (0, sysweb3_utils_1.MainSigner)({
+    const { hd: _hd, main: _main } = MainSigner({
       walletMnemonic: mnemonic,
       isTestnet: network.isTestnet,
       network: network.url,
@@ -578,7 +578,7 @@ export const KeyringManager = () => {
 
     const account = _getInitialAccountData({
       label,
-      signer: main,
+      signer: _hd,
       createdAccount: latestUpdate,
       xprv,
     });
