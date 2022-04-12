@@ -25,7 +25,7 @@
     "@typescript-eslint/no-var-requires": "off",
     "@typescript-eslint/ban-ts-comment": "off",
     "import/order": [
-      "error",
+      "warn",
       {
         "groups": [
           "builtin",
@@ -44,18 +44,7 @@
         }
       }
     ],
-    "prettier/prettier": [
-      "error",
-      {
-        "bracketSpacing": true,
-        "arrowParens": "always",
-        "trailingComma": "es5",
-        "tabWidth": 2,
-        "semi": true,
-        "singleQuote": true,
-        "jsxSingleQuote": true
-      }
-    ],
+    "prettier/prettier": "warn",
     "no-confusing-arrow": "warn",
     "no-multiple-empty-lines": "warn",
     "keyword-spacing": "warn",
