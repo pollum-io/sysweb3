@@ -1,12 +1,13 @@
+import sys from 'syscoinjs-lib';
+
 import {
   ITokenMap,
   ITxid,
   IWalletState,
   MainSigner,
 } from '@pollum-io/sysweb3-utils';
-import sys from 'syscoinjs-lib';
 
-const TrezorTransactions = ({
+export const TrezorTransactions = ({
   mnemonic,
   wallet: { activeNetwork },
 }: {
@@ -240,5 +241,3 @@ const TrezorTransactions = ({
     verifyMessage,
   };
 };
-
-export default TrezorTransactions;

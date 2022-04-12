@@ -1,4 +1,6 @@
 import sys from 'syscoinjs-lib';
+import syscointx from 'syscointx-js';
+
 import {
   INewNFT,
   isBase64,
@@ -12,7 +14,6 @@ import {
   MainSigner,
   IWalletState,
 } from '@pollum-io/sysweb3-utils';
-import syscointx from 'syscointx-js';
 
 export const SyscoinTransactions = ({
   mnemonic,

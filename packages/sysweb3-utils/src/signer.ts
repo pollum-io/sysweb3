@@ -1,9 +1,8 @@
-import { BitcoinNetwork } from '.';
+import { BIP32Interface } from 'bip32';
+import { Psbt } from 'bitcoinjs-lib';
 import sys from 'syscoinjs-lib';
 
-import { BIP32Interface } from 'bip32';
-import {} from 'bip84';
-import { Psbt } from 'bitcoinjs-lib';
+import { BitcoinNetwork } from '.';
 
 export const MainSigner = ({
   walletMnemonic,

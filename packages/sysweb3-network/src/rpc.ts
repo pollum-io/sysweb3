@@ -1,5 +1,5 @@
-import { web3Provider } from '@pollum-io/sysweb3-network';
 import { jsonRpcRequest } from './rpc-request';
+import { web3Provider } from '@pollum-io/sysweb3-network';
 
 // const hexRegEx = /^0x[0-9a-f]+$/iu;
 // const chainIdRegEx = /^0x[1-9a-f]+[0-9a-f]*$/iu;

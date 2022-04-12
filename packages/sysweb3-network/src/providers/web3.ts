@@ -1,4 +1,5 @@
 import Web3 from 'web3';
+
 import { networks } from '../networks';
 
 export const web3Provider = new Web3(

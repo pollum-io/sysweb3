@@ -1,8 +1,9 @@
+import coinSelectSyscoin from 'coinselectsyscoin';
+import { ethers } from 'ethers';
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
-import coinSelectSyscoin from 'coinselectsyscoin';
+
 import { SyscoinHDSigner } from '.';
-import { ethers } from 'ethers';
 
 // const InfuraProvider = ethers.providers.InfuraProvider;
 

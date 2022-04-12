@@ -1,5 +1,3 @@
-// @ts-ignore
-import { web3Provider } from '@pollum-io/sysweb3-network';
 import axios from 'axios';
 import * as sigUtil from 'eth-sig-util';
 import * as ethUtil from 'ethereumjs-util';
@@ -7,6 +5,8 @@ import { ethers } from 'ethers';
 import { request, gql } from 'graphql-request';
 import _ from 'lodash';
 import { Account, TransactionReceipt } from 'web3-core';
+
+import { web3Provider } from '@pollum-io/sysweb3-network';
 
 export const Web3Accounts = () => {
   /**

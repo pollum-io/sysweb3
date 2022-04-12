@@ -1,6 +1,7 @@
 import sys from 'syscoinjs-lib';
-import { web3Provider } from '@pollum-io/sysweb3-network';
+
 import { ITokenMap, ISyscoinToken, INetworkType } from '.';
+import { web3Provider } from '@pollum-io/sysweb3-network';
 
 export const txUtils = (main: any) => {
   const getRawTransaction = (txid: string) =>

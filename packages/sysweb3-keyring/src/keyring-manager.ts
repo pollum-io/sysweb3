@@ -1,8 +1,16 @@
 // @ts-nocheck
-import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
-import * as sysweb3 from '@pollum-io/sysweb3-core';
+import { generateMnemonic, validateMnemonic } from 'bip39';
+import { fromZPrv } from 'bip84';
+import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
+
+import { Web3Accounts } from './accounts';
+import { SyscoinTransactions } from './transactions';
+import { TrezorWallet } from './trezor';
+import { TrezorTransactions } from './trezor/transactions';
+import * as sysweb3 from '@pollum-io/sysweb3-core';
+import { networks, setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
   IKeyringAccountState,
   IWalletState,
@@ -11,15 +19,6 @@ import {
   MainSigner,
   ISyscoinTransaction,
 } from '@pollum-io/sysweb3-utils';
-import { generateMnemonic, validateMnemonic } from 'bip39';
-import CryptoJS from 'crypto-js';
-import { MainWallet } from './wallets/main';
-import TrezorTransactions from './trezor/transactions';
-import { TrezorWallet } from './trezor';
-import { SyscoinTransactions } from './transactions';
-import { Web3Accounts } from './accounts';
-import { networks, setActiveNetwork } from '@pollum-io/sysweb3-network';
-import { fromZPrv } from 'bip84';
 
 export const KeyringManager = () => {
   /** keys */

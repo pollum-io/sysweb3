@@ -4,6 +4,7 @@ import {
   SignedTransaction,
   TransactionConfig,
 } from 'web3-core';
+
 import { INetwork, INetworkType } from '.';
 
 export enum IKeyringAccountType {

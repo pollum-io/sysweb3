@@ -25,16 +25,18 @@
       "warn",
       {
         "groups": [
-          "builtin",
-          "external",
-          "internal",
-          "parent",
-          "sibling",
-          "index",
-          "object",
-          "type"
+          ["builtin", "external"],
+          ["internal", "parent", "sibling", "index"],
+          ["object", "type"]
         ],
-        "newlines-between": "never",
+        "pathGroups": [
+          {
+            "pattern": "@pollum-io/**",
+            "group": "index"
+          }
+        ],
+        "pathGroupsExcludedImportTypes": ["@pollum-io/**"],
+        "newlines-between": "always",
         "alphabetize": {
           "order": "asc",
           "caseInsensitive": true

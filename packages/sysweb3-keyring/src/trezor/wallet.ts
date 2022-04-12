@@ -1,10 +1,11 @@
+import { fromZPub } from 'bip84';
+import sys from 'syscoinjs-lib';
+
 import {
   IKeyringAccountState,
   IWalletState,
   MainSigner,
 } from '@pollum-io/sysweb3-utils';
-import sys from 'syscoinjs-lib';
-import { fromZPub } from 'bip84';
 
 export const TrezorWallet = ({
   tx,
