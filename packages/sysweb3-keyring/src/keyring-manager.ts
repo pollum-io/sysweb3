@@ -201,7 +201,7 @@ export const KeyringManager = () => {
     const createdAccount = await _getLatestUpdateForSysAccount();
 
     const account: IKeyringAccountState = _getInitialAccountData({
-      signer: main,
+      signer: _hd,
       createdAccount,
       xprv,
     });
@@ -250,8 +250,8 @@ export const KeyringManager = () => {
     const { balance, receivingAddress, xpub } = createdAccount;
 
     const account = {
-      id: signer.Signer.Signer.accountIndex,
-      label: label ? label : `Account ${signer.Signer.Signer.accountIndex + 1}`,
+      id: signer.Signer.accountIndex,
+      label: label ? label : `Account ${signer.Signer.accountIndex + 1}`,
       balances: {
         syscoin: balance,
         ethereum: 0,
@@ -298,7 +298,7 @@ export const KeyringManager = () => {
       const updatedAccountInfo = await _getLatestUpdateForSysAccount();
 
       const account = _getInitialAccountData({
-        signer: main,
+        signer: _hd,
         createdAccount: updatedAccountInfo,
         xprv,
       });
@@ -415,6 +415,7 @@ export const KeyringManager = () => {
 
     wallet = await _unlockWallet(password);
 
+    setAccountIndexForDerivedAccount(wallet.activeAccount.id)
     _clearTemporaryLocalKeys();
     _updateUnlocked();
     _notifyUpdate();
@@ -560,6 +561,36 @@ export const KeyringManager = () => {
   }
   /** end */
 
+  const addNewAccount = async (label) => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
+    const id = _hd.createAccount();
+
+    _hd.setAccountIndex(id);
+
+    const latestUpdate = await getLatestUpdateForAccount();
+
+    const xprv = getEncryptedXprv();
+
+    const account = _getInitialAccountData({
+      label,
+      signer: _hd,
+      createdAccount: latestUpdate,
+      xprv,
+    });
+
+    return {
+      ...account,
+      id,
+    };
+  }
+
   return {
     validateSeed,
     setWalletPassword,
@@ -590,5 +621,6 @@ export const KeyringManager = () => {
     hasHdMnemonic,
     forgetSigners,
     setAccountIndexForDerivedAccount,
+    addNewAccount,
   };
 };

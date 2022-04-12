@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-network",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A network management tool for multi-chain accounts.",
   "main": "cjs/index.js",
   "repository": {
@@ -10,6 +10,7 @@
   "author": "Pali Wallet",
   "license": "MIT",
   "private": false,
+  "type": "module",
   "scripts": {
     "prebuild": "rimraf dist/",
     "build": "tsc && tsc -p tsconfig.cjs.json",
