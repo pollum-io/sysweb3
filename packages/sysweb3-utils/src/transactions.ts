@@ -1,5 +1,6 @@
-import sys from 'syscoinjs-lib';
-import { ITokenMap, ISyscoinToken, INetworkType } from '.';
+import sys from "syscoinjs-lib";
+import { web3Provider } from "@pollum-io/sysweb3-network";
+import { ITokenMap, ISyscoinToken, INetworkType } from ".";
 
 export const txUtils = (main: any) => {
   const getRawTransaction = (txid: string) =>
@@ -37,13 +38,47 @@ export const txUtils = (main: any) => {
 
   const getFeeRate = (fee: number): BigInt => new sys.utils.BN(fee * 1e8);
 
+  /**
+   * This function should return gas used and the effective gas price by transaction hash.
+   *
+   * @param {string} transactionHash
+   *
+   * @example
+   *
+   * ```
+   * <button onClick={getGasUsedInTransaction('0x00000000000000000000089000000000000000')}>Get gas used!</button>
+   * ```
+   */
+  const getGasUsedInTransaction = async (transactionHash: string) => {
+    try {
+      const { gasUsed, effectiveGasPrice } =
+        await web3Provider.eth.getTransactionReceipt(transactionHash);
+
+      if (!gasUsed || !effectiveGasPrice) {
+        throw new Error(
+          "Can not find this transaction at the current network, please verify it and try again."
+        );
+      }
+
+      return {
+        gasUsed,
+        effectiveGasPrice,
+      };
+    } catch (error) {
+      throw new Error(
+        `Incorrect transaction hash, please try again with a correct one!`
+      );
+    }
+  };
+
   return {
     getPsbtFromJson,
     getRawTransaction,
     getTokenMap,
-    getFeeRate
-  }
-}
+    getFeeRate,
+    getGasUsedInTransaction,
+  };
+};
 
 export type ISyscoinVIn = {
   txid: string;
@@ -119,7 +154,7 @@ export type IAuxFees = {
 export type INewToken = {
   advanced?: {
     auxfeedetails?: IAuxFees[];
-    capabilityflags?: string | '127';
+    capabilityflags?: string | "127";
     initialSupply?: number;
     notaryAddress?: string;
     notarydetails?: INotaryDetails;
@@ -167,7 +202,7 @@ export type ITokenUpdate = {
   };
   assetGuid: number;
   assetWhiteList: string;
-  capabilityflags: string | '127';
+  capabilityflags: string | "127";
   contract: string;
   description: string;
   fee: number;
@@ -199,7 +234,7 @@ export type IETHTxConfig = {
   txData?: string;
 };
 
-export type IETHNetwork = 'testnet' | 'mainnet';
+export type IETHNetwork = "testnet" | "mainnet";
 
 export interface IETHPendingTx {
   amount: string;
