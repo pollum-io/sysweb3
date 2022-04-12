@@ -1,4 +1,3 @@
-// @ts-nocheck
 import SafeEventEmitter from '@metamask/safe-event-emitter';
 import { generateMnemonic, validateMnemonic } from 'bip39';
 import { fromZPrv } from 'bip84';
@@ -18,6 +17,9 @@ import {
   INetwork,
   MainSigner,
   ISyscoinTransaction,
+  SyscoinHDSigner,
+  SyscoinMainSigner,
+  initialNetworksState,
 } from '@pollum-io/sysweb3-utils';
 
 export const KeyringManager = () => {
@@ -31,6 +33,8 @@ export const KeyringManager = () => {
   let main: SyscoinMainSigner = {} as SyscoinMainSigner;
 
   let wallet: IWalletState = initialWalletState;
+
+  const hasHdMnemonic = () => Boolean(hd.mnemonic);
 
   storage.set('signers-key', { mnemonic: '', network: wallet.activeNetwork });
   storage.set('keyring', {
@@ -50,7 +54,7 @@ export const KeyringManager = () => {
   /** end */
 
   /** validations */
-  const checkPassword = (pwd) => {
+  const checkPassword = (pwd: string) => {
     const isValid = storage.get('vault-key') === pwd;
 
     if (isValid) _password = pwd;
@@ -101,8 +105,6 @@ export const KeyringManager = () => {
   const getAccountById = (id: number): IKeyringAccountState =>
     Object.values(wallet.accounts).find((account) => account.id === id) ||
     ({} as IKeyringAccountState);
-
-  const hasHdMnemonic = () => Boolean(hd.mnemonic);
   /** end */
 
   /** controllers */
@@ -178,6 +180,7 @@ export const KeyringManager = () => {
     if (!_wallet) {
       _password = password;
 
+      // TODO: solve this return
       return {};
     }
 
@@ -336,14 +339,20 @@ export const KeyringManager = () => {
     return await _getLatestUpdateForWeb3Accounts();
   };
 
-  const _getFormattedBackendAccount = async ({ url, xpub }) => {
+  const _getFormattedBackendAccount = async ({
+    url,
+    xpub,
+  }: {
+    url: string;
+    xpub: string;
+  }) => {
     const options = 'tokens=nonzero&details=txs';
 
     const { address, balance, transactions, tokensAsset } =
       await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
 
     const txs: ISyscoinTransaction = {};
-    const assets = {};
+    const assets: any = {};
 
     if (transactions) {
       for (const tx of transactions) {
@@ -359,7 +368,7 @@ export const KeyringManager = () => {
 
     return {
       transactions: txs,
-      assets,
+      tokens: assets,
       xpub: address,
       balance: balance / 1e8,
     };
@@ -605,7 +614,7 @@ export const KeyringManager = () => {
   };
   /** end */
 
-  const addNewAccount = async (label) => {
+  const addNewAccount = async (label: string) => {
     const { mnemonic, network } = storage.get('signers-key');
     const { hd: _hd, main: _main } = MainSigner({
       walletMnemonic: mnemonic,
