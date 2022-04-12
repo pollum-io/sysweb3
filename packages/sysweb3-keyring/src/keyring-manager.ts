@@ -572,6 +572,8 @@ export const KeyringManager = () => {
 
     const id = _hd.createAccount();
 
+    _hd.setAccountIndex(id);
+
     const latestUpdate = await getLatestUpdateForAccount();
 
     const xprv = getEncryptedXprv();
@@ -582,8 +584,6 @@ export const KeyringManager = () => {
       createdAccount: latestUpdate,
       xprv,
     });
-
-    _hd.setAccountIndex(id);
 
     return {
       ...account,
