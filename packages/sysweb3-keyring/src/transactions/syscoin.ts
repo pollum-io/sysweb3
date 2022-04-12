@@ -14,19 +14,21 @@ import {
 } from '@pollum-io/sysweb3-utils';
 import syscointx from 'syscointx-js';
 
-export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { mnemonic: string, wallet: IWalletState }) => {
+export const SyscoinTransactions = ({
+  mnemonic,
+  wallet: { activeNetwork },
+}: {
+  mnemonic: string;
+  wallet: IWalletState;
+}) => {
   const { hd, main } = MainSigner({
     walletMnemonic: mnemonic,
     isTestnet: activeNetwork.isTestnet,
     network: activeNetwork.url,
-    blockbookURL: activeNetwork.url
+    blockbookURL: activeNetwork.url,
   });
 
-  const {
-    getFeeRate,
-    getRawTransaction,
-    getTokenMap,
-  } = txUtils(main);
+  const { getFeeRate, getRawTransaction, getTokenMap } = txUtils(main);
 
   const { estimateSysTransactionFee, getRecommendedFee } = feeUtils(hd, main);
 
@@ -49,7 +51,10 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
       const interval = setInterval(async () => {
         const createdTokenTransaction = await getRawTransaction(txid);
 
-        if (createdTokenTransaction && createdTokenTransaction.confirmations > 1) {
+        if (
+          createdTokenTransaction &&
+          createdTokenTransaction.confirmations > 1
+        ) {
           const changeAddress = await hd.getNewChangeAddress(true);
 
           try {
@@ -69,7 +74,9 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
             );
 
             if (!pendingTransaction) {
-              throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.');
+              throw new Error(
+                'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+              );
             }
 
             const txid = pendingTransaction.extractTransaction().getId();
@@ -295,7 +302,9 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     );
 
     if (!pendingTransaction) {
-      throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.');
+      throw new Error(
+        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+      );
     }
 
     const txid = pendingTransaction.extractTransaction().getId();
@@ -303,13 +312,17 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     return { txid };
   };
 
-  const _createParentToken = async ({ tokenOptions, feeRate }: {
+  const _createParentToken = async ({
+    tokenOptions,
+    feeRate,
+  }: {
     tokenOptions: {
       precision: number;
       symbol: string;
       maxsupply: number;
       description: string;
-    }, feeRate: number
+    };
+    feeRate: number;
   }) => {
     const tokenChangeAddress = await hd.getNewChangeAddress(true);
     const txOptions = { rbf: true };
@@ -323,7 +336,9 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     );
 
     if (!pendingTransaction) {
-      throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.');
+      throw new Error(
+        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+      );
     }
 
     const tokensFromTransaction = syscointx.getAssetsFromTx(
@@ -345,11 +360,11 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     feeRate,
   }: {
     // todo: create types
-    parentTokenTransaction: any,
-    parentToken: any,
-    precision: number,
-    receivingAddress: string,
-    feeRate: number,
+    parentTokenTransaction: any;
+    parentToken: any;
+    precision: number;
+    receivingAddress: string;
+    feeRate: number;
   }) => {
     if (parentTokenTransaction.confirmations >= 1) {
       const tokenMap = getTokenMap({
@@ -369,7 +384,9 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
         );
 
         if (!pendingTransaction) {
-          throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.')
+          throw new Error(
+            'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+          );
         }
 
         const txid = pendingTransaction.extractTransaction().getId();
@@ -381,7 +398,10 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     }
   };
 
-  const _updateParentToken = async ({ parentToken, receivingAddress }: {
+  const _updateParentToken = async ({
+    parentToken,
+    receivingAddress,
+  }: {
     parentToken: any;
     receivingAddress: string;
   }) => {
@@ -407,7 +427,9 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     );
 
     if (!txid) {
-      throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.')
+      throw new Error(
+        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+      );
     }
 
     return txid;
@@ -505,10 +527,12 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
   const signTransaction = async (
     data: { psbt: string; assets: string },
     isSendOnly: boolean,
-    isTrezor?: boolean,
+    isTrezor?: boolean
   ): Promise<any> => {
     if (!isBase64(data.psbt) || typeof data.assets !== 'string') {
-      throw new Error('Bad Request: PSBT must be in Base64 format and assets must be a JSON string. Please check the documentation to see the correct formats.')
+      throw new Error(
+        'Bad Request: PSBT must be in Base64 format and assets must be a JSON string. Please check the documentation to see the correct formats.'
+      );
     }
 
     try {
@@ -564,7 +588,9 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
       const txid = pendingTransaction.extractTransaction().getId();
 
       if (!pendingTransaction || !txid) {
-        throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.')
+        throw new Error(
+          'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+        );
       }
 
       return { txid };
@@ -647,13 +673,11 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
 
     const txOptions = { rbf: false };
 
-    const txFee = await estimateSysTransactionFee(
-      {
-        outputs,
-        changeAddress: await hd.getNewChangeAddress(true),
-        feeRate,
-      },
-    );
+    const txFee = await estimateSysTransactionFee({
+      outputs,
+      changeAddress: await hd.getNewChangeAddress(true),
+      feeRate,
+    });
 
     if (value.add(txFee).gte(backendAccount.balance)) {
       outputs = [
@@ -705,9 +729,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
       guid: assetGuid,
       changeAddress: await hd.getNewChangeAddress(true),
       amount: new sys.utils.BN(amount * 10 ** 8),
-      receivingAddress: await hd.getNewReceivingAddress(
-        true
-      ),
+      receivingAddress: await hd.getNewReceivingAddress(true),
     });
 
     try {
@@ -734,7 +756,8 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     }
   };
 
-  const signMessage = (account: IKeyringAccountState, tx: any, options: any) => console.log(account, tx, options);
+  const signMessage = (account: IKeyringAccountState, tx: any, options: any) =>
+    console.log(account, tx, options);
 
   return {
     confirmTokenCreation,

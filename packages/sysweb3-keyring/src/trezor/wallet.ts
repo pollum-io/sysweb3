@@ -1,15 +1,26 @@
-import { IKeyringAccountState, IWalletState, MainSigner } from '@pollum-io/sysweb3-utils';
+import {
+  IKeyringAccountState,
+  IWalletState,
+  MainSigner,
+} from '@pollum-io/sysweb3-utils';
 import sys from 'syscoinjs-lib';
 import { fromZPub } from 'bip84';
 
-export const TrezorWallet = ({ tx, mnemonic, wallet: { activeNetwork } }: { tx: any; mnemonic: string, wallet: IWalletState }) => {
+export const TrezorWallet = ({
+  tx,
+  mnemonic,
+  wallet: { activeNetwork },
+}: {
+  tx: any;
+  mnemonic: string;
+  wallet: IWalletState;
+}) => {
   const { main } = MainSigner({
     walletMnemonic: mnemonic,
     isTestnet: activeNetwork.isTestnet,
     network: activeNetwork.url,
-    blockbookURL: activeNetwork.url
+    blockbookURL: activeNetwork.url,
   });
-
 
   const getAccountInfo = async (
     xpub: string,
@@ -66,9 +77,9 @@ export const TrezorWallet = ({ tx, mnemonic, wallet: { activeNetwork } }: { tx: 
         syscoin: balance / 10 ** 8,
         ethereum: 0,
       },
-      saveTokenInfo: () => { },
-      signTransaction: () => { },
-      signMessage: () => { },
+      saveTokenInfo: () => {},
+      signTransaction: () => {},
+      signMessage: () => {},
       getPrivateKey: () => accountInfo.xprv,
     };
 
@@ -81,10 +92,7 @@ export const TrezorWallet = ({ tx, mnemonic, wallet: { activeNetwork } }: { tx: 
 
       await trezorSigner.createAccount();
 
-      const syscoin = new sys.SyscoinJSLib(
-        main,
-        main.blockbookURL
-      );
+      const syscoin = new sys.SyscoinJSLib(main, main.blockbookURL);
 
       const accountInfo: IKeyringAccountState = await getAccountInfo(
         syscoin.HDSigner.getAccountXpub(),
@@ -98,7 +106,7 @@ export const TrezorWallet = ({ tx, mnemonic, wallet: { activeNetwork } }: { tx: 
     }
   };
 
-  const forgetWallet = () => { };
+  const forgetWallet = () => {};
 
   const getAddress = (trezor: any, kdPath: any) => {
     return new Promise(function (resolve, reject) {
@@ -110,12 +118,12 @@ export const TrezorWallet = ({ tx, mnemonic, wallet: { activeNetwork } }: { tx: 
         return reject(response.error);
       });
     });
-  }
+  };
 
   return {
     createWallet,
     forgetWallet,
     getAddress,
     tx,
-  }
-}
+  };
+};

@@ -22,7 +22,7 @@ export const initialNetworksState = {
       url: 'https://blockbook.elint.services/',
       default: true,
       isTestnet: false,
-      currency: 'sys'
+      currency: 'sys',
     },
     5700: {
       chainId: 5700,
@@ -30,7 +30,7 @@ export const initialNetworksState = {
       url: 'https://blockbook-dev.elint.services/',
       default: true,
       isTestnet: true,
-      currency: 'tsys'
+      currency: 'tsys',
     },
   },
   ethereum: {
@@ -40,7 +40,7 @@ export const initialNetworksState = {
       label: 'Ethereum Mainnet',
       default: true,
       isTestnet: false,
-      currency: 'eth'
+      currency: 'eth',
     },
     42: {
       url: 'https://kovan.poa.network',
@@ -48,7 +48,7 @@ export const initialNetworksState = {
       default: true,
       label: 'Kovan',
       chainId: 42,
-      currency: 'kov'
+      currency: 'kov',
     },
     80001: {
       chainId: 800001,
@@ -64,7 +64,7 @@ export const initialNetworksState = {
       url: 'https://polygon-mainnet.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
       default: true,
       isTestnet: false,
-      currency: 'matic'
+      currency: 'matic',
     },
     4: {
       chainId: 4,
@@ -72,8 +72,8 @@ export const initialNetworksState = {
       url: 'https://rinkeby.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
       default: true,
       isTestnet: true,
-      currency: 'rin'
-    }
+      currency: 'rin',
+    },
   },
 };
 

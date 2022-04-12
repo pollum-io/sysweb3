@@ -4,12 +4,15 @@ import abi from './abi/erc721.json';
 import { IEthereumAddress, createContractUsingAbi } from '.';
 
 /**
- * 
+ *
  * @param contract Address of the token contract
  * @param tokenId ID of the token
  * @returns the link of the image for the given token
  */
-export const getNftImage = async (contract: string, tokenId: number): Promise<string> => {
+export const getNftImage = async (
+  contract: string,
+  tokenId: number
+): Promise<string> => {
   try {
     const nft = await (await createContractUsingAbi(abi, contract)).methods
       .tokenURI(tokenId)
@@ -32,7 +35,9 @@ export const getNftImage = async (contract: string, tokenId: number): Promise<st
   }
 };
 
-export const getTokenIconBySymbol = async (symbol: string): Promise<TokenIcon | undefined> => {
+export const getTokenIconBySymbol = async (
+  symbol: string
+): Promise<TokenIcon | undefined> => {
   try {
     const response = await axios.get(
       `https://api.coingecko.com/api/v3/search?query=${symbol.toUpperCase()}`
@@ -67,16 +72,19 @@ export const getHost = (url: string) => {
 
 /**
  * Converts a token to a fiat value
- * 
+ *
  * Parameters should be all lower case and written by extense
- * 
+ *
  * @param token Token to get fiat price from
  * @param fiat Fiat to convert token price to, should be a {@link [ISO 4217 code](https://docs.1010data.com/1010dataReferenceManual/DataTypesAndFormats/currencyUnitCodes.html)}
  * @example 'syscoin' for token | 'usd' for fiat
  */
-export const getFiatValueByToken = async (token: string, fiat: string): Promise<{
-  price: number,
-  priceChange: number,
+export const getFiatValueByToken = async (
+  token: string,
+  fiat: string
+): Promise<{
+  price: number;
+  priceChange: number;
 }> => {
   try {
     const response = await axios.get(
@@ -107,11 +115,13 @@ export const getSymbolByChain = async (chain: string): Promise<string> => {
   return data.symbol.toString().toUpperCase();
 };
 
-export const getTokenBySymbol = async (symbol: string): Promise<{
-  symbol: string,
-  icon: string,
-  description: string,
-  contract: string,
+export const getTokenBySymbol = async (
+  symbol: string
+): Promise<{
+  symbol: string;
+  icon: string;
+  description: string;
+  contract: string;
 }> => {
   const {
     data: { symbol: _symbol, contract_address, description, image },
@@ -136,10 +146,12 @@ export const getSearch = async (query: string): Promise<AxiosResponse> => {
 };
 
 /**
- * 
+ *
  * @param tokenAddress Contract address of the token to get info from
  */
-export const importWeb3Token = async (tokenAddress: string): Promise<EthTokenDetails> => {
+export const importWeb3Token = async (
+  tokenAddress: string
+): Promise<EthTokenDetails> => {
   try {
     const contract = await createContractUsingAbi(abi20, tokenAddress);
 
@@ -181,10 +193,12 @@ export const importWeb3Token = async (tokenAddress: string): Promise<EthTokenDet
 };
 
 /**
- * 
+ *
  * @param address Contract address of the token to validate
  */
-export const validateToken = async (address: string): Promise<IErc20Token | Error> => {
+export const validateToken = async (
+  address: string
+): Promise<IErc20Token | Error> => {
   try {
     const contract = await createContractUsingAbi(abi, address);
 
@@ -206,19 +220,19 @@ export const validateToken = async (address: string): Promise<IErc20Token | Erro
 
     return new Error('Invalid token');
   } catch (error) {
-    throw new Error("Token not found, verify the Token Contract Address.");
+    throw new Error('Token not found, verify the Token Contract Address.');
   }
 };
 
 /** types */
 export type EthTokenDetails = {
-  id: string,
-  symbol: string,
-  name: string,
-  decimals: number,
-  description: string,
-  contract: string,
-}
+  id: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+  description: string;
+  contract: string;
+};
 
 export type IEthereumTokensResponse = {
   ethereum: IEthereumAddress;
@@ -236,7 +250,7 @@ export type IEthereumToken = {
 export type TokenIcon = {
   thumbImage: string;
   largeImage: string;
-}
+};
 
 export type IEthereumNft = {
   blockNumber: string;

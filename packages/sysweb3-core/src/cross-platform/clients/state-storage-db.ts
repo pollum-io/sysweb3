@@ -23,7 +23,7 @@ export const StateStorageDb = (
   const set = (key: string, value: any) => {
     if (!storageClient) return;
 
-    storageClient.setItem(keyPrefix + key, JSON.stringify(value))
+    storageClient.setItem(keyPrefix + key, JSON.stringify(value));
   };
 
   const get = (key: string): any => {

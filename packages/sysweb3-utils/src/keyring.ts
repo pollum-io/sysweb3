@@ -1,8 +1,10 @@
-import { EncryptedKeystoreV3Json, Sign, SignedTransaction, TransactionConfig } from 'web3-core';
 import {
-  INetwork,
-  INetworkType,
-} from '.';
+  EncryptedKeystoreV3Json,
+  Sign,
+  SignedTransaction,
+  TransactionConfig,
+} from 'web3-core';
+import { INetwork, INetworkType } from '.';
 
 export enum IKeyringAccountType {
   Trezor,
@@ -57,14 +59,14 @@ export interface IKeyringAccountState {
 }
 
 export interface ISyscoinBackendAccount {
-  page: number,
-  totalPages: number,
-  itemsOnPage: number,
-  address: string,
-  balance: string,
-  totalReceived: string,
-  totalSent: string,
-  unconfirmedBalance: string,
-  unconfirmedTxs: number,
-  txs: number
+  page: number;
+  totalPages: number;
+  itemsOnPage: number;
+  address: string;
+  balance: string;
+  totalReceived: string;
+  totalSent: string;
+  unconfirmedBalance: string;
+  unconfirmedTxs: number;
+  txs: number;
 }

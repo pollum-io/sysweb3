@@ -1,18 +1,32 @@
-import { ITokenMap, ITxid, IWalletState, MainSigner } from '@pollum-io/sysweb3-utils';
+import {
+  ITokenMap,
+  ITxid,
+  IWalletState,
+  MainSigner,
+} from '@pollum-io/sysweb3-utils';
 import sys from 'syscoinjs-lib';
 
-const TrezorTransactions = ({ mnemonic, wallet: { activeNetwork } }: { mnemonic: string, wallet: IWalletState }) => {
+const TrezorTransactions = ({
+  mnemonic,
+  wallet: { activeNetwork },
+}: {
+  mnemonic: string;
+  wallet: IWalletState;
+}) => {
   const { hd, main } = MainSigner({
     walletMnemonic: mnemonic,
     isTestnet: activeNetwork.isTestnet,
     network: activeNetwork.url,
-    blockbookURL: activeNetwork.url
+    blockbookURL: activeNetwork.url,
   });
 
   const confirmTokenMint = async ({
     tokenOptions,
     feeRate,
-  }: { tokenOptions: ITokenMap, feeRate: number }): Promise<ITxid> => {
+  }: {
+    tokenOptions: ITokenMap;
+    feeRate: number;
+  }): Promise<ITxid> => {
     const pendingTransaction = await main.assetSend(
       { rbf: true },
       tokenOptions,
@@ -183,7 +197,6 @@ const TrezorTransactions = ({ mnemonic, wallet: { activeNetwork } }: { mnemonic:
 
   //       if (response.success) {
 
-
   //       } else {
   //         return reject(response.payload.error);
   //       }
@@ -195,7 +208,7 @@ const TrezorTransactions = ({ mnemonic, wallet: { activeNetwork } }: { mnemonic:
     return new Promise(function (resolve, reject) {
       const { success, payload } = trezor.ethereumSignMessage({
         path: kdPath,
-        message: txData
+        message: txData,
       });
 
       if (success) {
@@ -206,20 +219,25 @@ const TrezorTransactions = ({ mnemonic, wallet: { activeNetwork } }: { mnemonic:
 
       return reject(payload.error);
     });
-  }
+  };
 
   const verifyMessage = (trezor: any, kdPath: any, txData: any) => {
-    trezor.ethereumVerifyMessage(kdPath, txData.signature, txData.Messsage, (response: any) => {
-      return response;
-    });
-  }
+    trezor.ethereumVerifyMessage(
+      kdPath,
+      txData.signature,
+      txData.Messsage,
+      (response: any) => {
+        return response;
+      }
+    );
+  };
 
   return {
     confirmTokenMint,
     confirmTokenSend,
     confirmNativeTokenSend,
     signMessage,
-    verifyMessage
+    verifyMessage,
   };
 };
 

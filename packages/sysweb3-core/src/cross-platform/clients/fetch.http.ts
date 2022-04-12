@@ -1,4 +1,6 @@
-const defaultFetch = window.fetch.bind(window) ? window.fetch.bind(window) : undefined;
+const defaultFetch = window.fetch.bind(window)
+  ? window.fetch.bind(window)
+  : undefined;
 
 export const FetchRestService = (httpClient: any = defaultFetch) => {
   const invoke = (options: RestApiOptionsRequest) => {
@@ -96,7 +98,7 @@ export const FetchRestService = (httpClient: any = defaultFetch) => {
     buildRequest,
     serialize,
     makeServiceRequest,
-  }
+  };
 };
 
 interface RestApiOptionsRequest {

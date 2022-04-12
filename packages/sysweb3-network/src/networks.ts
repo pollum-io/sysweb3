@@ -2,15 +2,15 @@ interface IWeb3Network {
   chainId: number;
   label: string;
   url: string;
-  default: boolean,
-  isTestnet: boolean,
-  currency: string
+  default: boolean;
+  isTestnet: boolean;
+  currency: string;
 }
 
 export const networks: {
   [chain: string]: {
-    [chainId: number]: IWeb3Network
-  }
+    [chainId: number]: IWeb3Network;
+  };
 } = {
   syscoin: {
     57: {
@@ -70,6 +70,6 @@ export const networks: {
       isTestnet: true,
       label: 'Rinkeby',
       url: 'https://rinkeby.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
-    }
+    },
   },
 };
