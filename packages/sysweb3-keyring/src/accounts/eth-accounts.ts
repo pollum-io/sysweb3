@@ -1,3 +1,4 @@
+import { TransactionResponse } from '@ethersproject/abstract-provider';
 import axios from 'axios';
 import * as sigUtil from 'eth-sig-util';
 import * as ethUtil from 'ethereumjs-util';
@@ -239,19 +240,20 @@ export const Web3Accounts = () => {
   };
 
   // const getRecommendedFee = () => { };
-  const getUserTransactions = async (address: string): Promise<any> => {
+  const getUserTransactions = async (
+    address: string,
+    network: string
+  ): Promise<TransactionResponse[] | undefined> => {
+    const etherscanProvider = new ethers.providers.EtherscanProvider(
+      network, // homestead === mainnet
+      '3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH'
+    );
     try {
-      const userTxs = await axios.get(
-        `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10&sort=asc&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH`
-      );
-
-      if (userTxs.data.message === 'OK') {
-        if (userTxs.data.result !== []) {
-          return userTxs.data.result;
-        }
-
-        return [];
+      const userTxs = etherscanProvider.getHistory(address);
+      if (userTxs) {
+        return userTxs;
       }
+      return [];
     } catch (error) {
       console.log(error);
     }
