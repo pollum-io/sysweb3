@@ -225,7 +225,7 @@ export const validateToken = async (
   }
 };
 
-export default tokens;
+export const getTokenJson = () => tokens;
 
 /** types */
 export type EthTokenDetails = {
