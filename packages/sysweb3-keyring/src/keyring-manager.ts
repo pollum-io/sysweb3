@@ -10,7 +10,6 @@ import {
   INetwork,
   MainSigner,
   ISyscoinTransaction,
-  initialNetworksState
 } from '@pollum-io/sysweb3-utils';
 import { generateMnemonic, validateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
