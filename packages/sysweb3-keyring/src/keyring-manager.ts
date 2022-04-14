@@ -222,7 +222,9 @@ export const KeyringManager = () => {
 
     const { id } = wallet.activeAccount;
 
-    const transactions = {};
+    const transactionsArr = await web3Wallet.getUserTransactions(
+      web3Account.address
+    );
 
     return {
       ...web3Account,
@@ -230,7 +232,7 @@ export const KeyringManager = () => {
       id,
       isTrezorWallet: false,
       label: `Account ${id}`,
-      transactions,
+      transactions: transactionsArr,
       trezorId: -1,
       xprv: '',
       balances: {
@@ -239,7 +241,7 @@ export const KeyringManager = () => {
       },
       xpub: '',
     };
-  }
+  };
 
   const _getInitialAccountData = ({
     label,
