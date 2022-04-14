@@ -13,6 +13,16 @@ import {
   IWalletState,
 } from '@pollum-io/sysweb3-utils';
 import syscointx from 'syscointx-js';
+import coinSelectSyscoin from 'coinselectsyscoin';
+
+type EstimateFeeParams = {
+  outputs: { value: number, address: string }[],
+  changeAddress: string;
+  feeRateBN: any;
+  network: string;
+  xpub: string;
+  explorerUrl: string;
+}
 
 export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { mnemonic: string, wallet: IWalletState }) => {
   const { hd, main } = MainSigner({
@@ -22,13 +32,51 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     blockbookURL: activeNetwork.url
   });
 
+  const estimateSysTransactionFee = async ({
+    outputs,
+    changeAddress,
+    feeRateBN,
+    network,
+    xpub,
+    explorerUrl
+  }: EstimateFeeParams) => {
+    const txOpts = { rbf: false };
+
+    const utxos = await sys.utils.fetchBackendUTXOS(
+      explorerUrl,
+      xpub,
+    );
+    const utxosSanitized = sys.utils.sanitizeBlockbookUTXOs(
+      null,
+      utxos,
+      network
+    );
+
+    // 0 feerate to create tx, then find bytes and multiply feeRate by bytes to get estimated txfee 
+    const tx = await syscointx.createTransaction(
+      txOpts,
+      utxosSanitized,
+      changeAddress,
+      outputs,
+      new sys.utils.BN(0)
+    );
+    const bytes = coinSelectSyscoin.utils.transactionBytes(
+      tx.inputs,
+      tx.outputs
+    );
+    const txFee = feeRateBN.mul(new sys.utils.BN(bytes));
+
+    return txFee;
+  };
+
+  const getRecommendedFee = async (explorerUrl: string): Promise<number> =>
+    (await sys.utils.fetchEstimateFee(explorerUrl, 1)) / 10 ** 8;
+
   const {
     getFeeRate,
     getRawTransaction,
     getTokenMap,
   } = txUtils(main);
-
-  const { estimateSysTransactionFee, getRecommendedFee } = feeUtils(hd, main);
 
   const _createMintedToken = async ({
     txid,
