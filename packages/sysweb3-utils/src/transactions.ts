@@ -2,9 +2,9 @@ import sys from "syscoinjs-lib";
 import { web3Provider } from "@pollum-io/sysweb3-network";
 import { ITokenMap, ISyscoinToken, INetworkType } from ".";
 
-export const txUtils = (main: any) => {
-  const getRawTransaction = (txid: string) =>
-    sys.utils.fetchBackendRawTx(main.blockbookURL, txid);
+export const txUtils = () => {
+  const getRawTransaction = (explorerUrl: string, txid: string) =>
+    sys.utils.fetchBackendRawTx(explorerUrl, txid);
 
   const getPsbtFromJson = (psbt: JSON): string =>
     sys.utils.importPsbtFromJson(psbt);

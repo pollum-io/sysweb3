@@ -6,14 +6,13 @@ import {
   ITokenSend,
   ITokenUpdate,
   ITxid,
-  feeUtils,
   txUtils,
   IKeyringAccountState,
   MainSigner,
-  IWalletState,
 } from '@pollum-io/sysweb3-utils';
 import syscointx from 'syscointx-js';
 import coinSelectSyscoin from 'coinselectsyscoin';
+import * as sysweb3 from '@pollum-io/sysweb3-core';
 
 type EstimateFeeParams = {
   outputs: { value: number, address: string }[],
@@ -24,13 +23,8 @@ type EstimateFeeParams = {
   explorerUrl: string;
 }
 
-export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { mnemonic: string, wallet: IWalletState }) => {
-  const { hd, main } = MainSigner({
-    walletMnemonic: mnemonic,
-    isTestnet: activeNetwork.isTestnet,
-    network: activeNetwork.url,
-    blockbookURL: activeNetwork.url
-  });
+export const SyscoinTransactions = () => {
+  const storage = sysweb3.sysweb3Di.getStorageDb();
 
   const estimateSysTransactionFee = async ({
     outputs,
@@ -76,7 +70,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     getFeeRate,
     getRawTransaction,
     getTokenMap,
-  } = txUtils(main);
+  } = txUtils();
 
   const _createMintedToken = async ({
     txid,
@@ -93,12 +87,20 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     receivingAddress: string;
     fee: number;
   }) => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     return await new Promise((resolve: any, reject: any) => {
       const interval = setInterval(async () => {
-        const createdTokenTransaction = await getRawTransaction(txid);
+        const createdTokenTransaction = await getRawTransaction(network.url, txid);
 
         if (createdTokenTransaction && createdTokenTransaction.confirmations > 1) {
-          const changeAddress = await hd.getNewChangeAddress(true);
+          const changeAddress = await _hd.getNewChangeAddress(true);
 
           try {
             const tokenMap = getTokenMap({
@@ -109,7 +111,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
             });
             const txOptions = { rbf: true };
 
-            const pendingTransaction = await main.assetSend(
+            const pendingTransaction = await _main.assetSend(
               txOptions,
               tokenMap,
               receivingAddress,
@@ -140,6 +142,14 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
 
   // todo: create temp tx type new token
   const _getTokenUpdateOptions = (temporaryTransaction: any) => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     const {
       capabilityflags,
       contract,
@@ -162,7 +172,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     if (notaryAddress) {
       const notaryPayment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: notaryAddress,
-        network: main.network,
+        network: _main.network,
       });
 
       tokenOptions = {
@@ -180,7 +190,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     if (payoutAddress) {
       const payment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: payoutAddress,
-        network: main.network,
+        network: _main.network,
       });
 
       const auxFeeKeyID = Buffer.from(payment.hash.toString('hex'), 'hex');
@@ -199,6 +209,14 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
 
   // todo: create temp tx type new token
   const _getTokenCreationOptions = (temporaryTransaction: any) => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     const {
       capabilityflags,
       notarydetails,
@@ -227,7 +245,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     if (notaryAddress) {
       const notaryPayment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: notaryAddress,
-        network: main.network,
+        network: _main.network,
       });
 
       tokenOptions = {
@@ -245,7 +263,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     if (payoutAddress) {
       const payment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: payoutAddress,
-        network: main.network,
+        network: _main.network,
       });
 
       const auxFeeKeyID = Buffer.from(payment.hash.toString('hex'), 'hex');
@@ -271,6 +289,14 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     confirmations: number;
     guid: string;
   }> => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     const { precision, initialSupply, maxsupply, fee, receiver } =
       temporaryTransaction;
 
@@ -279,17 +305,17 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     const tokenOptions = _getTokenCreationOptions(temporaryTransaction);
     const txOptions = { rbf: true };
 
-    const pendingTransaction = await main.assetNew(
+    const pendingTransaction = await _main.assetNew(
       tokenOptions,
       txOptions,
-      await hd.getNewChangeAddress(true),
+      await _hd.getNewChangeAddress(true),
       receiver,
       new sys.utils.BN(fee * 1e8)
     );
 
     const txid = pendingTransaction.extractTransaction().getId();
 
-    const transactionData = await getRawTransaction(txid);
+    const transactionData = await getRawTransaction(network.url, txid);
     const assets = syscointx.getAssetsFromTx(
       pendingTransaction.extractTransaction()
     );
@@ -317,28 +343,36 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
   const confirmTokenMint = async (
     temporaryTransaction: ITokenMint
   ): Promise<ITxid> => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     const { fee, assetGuid, amount } = temporaryTransaction;
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
     // const { decimals } = await getToken(assetGuid);
 
-    const receivingAddress = await hd.getNewReceivingAddress(true);
+    const receivingAddress = await _hd.getNewReceivingAddress(true);
     const txOptions = { rbf: true };
 
     const tokenMap = getTokenMap({
       guid: assetGuid,
-      changeAddress: await hd.getNewChangeAddress(true),
+      changeAddress: await _hd.getNewChangeAddress(true),
       amount: new sys.utils.BN(amount * 10 ** 8),
       receivingAddress,
     });
 
     // todo: trezor handler in pali
 
-    const pendingTransaction = await main.assetSend(
+    const pendingTransaction = await _main.assetSend(
       txOptions,
       tokenMap,
-      await hd.getNewChangeAddress(true),
+      await _hd.getNewChangeAddress(true),
       feeRate
     );
 
@@ -359,10 +393,18 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
       description: string;
     }, feeRate: number
   }) => {
-    const tokenChangeAddress = await hd.getNewChangeAddress(true);
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
+    const tokenChangeAddress = await _hd.getNewChangeAddress(true);
     const txOptions = { rbf: true };
 
-    const pendingTransaction = await main.assetNew(
+    const pendingTransaction = await _main.assetNew(
       tokenOptions,
       txOptions,
       tokenChangeAddress,
@@ -399,6 +441,14 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     receivingAddress: string,
     feeRate: number,
   }) => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     if (parentTokenTransaction.confirmations >= 1) {
       const tokenMap = getTokenMap({
         guid: parentToken.guid,
@@ -409,7 +459,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
 
       try {
         const txOptions = { rbf: true };
-        const pendingTransaction = await main.assetSend(
+        const pendingTransaction = await _main.assetSend(
           txOptions,
           tokenMap,
           null,
@@ -433,6 +483,14 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     parentToken: any;
     receivingAddress: string;
   }) => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     const feeRate = new sys.utils.BN(10);
     const guid = parentToken.guid;
     const tokenOptions = { updatecapabilityflags: '0' };
@@ -445,7 +503,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
       receivingAddress,
     });
 
-    const txid = await main.assetUpdate(
+    const txid = await _main.assetUpdate(
       guid,
       tokenOptions,
       txOptions,
@@ -464,6 +522,8 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
   const confirmNftCreation = async (
     temporaryTransaction: INewNFT
   ): Promise<ITxid> => {
+    const { network } = storage.get('signers-key');
+
     const { fee, symbol, description, receivingAddress, precision } =
       temporaryTransaction;
 
@@ -483,6 +543,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
         return await new Promise((resolve) => {
           const interval = setInterval(async () => {
             const parentTokenTransaction = await getRawTransaction(
+              network.url,
               parentToken.txid
             );
 
@@ -494,7 +555,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
               feeRate,
             });
 
-            const parentTokenMintTransaction = await getRawTransaction(txid);
+            const parentTokenMintTransaction = await getRawTransaction(network.url, txid);
 
             if (!parentTokenMintTransaction) {
               throw new Error(
@@ -555,6 +616,14 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     isSendOnly: boolean,
     isTrezor?: boolean,
   ): Promise<any> => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     if (!isBase64(data.psbt) || typeof data.assets !== 'string') {
       throw new Error('Bad Request: PSBT must be in Base64 format and assets must be a JSON string. Please check the documentation to see the correct formats.')
     }
@@ -564,12 +633,12 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
 
       const trezorSigner = new sys.utils.TrezorSigner();
 
-      new sys.SyscoinJSLib(trezorSigner, main.blockbookURL);
+      new sys.SyscoinJSLib(trezorSigner, _main.blockbookURL);
 
       if (isSendOnly) {
         return await _sendSignedPsbt({
           psbt: response.psbt,
-          signer: isTrezor ? trezorSigner : main,
+          signer: isTrezor ? trezorSigner : _main,
         });
       }
 
@@ -586,6 +655,14 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
   const confirmUpdateToken = async (
     temporaryTransaction: ITokenUpdate
   ): Promise<ITxid> => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     const { fee, assetGuid, assetWhiteList } = temporaryTransaction;
 
     const txOptions = { rbf: true, assetWhiteList };
@@ -593,14 +670,14 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     try {
       const tokenMap = getTokenMap({
         guid: assetGuid,
-        changeAddress: await hd.getNewChangeAddress(true),
+        changeAddress: await _hd.getNewChangeAddress(true),
         amount: new sys.utils.BN(0),
-        receivingAddress: await hd.getNewReceivingAddress(true),
+        receivingAddress: await _hd.getNewReceivingAddress(true),
       });
 
       const tokenOptions = _getTokenUpdateOptions(temporaryTransaction);
 
-      const pendingTransaction = await main.assetUpdate(
+      const pendingTransaction = await _main.assetUpdate(
         assetGuid,
         tokenOptions,
         txOptions,
@@ -624,6 +701,14 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
   const _confirmCustomTokenSend = async (
     temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     const { amount, rbf, receivingAddress, fee, token } = temporaryTransaction;
     // const { decimals } = await getToken(token);
 
@@ -655,7 +740,7 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
       //   });
       // }
 
-      const pendingTransaction = await main.assetAllocationSend(
+      const pendingTransaction = await _main.assetAllocationSend(
         txOptions,
         tokenOptions,
         null,
@@ -673,13 +758,23 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
   const _confirmNativeTokenSend = async (
     temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     const { receivingAddress, amount, fee } = temporaryTransaction;
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
+    const xpub = _hd.getAccountXpub();
+
     const backendAccount = await sys.utils.fetchBackendAccount(
-      main.blockbookURL,
-      hd.getAccountXpub(),
+      _main.blockbookURL,
+      xpub,
       {},
       true
     );
@@ -693,13 +788,18 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
       },
     ];
 
-    const txOptions = { rbf: false };
+    const changeAddress = await _hd.getNewChangeAddress(true);
+
+    const txOptions = { rbf: true };
 
     const txFee = await estimateSysTransactionFee(
       {
         outputs,
-        changeAddress: await hd.getNewChangeAddress(true),
-        feeRate,
+        changeAddress,
+        feeRateBN: feeRate,
+        network: _hd.Signer.isTestnet ? 'testnet' : 'main',
+        xpub,
+        explorerUrl: _main.blockbookURL,
       },
     );
 
@@ -713,9 +813,9 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
     }
 
     try {
-      const pendingTransaction = await main.createTransaction(
+      const pendingTransaction = await _main.createTransaction(
         txOptions,
-        await hd.getNewChangeAddress(true),
+        changeAddress,
         outputs,
         feeRate
       );
@@ -731,6 +831,14 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
   const sendTransaction = async (
     temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     const { isToken, token } = temporaryTransaction;
 
     if (isToken && token) {
@@ -743,6 +851,14 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
   const confirmMintNFT = async (
     temporaryTransaction: ITokenMint
   ): Promise<ITxid> => {
+    const { mnemonic, network } = storage.get('signers-key');
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: mnemonic,
+      isTestnet: network.isTestnet,
+      network: network.url,
+      blockbookURL: network.url
+    });
+
     const { fee, amount, assetGuid }: any = temporaryTransaction;
 
     // const { decimals } = await getToken(assetGuid);
@@ -751,18 +867,18 @@ export const SyscoinTransactions = ({ mnemonic, wallet: { activeNetwork } }: { m
 
     const tokenMap = getTokenMap({
       guid: assetGuid,
-      changeAddress: await hd.getNewChangeAddress(true),
+      changeAddress: await _hd.getNewChangeAddress(true),
       amount: new sys.utils.BN(amount * 10 ** 8),
-      receivingAddress: await hd.getNewReceivingAddress(
+      receivingAddress: await _hd.getNewReceivingAddress(
         true
       ),
     });
 
     try {
-      const pendingTransaction = await main.assetSend(
+      const pendingTransaction = await _main.assetSend(
         txOptions,
         tokenMap,
-        await hd.getNewChangeAddress(true),
+        await _hd.getNewChangeAddress(true),
         feeRate
       );
 
