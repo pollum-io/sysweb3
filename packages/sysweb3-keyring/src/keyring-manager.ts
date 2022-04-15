@@ -409,6 +409,7 @@ export const KeyringManager = () => {
     _updateUnlocked();
     _notifyUpdate();
     _updateLocalStoreWallet();
+    await _getLatestUpdateForSysAccount();
 
     return wallet.activeAccount;
   };
