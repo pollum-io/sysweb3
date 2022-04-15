@@ -65,7 +65,6 @@ export const TrezorWallet = () => {
       signTransaction: () => { },
       signMessage: () => { },
       getPrivateKey: () => accountInfo.xprv,
-      assets: {},
     };
 
     return accountInfo;
