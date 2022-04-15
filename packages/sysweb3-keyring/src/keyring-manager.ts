@@ -11,6 +11,7 @@ import {
   MainSigner,
   ISyscoinTransaction,
   initialNetworksState,
+  getSigners,
 } from '@pollum-io/sysweb3-utils';
 import { generateMnemonic, validateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
@@ -182,12 +183,7 @@ export const KeyringManager = () => {
   const _createMainWallet = async (): Promise<IKeyringAccountState> => {
     const { mnemonic, network } = storage.get('signers-key');
 
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { _hd, _main } = getSigners();
 
     const hdsigner = Object.assign(_hd, Object.getPrototypeOf(_hd))
     const mainsigner = Object.assign(_main, Object.getPrototypeOf(_main))
@@ -279,12 +275,7 @@ export const KeyringManager = () => {
     _fullUpdate();
 
     if (isSyscoinChain) {
-      const { hd: _hd, main: _main } = MainSigner({
-        walletMnemonic: mnemonic,
-        isTestnet: network.isTestnet,
-        network: network.url,
-        blockbookURL: network.url
-      });
+      const { _hd, _main } = getSigners();
 
       const hdsigner = Object.assign(_hd, Object.getPrototypeOf(_hd))
       const mainsigner = Object.assign(_main, Object.getPrototypeOf(_main))
@@ -351,12 +342,7 @@ export const KeyringManager = () => {
   }> => {
     const { network: { url, isTestnet }, mnemonic } = storage.get('signers-key');
 
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: isTestnet,
-      network: isTestnet ? 'testnet' : 'main',
-      blockbookURL: url
-    });
+    const { _hd, _main } = getSigners();
 
     hd = _hd;
     main = _main;
@@ -564,12 +550,8 @@ export const KeyringManager = () => {
 
   const addNewAccount = async (label) => {
     const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+
+    const { _hd, _main } = getSigners();
 
     const id = _hd.createAccount();
 

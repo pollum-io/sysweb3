@@ -8,7 +8,7 @@ import {
   ITxid,
   txUtils,
   IKeyringAccountState,
-  MainSigner,
+  getSigners,
 } from '@pollum-io/sysweb3-utils';
 import syscointx from 'syscointx-js';
 import coinSelectSyscoin from 'coinselectsyscoin';
@@ -24,7 +24,7 @@ type EstimateFeeParams = {
 }
 
 export const SyscoinTransactions = () => {
-  const storage = sysweb3.sysweb3Di.getStorageDb();
+  const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
   const estimateSysTransactionFee = async ({
     outputs,
@@ -34,7 +34,7 @@ export const SyscoinTransactions = () => {
     xpub,
     explorerUrl
   }: EstimateFeeParams) => {
-    const txOpts = { rbf: false };
+    const txOpts = { rbf: true };
 
     const utxos = await sys.utils.fetchBackendUTXOS(
       explorerUrl,
@@ -87,13 +87,9 @@ export const SyscoinTransactions = () => {
     receivingAddress: string;
     fee: number;
   }) => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { network } = storage.get('signers-key');
+
+    const { _hd, _main } = getSigners();
 
     return await new Promise((resolve: any, reject: any) => {
       const interval = setInterval(async () => {
@@ -142,13 +138,7 @@ export const SyscoinTransactions = () => {
 
   // todo: create temp tx type new token
   const _getTokenUpdateOptions = (temporaryTransaction: any) => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { _main } = getSigners();
 
     const {
       capabilityflags,
@@ -209,13 +199,7 @@ export const SyscoinTransactions = () => {
 
   // todo: create temp tx type new token
   const _getTokenCreationOptions = (temporaryTransaction: any) => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { _main } = getSigners();
 
     const {
       capabilityflags,
@@ -289,13 +273,8 @@ export const SyscoinTransactions = () => {
     confirmations: number;
     guid: string;
   }> => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { network } = storage.get('signers-key');
+    const { _hd, _main } = getSigners();
 
     const { precision, initialSupply, maxsupply, fee, receiver } =
       temporaryTransaction;
@@ -343,13 +322,7 @@ export const SyscoinTransactions = () => {
   const confirmTokenMint = async (
     temporaryTransaction: ITokenMint
   ): Promise<ITxid> => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { _hd, _main } = getSigners();
 
     const { fee, assetGuid, amount } = temporaryTransaction;
 
@@ -393,13 +366,7 @@ export const SyscoinTransactions = () => {
       description: string;
     }, feeRate: number
   }) => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { _hd, _main } = getSigners();
 
     const tokenChangeAddress = await _hd.getNewChangeAddress(true);
     const txOptions = { rbf: true };
@@ -441,13 +408,7 @@ export const SyscoinTransactions = () => {
     receivingAddress: string,
     feeRate: number,
   }) => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { _main } = getSigners();
 
     if (parentTokenTransaction.confirmations >= 1) {
       const tokenMap = getTokenMap({
@@ -483,13 +444,7 @@ export const SyscoinTransactions = () => {
     parentToken: any;
     receivingAddress: string;
   }) => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { _main } = getSigners();
 
     const feeRate = new sys.utils.BN(10);
     const guid = parentToken.guid;
@@ -616,13 +571,7 @@ export const SyscoinTransactions = () => {
     isSendOnly: boolean,
     isTrezor?: boolean,
   ): Promise<any> => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { _main } = getSigners();
 
     if (!isBase64(data.psbt) || typeof data.assets !== 'string') {
       throw new Error('Bad Request: PSBT must be in Base64 format and assets must be a JSON string. Please check the documentation to see the correct formats.')
@@ -655,13 +604,7 @@ export const SyscoinTransactions = () => {
   const confirmUpdateToken = async (
     temporaryTransaction: ITokenUpdate
   ): Promise<ITxid> => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { _hd, _main } = getSigners();
 
     const { fee, assetGuid, assetWhiteList } = temporaryTransaction;
 
@@ -701,13 +644,7 @@ export const SyscoinTransactions = () => {
   const _confirmCustomTokenSend = async (
     temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { _main } = getSigners();
 
     const { amount, rbf, receivingAddress, fee, token } = temporaryTransaction;
     // const { decimals } = await getToken(token);
@@ -758,13 +695,7 @@ export const SyscoinTransactions = () => {
   const _confirmNativeTokenSend = async (
     temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { _hd, _main } = getSigners();
 
     const { receivingAddress, amount, fee } = temporaryTransaction;
 
@@ -831,14 +762,6 @@ export const SyscoinTransactions = () => {
   const sendTransaction = async (
     temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
-
     const { isToken, token } = temporaryTransaction;
 
     if (isToken && token) {
@@ -851,13 +774,7 @@ export const SyscoinTransactions = () => {
   const confirmMintNFT = async (
     temporaryTransaction: ITokenMint
   ): Promise<ITxid> => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+    const { _hd, _main } = getSigners();
 
     const { fee, amount, assetGuid }: any = temporaryTransaction;
 
