@@ -132,83 +132,6 @@ export const Web3Accounts = () => {
   };
 
   /**
-   * This function should send a value to address provided.
-   *
-   * @param {string} fromAddress
-   * @param {string} fromPrivateKey
-   * @param {string} toAddress
-   * @param {number} value
-   * @param {string} gasFee
-   * ```
-   * ```
-   *
-   * @example
-   *
-   * ```
-   * <button onClick={sendTransaction('0x00000000000000000000089000000000000000', '0x00000000000000000000089000000000000', 0.5, 'high')}>Send Value to address provided</button>
-   * ```
-   *
-   */
-
-  const sendTransaction = async (
-    fromAddress: string,
-    fromPrivateKey: string,
-    toAddress: string,
-    value: number,
-    gasFee?: string
-  ) => {
-    const gasPrice = (await web3Provider.eth.getGasPrice()).toString();
-
-    let editGasFee: any;
-
-    switch (gasFee) {
-      case "low":
-        editGasFee = web3Provider.utils
-          .toBN(gasPrice)
-          .mul(web3Provider.utils.toBN(8))
-          .div(web3Provider.utils.toBN(10))
-          .toString();
-
-        break;
-      case "high":
-        editGasFee = web3Provider.utils
-          .toBN(gasPrice)
-          .mul(web3Provider.utils.toBN(11))
-          .div(web3Provider.utils.toBN(10))
-          .toString();
-        break;
-      default:
-        editGasFee = gasPrice;
-        break;
-    }
-
-    const signedTransaction = await web3Provider.eth.accounts.signTransaction(
-      {
-        from: fromAddress,
-        to: toAddress,
-        value: web3Provider.utils.toWei(value.toString(), "ether"),
-        gas: await web3Provider.eth.estimateGas({
-          to: toAddress,
-        }),
-        gasPrice: editGasFee,
-        nonce: await web3Provider.eth.getTransactionCount(
-          fromAddress,
-          "latest"
-        ),
-      },
-      fromPrivateKey
-    );
-
-    try {
-      return web3Provider.eth
-        .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
-        .then((result: TransactionReceipt) => result);
-    } catch (error: any) {
-      throw new Error(error);
-    }
-  };
-
-  /**
    * This function should return an Account Object from imported wallet.
    *
    * @param {string} mnemonic
@@ -304,16 +227,86 @@ export const Web3Accounts = () => {
     );
   };
 
-  return {
-    createAccount,
-    getBalance,
-    getNftsByAddress,
-    getTokens,
-    getUserTransactions,
+  const getRecommendedGasPrice = async () => {
+    return (await web3Provider.eth.getGasPrice()).toString();
+  }
+
+  const getFeeByType = async (type: string) => {
+    const gasPrice = await getRecommendedGasPrice();
+
+    const low = web3Provider.utils
+      .toBN(gasPrice)
+      .mul(web3Provider.utils.toBN(8))
+      .div(web3Provider.utils.toBN(10))
+      .toString();
+
+    const high = web3Provider.utils
+      .toBN(gasPrice)
+      .mul(web3Provider.utils.toBN(11))
+      .div(web3Provider.utils.toBN(10))
+      .toString();
+
+    if (type === 'low') return low;
+    if (type === 'high') return high;
+
+    return gasPrice;
+  }
+
+  const getGasLimit = async (toAddress: string) => {
+    return await web3Provider.eth.estimateGas({
+      to: toAddress,
+    })
+  }
+
+  const sendTransaction = async (
+    fromAddress: string,
+    fromPrivateKey: string,
+    toAddress: string,
+    value: number,
+    gasLimit?: number,
+    gasPrice?: number
+  ): Promise<TransactionReceipt> => {
+    const defaultGasPrice = await getRecommendedGasPrice();
+    const defaultGasLimit = await getGasLimit(toAddress);
+
+    const signedTransaction = await web3Provider.eth.accounts.signTransaction({
+      from: fromAddress,
+      to: toAddress,
+      value: web3Provider.utils.toWei(value.toString(), "ether"),
+      gas: gasLimit || defaultGasLimit,
+      gasPrice: gasPrice || defaultGasPrice,
+      nonce: await web3Provider.eth.getTransactionCount(fromAddress, "latest"),
+    }, fromPrivateKey);
+    try {
+      return web3Provider.eth
+        .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
+        .then((result: TransactionReceipt) => result);
+    }
+    catch (error: any) {
+      throw new Error(error);
+    }
+  };
+
+  const tx = {
     getTransactionCount,
     eth_signTypedData_v4,
     sendTransaction,
+    getFeeByType,
+    getGasLimit,
+    getRecommendedGasPrice,
+  }
+
+  const account = {
+    createAccount,
+    getBalance,
+    getTokens,
+    getNftsByAddress,
     importAccount,
-    // getRecommendedFee,
+    getUserTransactions,
+  }
+
+  return {
+    account,
+    tx,
   };
 };

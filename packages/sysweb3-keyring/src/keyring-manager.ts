@@ -214,8 +214,8 @@ export const KeyringManager = () => {
   const _getLatestUpdateForWeb3Accounts = async () => {
     const { mnemonic } = storage.get('signers-key');
 
-    const web3Account = web3Wallet.importAccount(mnemonic);
-    const balance = await web3Wallet.getBalance(web3Account.address);
+    const web3Account = web3Wallet.account.importAccount(mnemonic);
+    const balance = await web3Wallet.account.getBalance(web3Account.address);
 
     const { id } = wallet.activeAccount;
 
