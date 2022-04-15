@@ -216,7 +216,6 @@ export const KeyringManager = () => {
 
   const _getLatestUpdateForWeb3Accounts = async () => {
     const { mnemonic } = storage.get('signers-key');
-    let transactionsArr: any = [];
 
     const web3Account = web3Wallet.importAccount(mnemonic);
     const balance = await web3Wallet.getBalance(web3Account.address);
@@ -224,12 +223,12 @@ export const KeyringManager = () => {
     const { id } = wallet.activeAccount;
     const { activeNetwork } = wallet;
 
-    if (activeNetwork.chainId === 1 || activeNetwork.chainId === 4) {
-      transactionsArr = await web3Wallet.getUserTransactions(
-        web3Account.address,
-        activeNetwork.chainId === 1 ? 'homestead' : 'rinkeby'
-      );
-    }
+    const transactions = await web3Wallet.getUserTransactions(
+      web3Account.address,
+      activeNetwork.chainId === 1 ? 'homestead' : 'rinkeby'
+    );
+
+    console.log('txs for web3', txs)
 
     return {
       ...web3Account,
@@ -237,7 +236,7 @@ export const KeyringManager = () => {
       id,
       isTrezorWallet: false,
       label: `Account ${id}`,
-      transactions: transactionsArr,
+      transactions,
       trezorId: -1,
       xprv: '',
       balances: {
@@ -268,6 +267,8 @@ export const KeyringManager = () => {
       xprv,
       address: receivingAddress,
       isTrezorWallet: false,
+      trransactions: [],
+      assets: [],
     };
 
     return account;
@@ -326,26 +327,14 @@ export const KeyringManager = () => {
 
     const { address, balance, transactions, tokensAsset } = await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
 
-    const txs: ISyscoinTransaction = {};
-    const assets = {};
-
-    if (transactions) {
-      for (const tx of transactions) {
-        txs[tx.txid] = tx;
-      }
-    }
-
-    if (tokensAsset) {
-      for (const asset of tokensAsset) {
-        assets[asset.assetGuid] = asset;
-      }
-    }
-
     return {
-      transactions: txs,
-      assets,
+      transactions,
+      assets: tokensAsset,
       xpub: address,
-      balance: balance / 1e8,
+      balances: {
+        syscoin: balance / 1e8,
+        ethereum: 0,
+      },
     }
   }
 
