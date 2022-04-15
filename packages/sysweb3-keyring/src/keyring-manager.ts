@@ -328,8 +328,8 @@ export const KeyringManager = () => {
     const { address, balance, transactions, tokensAsset } = await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
 
     return {
-      transactions,
-      assets: tokensAsset,
+      transactions: transactions.slice(0, 20),
+      assets: tokensAsset.slice(0, 30),
       xpub: address,
       balances: {
         syscoin: balance / 1e8,
