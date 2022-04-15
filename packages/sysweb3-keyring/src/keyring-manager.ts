@@ -56,7 +56,7 @@ export const KeyringManager = () => {
     return isValid;
   };
 
-  const isUnlocked = () => Boolean(hasHdMnemonic() && _password);
+  const isUnlocked = () => Boolean(hasHdMnemonic() && _password) || storage.get('keyring').isUnlocked
   /** end */
 
   /** seeds */
@@ -345,7 +345,7 @@ export const KeyringManager = () => {
     tokens: any;
     receivingAddress: string;
   }> => {
-    const { _hd: { Signer: { isTestnet } }, url: blockbookURL, mnemonic } = storage.get('signers')
+    const {_hd:{ blockbookURL: hdBlockbookUrl}, _main: {blockbookURL: mainBlockbookUrl}} = storage.get('signers');
 
     const { _hd, _main } = getSigners();
 
@@ -354,7 +354,7 @@ export const KeyringManager = () => {
 
     const xpub = _hd.getAccountXpub();
 
-    const formattedBackendAccount = await _getFormattedBackendAccount({ url: _main.blockbookURL, xpub });
+    const formattedBackendAccount = await _getFormattedBackendAccount({ url: hdBlockbookUrl || mainBlockbookUrl, xpub });
 
     const receivingAddress = await _hd.getNewReceivingAddress(true);
 
