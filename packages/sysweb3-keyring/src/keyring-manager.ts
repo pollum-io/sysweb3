@@ -351,13 +351,13 @@ export const KeyringManager = () => {
     tokens: any;
     receivingAddress: string;
   }> => {
-    const { network: { url, isTestnet }, mnemonic } = storage.get('signers-key');
+    const {_hd: {Signer: {isTestnet}}, url: blockbookURL, mnemonic} = storage.get('signers')
 
     const { hd: _hd, main: _main } = MainSigner({
       walletMnemonic: mnemonic,
       isTestnet: isTestnet,
       network: isTestnet ? 'testnet' : 'main',
-      blockbookURL: url
+      blockbookURL
     });
 
     hd = _hd;
@@ -365,7 +365,7 @@ export const KeyringManager = () => {
 
     const xpub = _hd.getAccountXpub();
 
-    const formattedBackendAccount = await _getFormattedBackendAccount({ url, xpub });
+    const formattedBackendAccount = await _getFormattedBackendAccount({ blockbookURL, xpub });
 
     const receivingAddress = await _hd.getNewReceivingAddress(true);
 
