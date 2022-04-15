@@ -51,6 +51,7 @@ export const TrezorWallet = () => {
       transactions,
       xpub,
       xprv: '',
+      assets: {},
       address: trezorAccount.getAddress(receivingIndex + 1),
       tokens: assets,
       connectedTo: [],

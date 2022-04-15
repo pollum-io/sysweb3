@@ -54,6 +54,8 @@ export interface IKeyringAccountState {
   xprv: string;
   balances: IKeyringBalances;
   xpub: string;
+  assets: any;
+  transactions: any;
 }
 
 export interface ISyscoinBackendAccount {

@@ -227,12 +227,18 @@ export const Web3Accounts = () => {
     );
   };
 
-  const getRecommendedGasPrice = async () => {
-    return (await web3Provider.eth.getGasPrice()).toString();
-  }
+  const getRecommendedGasPrice = async (formatted?: boolean) => {
+    const gasPriceBN = await web3Provider.eth.getGasPrice();
+
+    if (formatted) {
+      return ethers.utils.formatEther(gasPriceBN);
+    }
+
+    return gasPriceBN.toString();
+  };
 
   const getFeeByType = async (type: string) => {
-    const gasPrice = await getRecommendedGasPrice();
+    const gasPrice = await getRecommendedGasPrice(false);
 
     const low = web3Provider.utils
       .toBN(gasPrice)
@@ -273,7 +279,7 @@ export const Web3Accounts = () => {
     gasLimit?: number,
     gasPrice?: number
   }): Promise<TransactionReceipt> => {
-    const defaultGasPrice = await getRecommendedGasPrice();
+    const defaultGasPrice = await getRecommendedGasPrice(false);
     const defaultGasLimit = await getGasLimit(receivingAddress);
 
     const signedTransaction = await web3Provider.eth.accounts.signTransaction({
