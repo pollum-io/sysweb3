@@ -4,8 +4,6 @@ import coinSelectSyscoin from 'coinselectsyscoin';
 import { SyscoinHDSigner } from '.';
 import { ethers } from 'ethers';
 
-// const InfuraProvider = ethers.providers.InfuraProvider;
-
 export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
   const estimateSysTransactionFee = async (items: any) => {
     const { outputsArray, changeAddress, feeRateBN } = items;
@@ -49,22 +47,14 @@ export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
       const gasLimit: ethers.BigNumber = await contract.estimateGas.transfer(recipient, txAmount, { from: '' });
 
       return gasLimit.toNumber();
-    }
-    catch (error) {
+    } catch (error) {
       return defaultValue;
     }
   }
-
-  // const getTransactionCount = (address: string, chainId = 1) => {
-  //   const infuraProvider = new InfuraProvider();
-
-  //   return infuraProvider.getTransactionCount(address, 'pending');
-  // }
 
   return {
     estimateSysTransactionFee,
     getRecommendedFee,
     estimateTokenTransferGasLimit,
-    // getTransactionCount,
   }
 }
