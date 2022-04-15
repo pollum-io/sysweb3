@@ -351,7 +351,7 @@ export const KeyringManager = () => {
 
     const xpub = _hd.getAccountXpub();
 
-    const formattedBackendAccount = await _getFormattedBackendAccount({ blockbookURL, xpub });
+    const formattedBackendAccount = await _getFormattedBackendAccount({ url: _main.blockbookURL, xpub });
 
     const receivingAddress = await _hd.getNewReceivingAddress(true);
 
