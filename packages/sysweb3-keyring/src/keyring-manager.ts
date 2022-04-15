@@ -214,27 +214,27 @@ export const KeyringManager = () => {
   const _getLatestUpdateForWeb3Accounts = async () => {
     const { mnemonic } = storage.get('signers-key');
 
-    const web3Account = web3Wallet.importAccount(mnemonic);
-    const balance = await web3Wallet.getBalance(web3Account.address);
+    const { address, privateKey } = web3Wallet.importAccount(mnemonic);
+    const balance = await web3Wallet.getBalance(address);
 
     const { id } = wallet.activeAccount;
 
     const transactions = {};
 
     return {
-      ...web3Account,
       assets: {},
       id,
       isTrezorWallet: false,
       label: `Account ${id}`,
       transactions,
       trezorId: -1,
-      xprv: '',
+      xprv: privateKey,
       balances: {
         ethereum: balance,
         syscoin: 0,
       },
-      xpub: '',
+      xpub: address,
+      address: address,
     };
   }
 
@@ -331,7 +331,10 @@ export const KeyringManager = () => {
       transactions: txs,
       assets,
       xpub: address,
-      balance: balance / 1e8,
+      balances: {
+        syscoin: balance / 1e8,
+        ethereum: 0,
+      },
     }
   }
 
