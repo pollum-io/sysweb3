@@ -346,7 +346,6 @@ export const KeyringManager = () => {
     receivingAddress: string;
   }> => {
     const {_hd:{ blockbookURL: hdBlockbookUrl}, _main: {blockbookURL: mainBlockbookUrl}} = storage.get('signers');
-    const { _hd: { Signer: { isTestnet } }, url: blockbookURL, mnemonic } = storage.get('signers')
 
     const { _hd, _main } = getSigners();
 
