@@ -116,6 +116,7 @@ export const KeyringManager = () => {
 
   const _clearTemporaryLocalKeys = () => {
     storage.set('signers-key', { mnemonic: null, network: initialNetworksState })
+    _password = '';
   };
 
   const _persistWallet = (password: string = _password): string | Error => {
@@ -296,6 +297,8 @@ export const KeyringManager = () => {
 
       const xprv = getEncryptedXprv();
 
+      storage.set('signers-key', { mnemonic, network });
+
       const updatedAccountInfo = await _getLatestUpdateForSysAccount();
 
       const account = _getInitialAccountData({
@@ -306,7 +309,6 @@ export const KeyringManager = () => {
 
       hd && hd.setAccountIndex(account.id);
 
-      storage.set('signers-key', { mnemonic, network });
 
       return account;
     }
@@ -530,8 +532,6 @@ export const KeyringManager = () => {
     }
 
     _updateLocalStoreWallet();
-
-    storage.set('signers-key', { ...storage.get('signers-key'), network })
 
     const isSyscoinChain = Boolean(networks.syscoin[network.chainId]);
 
