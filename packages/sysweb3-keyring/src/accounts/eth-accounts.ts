@@ -296,17 +296,13 @@ export const Web3Accounts = () => {
     getRecommendedGasPrice,
   }
 
-  const account = {
+  return {
     createAccount,
     getBalance,
     getTokens,
     getNftsByAddress,
     importAccount,
     getUserTransactions,
-  }
-
-  return {
-    account,
     tx,
   };
 };
