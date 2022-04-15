@@ -233,7 +233,7 @@ export const KeyringManager = () => {
 
     return {
       ...web3Account,
-      assets: {},
+      assets: [],
       id,
       isTrezorWallet: false,
       label: `Account ${id}`,
