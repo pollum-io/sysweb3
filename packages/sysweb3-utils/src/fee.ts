@@ -60,8 +60,7 @@ export const feeUtils = () => {
       const gasLimit: ethers.BigNumber = await contract.estimateGas.transfer(recipient, txAmount, { from: '' });
 
       return gasLimit.toNumber();
-    }
-    catch (error) {
+    } catch (error) {
       return defaultValue;
     }
   }
