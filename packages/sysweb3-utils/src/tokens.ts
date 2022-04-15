@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import tokens from 'tokens.json';
+import tokens from './tokens.json';
 import abi20 from './abi/erc20.json';
 import abi from './abi/erc721.json';
 import { IEthereumAddress, createContractUsingAbi } from '.';
