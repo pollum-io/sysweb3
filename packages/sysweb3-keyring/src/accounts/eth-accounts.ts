@@ -300,6 +300,14 @@ export const Web3Accounts = () => {
     }
   };
 
+  const getGasOracle = () => {
+    const gasOracle = axios.get('https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH')
+
+    console.log('gas oracle etherscan')
+
+    return gasOracle;
+  }
+
   const tx = {
     getTransactionCount,
     eth_signTypedData_v4,
@@ -307,6 +315,7 @@ export const Web3Accounts = () => {
     getFeeByType,
     getGasLimit,
     getRecommendedGasPrice,
+    getGasOracle,
   }
 
   return {
