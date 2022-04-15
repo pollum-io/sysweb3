@@ -258,25 +258,32 @@ export const Web3Accounts = () => {
     })
   }
 
-  const sendTransaction = async (
-    fromAddress: string,
-    fromPrivateKey: string,
-    toAddress: string,
-    value: number,
+  const sendTransaction = async ({
+    sender,
+    senderXprv,
+    receivingAddress,
+    amount,
+    gasLimit,
+    gasPrice,
+  }: {
+    sender: string,
+    senderXprv: string,
+    receivingAddress: string,
+    amount: number,
     gasLimit?: number,
     gasPrice?: number
-  ): Promise<TransactionReceipt> => {
+  }): Promise<TransactionReceipt> => {
     const defaultGasPrice = await getRecommendedGasPrice();
-    const defaultGasLimit = await getGasLimit(toAddress);
+    const defaultGasLimit = await getGasLimit(receivingAddress);
 
     const signedTransaction = await web3Provider.eth.accounts.signTransaction({
-      from: fromAddress,
-      to: toAddress,
-      value: web3Provider.utils.toWei(value.toString(), "ether"),
+      from: sender,
+      to: receivingAddress,
+      value: web3Provider.utils.toWei(amount.toString(), "ether"),
       gas: gasLimit || defaultGasLimit,
       gasPrice: gasPrice || defaultGasPrice,
-      nonce: await web3Provider.eth.getTransactionCount(fromAddress, "latest"),
-    }, fromPrivateKey);
+      nonce: await web3Provider.eth.getTransactionCount(sender, "latest"),
+    }, senderXprv);
     try {
       return web3Provider.eth
         .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
