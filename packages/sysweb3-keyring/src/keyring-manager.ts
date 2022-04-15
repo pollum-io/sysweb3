@@ -345,8 +345,6 @@ export const KeyringManager = () => {
     tokens: any;
     receivingAddress: string;
   }> => {
-    const {_hd:{ blockbookURL: hdBlockbookUrl}, _main: {blockbookURL: mainBlockbookUrl}} = storage.get('signers');
-
     const { _hd, _main } = getSigners();
 
     hd = _hd;
@@ -354,7 +352,7 @@ export const KeyringManager = () => {
 
     const xpub = _hd.getAccountXpub();
 
-    const formattedBackendAccount = await _getFormattedBackendAccount({ url: hdBlockbookUrl || mainBlockbookUrl, xpub });
+    const formattedBackendAccount = await _getFormattedBackendAccount({ url: _main.blockbookURL, xpub });
 
     const receivingAddress = await _hd.getNewReceivingAddress(true);
 
@@ -412,7 +410,7 @@ export const KeyringManager = () => {
     _updateUnlocked();
     _notifyUpdate();
     _updateLocalStoreWallet();
-    await _getLatestUpdateForSysAccount();
+    await getLatestUpdateForAccount();
 
     return wallet.activeAccount;
   };
