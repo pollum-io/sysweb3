@@ -300,12 +300,10 @@ export const Web3Accounts = () => {
     }
   };
 
-  const getGasOracle = () => {
-    const gasOracle = axios.get('https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH')
+  const getGasOracle = async () => {
+    const { data: { result } } = await axios.get('https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH');
 
-    console.log('gas oracle etherscan')
-
-    return gasOracle;
+    return result;
   }
 
   const tx = {
