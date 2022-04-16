@@ -212,17 +212,22 @@ export const KeyringManager = () => {
   const _getEncryptedPrivateKeyFromHd = () => hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
 
   const _getLatestUpdateForWeb3Accounts = async () => {
-    const { mnemonic } = storage.get('signers-key');
+    const { mnemonic, network } = storage.get('signers-key');
 
     const { address, privateKey } = web3Wallet.importAccount(mnemonic);
     const balance = await web3Wallet.getBalance(address);
 
     const { id } = wallet.activeAccount;
 
-    const transactions = {};
+    const transactions = await web3Wallet.getUserTransactions(
+      address,
+      network.chainId === 1 ? 'homestead' : 'rinkeby'
+    );
+
+    console.log('txs for web3', txs)
 
     return {
-      assets: {},
+      assets: [],
       id,
       isTrezorWallet: false,
       label: `Account ${id}`,
@@ -236,7 +241,7 @@ export const KeyringManager = () => {
       xpub: address,
       address: address,
     };
-  }
+  };
 
   const _getInitialAccountData = ({
     label,
@@ -258,6 +263,8 @@ export const KeyringManager = () => {
       xprv,
       address: receivingAddress,
       isTrezorWallet: false,
+      trransactions: [],
+      assets: [],
     };
 
     return account;
@@ -312,23 +319,11 @@ export const KeyringManager = () => {
 
     const { address, balance, transactions, tokensAsset } = await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
 
-    const txs: ISyscoinTransaction = {};
-    const assets = {};
-
-    if (transactions) {
-      for (const tx of transactions) {
-        txs[tx.txid] = tx;
-      }
-    }
-
-    if (tokensAsset) {
-      for (const asset of tokensAsset) {
-        assets[asset.assetGuid] = asset;
-      }
-    }
+    const latestAssets = tokensAsset.slice(0, 30);
+    const assets = latestAssets.map((token) => ({ ...token, symbol: atob(token.symbol) }));
 
     return {
-      transactions: txs,
+      transactions: transactions.slice(0, 20),
       assets,
       xpub: address,
       balances: {
@@ -345,8 +340,6 @@ export const KeyringManager = () => {
     tokens: any;
     receivingAddress: string;
   }> => {
-    const {_hd:{ blockbookURL: hdBlockbookUrl}, _main: {blockbookURL: mainBlockbookUrl}} = storage.get('signers');
-
     const { _hd, _main } = getSigners();
 
     hd = _hd;
@@ -354,7 +347,7 @@ export const KeyringManager = () => {
 
     const xpub = _hd.getAccountXpub();
 
-    const formattedBackendAccount = await _getFormattedBackendAccount({ url: hdBlockbookUrl || mainBlockbookUrl, xpub });
+    const formattedBackendAccount = await _getFormattedBackendAccount({ url: _main.blockbookURL, xpub });
 
     const receivingAddress = await _hd.getNewReceivingAddress(true);
 
@@ -412,7 +405,7 @@ export const KeyringManager = () => {
     _updateUnlocked();
     _notifyUpdate();
     _updateLocalStoreWallet();
-    await _getLatestUpdateForSysAccount();
+    await getLatestUpdateForAccount();
 
     return wallet.activeAccount;
   };

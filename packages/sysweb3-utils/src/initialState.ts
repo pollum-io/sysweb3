@@ -12,8 +12,8 @@ export const initialActiveAccountState = {
   trezorId: -1,
   xprv: '',
   xpub: '',
-  transactions: {},
-  assets: {},
+  transactions: [],
+  assets: [],
 };
 
 export const initialNetworksState = {
