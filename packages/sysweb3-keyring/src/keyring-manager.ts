@@ -227,7 +227,6 @@ export const KeyringManager = () => {
     console.log('txs for web3', txs)
 
     return {
-      ...web3Account,
       assets: [],
       id,
       isTrezorWallet: false,
@@ -321,7 +320,7 @@ export const KeyringManager = () => {
     const { address, balance, transactions, tokensAsset } = await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
 
     const latestAssets = tokensAsset.slice(0, 30);
-    const assets = latestAssets.map((token) => ({ ...token, symbol: atob(symbol) }));
+    const assets = latestAssets.map((token) => ({ ...token, symbol: atob(token.symbol) }));
 
     return {
       transactions: transactions.slice(0, 20),
