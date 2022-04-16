@@ -2,18 +2,16 @@ import { BitcoinNetwork } from '.';
 import sys from 'syscoinjs-lib';
 
 import { BIP32Interface } from 'bip32';
-import { } from 'bip84';
+import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { Psbt } from 'bitcoinjs-lib';
 
 export const MainSigner = ({
   walletMnemonic,
   isTestnet,
-  network,
   blockbookURL,
 }: {
   walletMnemonic: string;
   isTestnet: boolean;
-  network: string;
   blockbookURL: string;
 }): { hd: SyscoinHDSigner, main: any } => {
   let mainSigner: any;
@@ -22,14 +20,13 @@ export const MainSigner = ({
   const getMainSigner = ({
     SignerIn,
     blockbookURL,
-    network,
   }: {
     SignerIn?: any;
     blockbookURL?: string;
     network?: any;
   }) => {
     if (!mainSigner) {
-      mainSigner = new sys.SyscoinJSLib(SignerIn, blockbookURL, network);
+      mainSigner = new sys.SyscoinJSLib(SignerIn, blockbookURL);
     }
 
     return mainSigner;
@@ -65,13 +62,31 @@ export const MainSigner = ({
   };
 
   const hd = getHdSigner({ walletMnemonic, isTestnet });
-  const main = getMainSigner({ SignerIn: hd, network, blockbookURL });
+  const main = getMainSigner({ SignerIn: hd, blockbookURL });
 
   return {
     hd,
     main,
   }
 }
+
+export const getSigners = () => {
+  const storage = sysweb3.sysweb3Di.getStateStorageDb();
+
+  const { mnemonic, network } = storage.get('signers-key');
+
+  const { hd: _hd, main: _main } = MainSigner({
+    walletMnemonic: mnemonic,
+    isTestnet: network.isTestnet,
+    blockbookURL: network.url
+  });
+
+  return {
+    _hd,
+    _main,
+  }
+};
+
 export type SyscoinHdAccount = {
   pubTypes: {
     mainnet: {
