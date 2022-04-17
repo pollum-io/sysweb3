@@ -250,15 +250,12 @@ export const KeyringManager = () => {
     xprv,
   }: { label?: string, signer: any, createdAccount: any, xprv: string }) => {
     console.log('[get initial account data] getting initial account...')
-    const { balance, receivingAddress, xpub } = createdAccount;
+    const { balances, receivingAddress, xpub } = createdAccount;
 
     const account = {
       id: signer.Signer.accountIndex,
       label: label ? label : `Account ${signer.Signer.accountIndex + 1}`,
-      balances: {
-        syscoin: balance,
-        ethereum: 0,
-      },
+      balances,
       xpub,
       xprv,
       address: receivingAddress,
@@ -545,31 +542,61 @@ export const KeyringManager = () => {
   }
   /** end */
 
-  const addNewAccount = async (label) => {
+
+  const addNewAccount = async (label: string) => {
     const { mnemonic, network } = storage.get('signers-key');
+
+    const isSyscoinChain = Boolean(networks.syscoin[network.chainId]);
 
     const { _hd, _main } = getSigners();
 
-    const id = _hd.createAccount();
+    if (isSyscoinChain) {
+      const id = _hd.createAccount();
 
-    _hd.setAccountIndex(id);
+      _hd.setAccountIndex(id);
 
-    const latestUpdate = await getLatestUpdateForAccount();
+      const latestUpdate = await getLatestUpdateForAccount();
+      const xprv = getEncryptedXprv();
 
-    const xprv = getEncryptedXprv();
+      const account = _getInitialAccountData({
+        label,
+        signer: _hd,
+        createdAccount: latestUpdate,
+        xprv,
+      });
 
-    const account = _getInitialAccountData({
-      label,
-      signer: _hd,
-      createdAccount: latestUpdate,
-      xprv,
-    });
+      return {
+        ...account,
+        id,
+      };
+    }
 
-    return {
-      ...account,
-      id,
+    const { address, privateKey } = web3Wallet.createAccount();
+
+    const balance = web3Wallet.getBalance(address)
+
+    const createdAccount = {
+      balances: {
+        syscoin: 0,
+        ethereum: balance,
+      },
+      receivingAddress: address,
+      xpub: address,
+    }
+
+    const initialAccount = _getInitialAccountData({ label, signer: _hd, createdAccount, xprv: privateKey });
+
+    wallet = {
+      ...wallet,
+      accounts: {
+        ...wallet.accounts,
+        [initialAccount.id]: initialAccount,
+      },
+      activeAccount: initialAccount,
     };
-  }
+
+    return initialAccount;
+  };
 
   return {
     validateSeed,
