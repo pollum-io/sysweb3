@@ -99,9 +99,9 @@ export const KeyringManager = () => {
 
   const hasHdMnemonic = () => {
     if (!hd.mnemonic || !main.blockbookURL) {
-        const { _hd, _main } = getSigners();
-        hd = _hd;
-        main = _main;
+      const { _hd, _main } = getSigners();
+      hd = _hd;
+      main = _main;
     }
 
     return Boolean(hd.mnemonic);
@@ -339,19 +339,19 @@ export const KeyringManager = () => {
     tokens: any;
     receivingAddress: string;
   }> => {
-      if (!hd.mnemonic || !main.blockbookURL) {
-          const { _hd, _main } = getSigners();
-          hd = _hd;
-          main = _main;
-      }
-        
-      const xpub = hd.getAccountXpub();
-      const formattedBackendAccount = await _getFormattedBackendAccount({ url: main.blockbookURL, xpub });
-      const receivingAddress = await hd.getNewReceivingAddress(true);
-      return {
-          receivingAddress,
-          ...formattedBackendAccount
-      };
+    if (!hd.mnemonic || !main.blockbookURL) {
+      const { _hd, _main } = getSigners();
+      hd = _hd;
+      main = _main;
+    }
+
+    const xpub = hd.getAccountXpub();
+    const formattedBackendAccount = await _getFormattedBackendAccount({ url: main.blockbookURL, xpub });
+    const receivingAddress = await hd.getNewReceivingAddress(true);
+    return {
+      receivingAddress,
+      ...formattedBackendAccount
+    };
   };
   /** end */
 
@@ -383,7 +383,6 @@ export const KeyringManager = () => {
       },
       activeAccount: vault,
     }
-
     _fullUpdate();
 
     return vault;
