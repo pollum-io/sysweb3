@@ -97,7 +97,15 @@ export const KeyringManager = () => {
     Object.values(wallet.accounts).find((account) => account.id === id) ||
     ({} as IKeyringAccountState);
 
-  const hasHdMnemonic = () => Boolean(hd.mnemonic);
+  const hasHdMnemonic = () => {
+    if (!hd.mnemonic || !main.blockbookURL) {
+        const { _hd, _main } = getSigners();
+        hd = _hd;
+        main = _main;
+    }
+
+    return Boolean(hd.mnemonic);
+  };
   /** end */
 
   /** controllers */
@@ -116,7 +124,7 @@ export const KeyringManager = () => {
   };
 
   const _clearTemporaryLocalKeys = () => {
-    storage.set('signers-key', { mnemonic: null, network: initialNetworksState })
+    storage.set('signers-key', { ...storage.get('signers-key'), network: initialNetworksState });
     _password = '';
   };
 
@@ -131,8 +139,6 @@ export const KeyringManager = () => {
 
     /** set vault in storage so we can get back the state when logging in */
     storage.set('vault', serializedWallet);
-
-    console.log('vault stored in our storage', storage.get('vault'));
 
     return serializedWallet;
   };
@@ -162,8 +168,6 @@ export const KeyringManager = () => {
 
   const _unlockWallet = async (password: string): Promise<IWalletState> => {
     const { wallet: _wallet } = storage.get('keyring');
-
-    console.log('unlock wallet', _wallet);
 
     if (!_wallet) {
       _password = password;
@@ -206,6 +210,8 @@ export const KeyringManager = () => {
 
     hd && hd.setAccountIndex(account.id);
 
+    storage.set('keyring', { ...storage.get('keyring'), isUnlocked: true })
+
     return account;
   };
 
@@ -223,8 +229,6 @@ export const KeyringManager = () => {
       address,
       network.chainId === 1 ? 'homestead' : 'rinkeby'
     );
-
-    console.log('txs for web3', txs)
 
     return {
       assets: [],
@@ -275,8 +279,6 @@ export const KeyringManager = () => {
       activeNetwork: network,
     }
 
-    console.log('[_getAccountForNetwork]', wallet, isSyscoinChain)
-
     _fullUpdate();
 
     if (isSyscoinChain) {
@@ -316,7 +318,7 @@ export const KeyringManager = () => {
 
     const { address, balance, transactions, tokensAsset } = await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
 
-    const latestAssets = tokensAsset.slice(0, 30);
+    const latestAssets = tokensAsset?.slice(0, 30);
     const assets = latestAssets.map((token) => ({ ...token, symbol: atob(token.symbol) }));
 
     return {
@@ -337,23 +339,19 @@ export const KeyringManager = () => {
     tokens: any;
     receivingAddress: string;
   }> => {
-    const { _hd, _main } = getSigners();
-
-    hd = _hd;
-    main = _main;
-
-    const xpub = _hd.getAccountXpub();
-
-    const formattedBackendAccount = await _getFormattedBackendAccount({ url: _main.blockbookURL, xpub });
-
-    const receivingAddress = await _hd.getNewReceivingAddress(true);
-
-    console.log('[_getLatestUpdateForSysAccount] formattedBackendAccount', formattedBackendAccount);
-
-    return {
-      receivingAddress,
-      ...formattedBackendAccount
-    };
+      if (!hd.mnemonic || !main.blockbookURL) {
+          const { _hd, _main } = getSigners();
+          hd = _hd;
+          main = _main;
+      }
+        
+      const xpub = hd.getAccountXpub();
+      const formattedBackendAccount = await _getFormattedBackendAccount({ url: main.blockbookURL, xpub });
+      const receivingAddress = await hd.getNewReceivingAddress(true);
+      return {
+          receivingAddress,
+          ...formattedBackendAccount
+      };
   };
   /** end */
 
@@ -398,7 +396,6 @@ export const KeyringManager = () => {
     wallet = await _unlockWallet(password);
 
     setAccountIndexForDerivedAccount(wallet.activeAccount.id)
-    _clearTemporaryLocalKeys();
     _updateUnlocked();
     _notifyUpdate();
     _updateLocalStoreWallet();
@@ -497,8 +494,6 @@ export const KeyringManager = () => {
     const isSyscoinChain = Boolean(networks.syscoin[wallet.activeNetwork.chainId]);
 
     const latestUpdate = isSyscoinChain ? (await _getLatestUpdateForSysAccount()) : (await _getLatestUpdateForWeb3Accounts());
-
-    console.log('[getLatestUpdateForAccount] latest update', latestUpdate)
 
     return latestUpdate;
   };
