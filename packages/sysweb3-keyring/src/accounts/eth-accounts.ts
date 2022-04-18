@@ -67,7 +67,7 @@ export const Web3Accounts = () => {
   ): Promise<object | undefined> => {
     try {
       const { data } = await axios.get(
-        `https://api.etherscan.io/api?module=account&action=tokennfttx&address=${address}&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH`
+        `https://api.etherscan.io/api?module=account&action=tokennfttx&address=${address}&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`
       );
 
       if (data.message === "OK" && data.result !== []) {
@@ -169,7 +169,7 @@ export const Web3Accounts = () => {
   ): Promise<TransactionResponse[] | undefined> => {
     const etherscanProvider = new ethers.providers.EtherscanProvider(
       network, // homestead === mainnet
-      '3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH'
+      'K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
     );
     try {
       const userTxs = etherscanProvider.getHistory(address);
@@ -301,7 +301,7 @@ export const Web3Accounts = () => {
   };
 
   const getGasOracle = async () => {
-    const { data: { result } } = await axios.get('https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=3QSU7T49W5YYE248ZRF1CPKPRN7FPRPBKH');
+    const { data: { result } } = await axios.get('https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA');
 
     return result;
   }
