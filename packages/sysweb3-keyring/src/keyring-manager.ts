@@ -318,11 +318,11 @@ export const KeyringManager = () => {
 
     const { address, balance, transactions, tokensAsset } = await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
 
-    const latestAssets = tokensAsset?.slice(0, 30);
+    const latestAssets = tokensAsset ? tokensAsset.slice(0, 30) : [];
     const assets = latestAssets.map((token) => ({ ...token, symbol: atob(token.symbol) }));
 
     return {
-      transactions: transactions.slice(0, 20),
+      transactions: transactions ? transactions.slice(0, 20) : [],
       assets,
       xpub: address,
       balances: {
