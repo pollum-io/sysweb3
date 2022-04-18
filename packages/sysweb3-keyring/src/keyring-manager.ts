@@ -227,7 +227,17 @@ export const KeyringManager = () => {
 
     const transactions = await web3Wallet.getUserTransactions(
       address,
-      network.chainId === 1 ? 'homestead' : 'rinkeby'
+      network.chainId === 1
+        ? 'homestead'
+        : network.chainId === 4
+        ? 'rinkeby'
+        : network.chainId === 42
+        ? 'kovan'
+        : network.chainId === 3
+        ? 'ropsten'
+        : network.chainId === 5
+        ? 'goerli'
+        : 'homestead'
     );
 
     return {
