@@ -210,8 +210,6 @@ export const KeyringManager = () => {
 
     hd && hd.setAccountIndex(account.id);
 
-    storage.set('keyring', { ...storage.get('keyring'), isUnlocked: true })
-
     return account;
   };
 
@@ -227,7 +225,17 @@ export const KeyringManager = () => {
 
     const transactions = await web3Wallet.getUserTransactions(
       address,
-      network.chainId === 1 ? 'homestead' : 'rinkeby'
+      network.chainId === 1
+        ? 'homestead'
+        : network.chainId === 4
+        ? 'rinkeby'
+        : network.chainId === 42
+        ? 'kovan'
+        : network.chainId === 3
+        ? 'ropsten'
+        : network.chainId === 5
+        ? 'goerli'
+        : 'homestead'
     );
 
     return {
@@ -383,6 +391,9 @@ export const KeyringManager = () => {
       },
       activeAccount: vault,
     }
+
+    storage.set('keyring', { ...storage.get('keyring'), isUnlocked: true })
+
     _fullUpdate();
 
     return vault;
