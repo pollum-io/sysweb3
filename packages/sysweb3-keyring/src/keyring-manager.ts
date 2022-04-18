@@ -99,9 +99,9 @@ export const KeyringManager = () => {
 
   const hasHdMnemonic = () => {
     if (!hd.mnemonic || !main.blockbookURL) {
-        const { _hd, _main } = getSigners();
-        hd = _hd;
-        main = _main;
+      const { _hd, _main } = getSigners();
+      hd = _hd;
+      main = _main;
     }
 
     return Boolean(hd.mnemonic);
@@ -209,8 +209,6 @@ export const KeyringManager = () => {
     });
 
     hd && hd.setAccountIndex(account.id);
-
-    storage.set('keyring', { ...storage.get('keyring'), isUnlocked: true })
 
     return account;
   };
@@ -328,11 +326,11 @@ export const KeyringManager = () => {
 
     const { address, balance, transactions, tokensAsset } = await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
 
-    const latestAssets = tokensAsset.slice(0, 30);
+    const latestAssets = tokensAsset ? tokensAsset.slice(0, 30) : [];
     const assets = latestAssets.map((token) => ({ ...token, symbol: atob(token.symbol) }));
 
     return {
-      transactions: transactions.slice(0, 20),
+      transactions: transactions ? transactions.slice(0, 20) : [],
       assets,
       xpub: address,
       balances: {
@@ -349,19 +347,19 @@ export const KeyringManager = () => {
     tokens: any;
     receivingAddress: string;
   }> => {
-      if (!hd.mnemonic || !main.blockbookURL) {
-          const { _hd, _main } = getSigners();
-          hd = _hd;
-          main = _main;
-      }
-        
-      const xpub = hd.getAccountXpub();
-      const formattedBackendAccount = await _getFormattedBackendAccount({ url: main.blockbookURL, xpub });
-      const receivingAddress = await hd.getNewReceivingAddress(true);
-      return {
-          receivingAddress,
-          ...formattedBackendAccount
-      };
+    if (!hd.mnemonic || !main.blockbookURL) {
+      const { _hd, _main } = getSigners();
+      hd = _hd;
+      main = _main;
+    }
+
+    const xpub = hd.getAccountXpub();
+    const formattedBackendAccount = await _getFormattedBackendAccount({ url: main.blockbookURL, xpub });
+    const receivingAddress = await hd.getNewReceivingAddress(true);
+    return {
+      receivingAddress,
+      ...formattedBackendAccount
+    };
   };
   /** end */
 
@@ -393,6 +391,8 @@ export const KeyringManager = () => {
       },
       activeAccount: vault,
     }
+
+    storage.set('keyring', { ...storage.get('keyring'), isUnlocked: true })
 
     _fullUpdate();
 
