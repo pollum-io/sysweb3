@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-utils",
-  "version": "1.1.90",
+  "version": "1.1.91",
   "description": "A helper for multi-chain accounts.",
   "main": "cjs/index.js",
   "repository": {
