@@ -12,6 +12,7 @@ import {
   ISyscoinTransaction,
   initialNetworksState,
   getSigners,
+  validateSysRpc,
 } from '@pollum-io/sysweb3-utils';
 import { generateMnemonic, validateMnemonic } from 'bip39';
 import CryptoJS from 'crypto-js';
@@ -35,14 +36,14 @@ export const KeyringManager = () => {
 
   let wallet: IWalletState = initialWalletState;
 
-  storage.set('signers-key', { mnemonic: '', network: wallet.activeNetwork });
+  storage.set('signers-key', { mnemonic: '', network: wallet.activeNetwork, isTestnet: false });
   storage.set('keyring', { wallet, isUnlocked: Boolean(_password && storage.get('signers-key').mnemonic && hasHdMnemonic()) });
 
   const forgetSigners = () => {
     hd = {} as SyscoinHDSigner;
     main = {} as SyscoinMainSigner;
 
-    storage.set('signers-key', { mnemonic: null, network: null });
+    storage.set('signers-key', { mnemonic: null, network: null, isTestnet: false });
     storage.set('signers', { _hd: null, _main: null });
   }
   /** end */
@@ -302,7 +303,9 @@ export const KeyringManager = () => {
 
       const xprv = getEncryptedXprv();
 
-      storage.set('signers-key', { mnemonic, network });
+      const { isTestnet } = await validateSysRpc(network.url);
+
+      storage.set('signers-key', { mnemonic, network, isTestnet });
 
       const updatedAccountInfo = await _getLatestUpdateForSysAccount();
 
@@ -347,11 +350,10 @@ export const KeyringManager = () => {
     tokens: any;
     receivingAddress: string;
   }> => {
-    if (!hd.mnemonic || !main.blockbookURL) {
-      const { _hd, _main } = getSigners();
-      hd = _hd;
-      main = _main;
-    }
+    const { _hd, _main } = getSigners();
+
+    hd = _hd;
+    main = _main;
 
     const xpub = hd.getAccountXpub();
     const formattedBackendAccount = await _getFormattedBackendAccount({ url: main.blockbookURL, xpub });
@@ -457,7 +459,9 @@ export const KeyringManager = () => {
 
     _fullUpdate();
 
-    storage.set('signers-key', { mnemonic: storage.get('signers-key').mnemonic, network })
+    const { isTestnet } = await validateSysRpc(network.url);
+
+    storage.set('signers-key', { mnemonic: storage.get('signers-key').mnemonic, network, isTestnet })
 
     console.log('[changing network keyring] full update', wallet)
 
@@ -511,12 +515,16 @@ export const KeyringManager = () => {
 
   /** networks */
   const setSignerNetwork = async (network: INetwork): Promise<IKeyringAccountState> => {
+    const { isTestnet, valid: _validForSyscoin } = await validateSysRpc(network.url);
+
+    const chain = _validForSyscoin ? 'syscoin' : 'ethereum';
+
     wallet = {
       ...wallet,
       activeNetwork: network,
       networks: {
         ...wallet.networks,
-        syscoin: {
+        [chain]: {
           [network.chainId]: network,
         },
       }
@@ -524,13 +532,11 @@ export const KeyringManager = () => {
 
     _updateLocalStoreWallet();
 
-    const isSyscoinChain = Boolean(wallet.networks.syscoin[network.chainId]);
-
-    if (!isSyscoinChain) {
+    if (!_validForSyscoin) {
       setActiveNetwork('ethereum', network.chainId, wallet.networks);
     }
 
-    storage.set('signers-key', { ...storage.get('signers-key'), network });
+    storage.set('signers-key', { ...storage.get('signers-key'), network, isTestnet: _validForSyscoin ? isTestnet : false });
 
     const account = await _getAccountForNetwork({ isSyscoinChain });
 
