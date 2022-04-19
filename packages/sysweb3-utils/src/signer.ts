@@ -77,7 +77,7 @@ export const getSigners = () => {
 
   const { hd: _hd, main: _main } = MainSigner({
     walletMnemonic: mnemonic,
-    isTestnet: network.isTestnet,
+    isTestnet: network.chainId === 57 || network.chainId === 1,
     blockbookURL: network.url
   });
 
