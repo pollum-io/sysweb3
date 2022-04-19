@@ -263,7 +263,7 @@ export const KeyringManager = () => {
     xprv,
   }: { label?: string, signer: any, createdAccount: any, xprv: string }) => {
     console.log('[get initial account data] getting initial account...')
-    const { balances, receivingAddress, xpub } = createdAccount;
+    const { balances, receivingAddress, xpub, transactions, assets } = createdAccount;
 
     const account = {
       id: signer.Signer.accountIndex,
@@ -273,8 +273,8 @@ export const KeyringManager = () => {
       xprv,
       address: receivingAddress,
       isTrezorWallet: false,
-      trransactions: [],
-      assets: [],
+      transactions,
+      assets,
     };
 
     return account;
@@ -515,13 +515,21 @@ export const KeyringManager = () => {
 
   /** networks */
   const setSignerNetwork = async (network: INetwork): Promise<IKeyringAccountState> => {
+    storage.set('signers-key', { ...storage.get('signers-key'), network });
+
+    wallet = {
+      ...wallet,
+      activeNetwork: network,
+    }
+
+    _updateLocalStoreWallet();
+
     const { isTestnet, valid: _validForSyscoin } = await validateSysRpc(network.url);
 
     const chain = _validForSyscoin ? 'syscoin' : 'ethereum';
 
     wallet = {
       ...wallet,
-      activeNetwork: network,
       networks: {
         ...wallet.networks,
         [chain]: {
@@ -538,7 +546,7 @@ export const KeyringManager = () => {
 
     storage.set('signers-key', { ...storage.get('signers-key'), network, isTestnet: _validForSyscoin ? isTestnet : false });
 
-    const account = await _getAccountForNetwork({ isSyscoinChain });
+    const account = await _getAccountForNetwork({ isSyscoinChain: !!_validForSyscoin });
 
     return account;
   }

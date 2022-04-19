@@ -38,7 +38,7 @@ export const validateSysRpc = async (
     currency: symbol.toString().toLowerCase(),
   };
 
-  const isTestnet = !!(chain === 'main');
+  const isTestnet = !(chain === 'main');
 
   return {
     valid,
