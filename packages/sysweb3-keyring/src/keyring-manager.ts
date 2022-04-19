@@ -516,7 +516,9 @@ export const KeyringManager = () => {
       activeNetwork: network,
       networks: {
         ...wallet.networks,
-        [network.chainId]: network,
+        syscoin: {
+          [network.chainId]: network,
+        },
       }
     }
 
@@ -607,6 +609,10 @@ export const KeyringManager = () => {
     return initialAccount;
   };
 
+  const removeNetwork = (chain: string, chainId: number) => {
+    delete wallet.networks[chain][chainId];
+  }
+
   return {
     validateSeed,
     setWalletPassword,
@@ -638,5 +644,6 @@ export const KeyringManager = () => {
     forgetSigners,
     setAccountIndexForDerivedAccount,
     addNewAccount,
+    removeNetwork,
   };
 };
