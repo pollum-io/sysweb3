@@ -20,7 +20,7 @@ import TrezorTransactions from './trezor/transactions';
 import { TrezorWallet } from './trezor';
 import { SyscoinTransactions } from './transactions';
 import { Web3Accounts } from './accounts';
-import { networks, setActiveNetwork } from '@pollum-io/sysweb3-network';
+import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 import { fromZPrv } from 'bip84';
 
 export const KeyringManager = () => {
@@ -228,14 +228,14 @@ export const KeyringManager = () => {
       network.chainId === 1
         ? 'homestead'
         : network.chainId === 4
-        ? 'rinkeby'
-        : network.chainId === 42
-        ? 'kovan'
-        : network.chainId === 3
-        ? 'ropsten'
-        : network.chainId === 5
-        ? 'goerli'
-        : 'homestead'
+          ? 'rinkeby'
+          : network.chainId === 42
+            ? 'kovan'
+            : network.chainId === 3
+              ? 'ropsten'
+              : network.chainId === 5
+                ? 'goerli'
+                : 'homestead'
     );
 
     return {
@@ -501,7 +501,7 @@ export const KeyringManager = () => {
 
     _updateLocalStoreWallet();
 
-    const isSyscoinChain = Boolean(networks.syscoin[wallet.activeNetwork.chainId]);
+    const isSyscoinChain = Boolean(wallet.networks.syscoin[wallet.activeNetwork.chainId]);
 
     const latestUpdate = isSyscoinChain ? (await _getLatestUpdateForSysAccount()) : (await _getLatestUpdateForWeb3Accounts());
 
@@ -514,14 +514,18 @@ export const KeyringManager = () => {
     wallet = {
       ...wallet,
       activeNetwork: network,
+      networks: {
+        ...wallet.networks,
+        [network.chainId]: network,
+      }
     }
 
     _updateLocalStoreWallet();
 
-    const isSyscoinChain = Boolean(networks.syscoin[network.chainId]);
+    const isSyscoinChain = Boolean(wallet.networks.syscoin[network.chainId]);
 
     if (!isSyscoinChain) {
-      setActiveNetwork('ethereum', network.chainId);
+      setActiveNetwork('ethereum', network.chainId, wallet.networks);
     }
 
     storage.set('signers-key', { ...storage.get('signers-key'), network });
@@ -551,7 +555,7 @@ export const KeyringManager = () => {
   const addNewAccount = async (label: string) => {
     const { mnemonic, network } = storage.get('signers-key');
 
-    const isSyscoinChain = Boolean(networks.syscoin[network.chainId]);
+    const isSyscoinChain = Boolean(wallet.networks.syscoin[network.chainId]);
 
     const { _hd, _main } = getSigners();
 
