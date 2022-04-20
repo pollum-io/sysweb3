@@ -555,23 +555,28 @@ export const KeyringManager = () => {
 
 
   const addNewAccount = async (label: string) => {
-    const { mnemonic, network } = storage.get('signers-key');
+    const { network } = storage.get('signers-key');
 
     const isSyscoinChain = Boolean(wallet.networks.syscoin[network.chainId]);
 
-    const { _hd, _main } = getSigners();
+    if (!hd.mnemonic || !main.blockbookURL) {
+      const { _hd, _main } = (0, sysweb3_utils_1.getSigners)();
+
+      hd = _hd;
+      main = _main;
+    }
 
     if (isSyscoinChain) {
-      const id = _hd.createAccount();
+      const id = hd.createAccount();
 
-      _hd.setAccountIndex(id);
+      hd.setAccountIndex(id);
 
       const latestUpdate = await getLatestUpdateForAccount();
       const xprv = getEncryptedXprv();
 
       const account = _getInitialAccountData({
         label,
-        signer: _hd,
+        signer: hd,
         createdAccount: latestUpdate,
         xprv,
       });
@@ -595,7 +600,7 @@ export const KeyringManager = () => {
       xpub: address,
     }
 
-    const initialAccount = _getInitialAccountData({ label, signer: _hd, createdAccount, xprv: privateKey });
+    const initialAccount = _getInitialAccountData({ label, signer: hd, createdAccount, xprv: privateKey });
 
     wallet = {
       ...wallet,
