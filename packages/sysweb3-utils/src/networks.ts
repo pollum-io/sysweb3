@@ -6,6 +6,7 @@ export enum INetworkType {
 export type INetwork = {
   chainId: number;
   url: string;
+  isTestnet?: boolean;
   default?: boolean;
   label: string;
   currency?: string;
