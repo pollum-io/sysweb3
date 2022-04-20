@@ -506,8 +506,6 @@ export const KeyringManager = () => {
 
   /** networks */
   const setSignerNetwork = async (network: INetwork, chain: string): Promise<IKeyringAccountState> => {
-    await _setSignerByChain(network, chain);
-
     wallet = {
       ...wallet,
       networks: {
@@ -520,6 +518,8 @@ export const KeyringManager = () => {
     };
 
     _fullUpdate();
+
+    await _setSignerByChain(network, chain);
 
     const account = await _getAccountForNetwork({ isSyscoinChain: (chain === 'syscoin') });
 
