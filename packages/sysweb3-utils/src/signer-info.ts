@@ -3,4 +3,4 @@ export type SignerInfo = {
   isTestnet: boolean;
   network: string;
   blockbookURL: string;
-}
+};

@@ -1,16 +1,17 @@
-import { MAX_SAFE_CHAIN_ID } from "./constants";
 import axios from 'axios';
 import bip44Constants from 'bip44-constants';
+
+import { MAX_SAFE_CHAIN_ID } from './constants';
 
 export const isValidChainIdForEthNetworks = (chainId: number) => {
   return (
     Number.isSafeInteger(chainId) && chainId > 0 && chainId <= MAX_SAFE_CHAIN_ID
   );
-}
+};
 
 export const validateSysRpc = async (
   rpcUrl: string
-): Promise<{ data: any; valid: boolean, isTestnet: boolean }> => {
+): Promise<{ data: any; valid: boolean; isTestnet: boolean }> => {
   const response = await axios.get(`${rpcUrl}/api/v2`);
 
   const {
@@ -24,7 +25,9 @@ export const validateSysRpc = async (
 
   const isTestnetCoin = String(coin).includes('Testnet');
 
-  const bip44Coin = bip44Constants.find((item: any) => item[2] === (isTestnetCoin ? bip44Constants[1][2] : coin));
+  const bip44Coin = bip44Constants.find(
+    (item: any) => item[2] === (isTestnetCoin ? bip44Constants[1][2] : coin)
+  );
 
   const coinTypeInDecimal = bip44Coin[0];
   const symbol = bip44Coin[1];

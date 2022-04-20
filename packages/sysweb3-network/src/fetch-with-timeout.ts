@@ -1,4 +1,3 @@
-
 import { memoize } from 'lodash';
 
 export const getFetchWithTimeout = memoize((timeout: number) => {

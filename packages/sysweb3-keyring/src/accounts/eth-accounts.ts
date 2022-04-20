@@ -1,6 +1,4 @@
-// @ts-ignore
 import { TransactionResponse } from '@ethersproject/abstract-provider';
-import { web3Provider } from '@pollum-io/sysweb3-network';
 import axios from 'axios';
 import * as sigUtil from 'eth-sig-util';
 import * as ethUtil from 'ethereumjs-util';
@@ -8,6 +6,8 @@ import { ethers } from 'ethers';
 import { request, gql } from 'graphql-request';
 import _ from 'lodash';
 import { Account, TransactionReceipt } from 'web3-core';
+
+import { web3Provider } from '@pollum-io/sysweb3-network';
 
 export const Web3Accounts = () => {
   /**
@@ -70,7 +70,7 @@ export const Web3Accounts = () => {
         `https://api.etherscan.io/api?module=account&action=tokennfttx&address=${address}&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`
       );
 
-      if (data.message === "OK" && data.result !== []) {
+      if (data.message === 'OK' && data.result !== []) {
         return data.result;
       }
 
@@ -115,10 +115,10 @@ export const Web3Accounts = () => {
 
     try {
       const { ethereum } = await request({
-        url: "https://graphql.bitquery.io/",
+        url: 'https://graphql.bitquery.io/',
         document: query,
         requestHeaders: {
-          "X-API-KEY": "BQYvhnv04csZHaprIBZNwtpRiDIwEIW9",
+          'X-API-KEY': 'BQYvhnv04csZHaprIBZNwtpRiDIwEIW9',
         },
       });
 
@@ -127,7 +127,7 @@ export const Web3Accounts = () => {
       }
     } catch (error) {
       // todo: handle error
-      throw new Error("Not available tokens");
+      throw new Error('Not available tokens');
     }
   };
 
@@ -205,8 +205,8 @@ export const Web3Accounts = () => {
         if (result.error) {
           alert(result.error.message);
         }
-        if (result.error) return console.error("ERROR", result);
-        console.log("TYPED SIGNED:" + JSON.stringify(result.result));
+        if (result.error) return console.error('ERROR', result);
+        console.log('TYPED SIGNED:' + JSON.stringify(result.result));
 
         const recovered = sigUtil.recoverTypedSignature_v4({
           data: JSON.parse(msg),
@@ -217,10 +217,10 @@ export const Web3Accounts = () => {
           ethUtil.toChecksumAddress(recovered) ===
           ethUtil.toChecksumAddress(from)
         ) {
-          alert("Successfully recovered signer as " + from);
+          alert('Successfully recovered signer as ' + from);
         } else {
           alert(
-            "Failed to verify signer when comparing " + result + " to " + from
+            'Failed to verify signer when comparing ' + result + ' to ' + from
           );
         }
       }
@@ -256,13 +256,13 @@ export const Web3Accounts = () => {
     if (type === 'high') return high;
 
     return gasPrice;
-  }
+  };
 
   const getGasLimit = async (toAddress: string) => {
     return await web3Provider.eth.estimateGas({
       to: toAddress,
-    })
-  }
+    });
+  };
 
   const sendTransaction = async ({
     sender,
@@ -272,39 +272,45 @@ export const Web3Accounts = () => {
     gasLimit,
     gasPrice,
   }: {
-    sender: string,
-    senderXprv: string,
-    receivingAddress: string,
-    amount: number,
-    gasLimit?: number,
-    gasPrice?: number
+    sender: string;
+    senderXprv: string;
+    receivingAddress: string;
+    amount: number;
+    gasLimit?: number;
+    gasPrice?: number;
   }): Promise<TransactionReceipt> => {
     const defaultGasPrice = await getRecommendedGasPrice(false);
     const defaultGasLimit = await getGasLimit(receivingAddress);
 
-    const signedTransaction = await web3Provider.eth.accounts.signTransaction({
-      from: sender,
-      to: receivingAddress,
-      value: web3Provider.utils.toWei(amount.toString(), "ether"),
-      gas: gasLimit || defaultGasLimit,
-      gasPrice: gasPrice || defaultGasPrice,
-      nonce: await web3Provider.eth.getTransactionCount(sender, "latest"),
-    }, senderXprv);
+    const signedTransaction = await web3Provider.eth.accounts.signTransaction(
+      {
+        from: sender,
+        to: receivingAddress,
+        value: web3Provider.utils.toWei(amount.toString(), 'ether'),
+        gas: gasLimit || defaultGasLimit,
+        gasPrice: gasPrice || defaultGasPrice,
+        nonce: await web3Provider.eth.getTransactionCount(sender, 'latest'),
+      },
+      senderXprv
+    );
     try {
       return web3Provider.eth
         .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
         .then((result: TransactionReceipt) => result);
-    }
-    catch (error: any) {
+    } catch (error: any) {
       throw new Error(error);
     }
   };
 
   const getGasOracle = async () => {
-    const { data: { result } } = await axios.get('https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA');
+    const {
+      data: { result },
+    } = await axios.get(
+      'https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
+    );
 
     return result;
-  }
+  };
 
   const tx = {
     getTransactionCount,
@@ -314,7 +320,7 @@ export const Web3Accounts = () => {
     getGasLimit,
     getRecommendedGasPrice,
     getGasOracle,
-  }
+  };
 
   return {
     createAccount,

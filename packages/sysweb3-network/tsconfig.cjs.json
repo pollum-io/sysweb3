@@ -2,12 +2,10 @@
   "extends": "../../tsconfig-package-cjs.json",
   "compilerOptions": {
     "outDir": "dist/cjs",
-    "lib": [ "esnext", "dom" ],
+    "lib": ["esnext", "dom"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
   },
 
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }
