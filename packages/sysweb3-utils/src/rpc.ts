@@ -23,11 +23,8 @@ export const validateSysRpc = async (
   if (!valid) throw new Error('Invalid RPC URL');
 
   const isTestnetCoin = String(coin).includes('Testnet');
-  const testnetCoinType = 2147483649;
 
-  const bip44Coin = bip44Constants.find(
-    (item: [number, string, string]) => item[2] === (isTestnetCoin ? testnetCoinType : coin)
-  );
+  const bip44Coin = bip44Constants.find((item: any) => item[2] === (isTestnetCoin ? bip44Constants[1][2] : coin));
 
   const coinTypeInDecimal = bip44Coin[0];
   const symbol = bip44Coin[1];
