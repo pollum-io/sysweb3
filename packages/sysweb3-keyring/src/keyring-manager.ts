@@ -17,6 +17,7 @@ import {
   INetwork,
   initialNetworksState,
   getSigners,
+  validateSysRpc,
   SyscoinHDSigner,
   SyscoinMainSigner,
 } from '@pollum-io/sysweb3-utils';
@@ -50,12 +51,27 @@ export const KeyringManager = () => {
       _password && storage.get('signers-key').mnemonic && hasHdMnemonic()
     ),
   });
+  storage.set('signers-key', {
+    mnemonic: '',
+    network: wallet.activeNetwork,
+    isTestnet: false,
+  });
+  storage.set('keyring', {
+    wallet,
+    isUnlocked: Boolean(
+      _password && storage.get('signers-key').mnemonic && hasHdMnemonic()
+    ),
+  });
 
   const forgetSigners = () => {
     hd = {} as SyscoinHDSigner;
     main = {} as SyscoinMainSigner;
 
-    storage.set('signers-key', { mnemonic: null, network: null });
+    storage.set('signers-key', {
+      mnemonic: null,
+      network: null,
+      isTestnet: false,
+    });
     storage.set('signers', { _hd: null, _main: null });
   };
   /** end */
@@ -185,7 +201,6 @@ export const KeyringManager = () => {
     if (!_wallet) {
       _password = password;
 
-      // TODO: solve this return
       return {};
     }
 
@@ -280,7 +295,8 @@ export const KeyringManager = () => {
     xprv: string;
   }) => {
     console.log('[get initial account data] getting initial account...');
-    const { balances, receivingAddress, xpub } = createdAccount;
+    const { balances, receivingAddress, xpub, transactions, assets } =
+      createdAccount;
 
     const account = {
       id: signer.Signer.accountIndex,
@@ -290,8 +306,8 @@ export const KeyringManager = () => {
       xprv,
       address: receivingAddress,
       isTrezorWallet: false,
-      transactions: [],
-      assets: [],
+      transactions,
+      assets,
     };
 
     return account;
@@ -324,7 +340,9 @@ export const KeyringManager = () => {
 
       const xprv = getEncryptedXprv();
 
-      storage.set('signers-key', { mnemonic, network });
+      const { isTestnet } = await validateSysRpc(network.url);
+
+      storage.set('signers-key', { mnemonic, network, isTestnet });
 
       const updatedAccountInfo = await _getLatestUpdateForSysAccount();
 
@@ -380,6 +398,7 @@ export const KeyringManager = () => {
   }> => {
     if (!hd.mnemonic || !main.blockbookURL) {
       const { _hd, _main } = getSigners();
+
       hd = _hd;
       main = _main;
     }
@@ -475,35 +494,6 @@ export const KeyringManager = () => {
     txs.signMessage(account, msgParams.data, opts);
   };
 
-  const setActiveNetworkForSigner = async (network: INetwork) => {
-    const vault = await setSignerNetwork(network);
-
-    console.log('[changing network keyring] account', vault);
-
-    wallet = {
-      ...wallet,
-      accounts: {
-        ...wallet.accounts,
-        [vault.id]: vault,
-      },
-      activeNetwork: network,
-      activeAccount: vault,
-    };
-
-    console.log('[changing network keyring] wallet', wallet);
-
-    _fullUpdate();
-
-    storage.set('signers-key', {
-      mnemonic: storage.get('signers-key').mnemonic,
-      network,
-    });
-
-    console.log('[changing network keyring] full update', wallet);
-
-    return vault;
-  };
-
   const forgetMainWallet = (pwd: string) => {
     if (checkPassword(pwd)) return new Error('Invalid password');
 
@@ -553,31 +543,62 @@ export const KeyringManager = () => {
   /** end */
 
   /** networks */
+  const _setSignerByChain = async (network: INetwork, chain: string) => {
+    storage.set('signers-key', {
+      mnemonic: storage.get('signers-key').mnemonic,
+      network,
+    });
+
+    if (chain === 'syscoin') {
+      const { isTestnet } = await validateSysRpc(network.url);
+
+      storage.set('signers-key', { ...storage.get('signers-key'), isTestnet });
+
+      return;
+    }
+
+    setActiveNetwork('ethereum', network.chainId, wallet.networks);
+
+    storage.set('signers-key', {
+      ...storage.get('signers-key'),
+      isTestnet: false,
+    });
+  };
+
+  /** networks */
   const setSignerNetwork = async (
-    network: INetwork
+    network: INetwork,
+    chain: string
   ): Promise<IKeyringAccountState> => {
     wallet = {
       ...wallet,
-      activeNetwork: network,
       networks: {
         ...wallet.networks,
-        syscoin: {
+        [chain]: {
           [network.chainId]: network,
         },
       },
+      activeNetwork: network,
     };
 
-    _updateLocalStoreWallet();
+    _fullUpdate();
 
-    const isSyscoinChain = Boolean(wallet.networks.syscoin[network.chainId]);
+    await _setSignerByChain(network, chain);
 
-    if (!isSyscoinChain) {
-      setActiveNetwork('ethereum', network.chainId, wallet.networks);
-    }
+    const account = await _getAccountForNetwork({
+      isSyscoinChain: chain === 'syscoin',
+    });
 
-    storage.set('signers-key', { ...storage.get('signers-key'), network });
+    wallet = {
+      ...wallet,
+      accounts: {
+        ...wallet.accounts,
+        [account.id]: account,
+      },
+      activeAccount: account,
+    };
 
-    const account = await _getAccountForNetwork({ isSyscoinChain });
+    _fullUpdate();
 
     return account;
   };
@@ -680,7 +701,6 @@ export const KeyringManager = () => {
     getAccounts,
     removeAccount,
     signMessage,
-    setActiveNetworkForSigner,
     forgetMainWallet,
     getEncryptedXprv,
     txs,
