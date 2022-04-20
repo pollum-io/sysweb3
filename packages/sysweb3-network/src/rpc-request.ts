@@ -1,11 +1,15 @@
-import { getFetchWithTimeout } from "./fetch-with-timeout";
+import { getFetchWithTimeout } from './fetch-with-timeout';
 
 const fetchWithTimeout = getFetchWithTimeout(1000 * 30);
 
-export const jsonRpcRequest = async (rpcUrl: string, rpcMethod: string, rpcParams = []) => {
+export const jsonRpcRequest = async (
+  rpcUrl: string,
+  rpcMethod: string,
+  rpcParams = []
+) => {
   let fetchUrl = rpcUrl;
 
-  const headers: { 'Content-Type': string, Authorization?: string } = {
+  const headers: { 'Content-Type': string; Authorization?: string } = {
     'Content-Type': 'application/json',
   };
 
@@ -15,7 +19,7 @@ export const jsonRpcRequest = async (rpcUrl: string, rpcMethod: string, rpcParam
   // URLs containing username and password needs special processing
   if (username && password) {
     const encodedAuth = Buffer.from(`${username}:${password}`).toString(
-      'base64',
+      'base64'
     );
 
     headers.Authorization = `Basic ${encodedAuth}`;
@@ -49,4 +53,4 @@ export const jsonRpcRequest = async (rpcUrl: string, rpcMethod: string, rpcParam
   }
 
   return result;
-}
+};

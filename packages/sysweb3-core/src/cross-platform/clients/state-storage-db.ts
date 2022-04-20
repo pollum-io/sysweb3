@@ -1,6 +1,8 @@
 import { IKeyValueDb } from './../i-key-value-db';
 
-const defaultStorage = window.localStorage ? window.localStorage : undefined;
+declare let window: any;
+const defaultStorage =
+  typeof window !== 'undefined' ? window.localStorage : undefined;
 
 export const StateStorageDb = (
   storageClient: IStateStorageClient | undefined = defaultStorage
@@ -23,7 +25,7 @@ export const StateStorageDb = (
   const set = (key: string, value: any) => {
     if (!storageClient) return;
 
-    storageClient.setItem(keyPrefix + key, JSON.stringify(value))
+    storageClient.setItem(keyPrefix + key, JSON.stringify(value));
   };
 
   const get = (key: string): any => {

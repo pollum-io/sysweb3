@@ -1,13 +1,13 @@
-import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
   getFiatValueByToken,
   getNftImage,
   getTokenIconBySymbol,
 } from '../src/tokens';
+import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 
 describe('web3-NFT tests', () => {
   it('should check NFT url', async () => {
-    setActiveNetwork(1);
+    setActiveNetwork('ethereum', 1);
     const nftUrl = await getNftImage(
       '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d',
       8520
@@ -18,7 +18,7 @@ describe('web3-NFT tests', () => {
 
   it('should get token icon by symbol', async () => {
     const token = await getTokenIconBySymbol('eth');
-    expect(token.startsWith('https://')).toBe(true);
+    expect(token.largeImage.startsWith('https://')).toBe(true);
   });
 
   it('should retrive a token price as fiat', async () => {

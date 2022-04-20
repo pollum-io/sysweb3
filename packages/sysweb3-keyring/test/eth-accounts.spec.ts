@@ -1,7 +1,8 @@
-import { web3Provider, setActiveNetwork } from '@pollum-io/sysweb3-network';
 import Web3 from 'web3';
+
 import { Web3Accounts } from '../src/accounts/eth-accounts';
 import { FAKE_ADDRESS, FAKE_PRIV_KEY, FAKE_SEED_PHRASE } from './constants';
+import { web3Provider, setActiveNetwork } from '@pollum-io/sysweb3-network';
 
 describe('Web3Accounts', () => {
   const {
@@ -10,7 +11,7 @@ describe('Web3Accounts', () => {
     importAccount,
     getNftsByAddress,
     getTokens,
-    sendTransaction,
+    tx: { sendTransaction },
   } = Web3Accounts();
 
   //* createAccount
@@ -84,18 +85,12 @@ describe('Web3Accounts', () => {
   it('should send a transaction', async () => {
     // change to Rinkeby network
     setActiveNetwork('ethereum', 4);
-    const transaction = await sendTransaction(
-      // Pali web3 account
-      '0x0beaDdE9e116ceF07aFedc45a8566d1aDd3168F3',
-      // test web3 account private key
-      '0x6e578c2227bc4629794e566610209c9cb7a35341f13de4ba886a59a4e11b7d1e',
-      // Receiver web3 account
-      '0xCe1812Ccc5273a3F8B1b2d96217877842a851A31',
-      // Value
-      0.01,
-      // Here we can pass a edit gasPrice or not using Low, High or empty to standard
-      ''
-    );
+    const transaction = await sendTransaction({
+      sender: '0x0beaDdE9e116ceF07aFedc45a8566d1aDd3168F3',
+      senderXprv: '0x6e578c2227bc4629794e566610209c9cb7a35341f13de4ba886a59a4e11b7d1e',
+      receivingAddress: '0xCe1812Ccc5273a3F8B1b2d96217877842a851A31',
+      amount: 0.01,
+    });
 
     const blockNumber = transaction.blockNumber;
     expect(typeof blockNumber).toBe('number');

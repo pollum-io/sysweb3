@@ -31,16 +31,24 @@ export type PutPostRequest = {
   data?: any;
   options?: RestApiOptions;
   queryParams?: object;
-}
+};
 
 export interface RestApi {
   $delete: () => Promise<any>;
-  $get: (url: string,
+  $get: (
+    url: string,
     queryParams?: object,
-    options?: RestApiOptions) => Promise<any>;
+    options?: RestApiOptions
+  ) => Promise<any>;
   $post: (request: PutPostRequest) => Promise<any>;
   $put: (request: PutPostRequest) => Promise<any>;
-  httpRequest: (url: string, method: string, data: any, options: RestApiOptions, queryParams: any) => Promise<any>;
+  httpRequest: (
+    url: string,
+    method: string,
+    data: any,
+    options: RestApiOptions,
+    queryParams: any
+  ) => Promise<any>;
   resolveUrl: (url: string, options?: RestApiOptions) => string;
   configure: () => IRestConfig;
 }
