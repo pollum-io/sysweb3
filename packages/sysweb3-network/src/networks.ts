@@ -2,22 +2,20 @@ interface IWeb3Network {
   chainId: number;
   label: string;
   url: string;
-  default: boolean,
-  isTestnet: boolean,
-  currency: string
+  default: boolean;
+  currency: string;
 }
 
 export const networks: {
   [chain: string]: {
-    [chainId: number]: IWeb3Network
-  }
+    [chainId: number]: IWeb3Network;
+  };
 } = {
   syscoin: {
     57: {
       chainId: 57,
       currency: 'sys',
       default: true,
-      isTestnet: false,
       label: 'Syscoin Mainnet',
       url: 'https://blockbook.elint.services/',
     },
@@ -25,7 +23,6 @@ export const networks: {
       chainId: 5700,
       currency: 'tsys',
       default: true,
-      isTestnet: true,
       label: 'Syscoin Testnet',
       url: 'https://blockbook-dev.elint.services/',
     },
@@ -35,7 +32,6 @@ export const networks: {
       chainId: 1,
       currency: 'eth',
       default: true,
-      isTestnet: false,
       url: 'https://mainnet.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
       label: 'Ethereum Mainnet',
     },
@@ -43,7 +39,6 @@ export const networks: {
       chainId: 42,
       currency: 'kov',
       default: true,
-      isTestnet: true,
       label: 'Kovan',
       url: 'https://kovan.poa.network',
     },
@@ -51,7 +46,6 @@ export const networks: {
       chainId: 800001,
       currency: 'matic',
       default: true,
-      isTestnet: true,
       label: 'Polygon Testnet',
       url: 'https://polygon-mumbai.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
     },
@@ -59,7 +53,6 @@ export const networks: {
       chainId: 137,
       currency: 'matic',
       default: true,
-      isTestnet: false,
       label: 'Polygon Mainnet',
       url: 'https://polygon-mainnet.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
     },
@@ -67,9 +60,22 @@ export const networks: {
       chainId: 4,
       currency: 'rin',
       default: true,
-      isTestnet: true,
       label: 'Rinkeby',
       url: 'https://rinkeby.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
-    }
+    },
+    3: {
+      chainId: 3,
+      currency: 'eth',
+      default: true,
+      label: 'Ropsten',
+      url: 'https://ropsten.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
+    },
+    5: {
+      chainId: 5,
+      currency: 'eth',
+      default: true,
+      label: 'Goerli',
+      url: 'https://goerli.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
+    },
   },
 };

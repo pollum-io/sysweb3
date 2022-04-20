@@ -1,25 +1,25 @@
-// @ts-nocheck
-import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
-import * as sysweb3 from '@pollum-io/sysweb3-core';
+import { generateMnemonic, validateMnemonic } from 'bip39';
+import { fromZPrv } from 'bip84';
+import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
+
+import { Web3Accounts } from './accounts';
+import { SyscoinTransactions } from './transactions';
+import { TrezorWallet } from './trezor';
+import * as sysweb3 from '@pollum-io/sysweb3-core';
+import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
   IKeyringAccountState,
   IWalletState,
   initialWalletState,
   INetwork,
-  MainSigner,
-  ISyscoinTransaction,
+  initialNetworksState,
+  getSigners,
+  validateSysRpc,
+  SyscoinHDSigner,
+  SyscoinMainSigner,
 } from '@pollum-io/sysweb3-utils';
-import { generateMnemonic, validateMnemonic } from 'bip39';
-import CryptoJS from 'crypto-js';
-import { MainWallet } from './wallets/main';
-import TrezorTransactions from './trezor/transactions';
-import { TrezorWallet } from './trezor';
-import { SyscoinTransactions } from './transactions';
-import { Web3Accounts } from './accounts';
-import { networks, setActiveNetwork } from '@pollum-io/sysweb3-network';
-import { fromZPrv } from 'bip84';
 
 export const KeyringManager = () => {
   /** keys */
@@ -33,20 +33,50 @@ export const KeyringManager = () => {
 
   let wallet: IWalletState = initialWalletState;
 
+  const hasHdMnemonic = () => {
+    if (!hd.mnemonic || !main.blockbookURL) {
+      const { _hd, _main } = getSigners();
+      hd = _hd;
+      main = _main;
+    }
+
+    return Boolean(hd.mnemonic);
+  };
+
   storage.set('signers-key', { mnemonic: '', network: wallet.activeNetwork });
-  storage.set('keyring', { wallet, isUnlocked: Boolean(_password && storage.get('signers-key').mnemonic && hasHdMnemonic()) });
+  storage.set('keyring', {
+    wallet,
+    isUnlocked: Boolean(
+      _password && storage.get('signers-key').mnemonic && hasHdMnemonic()
+    ),
+  });
+  storage.set('signers-key', {
+    mnemonic: '',
+    network: wallet.activeNetwork,
+    isTestnet: false,
+  });
+  storage.set('keyring', {
+    wallet,
+    isUnlocked: Boolean(
+      _password && storage.get('signers-key').mnemonic && hasHdMnemonic()
+    ),
+  });
 
   const forgetSigners = () => {
     hd = {} as SyscoinHDSigner;
     main = {} as SyscoinMainSigner;
 
-    storage.set('signers-key', { mnemonic: null, network: null });
+    storage.set('signers-key', {
+      mnemonic: null,
+      network: null,
+      isTestnet: false,
+    });
     storage.set('signers', { _hd: null, _main: null });
-  }
+  };
   /** end */
 
   /** validations */
-  const checkPassword = (pwd) => {
+  const checkPassword = (pwd: string) => {
     const isValid = storage.get('vault-key') === pwd;
 
     if (isValid) _password = pwd;
@@ -54,12 +84,16 @@ export const KeyringManager = () => {
     return isValid;
   };
 
-  const isUnlocked = () => Boolean(hasHdMnemonic() && _password);
+  const isUnlocked = () =>
+    Boolean(hasHdMnemonic() && _password) || storage.get('keyring').isUnlocked;
   /** end */
 
   /** seeds */
   const getEncryptedMnemonic = () => {
-    const encryptedMnemonic = CryptoJS.AES.encrypt(storage.get('signers-key').mnemonic, _password);
+    const encryptedMnemonic = CryptoJS.AES.encrypt(
+      storage.get('signers-key').mnemonic,
+      _password
+    );
 
     return String(encryptedMnemonic);
   };
@@ -94,16 +128,11 @@ export const KeyringManager = () => {
   const getAccountById = (id: number): IKeyringAccountState =>
     Object.values(wallet.accounts).find((account) => account.id === id) ||
     ({} as IKeyringAccountState);
-
-  const hasHdMnemonic = () => Boolean(hd.mnemonic);
   /** end */
 
   /** controllers */
-  const controllersData = { mnemonic: storage.get('signers-key').mnemonic, wallet };
-
-  const _trezorTxs = TrezorTransactions(controllersData);
-  const trezor = TrezorWallet({ ...controllersData, tx: _trezorTxs });
-  const txs = SyscoinTransactions(controllersData);
+  const trezor = TrezorWallet();
+  const txs = SyscoinTransactions();
   /** end */
 
   /** private */
@@ -114,7 +143,11 @@ export const KeyringManager = () => {
   };
 
   const _clearTemporaryLocalKeys = () => {
-    storage.set('signers-key', { mnemonic: null, network: initialNetworksState })
+    storage.set('signers-key', {
+      ...storage.get('signers-key'),
+      network: initialNetworksState,
+    });
+    _password = '';
   };
 
   const _persistWallet = (password: string = _password): string | Error => {
@@ -128,8 +161,6 @@ export const KeyringManager = () => {
 
     /** set vault in storage so we can get back the state when logging in */
     storage.set('vault', serializedWallet);
-
-    console.log('vault stored in our storage', storage.get('vault'));
 
     return serializedWallet;
   };
@@ -160,8 +191,6 @@ export const KeyringManager = () => {
   const _unlockWallet = async (password: string): Promise<IWalletState> => {
     const { wallet: _wallet } = storage.get('keyring');
 
-    console.log('unlock wallet', _wallet);
-
     if (!_wallet) {
       _password = password;
 
@@ -179,17 +208,10 @@ export const KeyringManager = () => {
   };
 
   const _createMainWallet = async (): Promise<IKeyringAccountState> => {
-    const { mnemonic, network } = storage.get('signers-key');
+    const { _hd, _main } = getSigners();
 
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
-
-    const hdsigner = Object.assign(_hd, Object.getPrototypeOf(_hd))
-    const mainsigner = Object.assign(_main, Object.getPrototypeOf(_main))
+    const hdsigner = Object.assign(_hd, Object.getPrototypeOf(_hd));
+    const mainsigner = Object.assign(_main, Object.getPrototypeOf(_main));
 
     hd = hdsigner;
     main = mainsigner;
@@ -211,82 +233,98 @@ export const KeyringManager = () => {
     return account;
   };
 
-  const _getEncryptedPrivateKeyFromHd = () => hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
+  const _getEncryptedPrivateKeyFromHd = () =>
+    hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
 
   const _getLatestUpdateForWeb3Accounts = async () => {
-    const { mnemonic } = storage.get('signers-key');
+    const { mnemonic, network } = storage.get('signers-key');
 
-    const web3Account = web3Wallet.importAccount(mnemonic);
-    const balance = await web3Wallet.getBalance(web3Account.address);
+    const { address, privateKey } = web3Wallet.importAccount(mnemonic);
+    const balance = await web3Wallet.getBalance(address);
 
     const { id } = wallet.activeAccount;
 
-    const transactions = {};
+    const transactions = await web3Wallet.getUserTransactions(
+      address,
+      network.chainId === 1
+        ? 'homestead'
+        : network.chainId === 4
+        ? 'rinkeby'
+        : network.chainId === 42
+        ? 'kovan'
+        : network.chainId === 3
+        ? 'ropsten'
+        : network.chainId === 5
+        ? 'goerli'
+        : 'homestead'
+    );
 
     return {
-      ...web3Account,
-      assets: {},
+      assets: [],
       id,
       isTrezorWallet: false,
       label: `Account ${id}`,
       transactions,
       trezorId: -1,
-      xprv: '',
+      xprv: privateKey,
       balances: {
         ethereum: balance,
         syscoin: 0,
       },
-      xpub: '',
+      xpub: address,
+      address: address,
     };
-  }
+  };
 
   const _getInitialAccountData = ({
     label,
     signer,
     createdAccount,
     xprv,
-  }: { label?: string, signer: any, createdAccount: any, xprv: string }) => {
-    console.log('[get initial account data] getting initial account...')
-    const { balance, receivingAddress, xpub } = createdAccount;
+  }: {
+    label?: string;
+    signer: any;
+    createdAccount: any;
+    xprv: string;
+  }) => {
+    console.log('[get initial account data] getting initial account...');
+    const { balances, receivingAddress, xpub, transactions, assets } =
+      createdAccount;
 
     const account = {
       id: signer.Signer.accountIndex,
       label: label ? label : `Account ${signer.Signer.accountIndex + 1}`,
-      balances: {
-        syscoin: balance,
-        ethereum: 0,
-      },
+      balances,
       xpub,
       xprv,
       address: receivingAddress,
       isTrezorWallet: false,
+      transactions,
+      assets,
     };
 
     return account;
   };
 
-  const _getAccountForNetwork = async ({ isSyscoinChain }: { isSyscoinChain: boolean }) => {
+  const _getAccountForNetwork = async ({
+    isSyscoinChain,
+  }: {
+    isSyscoinChain: boolean;
+  }) => {
     const { mnemonic, network } = storage.get('signers-key');
 
     wallet = {
       ...wallet,
       activeNetwork: network,
-    }
-
-    console.log('[_getAccountForNetwork]', wallet, isSyscoinChain)
+    };
 
     _fullUpdate();
 
     if (isSyscoinChain) {
-      const { hd: _hd, main: _main } = MainSigner({
-        walletMnemonic: mnemonic,
-        isTestnet: network.isTestnet,
-        network: network.url,
-        blockbookURL: network.url
-      });
+      const { _hd, _main } = getSigners();
 
-      const hdsigner = Object.assign(_hd, Object.getPrototypeOf(_hd))
-      const mainsigner = Object.assign(_main, Object.getPrototypeOf(_main))
+      const hdsigner = Object.assign(_hd, Object.getPrototypeOf(_hd));
+      const mainsigner = Object.assign(_main, Object.getPrototypeOf(_main));
 
       hd = hdsigner;
       main = mainsigner;
@@ -294,6 +332,10 @@ export const KeyringManager = () => {
       storage.set('signers', { _hd: hdsigner, _main: mainsigner });
 
       const xprv = getEncryptedXprv();
+
+      const { isTestnet } = await validateSysRpc(network.url);
+
+      storage.set('signers-key', { mnemonic, network, isTestnet });
 
       const updatedAccountInfo = await _getLatestUpdateForSysAccount();
 
@@ -305,41 +347,40 @@ export const KeyringManager = () => {
 
       hd && hd.setAccountIndex(account.id);
 
-      storage.set('signers-key', { mnemonic, network });
-
       return account;
     }
 
     return await _getLatestUpdateForWeb3Accounts();
-  }
+  };
 
-  const _getFormattedBackendAccount = async ({ url, xpub }) => {
+  const _getFormattedBackendAccount = async ({
+    url,
+    xpub,
+  }: {
+    url: string;
+    xpub: string;
+  }) => {
     const options = 'tokens=nonzero&details=txs';
 
-    const { address, balance, transactions, tokensAsset } = await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
+    const { address, balance, transactions, tokensAsset } =
+      await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
 
-    const txs: ISyscoinTransaction = {};
-    const assets = {};
-
-    if (transactions) {
-      for (const tx of transactions) {
-        txs[tx.txid] = tx;
-      }
-    }
-
-    if (tokensAsset) {
-      for (const asset of tokensAsset) {
-        assets[asset.assetGuid] = asset;
-      }
-    }
+    const latestAssets = tokensAsset ? tokensAsset.slice(0, 30) : [];
+    const assets = latestAssets.map((token: any) => ({
+      ...token,
+      symbol: atob(token.symbol),
+    }));
 
     return {
-      transactions: txs,
+      transactions: transactions ? transactions.slice(0, 20) : [],
       assets,
       xpub: address,
-      balance: balance / 1e8,
-    }
-  }
+      balances: {
+        syscoin: balance / 1e8,
+        ethereum: 0,
+      },
+    };
+  };
 
   const _getLatestUpdateForSysAccount = async (): Promise<{
     xpub: string;
@@ -348,29 +389,22 @@ export const KeyringManager = () => {
     tokens: any;
     receivingAddress: string;
   }> => {
-    const { network: { url, isTestnet }, mnemonic } = storage.get('signers-key');
+    if (!hd.mnemonic || !main.blockbookURL) {
+      const { _hd, _main } = getSigners();
 
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: isTestnet,
-      network: isTestnet ? 'testnet' : 'main',
-      blockbookURL: url
+      hd = _hd;
+      main = _main;
+    }
+
+    const xpub = hd.getAccountXpub();
+    const formattedBackendAccount = await _getFormattedBackendAccount({
+      url: main.blockbookURL,
+      xpub,
     });
-
-    hd = _hd;
-    main = _main;
-
-    const xpub = _hd.getAccountXpub();
-
-    const formattedBackendAccount = await _getFormattedBackendAccount({ url, xpub });
-
-    const receivingAddress = await _hd.getNewReceivingAddress(true);
-
-    console.log('[_getLatestUpdateForSysAccount] formattedBackendAccount', formattedBackendAccount);
-
+    const receivingAddress = hd.getNewReceivingAddress(true);
     return {
       receivingAddress,
-      ...formattedBackendAccount
+      ...formattedBackendAccount,
     };
   };
   /** end */
@@ -385,7 +419,8 @@ export const KeyringManager = () => {
   const createSeed = () => {
     const signers = storage.get('signers-key');
 
-    if (!signers.mnemonic) storage.set('signers-key', { ...signers, mnemonic: generateMnemonic() });
+    if (!signers.mnemonic)
+      storage.set('signers-key', { ...signers, mnemonic: generateMnemonic() });
 
     return storage.get('signers-key').mnemonic;
   };
@@ -399,10 +434,12 @@ export const KeyringManager = () => {
       ...wallet,
       accounts: {
         ...wallet.accounts,
-        [vault.id]: vault
+        [vault.id]: vault,
       },
       activeAccount: vault,
-    }
+    };
+
+    storage.set('keyring', { ...storage.get('keyring'), isUnlocked: true });
 
     _fullUpdate();
 
@@ -410,16 +447,18 @@ export const KeyringManager = () => {
   };
 
   /** login/logout */
-  const login = async (password: string): Promise<IKeyringAccountState | Error> => {
+  const login = async (
+    password: string
+  ): Promise<IKeyringAccountState | Error> => {
     if (!checkPassword(password)) return new Error('Invalid password');
 
     wallet = await _unlockWallet(password);
 
-    setAccountIndexForDerivedAccount(wallet.activeAccount.id)
-    _clearTemporaryLocalKeys();
+    setAccountIndexForDerivedAccount(wallet.activeAccount.id);
     _updateUnlocked();
     _notifyUpdate();
     _updateLocalStoreWallet();
+    await getLatestUpdateForAccount();
 
     return wallet.activeAccount;
   };
@@ -429,7 +468,7 @@ export const KeyringManager = () => {
 
     _clearTemporaryLocalKeys();
 
-    storage.set('keyring', { ...storage.get('keyring'), isUnlocked: false })
+    storage.set('keyring', { ...storage.get('keyring'), isUnlocked: false });
 
     eventEmitter.emit('lock');
 
@@ -437,7 +476,7 @@ export const KeyringManager = () => {
   };
   /** end */
 
-  const removeAccount = () => { };
+  const removeAccount = () => {};
 
   const signMessage = (
     msgParams: { accountId: number; data: string },
@@ -447,33 +486,6 @@ export const KeyringManager = () => {
 
     txs.signMessage(account, msgParams.data, opts);
   };
-
-  const setActiveNetworkForSigner = async (network: INetwork) => {
-    const vault = await setSignerNetwork(network);
-
-    console.log('[changing network keyring] account', vault)
-
-    wallet = {
-      ...wallet,
-      accounts: {
-        ...wallet.accounts,
-        [vault.id]: vault,
-      },
-      activeNetwork: network,
-      activeAccount: vault,
-    }
-
-    console.log('[changing network keyring] wallet', wallet)
-
-    _fullUpdate();
-
-    storage.set('signers-key', { mnemonic: storage.get('signers-key').mnemonic, network })
-
-    console.log('[changing network keyring] full update', wallet)
-
-    return vault;
-  };
-
 
   const forgetMainWallet = (pwd: string) => {
     if (checkPassword(pwd)) return new Error('Invalid password');
@@ -488,14 +500,14 @@ export const KeyringManager = () => {
   };
 
   const getEncryptedXprv = () =>
-    CryptoJS.AES.encrypt(
-      _getEncryptedPrivateKeyFromHd(),
-      _password
-    ).toString();
+    CryptoJS.AES.encrypt(_getEncryptedPrivateKeyFromHd(), _password).toString();
 
   const validateSeed = (seedphrase: string) => {
     if (validateMnemonic(seedphrase)) {
-      storage.set('signers-key', { ...storage.get('signers-key'), mnemonic: seedphrase });
+      storage.set('signers-key', {
+        ...storage.get('signers-key'),
+        mnemonic: seedphrase,
+      });
 
       return true;
     }
@@ -511,39 +523,78 @@ export const KeyringManager = () => {
 
     _updateLocalStoreWallet();
 
-    const isSyscoinChain = Boolean(networks.syscoin[wallet.activeNetwork.chainId]);
+    const isSyscoinChain = Boolean(
+      wallet.networks.syscoin[wallet.activeNetwork.chainId]
+    );
 
-    const latestUpdate = isSyscoinChain ? (await _getLatestUpdateForSysAccount()) : (await _getLatestUpdateForWeb3Accounts());
-
-    console.log('[getLatestUpdateForAccount] latest update', latestUpdate)
+    const latestUpdate = isSyscoinChain
+      ? await _getLatestUpdateForSysAccount()
+      : await _getLatestUpdateForWeb3Accounts();
 
     return latestUpdate;
   };
   /** end */
 
   /** networks */
-  const setSignerNetwork = async (network: INetwork): Promise<IKeyringAccountState> => {
+  const _setSignerByChain = async (network: INetwork, chain: string) => {
+    storage.set('signers-key', {
+      mnemonic: storage.get('signers-key').mnemonic,
+      network,
+    });
+
+    if (chain === 'syscoin') {
+      const { isTestnet } = await validateSysRpc(network.url);
+
+      storage.set('signers-key', { ...storage.get('signers-key'), isTestnet });
+
+      return;
+    }
+
+    setActiveNetwork('ethereum', network.chainId, wallet.networks);
+
+    storage.set('signers-key', {
+      ...storage.get('signers-key'),
+      isTestnet: false,
+    });
+  };
+
+  /** networks */
+  const setSignerNetwork = async (
+    network: INetwork,
+    chain: string
+  ): Promise<IKeyringAccountState> => {
     wallet = {
       ...wallet,
+      networks: {
+        ...wallet.networks,
+        [chain]: {
+          [network.chainId]: network,
+        },
+      },
       activeNetwork: network,
-    }
+    };
 
-    _updateLocalStoreWallet();
+    _fullUpdate();
 
-    storage.set('signers-key', { ...storage.get('signers-key'), network })
+    await _setSignerByChain(network, chain);
 
-    const isSyscoinChain = Boolean(networks.syscoin[network.chainId]);
+    const account = await _getAccountForNetwork({
+      isSyscoinChain: chain === 'syscoin',
+    });
 
-    if (!isSyscoinChain) {
-      setActiveNetwork('ethereum', network.chainId);
-    }
+    wallet = {
+      ...wallet,
+      accounts: {
+        ...wallet.accounts,
+        [account.id]: account,
+      },
+      activeAccount: account,
+    };
 
-    storage.set('signers-key', { ...storage.get('signers-key'), network });
-
-    const account = await _getAccountForNetwork({ isSyscoinChain });
+    _fullUpdate();
 
     return account;
-  }
+  };
   /** end */
 
   /** accounts */
@@ -558,38 +609,73 @@ export const KeyringManager = () => {
 
     hd.Signer.accounts.push(derivedAccount);
     hd.setAccountIndex(accountId);
-  }
+  };
   /** end */
 
-  const addNewAccount = async (label) => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { hd: _hd, main: _main } = MainSigner({
-      walletMnemonic: mnemonic,
-      isTestnet: network.isTestnet,
-      network: network.url,
-      blockbookURL: network.url
-    });
+  const addNewAccount = async (label: string) => {
+    const { network } = storage.get('signers-key');
 
-    const id = _hd.createAccount();
+    const isSyscoinChain = Boolean(wallet.networks.syscoin[network.chainId]);
 
-    _hd.setAccountIndex(id);
+    const { _hd } = getSigners();
 
-    const latestUpdate = await getLatestUpdateForAccount();
+    if (isSyscoinChain) {
+      const id = _hd.createAccount();
 
-    const xprv = getEncryptedXprv();
+      _hd.setAccountIndex(id);
 
-    const account = _getInitialAccountData({
+      const latestUpdate = await getLatestUpdateForAccount();
+      const xprv = getEncryptedXprv();
+
+      const account = _getInitialAccountData({
+        label,
+        signer: _hd,
+        createdAccount: latestUpdate,
+        xprv,
+      });
+
+      return {
+        ...account,
+        id,
+      };
+    }
+
+    const { address, privateKey } = web3Wallet.createAccount();
+
+    const balance = web3Wallet.getBalance(address);
+
+    const createdAccount = {
+      balances: {
+        syscoin: 0,
+        ethereum: balance,
+      },
+      receivingAddress: address,
+      xpub: address,
+    };
+
+    const initialAccount = _getInitialAccountData({
       label,
       signer: _hd,
-      createdAccount: latestUpdate,
-      xprv,
+      createdAccount,
+      xprv: privateKey,
     });
 
-    return {
-      ...account,
-      id,
+    wallet = {
+      ...wallet,
+      accounts: {
+        ...wallet.accounts,
+        [initialAccount.id]: initialAccount,
+      },
+      activeAccount: initialAccount,
     };
-  }
+
+    return initialAccount;
+  };
+
+  const removeNetwork = (chain: string, chainId: number) => {
+    //@ts-ignore
+    delete wallet.networks[chain][chainId];
+  };
 
   return {
     validateSeed,
@@ -609,7 +695,6 @@ export const KeyringManager = () => {
     getAccounts,
     removeAccount,
     signMessage,
-    setActiveNetworkForSigner,
     forgetMainWallet,
     getEncryptedXprv,
     txs,
@@ -622,5 +707,6 @@ export const KeyringManager = () => {
     forgetSigners,
     setAccountIndexForDerivedAccount,
     addNewAccount,
+    removeNetwork,
   };
 };

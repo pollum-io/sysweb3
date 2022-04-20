@@ -5,8 +5,8 @@ export const initialize = async () => {
     manifest: {
       appUrl: 'https://paliwallet.com/',
       email: 'pali@pollum.io',
-    }
+    },
   });
 
   return trezorConnection;
-}
+};

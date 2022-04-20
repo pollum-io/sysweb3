@@ -10,5 +10,4 @@ export const isPrefixedFormattedHexString = (value: number | string) => {
     return false;
   }
   return /^0x[1-9a-f]+[0-9a-f]*$/iu.test(value);
-}
-
+};

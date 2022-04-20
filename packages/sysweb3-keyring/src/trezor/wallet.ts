@@ -1,22 +1,17 @@
-import { IKeyringAccountState, IWalletState, MainSigner } from '@pollum-io/sysweb3-utils';
-import sys from 'syscoinjs-lib';
 import { fromZPub } from 'bip84';
+import sys from 'syscoinjs-lib';
 
-export const TrezorWallet = ({ tx, mnemonic, wallet: { activeNetwork } }: { tx: any; mnemonic: string, wallet: IWalletState }) => {
-  const { main } = MainSigner({
-    walletMnemonic: mnemonic,
-    isTestnet: activeNetwork.isTestnet,
-    network: activeNetwork.url,
-    blockbookURL: activeNetwork.url
-  });
+import { getSigners, IKeyringAccountState } from '@pollum-io/sysweb3-utils';
 
-
+export const TrezorWallet = () => {
   const getAccountInfo = async (
     xpub: string,
     sysjs: any,
     trezorId: number
   ): Promise<IKeyringAccountState> => {
-    const { pubtypes, networks } = main;
+    const { _main } = getSigners();
+
+    const { pubtypes, networks } = _main;
 
     const { tokens, transactions, assets, balance } =
       await sys.utils.fetchBackendAccount(
@@ -57,6 +52,7 @@ export const TrezorWallet = ({ tx, mnemonic, wallet: { activeNetwork } }: { tx: 
       transactions,
       xpub,
       xprv: '',
+      assets: {},
       address: trezorAccount.getAddress(receivingIndex + 1),
       tokens: assets,
       connectedTo: [],
@@ -66,9 +62,9 @@ export const TrezorWallet = ({ tx, mnemonic, wallet: { activeNetwork } }: { tx: 
         syscoin: balance / 10 ** 8,
         ethereum: 0,
       },
-      saveTokenInfo: () => { },
-      signTransaction: () => { },
-      signMessage: () => { },
+      saveTokenInfo: () => {},
+      signTransaction: () => {},
+      signMessage: () => {},
       getPrivateKey: () => accountInfo.xprv,
     };
 
@@ -77,14 +73,13 @@ export const TrezorWallet = ({ tx, mnemonic, wallet: { activeNetwork } }: { tx: 
 
   const createWallet = async (): Promise<IKeyringAccountState> => {
     try {
+      const { _main } = getSigners();
+
       const trezorSigner = new sys.utils.TrezorSigner();
 
       await trezorSigner.createAccount();
 
-      const syscoin = new sys.SyscoinJSLib(
-        main,
-        main.blockbookURL
-      );
+      const syscoin = new sys.SyscoinJSLib(_main, _main.blockbookURL);
 
       const accountInfo: IKeyringAccountState = await getAccountInfo(
         syscoin.HDSigner.getAccountXpub(),
@@ -98,7 +93,7 @@ export const TrezorWallet = ({ tx, mnemonic, wallet: { activeNetwork } }: { tx: 
     }
   };
 
-  const forgetWallet = () => { };
+  const forgetWallet = () => {};
 
   const getAddress = (trezor: any, kdPath: any) => {
     return new Promise(function (resolve, reject) {
@@ -110,12 +105,11 @@ export const TrezorWallet = ({ tx, mnemonic, wallet: { activeNetwork } }: { tx: 
         return reject(response.error);
       });
     });
-  }
+  };
 
   return {
     createWallet,
     forgetWallet,
     getAddress,
-    tx,
-  }
-}
+  };
+};
