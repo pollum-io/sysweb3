@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-network",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A network management tool for multi-chain accounts.",
   "main": "cjs/index.js",
   "repository": {
@@ -35,5 +35,8 @@
   "bugs": {
     "url": "https://github.com/Pollum-io/sysweb3/issues"
   },
-  "homepage": "https://github.com/Pollum-io/sysweb3#readme"
+  "homepage": "https://github.com/Pollum-io/sysweb3#readme",
+  "dependencies": {
+    "@pollum-io/sysweb3-utils": "^1.1.86"
+  }
 }

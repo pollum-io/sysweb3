@@ -3,24 +3,31 @@ import { ethers } from 'ethers';
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
 
-import { SyscoinHDSigner } from '.';
+type EstimateFeeParams = {
+  outputs: { value: number; address: string }[];
+  changeAddress: string;
+  feeRateBN: any;
+  network: string;
+  xpub: string;
+  explorerUrl: string;
+};
 
-// const InfuraProvider = ethers.providers.InfuraProvider;
-
-export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
-  const estimateSysTransactionFee = async (items: any) => {
-    const { outputsArray, changeAddress, feeRateBN } = items;
-
+export const feeUtils = () => {
+  const estimateSysTransactionFee = async ({
+    outputs,
+    changeAddress,
+    feeRateBN,
+    network,
+    xpub,
+    explorerUrl,
+  }: EstimateFeeParams) => {
     const txOpts = { rbf: false };
 
-    const utxos = await sys.utils.fetchBackendUTXOS(
-      main.blockbookURL,
-      hd.getAccountXpub()
-    );
+    const utxos = await sys.utils.fetchBackendUTXOS(explorerUrl, xpub);
     const utxosSanitized = sys.utils.sanitizeBlockbookUTXOs(
       null,
       utxos,
-      main.network
+      network
     );
 
     // 0 feerate to create tx, then find bytes and multiply feeRate by bytes to get estimated txfee
@@ -28,7 +35,7 @@ export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
       txOpts,
       utxosSanitized,
       changeAddress,
-      outputsArray,
+      outputs,
       new sys.utils.BN(0)
     );
     const bytes = coinSelectSyscoin.utils.transactionBytes(
@@ -40,8 +47,8 @@ export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
     return txFee;
   };
 
-  const getRecommendedFee = async (): Promise<number> =>
-    (await sys.utils.fetchEstimateFee(main.blockbookURL, 1)) / 10 ** 8;
+  const getRecommendedFee = async (explorerUrl: string): Promise<number> =>
+    (await sys.utils.fetchEstimateFee(explorerUrl, 1)) / 10 ** 8;
 
   const estimateTokenTransferGasLimit = async (
     recipient: string,
@@ -64,16 +71,9 @@ export const feeUtils = (hd: SyscoinHDSigner, main: any) => {
     }
   };
 
-  // const getTransactionCount = (address: string, chainId = 1) => {
-  //   const infuraProvider = new InfuraProvider();
-
-  //   return infuraProvider.getTransactionCount(address, 'pending');
-  // }
-
   return {
     estimateSysTransactionFee,
     getRecommendedFee,
     estimateTokenTransferGasLimit,
-    // getTransactionCount,
   };
 };

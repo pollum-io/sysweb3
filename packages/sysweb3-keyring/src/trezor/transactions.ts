@@ -1,26 +1,8 @@
 import sys from 'syscoinjs-lib';
 
-import {
-  ITokenMap,
-  ITxid,
-  IWalletState,
-  MainSigner,
-} from '@pollum-io/sysweb3-utils';
+import { getSigners, ITokenMap, ITxid } from '@pollum-io/sysweb3-utils';
 
-export const TrezorTransactions = ({
-  mnemonic,
-  wallet: { activeNetwork },
-}: {
-  mnemonic: string;
-  wallet: IWalletState;
-}) => {
-  const { hd, main } = MainSigner({
-    walletMnemonic: mnemonic,
-    isTestnet: activeNetwork.isTestnet,
-    network: activeNetwork.url,
-    blockbookURL: activeNetwork.url,
-  });
-
+export const TrezorTransactions = () => {
   const confirmTokenMint = async ({
     tokenOptions,
     feeRate,
@@ -28,12 +10,14 @@ export const TrezorTransactions = ({
     tokenOptions: ITokenMap;
     feeRate: number;
   }): Promise<ITxid> => {
-    const pendingTransaction = await main.assetSend(
+    const { _hd, _main } = getSigners();
+
+    const pendingTransaction = await _main.assetSend(
       { rbf: true },
       tokenOptions,
-      await hd.getNewChangeAddress(true),
+      _hd.getNewChangeAddress(true),
       feeRate,
-      hd.getAccountXpub()
+      _hd.getAccountXpub()
     );
 
     if (!pendingTransaction) {
@@ -44,10 +28,10 @@ export const TrezorTransactions = ({
 
     const trezorSigner = new sys.utils.TrezorSigner();
 
-    new sys.SyscoinJSLib(trezorSigner, main.blockbookURL);
+    new sys.SyscoinJSLib(trezorSigner, _main.blockbookURL);
 
     try {
-      const txid = await main.signAndSend(
+      const txid = await _main.signAndSend(
         pendingTransaction.psbt,
         pendingTransaction.assets,
         trezorSigner
@@ -68,12 +52,14 @@ export const TrezorTransactions = ({
     tokenOptions: ITokenMap;
     feeRate: number;
   }): Promise<ITxid> => {
-    const pendingTransaction = await main.assetAllocationSend(
+    const { _hd, _main } = getSigners();
+
+    const pendingTransaction = await _main.assetAllocationSend(
       txOptions,
       tokenOptions,
-      await hd.getNewChangeAddress(true),
+      await _hd.getNewChangeAddress(true),
       feeRate,
-      hd.getAccountXpub()
+      _hd.getAccountXpub()
     );
 
     if (!pendingTransaction) {
@@ -84,10 +70,10 @@ export const TrezorTransactions = ({
 
     const trezorSigner = new sys.utils.TrezorSigner();
 
-    new sys.SyscoinJSLib(trezorSigner, main.blockbookURL);
+    new sys.SyscoinJSLib(trezorSigner, _main.blockbookURL);
 
     try {
-      const txid = await main.signAndSend(
+      const txid = await _main.signAndSend(
         pendingTransaction.psbt,
         pendingTransaction.assets,
         trezorSigner
@@ -111,12 +97,14 @@ export const TrezorTransactions = ({
     }>;
     feeRate: number;
   }): Promise<ITxid> => {
-    const pendingTransaction = await main.createTransaction(
+    const { _hd, _main } = getSigners();
+
+    const pendingTransaction = await _main.createTransaction(
       txOptions,
-      await hd.getNewChangeAddress(true),
+      await _hd.getNewChangeAddress(true),
       outputs,
       feeRate,
-      hd.getAccountXpub()
+      _hd.getAccountXpub()
     );
 
     if (!pendingTransaction) {
@@ -127,10 +115,10 @@ export const TrezorTransactions = ({
 
     const trezorSigner = new sys.utils.TrezorSigner();
 
-    new sys.SyscoinJSLib(trezorSigner, main.blockbookURL);
+    new sys.SyscoinJSLib(trezorSigner, _main.blockbookURL);
 
     try {
-      const txid = await main.signAndSend(
+      const txid = await _main.signAndSend(
         pendingTransaction.psbt,
         pendingTransaction.assets,
         trezorSigner

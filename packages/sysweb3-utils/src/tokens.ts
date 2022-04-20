@@ -3,6 +3,7 @@ import axios, { AxiosResponse } from 'axios';
 import { IEthereumAddress, createContractUsingAbi } from '.';
 import abi20 from './abi/erc20.json';
 import abi from './abi/erc721.json';
+import tokens from './tokens.json';
 
 /**
  *
@@ -224,6 +225,8 @@ export const validateToken = async (
     throw new Error('Token not found, verify the Token Contract Address.');
   }
 };
+
+export const getTokenJson = () => tokens;
 
 /** types */
 export type EthTokenDetails = {

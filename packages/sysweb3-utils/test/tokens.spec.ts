@@ -1,9 +1,9 @@
-import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
   getFiatValueByToken,
   getNftImage,
   getTokenIconBySymbol,
 } from '../src/tokens';
+import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 
 describe('web3-NFT tests', () => {
   it('should check NFT url', async () => {

@@ -1,6 +1,6 @@
-import { web3Provider, setActiveNetwork } from '@pollum-io/sysweb3-network';
 import { AES } from 'crypto-js';
 import Web3 from 'web3';
+
 import { Web3Accounts } from '../src/accounts/eth-accounts';
 import {
   FAKE_ADDRESS,
@@ -8,6 +8,7 @@ import {
   FAKE_PRIV_KEY,
   FAKE_SEED_PHRASE,
 } from './constants';
+import { web3Provider, setActiveNetwork } from '@pollum-io/sysweb3-network';
 
 describe('Web3Accounts', () => {
   const {
