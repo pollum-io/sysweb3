@@ -7,7 +7,6 @@ import sys from 'syscoinjs-lib';
 import { Web3Accounts } from './accounts';
 import { SyscoinTransactions } from './transactions';
 import { TrezorWallet } from './trezor';
-import { TrezorTransactions } from './trezor/transactions';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
@@ -132,14 +131,8 @@ export const KeyringManager = () => {
   /** end */
 
   /** controllers */
-  const controllersData = {
-    mnemonic: storage.get('signers-key').mnemonic,
-    wallet,
-  };
-
-  const _trezorTxs = TrezorTransactions(controllersData);
-  const trezor = TrezorWallet({ ...controllersData, tx: _trezorTxs });
-  const txs = SyscoinTransactions(controllersData);
+  const trezor = TrezorWallet();
+  const txs = SyscoinTransactions();
   /** end */
 
   /** private */
@@ -680,6 +673,7 @@ export const KeyringManager = () => {
   };
 
   const removeNetwork = (chain: string, chainId: number) => {
+    //@ts-ignore
     delete wallet.networks[chain][chainId];
   };
 
