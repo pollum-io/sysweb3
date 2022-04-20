@@ -63,5 +63,19 @@ export const networks: {
       label: 'Rinkeby',
       url: 'https://rinkeby.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
     },
+    3: {
+      chainId: 3,
+      currency: 'eth',
+      default: true,
+      label: 'Ropsten',
+      url: 'https://ropsten.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
+    },
+    5: {
+      chainId: 5,
+      currency: 'eth',
+      default: true,
+      label: 'Goerli',
+      url: 'https://goerli.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
+    },
   },
 };
