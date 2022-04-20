@@ -1,6 +1,7 @@
-import { getSigners, IKeyringAccountState } from '@pollum-io/sysweb3-utils';
-import sys from 'syscoinjs-lib';
 import { fromZPub } from 'bip84';
+import sys from 'syscoinjs-lib';
+
+import { getSigners, IKeyringAccountState } from '@pollum-io/sysweb3-utils';
 
 export const TrezorWallet = () => {
   const getAccountInfo = async (
@@ -61,9 +62,9 @@ export const TrezorWallet = () => {
         syscoin: balance / 10 ** 8,
         ethereum: 0,
       },
-      saveTokenInfo: () => { },
-      signTransaction: () => { },
-      signMessage: () => { },
+      saveTokenInfo: () => {},
+      signTransaction: () => {},
+      signMessage: () => {},
       getPrivateKey: () => accountInfo.xprv,
     };
 
@@ -78,10 +79,7 @@ export const TrezorWallet = () => {
 
       await trezorSigner.createAccount();
 
-      const syscoin = new sys.SyscoinJSLib(
-        _main,
-        _main.blockbookURL
-      );
+      const syscoin = new sys.SyscoinJSLib(_main, _main.blockbookURL);
 
       const accountInfo: IKeyringAccountState = await getAccountInfo(
         syscoin.HDSigner.getAccountXpub(),
@@ -95,7 +93,7 @@ export const TrezorWallet = () => {
     }
   };
 
-  const forgetWallet = () => { };
+  const forgetWallet = () => {};
 
   const getAddress = (trezor: any, kdPath: any) => {
     return new Promise(function (resolve, reject) {
@@ -107,11 +105,11 @@ export const TrezorWallet = () => {
         return reject(response.error);
       });
     });
-  }
+  };
 
   return {
     createWallet,
     forgetWallet,
     getAddress,
-  }
-}
+  };
+};

@@ -1,8 +1,9 @@
 import axios, { AxiosResponse } from 'axios';
+
+import { IEthereumAddress, createContractUsingAbi } from '.';
 import abi20 from './abi/erc20.json';
 import abi from './abi/erc721.json';
 import tokens from './tokens.json';
-import { IEthereumAddress, createContractUsingAbi } from '.';
 
 /**
  *

@@ -1,6 +1,7 @@
-import { ethers } from 'ethers';
-import { INetwork } from '.';
 import { bech32 } from 'bech32';
+import { ethers } from 'ethers';
+
+import { INetwork } from '.';
 
 export const isValidEthereumAddress = (address: string) => {
   return ethers.utils.isAddress(address);
