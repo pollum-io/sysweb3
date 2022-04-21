@@ -44,7 +44,6 @@ export const KeyringManager = () => {
     return Boolean(hd.mnemonic);
   };
 
-  storage.set('signers-key', { mnemonic: '', network: wallet.activeNetwork });
   storage.set('keyring', {
     wallet,
     isUnlocked: Boolean(
@@ -144,10 +143,7 @@ export const KeyringManager = () => {
   };
 
   const _clearTemporaryLocalKeys = () => {
-    storage.set('signers-key', {
-      ...storage.get('signers-key'),
-      network: initialNetworksState,
-    });
+    storage.set('signers-key', { ...storage.get('signers-key'), mnemonic: '', network: wallet.activeNetwork });
     _password = '';
   };
 
@@ -384,28 +380,26 @@ export const KeyringManager = () => {
   };
 
   const _getLatestUpdateForSysAccount = async (): Promise<{
+    address: string;
     xpub: string;
     balances: IKeyringBalances;
     transactions: any;
     assets: any;
-    receivingAddress: string;
   }> => {
-    if (!hd.mnemonic || !main.blockbookURL) {
-      const { _hd, _main } = getSigners();
+    const { _hd, _main } = getSigners();
 
-      hd = _hd;
-      main = _main;
-    }
+    hd = _hd;
+    main = _main;
 
     const xpub = hd.getAccountXpub();
     const formattedBackendAccount = await _getFormattedBackendAccount({
-      url: main.blockbookURL,
+      url: main.blockbookURL || wallet.activeNetwork.url,
       xpub,
     });
     const receivingAddress = hd.getNewReceivingAddress(true);
 
     return {
-      receivingAddress,
+      address: receivingAddress,
       ...formattedBackendAccount,
     };
   };
@@ -471,6 +465,9 @@ export const KeyringManager = () => {
     _clearTemporaryLocalKeys();
 
     storage.set('keyring', { ...storage.get('keyring'), isUnlocked: false });
+
+    hd = {} as SyscoinHDSigner;
+    main = {} as SyscoinMainSigner;
 
     eventEmitter.emit('lock');
 
