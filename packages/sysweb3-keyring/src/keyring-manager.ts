@@ -384,10 +384,12 @@ export const KeyringManager = () => {
     assets: any;
     receivingAddress: string;
   }> => {
-    const { _hd, _main } = getSigners();
+    if (!hd.mnemonic || !main.blockbookURL) {
+      const { _hd, _main } = getSigners();
 
-    hd = _hd;
-    main = _main;
+      hd = _hd;
+      main = _main;
+    }
 
     const xpub = hd.getAccountXpub();
     const formattedBackendAccount = await _getFormattedBackendAccount({
