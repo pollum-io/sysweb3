@@ -382,7 +382,7 @@ export const KeyringManager = () => {
     balances: IKeyringBalances;
     transactions: any;
     assets: any;
-    address: string;
+    receivingAddress: string;
   }> => {
     const { _hd, _main } = getSigners();
 
@@ -397,7 +397,7 @@ export const KeyringManager = () => {
     const receivingAddress = await hd.getNewReceivingAddress(true);
 
     return {
-      address: receivingAddress,
+      receivingAddress,
       ...formattedBackendAccount,
     };
   };
