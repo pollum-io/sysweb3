@@ -521,6 +521,8 @@ export const KeyringManager = () => {
 
     _fullUpdate();
 
+    await _setSignerByChain(network, chain);
+
     const account = await _getAccountForNetwork({ isSyscoinChain: (chain === 'syscoin') });
 
     wallet = {
