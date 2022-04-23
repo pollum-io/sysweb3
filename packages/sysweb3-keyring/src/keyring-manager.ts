@@ -27,20 +27,15 @@ export const KeyringManager = () => {
 
   let _password = '';
 
-  let hd: SyscoinHDSigner = {} as SyscoinHDSigner;
-  let main: SyscoinMainSigner = {} as SyscoinMainSigner;
-
   let wallet: IWalletState = initialWalletState;
 
-  const hasHdMnemonic = () => {
-    if (!hd.mnemonic || !main.blockbookURL) {
-      const { _hd, _main } = getSigners();
-      hd = _hd;
-      main = _main;
-    }
+  let hd: SyscoinHDSigner = new sys.utils.HDSigner('');
+  let main: SyscoinMainSigner = new sys.SyscoinJSLib(
+    hd,
+    wallet.activeNetwork.url
+  );
 
-    return Boolean(hd.mnemonic);
-  };
+  const hasHdMnemonic = () => Boolean(hd.mnemonic);
 
   storage.set('signers-key', {
     mnemonic: '',
@@ -68,16 +63,9 @@ export const KeyringManager = () => {
   /** end */
 
   /** validations */
-  const checkPassword = (pwd: string) => {
-    const isValid = storage.get('vault-key') === pwd;
+  const checkPassword = (pwd: string) => _password === pwd;
 
-    if (isValid) _password = pwd;
-
-    return isValid;
-  };
-
-  const isUnlocked = () =>
-    Boolean(hasHdMnemonic() && _password) || storage.get('keyring').isUnlocked;
+  const isUnlocked = () => Boolean(hasHdMnemonic() && _password);
   /** end */
 
   /** seeds */
@@ -408,8 +396,6 @@ export const KeyringManager = () => {
   /** keyring */
   const setWalletPassword = (pwd: string) => {
     _password = pwd;
-
-    storage.set('vault-key', pwd);
   };
 
   const createSeed = () => {
@@ -450,10 +436,11 @@ export const KeyringManager = () => {
 
     wallet = await _unlockWallet(password);
 
-    setAccountIndexForDerivedAccount(wallet.activeAccount.id);
     _updateUnlocked();
     _notifyUpdate();
     _updateLocalStoreWallet();
+    setAccountIndexForDerivedAccount(wallet.activeAccount.id);
+
     await getLatestUpdateForAccount();
 
     return wallet.activeAccount;
@@ -461,13 +448,6 @@ export const KeyringManager = () => {
 
   const logout = () => {
     const eventEmitter = new SafeEventEmitter();
-
-    _clearTemporaryLocalKeys();
-
-    storage.set('keyring', { ...storage.get('keyring'), isUnlocked: false });
-
-    hd = {} as SyscoinHDSigner;
-    main = {} as SyscoinMainSigner;
 
     eventEmitter.emit('lock');
 
@@ -602,6 +582,8 @@ export const KeyringManager = () => {
 
   /** accounts */
   const setAccountIndexForDerivedAccount = (accountId: number) => {
+    if (accountId === 0) return;
+
     const childAccount = hd.deriveAccount(accountId);
 
     const derivedAccount = new fromZPrv(
