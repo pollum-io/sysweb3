@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
+import sys from 'syscoinjs-lib';
 import abi20 from './abi/erc20.json';
 import abi from './abi/erc721.json';
 import tokens from './tokens.json';
@@ -226,6 +227,26 @@ export const validateToken = async (
 };
 
 export const getTokenJson = () => tokens;
+
+export const getAsset = async (
+  explorerUrl: string,
+  assetGuid: string
+): Promise<{
+  assetGuid: string;
+  contract: string;
+  decimals: number;
+  maxSupply: string;
+  pubData: any;
+  symbol: string;
+  totalSupply: string;
+  updateCapabilityFlags: number;
+}> => sys.utils.fetchBackendAsset(explorerUrl, assetGuid);
+
+export const countDecimals = (x: number) => {
+  if (Math.floor(x) === x) return 0;
+
+  return x.toString().split('.')[1].length || 0;
+};
 
 /** types */
 export type EthTokenDetails = {

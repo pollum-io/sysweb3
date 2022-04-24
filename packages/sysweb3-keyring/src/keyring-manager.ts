@@ -529,7 +529,11 @@ export const KeyringManager = () => {
       return;
     }
 
-    setActiveNetwork('ethereum', network.chainId, wallet.networks);
+    const newNetwork = wallet.networks.ethereum[network.chainId];
+
+    if (!newNetwork) throw new Error('Network not found');
+
+    setActiveNetwork(newNetwork);
 
     storage.set('signers-key', {
       ...storage.get('signers-key'),
@@ -542,8 +546,6 @@ export const KeyringManager = () => {
     network: INetwork,
     chain: string
   ): Promise<IKeyringAccountState> => {
-    await _setSignerByChain(network, chain);
-
     wallet = {
       ...wallet,
       networks: {
@@ -554,6 +556,8 @@ export const KeyringManager = () => {
       },
       activeNetwork: network,
     };
+
+    await _setSignerByChain(network, chain);
 
     _fullUpdate();
 

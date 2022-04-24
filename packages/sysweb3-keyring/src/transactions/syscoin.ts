@@ -1,4 +1,4 @@
-import sys from 'syscoinjs-lib';
+import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
   INewNFT,
   isBase64,
@@ -9,19 +9,20 @@ import {
   txUtils,
   IKeyringAccountState,
   getSigners,
+  getAsset,
+  countDecimals,
 } from '@pollum-io/sysweb3-utils';
-import syscointx from 'syscointx-js';
 import coinSelectSyscoin from 'coinselectsyscoin';
-import * as sysweb3 from '@pollum-io/sysweb3-core';
+import sys from 'syscoinjs-lib';
+import syscointx from 'syscointx-js';
 
 type EstimateFeeParams = {
-  outputs: { value: number, address: string }[],
+  outputs: { value: number; address: string }[];
   changeAddress: string;
   feeRateBN: any;
-  network: string;
   xpub: string;
   explorerUrl: string;
-}
+};
 
 export const SyscoinTransactions = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
@@ -30,23 +31,21 @@ export const SyscoinTransactions = () => {
     outputs,
     changeAddress,
     feeRateBN,
-    network,
     xpub,
-    explorerUrl
+    explorerUrl,
   }: EstimateFeeParams) => {
+    const { _main } = getSigners();
+
     const txOpts = { rbf: true };
 
-    const utxos = await sys.utils.fetchBackendUTXOS(
-      explorerUrl,
-      xpub,
-    );
+    const utxos = await sys.utils.fetchBackendUTXOS(explorerUrl, xpub);
     const utxosSanitized = sys.utils.sanitizeBlockbookUTXOs(
       null,
       utxos,
-      network
+      _main.network
     );
 
-    // 0 feerate to create tx, then find bytes and multiply feeRate by bytes to get estimated txfee 
+    // 0 feerate to create tx, then find bytes and multiply feeRate by bytes to get estimated txfee
     const tx = await syscointx.createTransaction(
       txOpts,
       utxosSanitized,
@@ -66,11 +65,7 @@ export const SyscoinTransactions = () => {
   const getRecommendedFee = async (explorerUrl: string): Promise<number> =>
     (await sys.utils.fetchEstimateFee(explorerUrl, 1)) / 10 ** 8;
 
-  const {
-    getFeeRate,
-    getRawTransaction,
-    getTokenMap,
-  } = txUtils();
+  const { getFeeRate, getRawTransaction, getTokenMap } = txUtils();
 
   const _createMintedToken = async ({
     txid,
@@ -93,9 +88,15 @@ export const SyscoinTransactions = () => {
 
     return await new Promise((resolve: any, reject: any) => {
       const interval = setInterval(async () => {
-        const createdTokenTransaction = await getRawTransaction(network.url, txid);
+        const createdTokenTransaction = await getRawTransaction(
+          network.url,
+          txid
+        );
 
-        if (createdTokenTransaction && createdTokenTransaction.confirmations > 1) {
+        if (
+          createdTokenTransaction &&
+          createdTokenTransaction.confirmations > 1
+        ) {
           const changeAddress = await _hd.getNewChangeAddress(true);
 
           try {
@@ -115,7 +116,9 @@ export const SyscoinTransactions = () => {
             );
 
             if (!pendingTransaction) {
-              throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.');
+              throw new Error(
+                'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+              );
             }
 
             const txid = pendingTransaction.extractTransaction().getId();
@@ -328,7 +331,7 @@ export const SyscoinTransactions = () => {
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    // const { decimals } = await getToken(assetGuid);
+    // const { decimals } = await getAsset(_main.blockbookURL, assetGuid);
 
     const receivingAddress = await _hd.getNewReceivingAddress(true);
     const txOptions = { rbf: true };
@@ -340,8 +343,6 @@ export const SyscoinTransactions = () => {
       receivingAddress,
     });
 
-    // todo: trezor handler in pali
-
     const pendingTransaction = await _main.assetSend(
       txOptions,
       tokenMap,
@@ -350,7 +351,9 @@ export const SyscoinTransactions = () => {
     );
 
     if (!pendingTransaction) {
-      throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.');
+      throw new Error(
+        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+      );
     }
 
     const txid = pendingTransaction.extractTransaction().getId();
@@ -358,13 +361,17 @@ export const SyscoinTransactions = () => {
     return { txid };
   };
 
-  const _createParentToken = async ({ tokenOptions, feeRate }: {
+  const _createParentToken = async ({
+    tokenOptions,
+    feeRate,
+  }: {
     tokenOptions: {
       precision: number;
       symbol: string;
       maxsupply: number;
       description: string;
-    }, feeRate: number
+    };
+    feeRate: number;
   }) => {
     const { _hd, _main } = getSigners();
 
@@ -380,7 +387,9 @@ export const SyscoinTransactions = () => {
     );
 
     if (!pendingTransaction) {
-      throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.');
+      throw new Error(
+        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+      );
     }
 
     const tokensFromTransaction = syscointx.getAssetsFromTx(
@@ -402,11 +411,11 @@ export const SyscoinTransactions = () => {
     feeRate,
   }: {
     // todo: create types
-    parentTokenTransaction: any,
-    parentToken: any,
-    precision: number,
-    receivingAddress: string,
-    feeRate: number,
+    parentTokenTransaction: any;
+    parentToken: any;
+    precision: number;
+    receivingAddress: string;
+    feeRate: number;
   }) => {
     const { _main } = getSigners();
 
@@ -428,7 +437,9 @@ export const SyscoinTransactions = () => {
         );
 
         if (!pendingTransaction) {
-          throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.')
+          throw new Error(
+            'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+          );
         }
 
         const txid = pendingTransaction.extractTransaction().getId();
@@ -440,7 +451,10 @@ export const SyscoinTransactions = () => {
     }
   };
 
-  const _updateParentToken = async ({ parentToken, receivingAddress }: {
+  const _updateParentToken = async ({
+    parentToken,
+    receivingAddress,
+  }: {
     parentToken: any;
     receivingAddress: string;
   }) => {
@@ -468,7 +482,9 @@ export const SyscoinTransactions = () => {
     );
 
     if (!txid) {
-      throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.')
+      throw new Error(
+        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+      );
     }
 
     return txid;
@@ -510,7 +526,10 @@ export const SyscoinTransactions = () => {
               feeRate,
             });
 
-            const parentTokenMintTransaction = await getRawTransaction(network.url, txid);
+            const parentTokenMintTransaction = await getRawTransaction(
+              network.url,
+              txid
+            );
 
             if (!parentTokenMintTransaction) {
               throw new Error(
@@ -569,12 +588,14 @@ export const SyscoinTransactions = () => {
   const signTransaction = async (
     data: { psbt: string; assets: string },
     isSendOnly: boolean,
-    isTrezor?: boolean,
+    isTrezor?: boolean
   ): Promise<any> => {
     const { _main } = getSigners();
 
     if (!isBase64(data.psbt) || typeof data.assets !== 'string') {
-      throw new Error('Bad Request: PSBT must be in Base64 format and assets must be a JSON string. Please check the documentation to see the correct formats.')
+      throw new Error(
+        'Bad Request: PSBT must be in Base64 format and assets must be a JSON string. Please check the documentation to see the correct formats.'
+      );
     }
 
     try {
@@ -632,7 +653,9 @@ export const SyscoinTransactions = () => {
       const txid = pendingTransaction.extractTransaction().getId();
 
       if (!pendingTransaction || !txid) {
-        throw new Error('Bad Request: Could not create transaction. Invalid or incorrect data provided.')
+        throw new Error(
+          'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+        );
       }
 
       return { txid };
@@ -647,18 +670,18 @@ export const SyscoinTransactions = () => {
     const { _main } = getSigners();
 
     const { amount, rbf, receivingAddress, fee, token } = temporaryTransaction;
-    // const { decimals } = await getToken(token);
+    const { decimals } = await getAsset(_main.blockbookURL, token);
 
     const txOptions = { rbf };
     const value = new sys.utils.BN(amount * 10 ** 8);
-    // const valueDecimals = countDecimals(amount);
+    const valueDecimals = countDecimals(amount);
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    // if (valueDecimals > 8) {
-    //   throw new Error(
-    //     `This token has ${8} decimals and you are trying to send a value with ${8} decimals, please check your tx`
-    //   );
-    // }
+    if (valueDecimals > decimals) {
+      throw new Error(
+        `This token has ${decimals} decimals and you are trying to send a value with ${decimals} decimals, please check your tx`
+      );
+    }
 
     try {
       const tokenOptions = getTokenMap({
@@ -667,15 +690,6 @@ export const SyscoinTransactions = () => {
         amount: value,
         receivingAddress,
       });
-
-      // todo: move to pali
-      // if (account.currentAccount.isTrezorWallet) {
-      //   return await window.controller.trezor.confirmTokenSend({
-      //     txOptions,
-      //     tokenOptions,
-      //     feeRate,
-      //   });
-      // }
 
       const pendingTransaction = await _main.assetAllocationSend(
         txOptions,
@@ -723,16 +737,13 @@ export const SyscoinTransactions = () => {
 
     const txOptions = { rbf: true };
 
-    const txFee = await estimateSysTransactionFee(
-      {
-        outputs,
-        changeAddress,
-        feeRateBN: feeRate,
-        network: _hd.Signer.isTestnet ? 'testnet' : 'main',
-        xpub,
-        explorerUrl: _main.blockbookURL,
-      },
-    );
+    const txFee = await estimateSysTransactionFee({
+      outputs,
+      changeAddress,
+      feeRateBN: feeRate,
+      xpub,
+      explorerUrl: _main.blockbookURL,
+    });
 
     if (value.add(txFee).gte(backendAccount.balance)) {
       outputs = [
@@ -778,7 +789,7 @@ export const SyscoinTransactions = () => {
 
     const { fee, amount, assetGuid }: any = temporaryTransaction;
 
-    // const { decimals } = await getToken(assetGuid);
+    // const { decimals } = await getAsset(assetGuid);
     const feeRate = new sys.utils.BN(fee * 1e8);
     const txOptions = { rbf: true };
 
@@ -786,9 +797,7 @@ export const SyscoinTransactions = () => {
       guid: assetGuid,
       changeAddress: await _hd.getNewChangeAddress(true),
       amount: new sys.utils.BN(amount * 10 ** 8),
-      receivingAddress: await _hd.getNewReceivingAddress(
-        true
-      ),
+      receivingAddress: await _hd.getNewReceivingAddress(true),
     });
 
     try {
@@ -815,7 +824,8 @@ export const SyscoinTransactions = () => {
     }
   };
 
-  const signMessage = (account: IKeyringAccountState, tx: any, options: any) => console.log(account, tx, options);
+  const signMessage = (account: IKeyringAccountState, tx: any, options: any) =>
+    console.log(account, tx, options);
 
   return {
     confirmTokenCreation,
