@@ -1,4 +1,4 @@
-import { setActiveNetwork } from '@pollum-io/sysweb3-network';
+import { networks, setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
   getFiatValueByToken,
   getNftImage,
@@ -7,7 +7,7 @@ import {
 
 describe('web3-NFT tests', () => {
   it('should check NFT url', async () => {
-    setActiveNetwork(1);
+    setActiveNetwork(networks.ethereum[1]);
     const nftUrl = await getNftImage(
       '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d',
       8520
