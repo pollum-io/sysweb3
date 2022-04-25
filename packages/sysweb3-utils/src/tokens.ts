@@ -38,7 +38,7 @@ export const getNftImage = async (
 
 export const getTokenIconBySymbol = async (
   symbol: string
-): Promise<TokenIcon | undefined> => {
+): Promise<string | undefined> => {
   try {
     const response = await axios.get(
       `https://api.coingecko.com/api/v3/search?query=${symbol.toUpperCase()}`
@@ -52,7 +52,6 @@ export const getTokenIconBySymbol = async (
       return tokens[0].thumb;
     }
   } catch (error) {
-    // todo: handle
     throw new Error('Token icon not found');
   }
 };
