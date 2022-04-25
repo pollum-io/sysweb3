@@ -14,11 +14,11 @@ import {
   IWalletState,
   initialWalletState,
   INetwork,
-  initialNetworksState,
   getSigners,
   validateSysRpc,
   SyscoinHDSigner,
   SyscoinMainSigner,
+  IKeyringBalances,
 } from '@pollum-io/sysweb3-utils';
 
 export const KeyringManager = () => {
@@ -28,28 +28,16 @@ export const KeyringManager = () => {
 
   let _password = '';
 
-  let hd: SyscoinHDSigner = {} as SyscoinHDSigner;
-  let main: SyscoinMainSigner = {} as SyscoinMainSigner;
-
   let wallet: IWalletState = initialWalletState;
 
-  const hasHdMnemonic = () => {
-    if (!hd.mnemonic || !main.blockbookURL) {
-      const { _hd, _main } = getSigners();
-      hd = _hd;
-      main = _main;
-    }
+  let hd: SyscoinHDSigner = new sys.utils.HDSigner('');
+  let main: SyscoinMainSigner = new sys.SyscoinJSLib(
+    hd,
+    wallet.activeNetwork.url
+  );
 
-    return Boolean(hd.mnemonic);
-  };
+  const hasHdMnemonic = () => Boolean(hd.mnemonic);
 
-  storage.set('signers-key', { mnemonic: '', network: wallet.activeNetwork });
-  storage.set('keyring', {
-    wallet,
-    isUnlocked: Boolean(
-      _password && storage.get('signers-key').mnemonic && hasHdMnemonic()
-    ),
-  });
   storage.set('signers-key', {
     mnemonic: '',
     network: wallet.activeNetwork,
@@ -76,16 +64,9 @@ export const KeyringManager = () => {
   /** end */
 
   /** validations */
-  const checkPassword = (pwd: string) => {
-    const isValid = storage.get('vault-key') === pwd;
+  const checkPassword = (pwd: string) => _password === pwd;
 
-    if (isValid) _password = pwd;
-
-    return isValid;
-  };
-
-  const isUnlocked = () =>
-    Boolean(hasHdMnemonic() && _password) || storage.get('keyring').isUnlocked;
+  const isUnlocked = () => Boolean(hasHdMnemonic() && _password);
   /** end */
 
   /** seeds */
@@ -128,6 +109,7 @@ export const KeyringManager = () => {
   const getAccountById = (id: number): IKeyringAccountState =>
     Object.values(wallet.accounts).find((account) => account.id === id) ||
     ({} as IKeyringAccountState);
+
   /** end */
 
   /** controllers */
@@ -145,8 +127,10 @@ export const KeyringManager = () => {
   const _clearTemporaryLocalKeys = () => {
     storage.set('signers-key', {
       ...storage.get('signers-key'),
-      network: initialNetworksState,
+      mnemonic: '',
+      network: wallet.activeNetwork,
     });
+
     _password = '';
   };
 
@@ -194,7 +178,7 @@ export const KeyringManager = () => {
     if (!_wallet) {
       _password = password;
 
-      return {};
+      throw new Error('Wallet not found');
     }
 
     _clearWallet();
@@ -384,9 +368,9 @@ export const KeyringManager = () => {
 
   const _getLatestUpdateForSysAccount = async (): Promise<{
     xpub: string;
-    balance: number;
+    balances: IKeyringBalances;
     transactions: any;
-    tokens: any;
+    assets: any;
     receivingAddress: string;
   }> => {
     if (!hd.mnemonic || !main.blockbookURL) {
@@ -398,10 +382,11 @@ export const KeyringManager = () => {
 
     const xpub = hd.getAccountXpub();
     const formattedBackendAccount = await _getFormattedBackendAccount({
-      url: main.blockbookURL,
+      url: main.blockbookURL || wallet.activeNetwork.url,
       xpub,
     });
-    const receivingAddress = hd.getNewReceivingAddress(true);
+    const receivingAddress = await hd.getNewReceivingAddress(true);
+
     return {
       receivingAddress,
       ...formattedBackendAccount,
@@ -412,8 +397,6 @@ export const KeyringManager = () => {
   /** keyring */
   const setWalletPassword = (pwd: string) => {
     _password = pwd;
-
-    storage.set('vault-key', pwd);
   };
 
   const createSeed = () => {
@@ -454,10 +437,11 @@ export const KeyringManager = () => {
 
     wallet = await _unlockWallet(password);
 
-    setAccountIndexForDerivedAccount(wallet.activeAccount.id);
     _updateUnlocked();
     _notifyUpdate();
     _updateLocalStoreWallet();
+    setAccountIndexForDerivedAccount(wallet.activeAccount.id);
+
     await getLatestUpdateForAccount();
 
     return wallet.activeAccount;
@@ -466,17 +450,15 @@ export const KeyringManager = () => {
   const logout = () => {
     const eventEmitter = new SafeEventEmitter();
 
-    _clearTemporaryLocalKeys();
-
-    storage.set('keyring', { ...storage.get('keyring'), isUnlocked: false });
-
     eventEmitter.emit('lock');
 
     _notifyUpdate();
   };
   /** end */
 
-  const removeAccount = () => {};
+  const removeAccount = (accountId: number) => {
+    delete wallet.accounts[accountId];
+  };
 
   const signMessage = (
     msgParams: { accountId: number; data: string },
@@ -550,7 +532,7 @@ export const KeyringManager = () => {
       return;
     }
 
-    setActiveNetwork('ethereum', network.chainId, wallet.networks);
+    setActiveNetwork(wallet.networks['ethereum'][network.chainId]);
 
     storage.set('signers-key', {
       ...storage.get('signers-key'),
@@ -563,6 +545,8 @@ export const KeyringManager = () => {
     network: INetwork,
     chain: string
   ): Promise<IKeyringAccountState> => {
+    await _setSignerByChain(network, chain);
+
     wallet = {
       ...wallet,
       networks: {
@@ -599,6 +583,8 @@ export const KeyringManager = () => {
 
   /** accounts */
   const setAccountIndexForDerivedAccount = (accountId: number) => {
+    if (accountId === 0) return;
+
     const childAccount = hd.deriveAccount(accountId);
 
     const derivedAccount = new fromZPrv(
@@ -673,7 +659,7 @@ export const KeyringManager = () => {
   };
 
   const removeNetwork = (chain: string, chainId: number) => {
-    //@ts-ignore
+    // @ts-ignore
     delete wallet.networks[chain][chainId];
   };
 
