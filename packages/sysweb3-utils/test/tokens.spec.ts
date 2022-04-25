@@ -18,7 +18,7 @@ describe('web3-NFT tests', () => {
 
   it('should get token icon by symbol', async () => {
     const token = await getTokenIconBySymbol('eth');
-    expect(token.largeImage.startsWith('https://')).toBe(true);
+    expect(token.startsWith('https://')).toBe(true);
   });
 
   it('should retrieve a token price as fiat', async () => {
