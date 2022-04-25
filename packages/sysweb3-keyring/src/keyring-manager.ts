@@ -12,9 +12,10 @@ import {
   SyscoinMainSigner,
   IKeyringBalances,
 } from '@pollum-io/sysweb3-utils';
-import { generateMnemonic, validateMnemonic } from 'bip39';
+import { generateMnemonic, validateMnemonic, mnemonicToSeed } from 'bip39';
 import { fromZPrv } from 'bip84';
 import CryptoJS from 'crypto-js';
+import { hdkey } from 'ethereumjs-wallet';
 import sys from 'syscoinjs-lib';
 import { Web3Accounts } from './accounts';
 import { SyscoinTransactions } from './transactions';
@@ -604,19 +605,28 @@ export const KeyringManager = () => {
 
     const isSyscoinChain = Boolean(wallet.networks.syscoin[network.chainId]);
 
-    const { _hd } = getSigners();
-
     if (isSyscoinChain) {
-      const id = _hd.createAccount();
+      const id = hd.createAccount();
 
-      _hd.setAccountIndex(id);
+      hd.setAccountIndex(id);
 
-      const latestUpdate = await getLatestUpdateForAccount();
+      const xpub = hd.getAccountXpub();
+      const formattedBackendAccount = await _getFormattedBackendAccount({
+        url: main.blockbookURL || wallet.activeNetwork.url,
+        xpub,
+      });
+      const receivingAddress = await hd.getNewReceivingAddress(true);
+
+      const latestUpdate = {
+        receivingAddress,
+        ...formattedBackendAccount,
+      };
+
       const xprv = getEncryptedXprv();
 
       const account = _getInitialAccountData({
         label,
-        signer: _hd,
+        signer: hd,
         createdAccount: latestUpdate,
         xprv,
       });
@@ -627,36 +637,61 @@ export const KeyringManager = () => {
       };
     }
 
-    const { address, privateKey } = web3Wallet.createAccount();
+    if (!hd.mnemonic) {
+      throw new Error('Seed phrase is required to create a new account.');
+    }
 
-    const balance = web3Wallet.getBalance(address);
+    const seed = await mnemonicToSeed(hd.mnemonic);
 
-    const createdAccount = {
-      balances: {
-        syscoin: 0,
-        ethereum: balance,
-      },
-      receivingAddress: address,
-      xpub: address,
-    };
+    const hdWallet = hdkey.fromMasterSeed(seed);
 
-    const initialAccount = _getInitialAccountData({
-      label,
-      signer: _hd,
-      createdAccount,
-      xprv: privateKey,
-    });
+    const masterNode = hdWallet.derivePath("m/44'/60'/0'/0");
+    const masterExtendedPublicKey = masterNode.publicExtendedKey();
 
-    wallet = {
-      ...wallet,
-      accounts: {
-        ...wallet.accounts,
-        [initialAccount.id]: initialAccount,
-      },
-      activeAccount: initialAccount,
-    };
+    const newAccount = hdkey.fromExtendedKey(String(masterExtendedPublicKey));
 
-    return initialAccount;
+    const { accounts } = hd.Signer;
+
+    for (const id in accounts) {
+      const node = newAccount.derivePath(`m/${id}`);
+
+      const nodeWallet = node.getWallet();
+
+      const address = nodeWallet.getAddressString();
+
+      console.log('created account web3 adress', address);
+    }
+
+    // const { address, privateKey } = web3Wallet.createAccount();
+
+    // const balance = web3Wallet.getBalance(address);
+
+    // const createdAccount = {
+    //   balances: {
+    //     syscoin: 0,
+    //     ethereum: balance,
+    //   },
+    //   receivingAddress: address,
+    //   xpub: address,
+    // };
+
+    // const initialAccount = _getInitialAccountData({
+    //   label,
+    //   signer: hd,
+    //   createdAccount,
+    //   xprv: privateKey,
+    // });
+
+    // wallet = {
+    //   ...wallet,
+    //   accounts: {
+    //     ...wallet.accounts,
+    //     [initialAccount.id]: initialAccount,
+    //   },
+    //   activeAccount: initialAccount,
+    // };
+
+    // return initialAccount;
   };
 
   const removeNetwork = (chain: string, chainId: number) => {

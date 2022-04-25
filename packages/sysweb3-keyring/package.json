@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-keyring",
-  "version": "1.0.198",
+  "version": "1.0.203",
   "description": "",
   "main": "cjs/index.js",
   "repository": {
@@ -26,7 +26,8 @@
     "@metamask/safe-event-emitter": "^2.0.0",
     "@pollum-io/sysweb3-core": "^1.0.10",
     "@pollum-io/sysweb3-network": "^1.0.18",
-    "@pollum-io/sysweb3-utils": "^1.1.106",
+    "@pollum-io/sysweb3-utils": "^1.1.107",
+    "ethereumjs-wallet": "^1.0.2",
     "syscointx-js": "^1.0.101"
   },
   "devDependencies": {
