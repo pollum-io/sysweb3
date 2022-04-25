@@ -3,6 +3,7 @@ import Web3 from 'web3';
 import { Web3Accounts } from '../src/accounts/eth-accounts';
 import { FAKE_ADDRESS, FAKE_PRIV_KEY, FAKE_SEED_PHRASE } from './constants';
 import { web3Provider, setActiveNetwork } from '@pollum-io/sysweb3-network';
+import { networks } from '@pollum-io/sysweb3-network';
 
 describe('Web3Accounts', () => {
   const {
@@ -68,7 +69,7 @@ describe('Web3Accounts', () => {
   //* setActiveNetwork
   it('should change the network', () => {
     // 5700 = testnet chainId
-    setActiveNetwork('syscoin', 5700);
+    setActiveNetwork(networks.syscoin[5700]);
 
     const provider = web3Provider.currentProvider;
     const { HttpProvider } = Web3.providers;
@@ -84,7 +85,7 @@ describe('Web3Accounts', () => {
   //* sendTransaction
   it('should send a transaction', async () => {
     // change to Rinkeby network
-    setActiveNetwork('ethereum', 4);
+    setActiveNetwork(networks.ethereum[4]);
     const transaction = await sendTransaction({
       sender: '0x0beaDdE9e116ceF07aFedc45a8566d1aDd3168F3',
       senderXprv: '0x6e578c2227bc4629794e566610209c9cb7a35341f13de4ba886a59a4e11b7d1e',
