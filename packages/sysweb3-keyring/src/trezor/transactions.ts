@@ -1,17 +1,21 @@
-import { getSigners, ITokenMap, ITxid } from '@pollum-io/sysweb3-utils';
 import sys from 'syscoinjs-lib';
 
-const TrezorTransactions = () => {
+import { getSigners, ITokenMap, ITxid } from '@pollum-io/sysweb3-utils';
+
+export const TrezorTransactions = () => {
   const confirmTokenMint = async ({
     tokenOptions,
     feeRate,
-  }: { tokenOptions: ITokenMap, feeRate: number }): Promise<ITxid> => {
+  }: {
+    tokenOptions: ITokenMap;
+    feeRate: number;
+  }): Promise<ITxid> => {
     const { _hd, _main } = getSigners();
 
     const pendingTransaction = await _main.assetSend(
       { rbf: true },
       tokenOptions,
-      await _hd.getNewChangeAddress(true),
+      _hd.getNewChangeAddress(true),
       feeRate,
       _hd.getAccountXpub()
     );
@@ -182,7 +186,6 @@ const TrezorTransactions = () => {
 
   //       if (response.success) {
 
-
   //       } else {
   //         return reject(response.payload.error);
   //       }
@@ -194,7 +197,7 @@ const TrezorTransactions = () => {
     return new Promise(function (resolve, reject) {
       const { success, payload } = trezor.ethereumSignMessage({
         path: kdPath,
-        message: txData
+        message: txData,
       });
 
       if (success) {
@@ -205,21 +208,24 @@ const TrezorTransactions = () => {
 
       return reject(payload.error);
     });
-  }
+  };
 
   const verifyMessage = (trezor: any, kdPath: any, txData: any) => {
-    trezor.ethereumVerifyMessage(kdPath, txData.signature, txData.Messsage, (response: any) => {
-      return response;
-    });
-  }
+    trezor.ethereumVerifyMessage(
+      kdPath,
+      txData.signature,
+      txData.Messsage,
+      (response: any) => {
+        return response;
+      }
+    );
+  };
 
   return {
     confirmTokenMint,
     confirmTokenSend,
     confirmNativeTokenSend,
     signMessage,
-    verifyMessage
+    verifyMessage,
   };
 };
-
-export default TrezorTransactions;

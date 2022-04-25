@@ -1,9 +1,9 @@
-import { BitcoinNetwork } from '.';
+import { BIP32Interface } from 'bip32';
+import { Psbt } from 'bitcoinjs-lib';
 import sys from 'syscoinjs-lib';
 
-import { BIP32Interface } from 'bip32';
+import { BitcoinNetwork } from '.';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { Psbt } from 'bitcoinjs-lib';
 
 export const MainSigner = ({
   walletMnemonic,
@@ -13,7 +13,7 @@ export const MainSigner = ({
   walletMnemonic: string;
   isTestnet: boolean;
   blockbookURL: string;
-}): { hd: SyscoinHDSigner, main: any } => {
+}): { hd: SyscoinHDSigner; main: any } => {
   let mainSigner: any;
   let hdSigner: SyscoinHDSigner;
 
@@ -67,8 +67,8 @@ export const MainSigner = ({
   return {
     hd,
     main,
-  }
-}
+  };
+};
 
 export const getSigners = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
@@ -78,13 +78,13 @@ export const getSigners = () => {
   const { hd: _hd, main: _main } = MainSigner({
     walletMnemonic: mnemonic,
     isTestnet,
-    blockbookURL: network.url
+    blockbookURL: network.url,
   });
 
   return {
     _hd,
     _main,
-  }
+  };
 };
 
 export type SyscoinHdAccount = {
@@ -96,7 +96,7 @@ export type SyscoinHdAccount = {
     testnet: {
       vprv: string;
       vpub: string;
-    }
+    };
   };
   networks: {
     mainnet: {
@@ -104,7 +104,7 @@ export type SyscoinHdAccount = {
       bech32: string;
       bip32: {
         public: number;
-        private: number
+        private: number;
       };
       pubKeyHash: number;
       scriptHash: number;
@@ -115,19 +115,19 @@ export type SyscoinHdAccount = {
       bech32: string;
       bip32: {
         public: number;
-        private: number
+        private: number;
       };
       pubKeyHash: number;
       scriptHash: number;
       wif: number;
-    }
+    };
   };
   network: {
     messagePrefix: string;
     bech32: string;
     bip32: {
       public: number;
-      private: number
+      private: number;
     };
     pubKeyHash: number;
     scriptHash: number;
@@ -135,7 +135,7 @@ export type SyscoinHdAccount = {
   };
   isTestnet: boolean;
   zprv: string;
-}
+};
 
 export interface SyscoinFromZprvAccount extends SyscoinHdAccount {
   toNode: (zprv: string) => string;
@@ -170,7 +170,7 @@ export interface SyscoinHDSigner {
         bech32: string;
         bip32: {
           public: number;
-          private: number
+          private: number;
         };
         pubKeyHash: number;
         scriptHash: number;
@@ -181,12 +181,12 @@ export interface SyscoinHDSigner {
         bech32: string;
         bip32: {
           public: number;
-          private: number
+          private: number;
         };
         pubKeyHash: number;
         scriptHash: number;
         wif: number;
-      }
+      };
     };
     password: string | null;
     SLIP44: number;
@@ -195,7 +195,7 @@ export interface SyscoinHDSigner {
       bech32: string;
       bip32: {
         public: number;
-        private: number
+        private: number;
       };
       pubKeyHash: number;
       scriptHash: number;
@@ -209,7 +209,7 @@ export interface SyscoinHDSigner {
       testnet: {
         vprv: string;
         vpub: string;
-      }
+      };
     };
     accounts: SyscoinFromZprvAccount[];
     changeIndex: number;
@@ -231,19 +231,19 @@ export interface SyscoinHDSigner {
       testnet: {
         vprv: string;
         vpub: string;
-      }
+      };
     };
     network: {
       messagePrefix: string;
       bech32: string;
       bip32: {
         public: number;
-        private: number
+        private: number;
       };
       pubKeyHash: number;
       scriptHash: number;
       wif: number;
-    }
+    };
   };
   blockbookURL: string;
   signPSBT: (psbt: Psbt, pathIn?: string) => Psbt;
@@ -269,22 +269,22 @@ export interface SyscoinHDSigner {
 }
 
 export type ISyscoinPubTypes = {
-  mainnet: { zprv: string, zpub: string },
-  testnet: { vprv: string, vpub: string }
-}
+  mainnet: { zprv: string; zpub: string };
+  testnet: { vprv: string; vpub: string };
+};
 
 export type SyscoinMainSigner = {
-  blockbookURL: string,
-  Signer: SyscoinHDSigner,
+  blockbookURL: string;
+  Signer: SyscoinHDSigner;
   network: {
-    messagePrefix: string,
-    bech32: string,
+    messagePrefix: string;
+    bech32: string;
     bip32: {
-      public: number,
-      private: number
-    },
-    pubKeyHash: number,
-    scriptHash: number,
-    wif: number
-  }
-}
+      public: number;
+      private: number;
+    };
+    pubKeyHash: number;
+    scriptHash: number;
+    wif: number;
+  };
+};
