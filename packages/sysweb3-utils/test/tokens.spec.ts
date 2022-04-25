@@ -21,14 +21,12 @@ describe('web3-NFT tests', () => {
     expect(token.startsWith('https://')).toBe(true);
   });
 
-  it('should retrive a token price as fiat', async () => {
+  it('should retrieve a token price as fiat', async () => {
     const result = await getFiatValueByToken('syscoin', 'usd');
-    console.log(result);
 
     expect(typeof result.price).toBe('number');
     expect(result.price).toBeGreaterThan(0);
 
     expect(typeof result.priceChange).toBe('number');
-    expect(result.priceChange).toBeGreaterThanOrEqual(0);
   });
 });
