@@ -98,7 +98,7 @@ export const FetchRestService = (httpClient: any = defaultFetch) => {
     buildRequest,
     serialize,
     makeServiceRequest,
-  }
+  };
 };
 
 interface RestApiOptionsRequest {

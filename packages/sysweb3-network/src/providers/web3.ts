@@ -1,5 +1,6 @@
-import { INetwork } from '@pollum-io/sysweb3-utils';
 import Web3 from 'web3';
+
+import { INetwork } from '@pollum-io/sysweb3-utils';
 
 export const web3Provider = new Web3(
   new Web3.providers.HttpProvider('https://rpc.syscoin.org/')
@@ -17,7 +18,11 @@ export const web3Provider = new Web3(
  * @returns void
  *
  */
-export const setActiveNetwork = (chain: string, chainId: number, networks: { [chain: string]: { [chainId: number]: INetwork } }): void => {
+export const setActiveNetwork = (
+  chain: string,
+  chainId: number,
+  networks: { [chain: string]: { [chainId: number]: INetwork } }
+): void => {
   const network = networks[chain][chainId];
 
   if (!network) throw new Error('Network not found');

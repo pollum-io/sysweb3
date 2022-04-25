@@ -2,7 +2,7 @@
 
 Collection of useful account functions for Syscoin multi-chain.
 
-Here, you'll find methods that help you to handle wallet, address, accounts, transactions and trezor wallet. 
+Here, you'll find methods that help you to handle wallet, address, accounts, transactions and trezor wallet.
 
 Furthermore, our motivation to build these solutions is:
 
@@ -51,4 +51,3 @@ Inside of source folder, you'll find some others folders like:
 ## License
 
 MIT License
-
