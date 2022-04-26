@@ -1,8 +1,11 @@
-import { EncryptedKeystoreV3Json, Sign, SignedTransaction, TransactionConfig } from 'web3-core';
 import {
-  INetwork,
-  INetworkType,
-} from '.';
+  EncryptedKeystoreV3Json,
+  Sign,
+  SignedTransaction,
+  TransactionConfig,
+} from 'web3-core';
+
+import { INetwork, INetworkType } from '.';
 
 export enum IKeyringAccountType {
   Trezor,
@@ -59,16 +62,16 @@ export interface IKeyringAccountState {
 }
 
 export interface ISyscoinBackendAccount {
-  page: number,
-  totalPages: number,
-  itemsOnPage: number,
-  address: string,
-  balance: string,
-  totalReceived: string,
-  totalSent: string,
-  unconfirmedBalance: string,
-  unconfirmedTxs: number,
-  txs: number
+  page: number;
+  totalPages: number;
+  itemsOnPage: number;
+  address: string;
+  balance: string;
+  totalReceived: string;
+  totalSent: string;
+  unconfirmedBalance: string;
+  unconfirmedTxs: number;
+  txs: number;
 }
 
 export interface LatestUpdateForSysAccount {
@@ -87,8 +90,8 @@ export interface KeyringManager {
   setWalletPassword: (pwd: string) => void;
   createSeed: () => string;
   createKeyringVault: () => Promise<IKeyringAccountState>;
-  getAccountById: (id: number) => IKeyringAccountState,
-  checkPassword: (pwd: string) => boolean,
+  getAccountById: (id: number) => IKeyringAccountState;
+  checkPassword: (pwd: string) => boolean;
   isUnlocked: () => boolean;
   getEncryptedMnemonic: () => string;
   getDecryptedMnemonic: () => string;
@@ -98,10 +101,12 @@ export interface KeyringManager {
   logout: () => void;
   login: () => Promise<IKeyringAccountState>;
   getAccounts: () => {
-    [accountId: number]: IKeyringAccountState,
+    [accountId: number]: IKeyringAccountState;
   };
   removeAccount: (id: number) => void;
-  setActiveNetworkForSigner: (network: INetwork) => Promise<IKeyringAccountState>;
+  setActiveNetworkForSigner: (
+    network: INetwork
+  ) => Promise<IKeyringAccountState>;
   forgetMainWallet: (pwd: string) => void | Error;
   getEncryptedXprv: () => string;
   txs: () => any;

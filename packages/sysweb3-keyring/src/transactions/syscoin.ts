@@ -1,3 +1,7 @@
+import coinSelectSyscoin from 'coinselectsyscoin';
+import sys from 'syscoinjs-lib';
+import syscointx from 'syscointx-js';
+
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
   INewNFT,
@@ -12,9 +16,6 @@ import {
   getAsset,
   countDecimals,
 } from '@pollum-io/sysweb3-utils';
-import coinSelectSyscoin from 'coinselectsyscoin';
-import sys from 'syscoinjs-lib';
-import syscointx from 'syscointx-js';
 
 type EstimateFeeParams = {
   outputs: { value: number; address: string }[];

@@ -4,7 +4,11 @@ export const getTrezorAccountAddressAndSplitTokensPath = ({
   xpub,
   signer,
   backendAccount,
-}: { xpub: string, signer: any, backendAccount: any }) => {
+}: {
+  xpub: string;
+  signer: any;
+  backendAccount: any;
+}) => {
   const account: any = new fromZpub(
     xpub,
     signer.Signer.Signer.pubtypes,

@@ -1,4 +1,3 @@
-// @ts-ignore
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { web3Provider } from '@pollum-io/sysweb3-network';
 import { getErc20Abi } from '@pollum-io/sysweb3-utils';

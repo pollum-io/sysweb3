@@ -15,47 +15,35 @@
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
-  "plugins": [
-    "@typescript-eslint",
-    "eslint-plugin-prettier"
-  ],
+  "plugins": ["@typescript-eslint", "eslint-plugin-prettier"],
   "rules": {
     "import/no-unresolved": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-var-requires": "off",
     "@typescript-eslint/ban-ts-comment": "off",
     "import/order": [
-      "error",
+      "warn",
       {
         "groups": [
-          "builtin",
-          "external",
-          "internal",
-          "parent",
-          "sibling",
-          "index",
-          "object",
-          "type"
+          ["builtin", "external"],
+          ["internal", "parent", "sibling", "index"],
+          ["object", "type"]
         ],
-        "newlines-between": "never",
+        "pathGroups": [
+          {
+            "pattern": "@pollum-io/**",
+            "group": "index"
+          }
+        ],
+        "pathGroupsExcludedImportTypes": ["@pollum-io/**"],
+        "newlines-between": "always",
         "alphabetize": {
           "order": "asc",
           "caseInsensitive": true
         }
       }
     ],
-    "prettier/prettier": [
-      "error",
-      {
-        "bracketSpacing": true,
-        "arrowParens": "always",
-        "trailingComma": "es5",
-        "tabWidth": 2,
-        "semi": true,
-        "singleQuote": true,
-        "jsxSingleQuote": true
-      }
-    ],
+    "prettier/prettier": "warn",
     "no-confusing-arrow": "warn",
     "no-multiple-empty-lines": "warn",
     "keyword-spacing": "warn",
