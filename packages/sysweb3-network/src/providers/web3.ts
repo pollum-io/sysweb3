@@ -18,15 +18,7 @@ export const web3Provider = new Web3(
  * @returns void
  *
  */
-export const setActiveNetwork = (
-  chain: string,
-  chainId: number,
-  networks: { [chain: string]: { [chainId: number]: INetwork } }
-): void => {
-  const network = networks[chain][chainId];
-
-  if (!network) throw new Error('Network not found');
-
+export const setActiveNetwork = (network: INetwork): void => {
   const { HttpProvider } = Web3.providers;
 
   web3Provider.setProvider(new HttpProvider(network.url));

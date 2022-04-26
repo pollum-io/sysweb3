@@ -1,8 +1,9 @@
+import { web3Provider } from '@pollum-io/sysweb3-network';
 import { ethers } from 'ethers';
 import { Contract, ContractOptions } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
-
-import { web3Provider } from '@pollum-io/sysweb3-network';
+import abi20 from './abi/erc20.json';
+import abi21 from './abi/erc721.json';
 
 export const createContractUsingAbi = async (
   AbiContract: AbiItem[] | AbiItem | object,
@@ -29,3 +30,7 @@ export const isContractAddress = async (address: string, chainId = 1) => {
   }
   return false;
 };
+
+export const getErc20Abi = () => abi20;
+
+export const getErc21Abi = () => abi21;
