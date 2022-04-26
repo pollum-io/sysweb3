@@ -1,14 +1,14 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
-import { web3Provider } from '@pollum-io/sysweb3-network';
-import { getErc20Abi } from '@pollum-io/sysweb3-utils';
 import axios from 'axios';
 import * as sigUtil from 'eth-sig-util';
 import * as ethUtil from 'ethereumjs-util';
-import { BN } from 'ethereumjs-util';
 import { ethers } from 'ethers';
 import { request, gql } from 'graphql-request';
 import _ from 'lodash';
 import { Account, TransactionReceipt } from 'web3-core';
+
+import { web3Provider } from '@pollum-io/sysweb3-network';
+import { getErc20Abi } from '@pollum-io/sysweb3-utils';
 
 export const Web3Accounts = () => {
   /**
@@ -272,7 +272,7 @@ export const Web3Accounts = () => {
   }: {
     contractAddress: string;
     receivingAddress: string;
-    value: string | BN;
+    value: any;
   }) => {
     const abi = getErc20Abi() as any;
     const contract = new web3Provider.eth.Contract(abi, contractAddress);
@@ -298,7 +298,7 @@ export const Web3Accounts = () => {
     gasPrice?: number;
     token?: any;
   }): Promise<TransactionReceipt> => {
-    const tokenDecimals = token.decimals ? token.decimals : 18;
+    const tokenDecimals = token && token.decimals ? token.decimals : 18;
     const decimals = web3Provider.utils.toBN(tokenDecimals);
     const amountBN = web3Provider.utils.toBN(amount);
 
