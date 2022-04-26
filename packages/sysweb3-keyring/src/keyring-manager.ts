@@ -601,14 +601,19 @@ export const KeyringManager = () => {
   /** end */
 
   const addNewAccount = async (label: string) => {
+    if (!hd.mnemonic) {
+      const { _hd, _main } = getSigners();
+
+      hd = _hd;
+      main = _main;
+    }
+
     const { network, mnemonic } = storage.get('signers-key');
 
     const isSyscoinChain = Boolean(wallet.networks.syscoin[network.chainId]);
 
     if (isSyscoinChain) {
       const id = hd.createAccount();
-
-      hd.setAccountIndex(id);
 
       const xpub = hd.getAccountXpub();
       const formattedBackendAccount = await _getFormattedBackendAccount({
@@ -721,8 +726,6 @@ export const KeyringManager = () => {
     };
 
     _updateLocalStoreWallet();
-
-    await getLatestUpdateForAccount();
   };
 
   return {
