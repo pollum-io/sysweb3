@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-keyring",
-  "version": "1.0.191",
+  "version": "1.0.209",
   "description": "",
   "main": "cjs/index.js",
   "repository": {
@@ -24,27 +24,28 @@
   "dependencies": {
     "@metamask/obs-store": "^7.0.0",
     "@metamask/safe-event-emitter": "^2.0.0",
-    "@pollum-io/sysweb3-core": "^1.0.10",
-    "@pollum-io/sysweb3-network": "^1.0.17",
-    "@pollum-io/sysweb3-utils": "^1.1.102",
-    "syscointx-js": "^1.0.101"
-  },
-  "devDependencies": {
-    "@types/crypto-js": "^4.1.1",
-    "@types/lodash": "^4.14.179",
-    "@types/node": "^17.0.23",
+    "@pollum-io/sysweb3-core": "^1.0.13",
+    "@pollum-io/sysweb3-network": "^1.0.19",
+    "@pollum-io/sysweb3-utils": "^1.1.108",
     "axios": "^0.26.1",
     "bip39": "^3.0.4",
     "coinselectsyscoin": "^1.0.77",
     "crypto-js": "^4.1.1",
     "eth-sig-util": "^3.0.1",
     "ethereumjs-util": "^7.1.4",
+    "ethereumjs-wallet": "^1.0.2",
     "ethers": "^5.6.4",
     "graphql": "^16.3.0",
     "graphql-request": "^4.1.0",
     "lodash": "^4.17.21",
     "syscoinjs-lib": "^1.0.212",
+    "syscointx-js": "^1.0.101",
     "web3": "^1.7.1",
     "web3-utils": "^1.7.1"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.1.1",
+    "@types/lodash": "^4.14.179",
+    "@types/node": "^17.0.23"
   }
 }

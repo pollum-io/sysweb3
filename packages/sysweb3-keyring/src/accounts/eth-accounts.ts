@@ -8,6 +8,7 @@ import _ from 'lodash';
 import { Account, TransactionReceipt } from 'web3-core';
 
 import { web3Provider } from '@pollum-io/sysweb3-network';
+import { getErc20Abi } from '@pollum-io/sysweb3-utils';
 
 export const Web3Accounts = () => {
   /**
@@ -264,6 +265,22 @@ export const Web3Accounts = () => {
     });
   };
 
+  const getData = ({
+    contractAddress,
+    receivingAddress,
+    value,
+  }: {
+    contractAddress: string;
+    receivingAddress: string;
+    value: any;
+  }) => {
+    const abi = getErc20Abi() as any;
+    const contract = new web3Provider.eth.Contract(abi, contractAddress);
+    const data = contract.methods.transfer(receivingAddress, value).encodeABI();
+
+    return data;
+  };
+
   const sendTransaction = async ({
     sender,
     senderXprv,
@@ -271,6 +288,7 @@ export const Web3Accounts = () => {
     amount,
     gasLimit,
     gasPrice,
+    token,
   }: {
     sender: string;
     senderXprv: string;
@@ -278,21 +296,42 @@ export const Web3Accounts = () => {
     amount: number;
     gasLimit?: number;
     gasPrice?: number;
+    token?: any;
   }): Promise<TransactionReceipt> => {
+    const tokenDecimals = token && token.decimals ? token.decimals : 18;
+    const decimals = web3Provider.utils.toBN(tokenDecimals);
+    const amountBN = web3Provider.utils.toBN(amount);
+
     const defaultGasPrice = await getRecommendedGasPrice(false);
     const defaultGasLimit = await getGasLimit(receivingAddress);
+
+    const value =
+      token && token.contractAddress
+        ? amountBN.mul(web3Provider.utils.toBN(10).pow(decimals))
+        : web3Provider.utils.toWei(amount.toString(), 'ether');
+
+    const data =
+      token && token.contractAddress
+        ? getData({
+            contractAddress: token.contractAddress,
+            receivingAddress,
+            value,
+          })
+        : null;
 
     const signedTransaction = await web3Provider.eth.accounts.signTransaction(
       {
         from: sender,
         to: receivingAddress,
-        value: web3Provider.utils.toWei(amount.toString(), 'ether'),
+        value,
         gas: gasLimit || defaultGasLimit,
         gasPrice: gasPrice || defaultGasPrice,
         nonce: await web3Provider.eth.getTransactionCount(sender, 'latest'),
+        data,
       },
       senderXprv
     );
+
     try {
       return web3Provider.eth
         .sendSignedTransaction(`${signedTransaction.rawTransaction}`)

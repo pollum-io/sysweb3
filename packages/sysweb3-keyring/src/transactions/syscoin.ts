@@ -13,13 +13,14 @@ import {
   txUtils,
   IKeyringAccountState,
   getSigners,
+  getAsset,
+  countDecimals,
 } from '@pollum-io/sysweb3-utils';
 
 type EstimateFeeParams = {
   outputs: { value: number; address: string }[];
   changeAddress: string;
   feeRateBN: any;
-  network: string;
   xpub: string;
   explorerUrl: string;
 };
@@ -31,17 +32,18 @@ export const SyscoinTransactions = () => {
     outputs,
     changeAddress,
     feeRateBN,
-    network,
     xpub,
     explorerUrl,
   }: EstimateFeeParams) => {
+    const { _main } = getSigners();
+
     const txOpts = { rbf: true };
 
     const utxos = await sys.utils.fetchBackendUTXOS(explorerUrl, xpub);
     const utxosSanitized = sys.utils.sanitizeBlockbookUTXOs(
       null,
       utxos,
-      network
+      _main.network
     );
 
     // 0 feerate to create tx, then find bytes and multiply feeRate by bytes to get estimated txfee
@@ -330,7 +332,7 @@ export const SyscoinTransactions = () => {
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    // const { decimals } = await getToken(assetGuid);
+    // const { decimals } = await getAsset(_main.blockbookURL, assetGuid);
 
     const receivingAddress = await _hd.getNewReceivingAddress(true);
     const txOptions = { rbf: true };
@@ -341,8 +343,6 @@ export const SyscoinTransactions = () => {
       amount: new sys.utils.BN(amount * 10 ** 8),
       receivingAddress,
     });
-
-    // todo: trezor handler in pali
 
     const pendingTransaction = await _main.assetSend(
       txOptions,
@@ -671,18 +671,18 @@ export const SyscoinTransactions = () => {
     const { _main } = getSigners();
 
     const { amount, rbf, receivingAddress, fee, token } = temporaryTransaction;
-    // const { decimals } = await getToken(token);
+    const { decimals } = await getAsset(_main.blockbookURL, token);
 
     const txOptions = { rbf };
     const value = new sys.utils.BN(amount * 10 ** 8);
-    // const valueDecimals = countDecimals(amount);
+    const valueDecimals = countDecimals(amount);
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    // if (valueDecimals > 8) {
-    //   throw new Error(
-    //     `This token has ${8} decimals and you are trying to send a value with ${8} decimals, please check your tx`
-    //   );
-    // }
+    if (valueDecimals > decimals) {
+      throw new Error(
+        `This token has ${decimals} decimals and you are trying to send a value with ${decimals} decimals, please check your tx`
+      );
+    }
 
     try {
       const tokenOptions = getTokenMap({
@@ -691,15 +691,6 @@ export const SyscoinTransactions = () => {
         amount: value,
         receivingAddress,
       });
-
-      // todo: move to pali
-      // if (account.currentAccount.isTrezorWallet) {
-      //   return await window.controller.trezor.confirmTokenSend({
-      //     txOptions,
-      //     tokenOptions,
-      //     feeRate,
-      //   });
-      // }
 
       const pendingTransaction = await _main.assetAllocationSend(
         txOptions,
@@ -751,7 +742,6 @@ export const SyscoinTransactions = () => {
       outputs,
       changeAddress,
       feeRateBN: feeRate,
-      network: _hd.Signer.isTestnet ? 'testnet' : 'main',
       xpub,
       explorerUrl: _main.blockbookURL,
     });
@@ -800,7 +790,7 @@ export const SyscoinTransactions = () => {
 
     const { fee, amount, assetGuid }: any = temporaryTransaction;
 
-    // const { decimals } = await getToken(assetGuid);
+    // const { decimals } = await getAsset(assetGuid);
     const feeRate = new sys.utils.BN(fee * 1e8);
     const txOptions = { rbf: true };
 

@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-network",
-  "version": "1.0.17",
+  "version": "1.0.19",
   "description": "A network management tool for multi-chain accounts.",
   "main": "cjs/index.js",
   "repository": {
@@ -26,13 +26,10 @@
     "publish": "npm run prebuild && npm run build && npm run rollup && npm run prerelease && npm run copy && npm run release:npm",
     "type-check": "tsc --pretty --noEmit"
   },
-  "devDependencies": {
-    "@types/web3": "^1.2.2",
-    "axios": "^0.26.1",
-    "web3": "^1.7.1"
-  },
   "dependencies": {
     "@pollum-io/sysweb3-core": "^1.0.12",
-    "@pollum-io/sysweb3-utils": "^1.1.101"
+    "@pollum-io/sysweb3-utils": "^1.1.101",
+    "axios": "^0.26.1",
+    "web3": "^1.7.1"
   }
 }
