@@ -8,7 +8,5 @@
     "resolveJsonModule": true,
     "noImplicitReturns": false
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

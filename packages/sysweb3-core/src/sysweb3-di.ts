@@ -11,7 +11,6 @@ export const SysWeb3Di = () => {
   };
 
   const useFetchHttpClient = (fetchClient?: any) => {
-    // @ts-ignore
     registerHttpClient(FetchRestService(fetchClient));
   };
 

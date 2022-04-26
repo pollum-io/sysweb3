@@ -1,4 +1,13 @@
 import SafeEventEmitter from '@metamask/safe-event-emitter';
+import { generateMnemonic, validateMnemonic, mnemonicToSeed } from 'bip39';
+import { fromZPrv } from 'bip84';
+import CryptoJS from 'crypto-js';
+import { hdkey } from 'ethereumjs-wallet';
+import sys from 'syscoinjs-lib';
+
+import { Web3Accounts } from './accounts';
+import { SyscoinTransactions } from './transactions';
+import { TrezorWallet } from './trezor';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
@@ -12,14 +21,6 @@ import {
   SyscoinMainSigner,
   IKeyringBalances,
 } from '@pollum-io/sysweb3-utils';
-import { generateMnemonic, validateMnemonic, mnemonicToSeed } from 'bip39';
-import { fromZPrv } from 'bip84';
-import CryptoJS from 'crypto-js';
-import { hdkey } from 'ethereumjs-wallet';
-import sys from 'syscoinjs-lib';
-import { Web3Accounts } from './accounts';
-import { SyscoinTransactions } from './transactions';
-import { TrezorWallet } from './trezor';
 
 export const KeyringManager = () => {
   /** keys */
