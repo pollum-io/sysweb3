@@ -27,12 +27,6 @@
     "@pollum-io/sysweb3-core": "^1.0.10",
     "@pollum-io/sysweb3-network": "^1.0.17",
     "@pollum-io/sysweb3-utils": "^1.1.102",
-    "syscointx-js": "^1.0.101"
-  },
-  "devDependencies": {
-    "@types/crypto-js": "^4.1.1",
-    "@types/lodash": "^4.14.179",
-    "@types/node": "^17.0.23",
     "axios": "^0.26.1",
     "bip39": "^3.0.4",
     "coinselectsyscoin": "^1.0.77",
@@ -44,7 +38,13 @@
     "graphql-request": "^4.1.0",
     "lodash": "^4.17.21",
     "syscoinjs-lib": "^1.0.212",
+    "syscointx-js": "^1.0.101",
     "web3": "^1.7.1",
     "web3-utils": "^1.7.1"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.1.1",
+    "@types/lodash": "^4.14.179",
+    "@types/node": "^17.0.23"
   }
 }
