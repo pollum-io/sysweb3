@@ -1,3 +1,4 @@
+import { ObservableStore } from '@metamask/obs-store';
 import SafeEventEmitter from '@metamask/safe-event-emitter';
 import { generateMnemonic, validateMnemonic, mnemonicToSeed } from 'bip39';
 import { fromZPrv } from 'bip84';
@@ -8,7 +9,6 @@ import sys from 'syscoinjs-lib';
 import { Web3Accounts } from './accounts';
 import { SyscoinTransactions } from './transactions';
 import { TrezorWallet } from './trezor';
-import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
   IKeyringAccountState,
@@ -25,7 +25,7 @@ import {
 export const KeyringManager = () => {
   /** keys */
   const web3Wallet = Web3Accounts();
-  const storage = sysweb3.sysweb3Di.getStateStorageDb();
+  const storage = new ObservableStore();
 
   let _password = '';
 
@@ -39,12 +39,12 @@ export const KeyringManager = () => {
 
   const hasHdMnemonic = () => Boolean(hd.mnemonic);
 
-  storage.set('signers-key', {
+  storage.putState({
     mnemonic: '',
     network: wallet.activeNetwork,
     isTestnet: false,
   });
-  storage.set('keyring', {
+  storage.putState({
     wallet,
     isUnlocked: Boolean(
       _password && storage.get('signers-key').mnemonic && hasHdMnemonic()
@@ -55,12 +55,12 @@ export const KeyringManager = () => {
     hd = {} as SyscoinHDSigner;
     main = {} as SyscoinMainSigner;
 
-    storage.set('signers-key', {
+    storage.putState({
       mnemonic: null,
       network: null,
       isTestnet: false,
     });
-    storage.set('signers', { _hd: null, _main: null });
+    storage.putState({ _hd: null, _main: null });
   };
   /** end */
 
@@ -73,7 +73,7 @@ export const KeyringManager = () => {
   /** seeds */
   const getEncryptedMnemonic = () => {
     const encryptedMnemonic = CryptoJS.AES.encrypt(
-      storage.get('signers-key').mnemonic,
+      storage.getState().mnemonic,
       _password
     );
 
@@ -126,8 +126,8 @@ export const KeyringManager = () => {
   };
 
   const _clearTemporaryLocalKeys = () => {
-    storage.set('signers-key', {
-      ...storage.get('signers-key'),
+    storage.putState({
+      ...storage.getState(),
       mnemonic: '',
       network: wallet.activeNetwork,
     });
@@ -145,19 +145,19 @@ export const KeyringManager = () => {
     const serializedWallet = JSON.stringify(wallet);
 
     /** set vault in storage so we can get back the state when logging in */
-    storage.set('vault', serializedWallet);
+    storage.putState({ seralizedWallet: serializedWallet });
 
     return serializedWallet;
   };
 
   const _updateLocalStoreWallet = () => {
-    return storage.set('keyring', { ...storage.get('keyring'), wallet });
+    return storage.putState({ ...storage.getState(), wallet });
   };
 
   const _notifyUpdate = () => {
     const eventEmitter = new SafeEventEmitter();
 
-    eventEmitter.emit('update', storage.get('keyring'));
+    eventEmitter.emit('update', storage.getState());
   };
 
   const _fullUpdate = () => {
@@ -169,12 +169,12 @@ export const KeyringManager = () => {
   const _updateUnlocked = () => {
     const eventEmitter = new SafeEventEmitter();
 
-    storage.set('keyring', { ...storage.get('keyring'), isUnlocked: true });
+    storage.putState({ ...storage.getState(), isUnlocked: true });
     eventEmitter.emit('unlock');
   };
 
   const _unlockWallet = async (password: string): Promise<IWalletState> => {
-    const { wallet: _wallet } = storage.get('keyring');
+    const { wallet: _wallet } = storage.getState();
 
     if (!_wallet) {
       _password = password;
@@ -201,7 +201,7 @@ export const KeyringManager = () => {
     hd = hdsigner;
     main = mainsigner;
 
-    storage.set('signers', { _hd: hdsigner, _main: mainsigner });
+    storage.putState({ _hd: hdsigner, _main: mainsigner });
 
     const xprv = getEncryptedXprv();
 
@@ -222,7 +222,7 @@ export const KeyringManager = () => {
     hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
 
   const _getLatestUpdateForWeb3Accounts = async () => {
-    const { mnemonic, network } = storage.get('signers-key');
+    const { mnemonic, network } = storage.getState();
 
     const { address, privateKey } = web3Wallet.importAccount(mnemonic);
     const balance = await web3Wallet.getBalance(address);
@@ -296,7 +296,7 @@ export const KeyringManager = () => {
   }: {
     isSyscoinChain: boolean;
   }) => {
-    const { mnemonic, network } = storage.get('signers-key');
+    const { mnemonic, network } = storage.getState();
 
     wallet = {
       ...wallet,
@@ -314,13 +314,13 @@ export const KeyringManager = () => {
       hd = hdsigner;
       main = mainsigner;
 
-      storage.set('signers', { _hd: hdsigner, _main: mainsigner });
+      storage.putState({ _hd: hdsigner, _main: mainsigner });
 
       const xprv = getEncryptedXprv();
 
       const { isTestnet } = await validateSysRpc(network.url);
 
-      storage.set('signers-key', { mnemonic, network, isTestnet });
+      storage.putState({ mnemonic, network, isTestnet });
 
       const updatedAccountInfo = await _getLatestUpdateForSysAccount();
 
@@ -399,12 +399,12 @@ export const KeyringManager = () => {
   };
 
   const createSeed = () => {
-    const signers = storage.get('signers-key');
+    const signers = storage.getState();
 
     if (!signers.mnemonic)
-      storage.set('signers-key', { ...signers, mnemonic: generateMnemonic() });
+      storage.putState({ ...signers, mnemonic: generateMnemonic() });
 
-    return storage.get('signers-key').mnemonic;
+    return storage.getState().mnemonic;
   };
 
   const createKeyringVault = async (): Promise<IKeyringAccountState> => {
@@ -421,7 +421,7 @@ export const KeyringManager = () => {
       activeAccount: vault,
     };
 
-    storage.set('keyring', { ...storage.get('keyring'), isUnlocked: true });
+    storage.putState({ ...storage.getState(), isUnlocked: true });
 
     _fullUpdate();
 
@@ -485,8 +485,8 @@ export const KeyringManager = () => {
 
   const validateSeed = (seedphrase: string) => {
     if (validateMnemonic(seedphrase)) {
-      storage.set('signers-key', {
-        ...storage.get('signers-key'),
+      storage.putState({
+        ...storage.getState(),
         mnemonic: seedphrase,
       });
 
@@ -498,7 +498,7 @@ export const KeyringManager = () => {
 
   /** get updates */
   const getLatestUpdateForAccount = async () => {
-    const { wallet: _wallet } = storage.get('keyring');
+    const { wallet: _wallet } = storage.getState();
 
     wallet = _wallet;
 
@@ -518,15 +518,15 @@ export const KeyringManager = () => {
 
   /** networks */
   const _setSignerByChain = async (network: INetwork, chain: string) => {
-    storage.set('signers-key', {
-      mnemonic: storage.get('signers-key').mnemonic,
+    storage.putState({
+      mnemonic: storage.getState().mnemonic,
       network,
     });
 
     if (chain === 'syscoin') {
       const { isTestnet } = await validateSysRpc(network.url);
 
-      storage.set('signers-key', { ...storage.get('signers-key'), isTestnet });
+      storage.putState({ ...storage.getState(), isTestnet });
 
       return;
     }
@@ -537,8 +537,8 @@ export const KeyringManager = () => {
 
     setActiveNetwork(newNetwork);
 
-    storage.set('signers-key', {
-      ...storage.get('signers-key'),
+    storage.putState({
+      ...storage.getState(),
       isTestnet: false,
     });
   };
@@ -609,7 +609,7 @@ export const KeyringManager = () => {
       main = _main;
     }
 
-    const { network, mnemonic } = storage.get('signers-key');
+    const { network, mnemonic } = storage.getState();
 
     const isSyscoinChain = Boolean(wallet.networks.syscoin[network.chainId]);
 
@@ -637,7 +637,7 @@ export const KeyringManager = () => {
         xprv,
       });
 
-      const { wallet: _wallet } = storage.get('keyring');
+      const { wallet: _wallet } = storage.getState();
 
       wallet = {
         ..._wallet,
@@ -697,7 +697,7 @@ export const KeyringManager = () => {
       ...createdAccount,
     };
 
-    const { wallet: _wallet } = storage.get('keyring');
+    const { wallet: _wallet } = storage.getState();
 
     wallet = {
       ..._wallet,
@@ -719,7 +719,7 @@ export const KeyringManager = () => {
   };
 
   const setActiveAccount = async (accountId: number) => {
-    const { wallet: _wallet } = storage.get('keyring');
+    const { wallet: _wallet } = storage.getState();
 
     wallet = {
       ..._wallet,
