@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-keyring",
-  "version": "1.0.218",
+  "version": "1.0.224",
   "description": "",
   "main": "cjs/index.js",
   "repository": {
@@ -37,6 +37,7 @@
     "ethers": "^5.6.4",
     "graphql": "^16.3.0",
     "graphql-request": "^4.1.0",
+    "localforage": "^1.10.0",
     "lodash": "^4.17.21",
     "syscoinjs-lib": "^1.0.212",
     "syscointx-js": "^1.0.101",
