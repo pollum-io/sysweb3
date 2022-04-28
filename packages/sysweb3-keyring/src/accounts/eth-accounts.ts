@@ -45,7 +45,7 @@ export const Web3Accounts = () => {
       return roundedBalance;
     } catch (error) {
       // todo: handle error
-      console.log(`${error}`);
+      console.error(`${error}`);
 
       return 0;
     }
@@ -78,7 +78,7 @@ export const Web3Accounts = () => {
       return;
     } catch (error) {
       // todo: handle error
-      console.log(error);
+      console.error(error);
       throw error;
     }
   };
@@ -158,7 +158,7 @@ export const Web3Accounts = () => {
       return account;
     } catch (error) {
       // todo: handle
-      console.log(error);
+      console.error(error);
       throw error;
     }
   };
@@ -179,7 +179,7 @@ export const Web3Accounts = () => {
       }
       return [];
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -207,7 +207,6 @@ export const Web3Accounts = () => {
           alert(result.error.message);
         }
         if (result.error) return console.error('ERROR', result);
-        console.log('TYPED SIGNED:' + JSON.stringify(result.result));
 
         const recovered = sigUtil.recoverTypedSignature_v4({
           data: JSON.parse(msg),
