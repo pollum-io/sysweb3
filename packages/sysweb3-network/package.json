@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-network",
-  "version": "1.0.20",
+  "version": "1.0.23",
   "description": "A network management tool for multi-chain accounts.",
   "main": "cjs/index.js",
   "repository": {
@@ -27,8 +27,8 @@
     "type-check": "tsc --pretty --noEmit"
   },
   "dependencies": {
-    "@pollum-io/sysweb3-core": "^1.0.14",
-    "@pollum-io/sysweb3-utils": "^1.1.109",
+    "@pollum-io/sysweb3-core": "^1.0.15",
+    "@pollum-io/sysweb3-utils": "^1.1.117",
     "axios": "^0.26.1",
     "web3": "^1.7.1"
   }
