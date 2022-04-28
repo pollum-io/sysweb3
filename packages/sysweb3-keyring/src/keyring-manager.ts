@@ -25,7 +25,7 @@ import {
 export const KeyringManager = () => {
   /** keys */
   const web3Wallet = Web3Accounts();
-  const storage = new ObservableStore();
+  const storage: any = new ObservableStore(initialWalletState);
 
   let _password = '';
 
@@ -47,7 +47,7 @@ export const KeyringManager = () => {
   storage.putState({
     wallet,
     isUnlocked: Boolean(
-      _password && storage.get('signers-key').mnemonic && hasHdMnemonic()
+      _password && storage.getState().mnemonic && hasHdMnemonic()
     ),
   });
 
@@ -222,7 +222,8 @@ export const KeyringManager = () => {
     hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
 
   const _getLatestUpdateForWeb3Accounts = async () => {
-    const { mnemonic, network } = storage.getState();
+    const mnemonic = storage.getState().mnemonic;
+    const network = storage.getState().network;
 
     const { address, privateKey } = web3Wallet.importAccount(mnemonic);
     const balance = await web3Wallet.getBalance(address);
@@ -296,7 +297,8 @@ export const KeyringManager = () => {
   }: {
     isSyscoinChain: boolean;
   }) => {
-    const { mnemonic, network } = storage.getState();
+    const mnemonic = storage.getState().mnemonic;
+    const network = storage.getState().network;
 
     wallet = {
       ...wallet,
@@ -498,9 +500,7 @@ export const KeyringManager = () => {
 
   /** get updates */
   const getLatestUpdateForAccount = async () => {
-    const { wallet: _wallet } = storage.getState();
-
-    wallet = _wallet;
+    const wallet = storage.getState().wallet;
 
     _updateLocalStoreWallet();
 
@@ -609,7 +609,8 @@ export const KeyringManager = () => {
       main = _main;
     }
 
-    const { network, mnemonic } = storage.getState();
+    const mnemonic = storage.getState().mnemonic;
+    const network = storage.getState().network;
 
     const isSyscoinChain = Boolean(wallet.networks.syscoin[network.chainId]);
 
@@ -637,7 +638,7 @@ export const KeyringManager = () => {
         xprv,
       });
 
-      const { wallet: _wallet } = storage.getState();
+      const _wallet = storage.getState().wallet;
 
       wallet = {
         ..._wallet,
@@ -697,7 +698,7 @@ export const KeyringManager = () => {
       ...createdAccount,
     };
 
-    const { wallet: _wallet } = storage.getState();
+    const _wallet = storage.getState();
 
     wallet = {
       ..._wallet,
@@ -719,7 +720,7 @@ export const KeyringManager = () => {
   };
 
   const setActiveAccount = async (accountId: number) => {
-    const { wallet: _wallet } = storage.getState();
+    const _wallet = storage.getState();
 
     wallet = {
       ..._wallet,
