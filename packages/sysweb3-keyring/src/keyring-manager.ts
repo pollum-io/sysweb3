@@ -514,7 +514,7 @@ export const KeyringManager = () => {
   };
 
   const forgetMainWallet = (pwd: string) => {
-    if (checkPassword(pwd)) return new Error('Invalid password');
+    if (!checkPassword(pwd)) throw new Error('Invalid password');
 
     _clearTemporaryLocalKeys();
 
