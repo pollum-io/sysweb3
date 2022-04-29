@@ -59,7 +59,13 @@ export const KeyringManager = () => {
   /** end */
 
   /** validations */
-  const checkPassword = (pwd: string) => _password === pwd;
+  const checkPassword = (pwd: string) => {
+    if (_password === '') {
+      _password = String(window.localStorage.getItem('password'));
+      return _password === pwd;
+    }
+    return _password === pwd;
+  };
 
   const isUnlocked = () => Boolean(hasHdMnemonic() && _password);
   /** end */
@@ -166,6 +172,12 @@ export const KeyringManager = () => {
   const _unlockWallet = async (password: string): Promise<IWalletState> => {
     const { wallet: _wallet } = storage.get('keyring');
 
+    if (_wallet === undefined || _wallet === null) {
+      const walletStorage: any = window.localStorage.getItem('wallet');
+      wallet = walletStorage;
+      return wallet;
+    }
+
     if (!_wallet) {
       _password = password;
 
@@ -192,6 +204,20 @@ export const KeyringManager = () => {
     main = mainsigner;
 
     storage.set('signers', { _hd: hdsigner, _main: mainsigner });
+    window.localStorage.setItem(
+      'signers',
+      JSON.stringify({ hd: hd, main: main })
+    );
+    window.localStorage.setItem(
+      'signers',
+      JSON.stringify({ hd: hd, main: main })
+    );
+    window.localStorage.setItem('networks', JSON.stringify(wallet.networks));
+    window.localStorage.setItem('password', _password);
+    window.localStorage.setItem(
+      'mnemonic',
+      storage.get('signers-key').mnemonic
+    );
 
     const xprv = getEncryptedXprv();
 
@@ -441,7 +467,7 @@ export const KeyringManager = () => {
     };
 
     storage.set('keyring', { wallet, isUnlocked: true });
-
+    window.localStorage.setItem('wallet', JSON.stringify(wallet));
     _fullUpdate();
 
     return vault;
@@ -508,7 +534,7 @@ export const KeyringManager = () => {
         ...storage.get('signers-key'),
         mnemonic: seedphrase,
       });
-
+      window.localStorage.setItem('mnemonic', seedphrase);
       return true;
     }
 
