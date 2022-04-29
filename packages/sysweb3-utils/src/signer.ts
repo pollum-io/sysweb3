@@ -72,8 +72,25 @@ export const MainSigner = ({
 
 export const getSigners = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
+  const signerLocalStorage: any = window.localStorage.getItem('signers');
+  const walletLocalStorage: any = window.localStorage.getItem('wallet');
 
   const { mnemonic, network, isTestnet } = storage.get('signers-key');
+
+  if (
+    storage.get('signers-key').mnemonic === '' ||
+    storage.get('signers-key') === undefined
+  ) {
+    const { hd: _hd, main: _main } = MainSigner({
+      walletMnemonic: String(window.localStorage.getItem('mnemonic')),
+      isTestnet: Boolean(JSON.parse(signerLocalStorage).hd.Signer.isTestnet),
+      blockbookURL: String(JSON.parse(walletLocalStorage).activeNetwork.url),
+    });
+    return {
+      _hd,
+      _main,
+    };
+  }
 
   const { hd: _hd, main: _main } = MainSigner({
     walletMnemonic: mnemonic,

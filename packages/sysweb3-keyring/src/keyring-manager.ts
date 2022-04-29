@@ -170,12 +170,22 @@ export const KeyringManager = () => {
   };
 
   const _unlockWallet = async (password: string): Promise<IWalletState> => {
-    const { wallet: _wallet } = storage.get('keyring');
-
-    if (_wallet === undefined || _wallet === null) {
-      const walletStorage: any = window.localStorage.getItem('wallet');
-      wallet = walletStorage;
-      return wallet;
+    let _wallet: any;
+    const walletLocalStorage: any = window.localStorage.getItem('wallet');
+    if (
+      storage.get('keyring') === undefined ||
+      storage.get('keyring') === null
+    ) {
+      _wallet = JSON.parse(walletLocalStorage);
+      _password = password;
+      wallet = _wallet;
+      return _wallet;
+    } else {
+      _wallet = storage.get('keyring');
+      _password = password;
+      wallet = _wallet;
+      storage.set('keyring', { ...storage.get('keyring'), wallet });
+      return _wallet;
     }
 
     if (!_wallet) {
@@ -238,7 +248,16 @@ export const KeyringManager = () => {
     hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
 
   const _getLatestUpdateForWeb3Accounts = async () => {
-    const { mnemonic, network } = storage.get('signers-key');
+    let mnemonic: any;
+    let network: any;
+    const walletLocalStorage: any = window.localStorage.getItem('wallet');
+    if (storage.get('signers-key') === undefined) {
+      mnemonic = window.localStorage.getItem('mnemonic');
+      network = JSON.parse(walletLocalStorage).activeNetwork;
+    } else {
+      mnemonic = storage.get('signers-key').mnemonic;
+      network = storage.get('signers-key').network;
+    }
 
     const { address, privateKey } = web3Wallet.importAccount(mnemonic);
     const balance = await web3Wallet.getBalance(address);
@@ -311,8 +330,22 @@ export const KeyringManager = () => {
   }: {
     isSyscoinChain: boolean;
   }) => {
-    const { mnemonic, network } = storage.get('signers-key');
-    const { wallet: _wallet } = storage.get('keyring');
+    let mnemonic: any;
+    let network: any;
+    let _wallet: any;
+    const walletLocalStorage: any = window.localStorage.getItem('wallet');
+    if (storage.get('signers-key') === undefined) {
+      mnemonic = window.localStorage.getItem('mnemonic');
+      network = JSON.parse(walletLocalStorage).activeNetwork;
+    } else {
+      mnemonic = storage.get('signers-key').mnemonic;
+      network = storage.get('signers-key').network;
+    }
+    if (storage.get('keyring') === undefined) {
+      _wallet = JSON.parse(walletLocalStorage);
+    } else {
+      _wallet = storage.get('keyring').wallet;
+    }
 
     wallet = {
       ..._wallet,
@@ -400,7 +433,7 @@ export const KeyringManager = () => {
     receivingAddress: string;
   }> => {
     const { wallet: _wallet } = storage.get('keyring');
-
+    const hdLocalStorage: any = window.localStorage.getItem('signers');
     if (!hd.mnemonic) {
       const { _hd, _main } = getSigners();
 
@@ -408,7 +441,13 @@ export const KeyringManager = () => {
       main = _main;
     }
 
-    const { _hd } = storage.get('signers');
+    let _hd;
+
+    if (storage.get('signers') === undefined) {
+      _hd = JSON.parse(hdLocalStorage).hd;
+    } else {
+      _hd = storage.get('signers')._hd;
+    }
 
     const hdAccounts = _hd.Signer.accounts;
 
@@ -543,7 +582,13 @@ export const KeyringManager = () => {
 
   /** get updates */
   const getLatestUpdateForAccount = async () => {
-    const { wallet: _wallet } = storage.get('keyring');
+    let _wallet: any;
+    const walletLocalStorage: any = window.localStorage.getItem('wallet');
+    if (storage.get('keyring') === undefined) {
+      _wallet = JSON.parse(walletLocalStorage);
+    } else {
+      _wallet = storage.get('keyring').wallet;
+    }
 
     wallet = _wallet;
 
