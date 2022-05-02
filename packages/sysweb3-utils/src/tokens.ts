@@ -203,7 +203,7 @@ export const validateToken = async (
   address: string
 ): Promise<IErc20Token | Error> => {
   try {
-    const contract = await createContractUsingAbi(abi, address);
+    const contract = await createContractUsingAbi(abi20, address);
 
     const [decimals, name, symbol]: IErc20Token[] = await Promise.all([
       contract.methods.decimals().call(),
