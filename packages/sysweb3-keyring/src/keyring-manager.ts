@@ -359,12 +359,23 @@ export const KeyringManager = () => {
 
       storage.set('signers-key', { mnemonic, network, isTestnet });
 
+      window.localStorage.setItem('isTestnet', `${isTestnet}`);
+      window.localStorage.setItem('networkUrl', network.url);
+
       const { _hd, _main } = getSigners();
 
       hd = _hd;
       main = _main;
 
-      const { _hd: hdSignerFromStorage } = storage.get('signers');
+      let hdSignerFromStorage: any;
+
+      if (storage.get('signers') === undefined) {
+        hdSignerFromStorage = JSON.parse(
+          window.localStorage.getItem('signers')
+        ).hd;
+      } else {
+        hdSignerFromStorage = storage.get('signers')._hd;
+      }
 
       const hdAccounts = hdSignerFromStorage.Signer.accounts;
 
@@ -818,6 +829,7 @@ export const KeyringManager = () => {
     };
 
     storage.set('keyring', { ...storage.get('keyring'), wallet });
+    window.localStorage.setItem('wallet', JSON.stringify(wallet));
   };
 
   return {

@@ -72,8 +72,6 @@ export const MainSigner = ({
 
 export const getSigners = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
-  const signerLocalStorage: any = window.localStorage.getItem('signers');
-  const walletLocalStorage: any = window.localStorage.getItem('wallet');
 
   const { mnemonic, network, isTestnet } = storage.get('signers-key');
 
@@ -83,8 +81,8 @@ export const getSigners = () => {
   ) {
     const { hd: _hd, main: _main } = MainSigner({
       walletMnemonic: String(window.localStorage.getItem('mnemonic')),
-      isTestnet: Boolean(JSON.parse(signerLocalStorage).hd.Signer.isTestnet),
-      blockbookURL: String(JSON.parse(walletLocalStorage).activeNetwork.url),
+      isTestnet: Boolean(window.localStorage.getItem('isTestnet')),
+      blockbookURL: String(window.localStorage.getItem('networkUrl')),
     });
     return {
       _hd,
