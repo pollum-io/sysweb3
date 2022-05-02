@@ -91,20 +91,10 @@ export const getFiatValueByToken = async (
 }> => {
   try {
     const {
-      data: { coins },
-    } = await axios.get(
-      `https://api.coingecko.com/api/v3/search?query=${token}`
-    );
+      data: { market_data },
+    } = await axios.get(`https://api.coingecko.com/api/v3/coins/${token}`);
 
-    const tokenFiltered = await coins.filter(
-      (coin: any) => coin.symbol === token.toUpperCase()
-    );
-
-    const response = await axios.get(
-      `https://api.coingecko.com/api/v3/coins/${tokenFiltered[0].id}`
-    );
-
-    const { price_change_24h, current_price } = response.data.market_data;
+    const { price_change_24h, current_price } = market_data;
 
     return {
       price: current_price[fiat],
@@ -213,7 +203,7 @@ export const validateToken = async (
   address: string
 ): Promise<IErc20Token | Error> => {
   try {
-    const contract = await createContractUsingAbi(abi, address);
+    const contract = await createContractUsingAbi(abi20, address);
 
     const [decimals, name, symbol]: IErc20Token[] = await Promise.all([
       contract.methods.decimals().call(),
