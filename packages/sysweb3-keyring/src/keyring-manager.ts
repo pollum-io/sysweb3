@@ -706,6 +706,7 @@ export const KeyringManager = () => {
       const xpub = hd.getAccountXpub();
 
       storage.set('signers', { _hd: hd, _main: main });
+      window.localStorage.setItem('signers', JSON.stringify({ hd, main }));
 
       const formattedBackendAccount = await _getFormattedBackendAccount({
         url: main.blockbookURL || wallet.activeNetwork.url,
@@ -739,7 +740,7 @@ export const KeyringManager = () => {
       };
 
       storage.set('keyring', { ...storage.get('keyring'), wallet });
-
+      window.localStorage.setItem('wallet', JSON.stringify(wallet));
       return {
         ...account,
         id,
