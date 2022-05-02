@@ -1,10 +1,10 @@
-import axios, { AxiosResponse } from "axios";
-import sys from "syscoinjs-lib";
+import axios, { AxiosResponse } from 'axios';
+import sys from 'syscoinjs-lib';
 
-import { IEthereumAddress, createContractUsingAbi } from ".";
-import abi20 from "./abi/erc20.json";
-import abi from "./abi/erc721.json";
-import tokens from "./tokens.json";
+import { IEthereumAddress, createContractUsingAbi } from '.';
+import abi20 from './abi/erc20.json';
+import abi from './abi/erc721.json';
+import tokens from './tokens.json';
 
 /**
  *
@@ -22,18 +22,19 @@ export const getNftImage = async (
       .call();
 
     if (nft) {
-      const ipfsUrl = String(nft).replace("ipfs://", "https://ipfs.io/ipfs/");
+      const ipfsUrl = String(nft).replace('ipfs://', 'https://ipfs.io/ipfs/');
 
       const url = await axios.get(ipfsUrl);
 
-      return String(url.data.image).replace("ipfs://", "https://ipfs.io/ipfs/");
+      return String(url.data.image).replace('ipfs://', 'https://ipfs.io/ipfs/');
     }
 
-    throw new Error("NFTinfo not found.");
+    throw new Error('NFTinfo not found.');
   } catch (error) {
-    console.log(
-      "Verify current network. Set the same network of NFT contract."
+    console.error(
+      'Verify current network. Set the same network of NFT contract.'
     );
+
     throw error;
   }
 };
@@ -54,7 +55,7 @@ export const getTokenIconBySymbol = async (
       return tokens[0].thumb;
     }
   } catch (error) {
-    throw new Error("Token icon not found");
+    throw new Error('Token icon not found');
   }
 };
 
@@ -65,7 +66,7 @@ export const isNFT = (guid: number) => {
 };
 
 export const getHost = (url: string) => {
-  if (typeof url === "string" && url !== "") {
+  if (typeof url === 'string' && url !== '') {
     return new URL(url).host;
   }
 
@@ -89,11 +90,11 @@ export const getFiatValueByToken = async (
   priceChange: number;
 }> => {
   try {
-    const response = await axios.get(
-      `https://api.coingecko.com/api/v3/coins/${token}`
-    );
+    const {
+      data: { market_data },
+    } = await axios.get(`https://api.coingecko.com/api/v3/coins/${token}`);
 
-    const { price_change_24h, current_price } = response.data.market_data;
+    const { price_change_24h, current_price } = market_data;
 
     return {
       price: current_price[fiat],
@@ -190,7 +191,7 @@ export const importWeb3Token = async (
 
     return {} as EthTokenDetails;
   } catch (error) {
-    throw new Error("Token not found, verify the Token Contract Address.");
+    throw new Error('Token not found, verify the Token Contract Address.');
   }
 };
 
@@ -202,7 +203,7 @@ export const validateToken = async (
   address: string
 ): Promise<IErc20Token | Error> => {
   try {
-    const contract = await createContractUsingAbi(abi, address);
+    const contract = await createContractUsingAbi(abi20, address);
 
     const [decimals, name, symbol]: IErc20Token[] = await Promise.all([
       contract.methods.decimals().call(),
@@ -220,9 +221,9 @@ export const validateToken = async (
       };
     }
 
-    return new Error("Invalid token");
+    return new Error('Invalid token');
   } catch (error) {
-    throw new Error("Token not found, verify the Token Contract Address.");
+    throw new Error('Token not found, verify the Token Contract Address.');
   }
 };
 
@@ -245,7 +246,7 @@ export const getAsset = async (
 export const countDecimals = (x: number) => {
   if (Math.floor(x) === x) return 0;
 
-  return x.toString().split(".")[1].length || 0;
+  return x.toString().split('.')[1].length || 0;
 };
 
 /** types */
@@ -305,9 +306,9 @@ export type IErc20Token = {
 };
 
 export enum IKeyringTokenType {
-  SYS = "SYS",
-  ETH = "ETH",
-  ERC20 = "ERC20",
+  SYS = 'SYS',
+  ETH = 'ETH',
+  ERC20 = 'ERC20',
 }
 
 export type ISyscoinToken = {
