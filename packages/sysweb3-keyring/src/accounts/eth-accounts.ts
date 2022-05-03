@@ -8,7 +8,7 @@ import _ from 'lodash';
 import { Account, TransactionReceipt } from 'web3-core';
 
 import { web3Provider } from '@pollum-io/sysweb3-network';
-import { getErc20Abi } from '@pollum-io/sysweb3-utils';
+import { createContractUsingAbi, getErc20Abi } from '@pollum-io/sysweb3-utils';
 
 export const Web3Accounts = () => {
   /**
@@ -50,6 +50,38 @@ export const Web3Accounts = () => {
       return 0;
     }
   };
+
+   /**
+   * This function should return the balance of any token using the current account.
+   *
+   * @param {string} tokenAddress
+   * @param {string} walletAddress
+   *
+   * @example
+   *
+   * ```
+   * <button onClick={getBalanceOfAnyToken('0x000000000000000', '0x000000000000000')}>Get balance of token</button>
+   * ```
+   */
+
+
+  const getBalanceOfAnyToken = async (tokenAddress: string, walletAddress:string): Promise<number> => {
+    try {
+      const abi = getErc20Abi() as any;
+      const balance =  await (await createContractUsingAbi(abi, tokenAddress)).methods
+      .balanceOf(walletAddress)
+      .call();
+
+      const formattedBalance = web3Provider.utils.fromWei(balance);
+
+      const roundedBalance = _.floor(parseFloat(formattedBalance), 4);
+
+      return roundedBalance;
+    } catch (error) {
+      console.log(`${error}`)
+      return 0;
+    }
+  }
 
   /**
    * This function should return a user NFT object (if account have any NFT).
@@ -363,6 +395,7 @@ export const Web3Accounts = () => {
   return {
     createAccount,
     getBalance,
+    getBalanceOfAnyToken,
     getTokens,
     getNftsByAddress,
     importAccount,
