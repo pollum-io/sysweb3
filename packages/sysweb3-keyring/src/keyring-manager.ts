@@ -253,7 +253,7 @@ export const KeyringManager = () => {
         {
           id: tokenId,
           name,
-          symbol,
+          symbol: String(symbol).toUpperCase(),
           decimals: 18,
           description: en,
           image: thumb,
