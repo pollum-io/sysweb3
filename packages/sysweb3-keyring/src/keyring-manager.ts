@@ -235,7 +235,14 @@ export const KeyringManager = () => {
     );
 
     return {
-      assets: [],
+      assets: [
+        {
+          id: 'ethereum',
+          name: 'ethereum',
+          symbol: 'ETH',
+          decimals: 18,
+        },
+      ],
       id,
       isTrezorWallet: false,
       label: `Account ${id}`,

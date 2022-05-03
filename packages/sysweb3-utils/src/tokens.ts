@@ -152,44 +152,36 @@ export const getSearch = async (query: string): Promise<AxiosResponse> => {
  *
  * @param tokenAddress Contract address of the token to get info from
  */
-export const importWeb3Token = async (
-  tokenAddress: string
-): Promise<EthTokenDetails> => {
+
+export const getWeb3TokenData = async (tokenAddress: string) => {
   try {
-    const contract = await createContractUsingAbi(abi20, tokenAddress);
-
-    const [tokenDecimals, tokenName, tokenSymbol]: IErc20Token[] =
-      await Promise.all([
-        contract.methods.decimals().call(),
-        contract.methods.name().call(),
-        contract.methods.symbol().call(),
-      ]);
-
-    const validToken = tokenDecimals && tokenName && tokenSymbol;
-
-    if (validToken) {
-      const {
-        data: {
-          id,
-          description: { en: description },
-        },
-      } = await axios.get(
-        `https://api.coingecko.com/api/v3/coins/${tokenName
-          .toString()
-          .toLowerCase()}`
-      );
-
-      return {
+    const {
+      data: {
         id,
-        symbol: String(tokenSymbol),
-        name: String(tokenName),
-        decimals: Number(tokenDecimals),
-        description,
-        contract: tokenAddress,
-      };
-    }
+        symbol,
+        name,
+        asset_platform_id,
+        description: { en },
+        links: { homepage },
+        blockchain_site,
+        image: { thumb },
+        current_price,
+      },
+    } = await axios.get(
+      `https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenAddress}`
+    );
 
-    return {} as EthTokenDetails;
+    return {
+      id,
+      symbol,
+      name,
+      asset_platform_id,
+      description: en,
+      links: homepage[0],
+      explorer: blockchain_site[0],
+      image: thumb,
+      current_price,
+    };
   } catch (error) {
     throw new Error('Token not found, verify the Token Contract Address.');
   }
