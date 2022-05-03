@@ -3,6 +3,7 @@
   "version": "1.0.283",
   "description": "",
   "main": "cjs/index.js",
+  "types": "types/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Pollum-io/sysweb3.git"
