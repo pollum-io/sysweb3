@@ -1,4 +1,5 @@
 import SafeEventEmitter from '@metamask/safe-event-emitter';
+import axios from 'axios';
 import { generateMnemonic, validateMnemonic, mnemonicToSeed } from 'bip39';
 import { fromZPrv } from 'bip84';
 import CryptoJS from 'crypto-js';
@@ -21,8 +22,6 @@ import {
   SyscoinMainSigner,
   IKeyringBalances,
 } from '@pollum-io/sysweb3-utils';
-
-import axios from 'axios'
 
 export const KeyringManager = () => {
   /** keys */
@@ -236,7 +235,18 @@ export const KeyringManager = () => {
         : 'homestead'
     );
 
-    const {data: { id: tokenId, symbol, name, description: { en }, image: { thumb }, current_price, market_cap_rank, links:{blockchain_site} }} = await axios.get('https://api.coingecko.com/api/v3/coins/ethereum');
+    const {
+      data: {
+        id: tokenId,
+        symbol,
+        name,
+        description: { en },
+        image: { thumb },
+        current_price,
+        market_cap_rank,
+        links: { blockchain_site },
+      },
+    } = await axios.get('https://api.coingecko.com/api/v3/coins/ethereum');
 
     return {
       assets: [
@@ -249,7 +259,7 @@ export const KeyringManager = () => {
           image: thumb,
           current_price,
           market_cap_rank,
-          explorer_link: blockchain_site[0]
+          explorer_link: blockchain_site[0],
         },
       ],
       id,
