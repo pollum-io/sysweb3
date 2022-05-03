@@ -22,6 +22,8 @@ import {
   IKeyringBalances,
 } from '@pollum-io/sysweb3-utils';
 
+import axios from 'axios'
+
 export const KeyringManager = () => {
   /** keys */
   const web3Wallet = Web3Accounts();
@@ -234,13 +236,20 @@ export const KeyringManager = () => {
         : 'homestead'
     );
 
+    const {data: { id: tokenId, symbol, name, description: { en }, image: { thumb }, current_price, market_cap_rank, links:{blockchain_site} }} = await axios.get('https://api.coingecko.com/api/v3/coins/ethereum');
+
     return {
       assets: [
         {
-          id: 'ethereum',
-          name: 'ethereum',
-          symbol: 'ETH',
+          id: tokenId,
+          name,
+          symbol,
           decimals: 18,
+          description: en,
+          image: thumb,
+          current_price,
+          market_cap_rank,
+          explorer_link: blockchain_site[0]
         },
       ],
       id,
