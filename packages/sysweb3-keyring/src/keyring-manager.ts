@@ -37,6 +37,7 @@ export const KeyringManager = () => {
     wallet.activeNetwork.url
   );
 
+  //? rename to hasMnemonic
   const hasHdMnemonic = () => Boolean(hd.mnemonic);
 
   storage.set('signers-key', {
@@ -46,6 +47,7 @@ export const KeyringManager = () => {
   });
 
   const forgetSigners = () => {
+    //? this is very dangerous
     hd = {} as SyscoinHDSigner;
     main = {} as SyscoinMainSigner;
 
@@ -81,6 +83,8 @@ export const KeyringManager = () => {
     ).toString();
 
     return decryptedMnemonic;
+    //? should be just
+    // return storage.get('signers-key').mnemonic;
   };
 
   const getSeed = (pwd: string) => (checkPassword(pwd) ? hd.mnemonic : null);
@@ -99,8 +103,10 @@ export const KeyringManager = () => {
     return account ? account.xprv : null;
   };
 
+  //? rename to getXpub
   const getAccountXpub = (): string => hd.getAccountXpub();
 
+  //? should have a null return
   const getAccountById = (id: number): IKeyringAccountState =>
     Object.values(wallet.accounts).find((account) => account.id === id) ||
     ({} as IKeyringAccountState);
@@ -208,6 +214,7 @@ export const KeyringManager = () => {
     return account;
   };
 
+  //? rename to getPrivateKey or getHDPrivateKey
   const _getEncryptedPrivateKeyFromHd = () =>
     hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
 
@@ -366,6 +373,7 @@ export const KeyringManager = () => {
     };
   };
 
+  //? rename to _getUpdatedAccount
   const _getLatestUpdateForSysAccount = async (): Promise<{
     xpub: string;
     balances: IKeyringBalances;
@@ -413,10 +421,15 @@ export const KeyringManager = () => {
   /** end */
 
   /** keyring */
+  //? rename to setPassword
   const setWalletPassword = (pwd: string) => {
     _password = pwd;
   };
 
+  //? this gets the seed (without password)
+  //? maybe rename to getOrCreateSeed
+  //? this should just create the seed
+  //? does this belong to keyring manager?
   const createSeed = () => {
     const signers = storage.get('signers-key');
 
@@ -426,6 +439,7 @@ export const KeyringManager = () => {
     return storage.get('signers-key').mnemonic;
   };
 
+  //? rename to createVault
   const createKeyringVault = async (): Promise<IKeyringAccountState> => {
     _clearWallet();
 
@@ -487,6 +501,7 @@ export const KeyringManager = () => {
     txs.signMessage(account, msgParams.data, opts);
   };
 
+  //? rename to forgetWallet
   const forgetMainWallet = (pwd: string) => {
     if (!checkPassword(pwd)) throw new Error('Invalid password');
 
@@ -499,9 +514,12 @@ export const KeyringManager = () => {
     _fullUpdate();
   };
 
+  //? standardize xprv or privateKey
   const getEncryptedXprv = () =>
     CryptoJS.AES.encrypt(_getEncryptedPrivateKeyFromHd(), _password).toString();
 
+  //? should have a different name
+  //? this should only validate, not assing
   const validateSeed = (seedphrase: string) => {
     if (validateMnemonic(seedphrase)) {
       storage.set('signers-key', {
@@ -516,6 +534,7 @@ export const KeyringManager = () => {
   };
 
   /** get updates */
+  //? updateAccount or getUpdatedAccount
   const getLatestUpdateForAccount = async () => {
     const { wallet: _wallet } = storage.get('keyring');
 
@@ -563,6 +582,7 @@ export const KeyringManager = () => {
   };
 
   /** networks */
+  //? why does this returns an account?
   const setSignerNetwork = async (
     network: INetwork,
     chain: string
@@ -586,6 +606,8 @@ export const KeyringManager = () => {
       isSyscoinChain: chain === 'syscoin',
     });
 
+    //? wallet has 2 assings very close
+    //? this kind of assign is very bad
     wallet = {
       ...wallet,
       accounts: {
@@ -595,6 +617,7 @@ export const KeyringManager = () => {
       activeAccount: account,
     };
 
+    //? why is this duplicated?
     _fullUpdate();
 
     return account;
@@ -732,11 +755,13 @@ export const KeyringManager = () => {
     return initialAccount;
   };
 
+  //? what if removing the active network?
   const removeNetwork = (chain: string, chainId: number) => {
     // @ts-ignore
     delete wallet.networks[chain][chainId];
   };
 
+  //? no need to be async
   const setActiveAccount = async (accountId: number) => {
     const { wallet: _wallet } = storage.get('keyring');
 
@@ -749,36 +774,36 @@ export const KeyringManager = () => {
   };
 
   return {
-    validateSeed,
-    setWalletPassword,
-    createSeed,
-    createKeyringVault,
-    getAccountById,
-    checkPassword,
-    isUnlocked,
-    getEncryptedMnemonic,
-    getDecryptedMnemonic,
-    getState,
-    getNetwork,
-    getPrivateKeyByAccountId,
-    logout,
-    login,
-    getAccounts,
-    removeAccount,
-    signMessage,
-    forgetMainWallet,
-    getEncryptedXprv,
-    txs,
-    trezor,
-    getAccountXpub,
-    getLatestUpdateForAccount,
-    setSignerNetwork,
-    getSeed,
-    hasHdMnemonic,
-    forgetSigners,
+    validateSeed, // done
+    setWalletPassword, // done
+    createSeed, // done
+    createKeyringVault, // done
+    getAccountById, // done
+    checkPassword, // done
+    isUnlocked, // ?
+    getEncryptedMnemonic, // ?
+    getDecryptedMnemonic, // ?
+    getState, // done
+    getNetwork, // done
+    getPrivateKeyByAccountId, // done
+    logout, // ?
+    login, // ?
+    getAccounts, // done
+    removeAccount, // done
+    signMessage, // ?
+    forgetMainWallet, // done
+    getEncryptedXprv, // done
+    txs, // no need
+    trezor, // no need
+    getAccountXpub, // done
+    getLatestUpdateForAccount, // done
+    setSignerNetwork, // done
+    getSeed, // done
+    hasHdMnemonic, // done
+    forgetSigners, // done
     setAccountIndexForDerivedAccount,
-    addNewAccount,
-    removeNetwork,
-    setActiveAccount,
+    addNewAccount, // done
+    removeNetwork, // done
+    setActiveAccount, // done
   };
 };
