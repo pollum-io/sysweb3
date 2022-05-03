@@ -1,10 +1,12 @@
 import { KeyringManager } from '../src/keyring-manager';
 import { FAKE_PASSWORD, FAKE_SEED_PHRASE } from './constants';
+import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { networks } from '@pollum-io/sysweb3-network';
 import { initialWalletState } from '@pollum-io/sysweb3-utils';
 
 describe('', () => {
   const keyringManager = KeyringManager();
+  const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
   jest.setTimeout(20000); // 20s
 
@@ -161,6 +163,23 @@ describe('', () => {
 
     const wallet = keyringManager.getState();
     expect(57 in wallet.networks.syscoin).toBe(false);
+  });
+
+  //* getLatestUpdateForAccount
+  it('should get an updated account', async () => {
+    const account = await keyringManager.getLatestUpdateForAccount();
+
+    expect(account).toBeDefined();
+  });
+
+  //* forgetSigners
+  it('should forget the signers', async () => {
+    keyringManager.forgetSigners();
+
+    const signers = storage.get('signers');
+
+    expect(signers._hd).toBeNull();
+    expect(signers._main).toBeNull();
   });
 
   //* forgetMainWallet
