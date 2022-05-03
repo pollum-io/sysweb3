@@ -4,9 +4,9 @@
     "rootDir": "src",
     "baseUrl": "src",
     "outDir": "dist/esm",
+    "declarationDir": "dist/types",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "declarationDir": "dist",
     "noImplicitReturns": false
   },
   "include": ["src"]
