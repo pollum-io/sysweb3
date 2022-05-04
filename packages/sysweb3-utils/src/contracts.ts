@@ -1,9 +1,10 @@
-import { web3Provider } from '@pollum-io/sysweb3-network';
 import { ethers } from 'ethers';
 import { Contract, ContractOptions } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
+
 import abi20 from './abi/erc20.json';
 import abi21 from './abi/erc721.json';
+import { web3Provider } from '@pollum-io/sysweb3-network';
 
 export const createContractUsingAbi = async (
   AbiContract: AbiItem[] | AbiItem | object,
