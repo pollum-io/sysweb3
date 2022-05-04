@@ -25,10 +25,10 @@ export interface IWalletState {
   activeAccount: IKeyringAccountState;
   networks: {
     [INetworkType.Ethereum]: {
-      [chainId: number]: INetwork;
+      [chainId: number | string]: INetwork;
     };
     [INetworkType.Syscoin]: {
-      [chainId: number]: INetwork;
+      [chainId: number | string]: INetwork;
     };
   };
   activeNetwork: INetwork;
