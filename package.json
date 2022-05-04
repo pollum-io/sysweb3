@@ -22,7 +22,11 @@
     "release:preflight": "npm pack ./dist --dry-run",
     "test": "jest",
     "type-check": "tsc --pretty --noEmit",
-    "publish": "npm run prebuild && npm run build && npm run build-rollup  && npm run build-all && npm run prerelease && npm run release"
+    "publish": "npm run prebuild && npm run build && npm run build-rollup  && npm run build-all && npm run prerelease && npm run release",
+    "prepare": "husky install"
+  },
+  "lint-staged": {
+    "*.ts": "eslint --cache --fix"
   },
   "repository": {
     "type": "git",
@@ -52,7 +56,9 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-prettier": "^4.0.0",
+    "husky": "^7.0.4",
     "jest": "^27.5.1",
+    "lint-staged": "^12.4.1",
     "minimist": "1.2.6",
     "node-fetch": "^3.2.2",
     "prettier": "^2.6.0",
