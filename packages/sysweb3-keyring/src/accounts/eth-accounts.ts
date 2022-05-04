@@ -51,7 +51,7 @@ export const Web3Accounts = () => {
     }
   };
 
-   /**
+  /**
    * This function should return the balance of any token using the current account.
    *
    * @param {string} tokenAddress
@@ -64,13 +64,17 @@ export const Web3Accounts = () => {
    * ```
    */
 
-
-  const getBalanceOfAnyToken = async (tokenAddress: string, walletAddress:string): Promise<number> => {
+  const getBalanceOfAnyToken = async (
+    tokenAddress: string,
+    walletAddress: string
+  ): Promise<number> => {
     try {
       const abi = getErc20Abi() as any;
-      const balance =  await (await createContractUsingAbi(abi, tokenAddress)).methods
-      .balanceOf(walletAddress)
-      .call();
+      const balance = await (
+        await createContractUsingAbi(abi, tokenAddress)
+      ).methods
+        .balanceOf(walletAddress)
+        .call();
 
       const formattedBalance = web3Provider.utils.fromWei(balance);
 
@@ -78,10 +82,9 @@ export const Web3Accounts = () => {
 
       return roundedBalance;
     } catch (error) {
-      console.log(`${error}`)
       return 0;
     }
-  }
+  };
 
   /**
    * This function should return a user NFT object (if account have any NFT).

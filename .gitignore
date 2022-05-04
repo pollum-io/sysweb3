@@ -5,13 +5,8 @@ build/
 bak/
 
 .DS_Store
-
-# dependencies
 node_modules/
-
 scratch/
-
-# jest coverage report folder
 coverage/
-
 yarn-error.log
+.eslintcache
