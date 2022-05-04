@@ -82,7 +82,6 @@ export const Web3Accounts = () => {
 
       return roundedBalance;
     } catch (error) {
-      console.log(`${error}`);
       return 0;
     }
   };
