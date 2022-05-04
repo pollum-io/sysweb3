@@ -10,20 +10,20 @@
   "typings": "types/index.d.ts",
   "homepage": "https://github.com/Pollum-io/sysweb3#readme",
   "scripts": {
-    "clean": "rimraf dist/",
-    "prebuild": "npm run clean",
     "build": "tsc && tsc -p tsconfig.cjs.json",
-    "build-rollup": "rollup -c scripts/config/rollup.config.js && rollup -c scripts/config/rollup.config.js --environment NODE_ENV:production",
     "build-all": "npm run build && npm run build-rollup",
+    "build-rollup": "rollup -c scripts/config/rollup.config.js && rollup -c scripts/config/rollup.config.js --environment NODE_ENV:production",
+    "clean": "rimraf dist/",
     "format": "prettier --write .",
+    "prebuild": "npm run clean",
+    "prepare": "husky install",
     "prerelease": "npm run build && npm version patch --no-git-tag-version",
-    "release:npm": "npm publish ./dist -access public",
+    "publish": "npm run prebuild && npm run build && npm run build-rollup  && npm run build-all && npm run prerelease && npm run release",
     "release": "node ./scripts/package/copy && npm run release:npm",
+    "release:npm": "npm publish ./dist -access public",
     "release:preflight": "npm pack ./dist --dry-run",
     "test": "jest",
-    "type-check": "tsc --pretty --noEmit",
-    "publish": "npm run prebuild && npm run build && npm run build-rollup  && npm run build-all && npm run prerelease && npm run release",
-    "prepare": "husky install"
+    "type-check": "tsc --pretty --noEmit"
   },
   "lint-staged": {
     "*.ts": "eslint --cache --fix"
