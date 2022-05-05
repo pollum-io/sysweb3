@@ -181,17 +181,19 @@ export const KeyringManager = () => {
   };
 
   const _createMainWallet = async (): Promise<IKeyringAccountState> => {
+    storage.set('vault', {
+      ...storage.get('vault'),
+      network: wallet.activeNetwork,
+    });
+
     const { _hd, _main } = getSigners();
 
-    const hdsigner = Object.assign(_hd, Object.getPrototypeOf(_hd));
-    const mainsigner = Object.assign(_main, Object.getPrototypeOf(_main));
-
-    hd = hdsigner;
-    main = mainsigner;
+    hd = _hd;
+    main = _main;
 
     storage.set('vault', {
       ...storage.get('vault'),
-      signers: { hd: hdsigner, main: mainsigner },
+      signers: { hd, main },
     });
 
     const xprv = getEncryptedXprv();
@@ -432,9 +434,8 @@ export const KeyringManager = () => {
   /** end */
 
   /** keyring */
-  const setWalletPassword = (pwd: string) => {
-    storage.get('vault').password = pwd;
-  };
+  const setWalletPassword = (pwd: string) =>
+    storage.set('vault', { ...storage.get('vault'), password: pwd });
 
   const createSeed = () => {
     const signers = storage.get('vault');
