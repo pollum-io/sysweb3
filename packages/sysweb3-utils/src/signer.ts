@@ -73,7 +73,7 @@ export const MainSigner = ({
 export const getSigners = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
-  const { mnemonic, network, isTestnet } = storage.get('signers-key');
+  const { mnemonic, network, isTestnet } = storage.get('vault');
 
   const { hd: _hd, main: _main } = MainSigner({
     walletMnemonic: mnemonic,
