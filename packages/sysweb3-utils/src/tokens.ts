@@ -177,8 +177,8 @@ export const getWeb3TokenData = async (tokenAddress: string) => {
       name,
       asset_platform_id,
       description: en,
-      links: homepage[0],
-      explorer: blockchain_site[0],
+      links: homepage,
+      explorer: blockchain_site,
       image: thumb,
       current_price,
     };
