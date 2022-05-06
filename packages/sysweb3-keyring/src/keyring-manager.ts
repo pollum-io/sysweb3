@@ -324,7 +324,9 @@ export const KeyringManager = () => {
       hd = _hd;
       main = _main;
 
-      const { hd: hdSignerFromStorage } = storage.get('signers');
+      const {
+        signers: { hd: hdSignerFromStorage },
+      } = storage.get('vault');
 
       const hdAccounts = hdSignerFromStorage.Signer.accounts;
 
