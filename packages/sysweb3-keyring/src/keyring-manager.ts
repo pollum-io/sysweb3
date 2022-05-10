@@ -38,34 +38,9 @@ export const KeyringManager = () => {
 
   const hasHdMnemonic = () => Boolean(hd.mnemonic);
 
-  storage.set('vault', {
-    password: '',
-    mnemonic: '',
-    network: wallet.activeNetwork,
-    isTestnet: false,
-    signers: {
-      hd: {},
-      main: {},
-    },
-    wallet: initialWalletState,
-  });
-
   const forgetSigners = () => {
-    hd = {} as SyscoinHDSigner;
-    main = {} as SyscoinMainSigner;
-
-    const vault = storage.get('vault');
-
-    storage.set('vault', {
-      ...vault,
-      mnemonic: null,
-      network: null,
-      isTestnet: false,
-      signers: {
-        hd: null,
-        main: null,
-      },
-    });
+    hd = new sys.utils.HDSigner('');
+    main = new sys.SyscoinJSLib(hd, wallet.activeNetwork.url);
   };
   /** end */
 
@@ -479,16 +454,20 @@ export const KeyringManager = () => {
 
     _updateUnlocked();
     _notifyUpdate();
+
     storage.set('vault', { ...storage.get('vault'), wallet });
-    setAccountIndexForDerivedAccount(wallet.activeAccount.id);
 
     await getLatestUpdateForAccount();
+
+    setAccountIndexForDerivedAccount(wallet.activeAccount.id);
 
     return wallet.activeAccount;
   };
 
   const logout = () => {
     const eventEmitter = new SafeEventEmitter();
+
+    forgetSigners();
 
     eventEmitter.emit('lock');
 
