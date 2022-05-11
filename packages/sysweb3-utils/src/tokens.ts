@@ -193,7 +193,7 @@ export const getWeb3TokenData = async (tokenAddress: string) => {
  */
 export const validateToken = async (
   address: string
-): Promise<IErc20Token | Error> => {
+): Promise<IErc20Token | any> => {
   try {
     const contract = await createContractUsingAbi(abi20, address);
 
@@ -213,9 +213,9 @@ export const validateToken = async (
       };
     }
 
-    return new Error('Invalid token');
+    return console.error('Invalid token');
   } catch (error) {
-    throw new Error('Token not found, verify the Token Contract Address.');
+    return console.error('Token not found, verify the Token Contract Address.');
   }
 };
 
