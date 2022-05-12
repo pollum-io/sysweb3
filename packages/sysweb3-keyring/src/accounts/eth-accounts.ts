@@ -108,8 +108,6 @@ export const Web3Accounts = () => {
       let apiBaseUrl: string = '';
   
       chainId !== 1 ? apiBaseUrl = `https://api-${label.toLowerCase()}.etherscan.io/` : 'https://api.etherscan.io/';
-  
-      console.log(apiBaseUrl)
      
       const { data } = await axios.get(
         `${apiBaseUrl}api?module=account&action=tokennfttx&address=${address}&page=1&offset=100&&startblock=0&endblock=27025780&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`
