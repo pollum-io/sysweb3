@@ -340,18 +340,38 @@ export const Web3Accounts = () => {
     const defaultGasLimit = await getGasLimit(receivingAddress);
 
     const value =
-      token && token.contractAddress
+      token && token.contract_address
         ? amountBN.mul(web3Provider.utils.toBN(10).pow(decimals))
         : web3Provider.utils.toWei(amount.toString(), 'ether');
 
     const data =
-      token && token.contractAddress
+      token && token.contract_address
         ? getData({
-            contractAddress: token.contractAddress,
+            contractAddress: token.contract_address,
             receivingAddress,
             value,
           })
         : null;
+
+    if (token && token.contract_address) {
+      const signedTokenTransaction =
+        await web3Provider.eth.accounts.signTransaction(
+          {
+            from: sender,
+            to: token.contract_address,
+            value: '0x00',
+            gas: gasLimit || defaultGasLimit,
+            gasPrice: gasPrice || defaultGasPrice,
+            nonce: await web3Provider.eth.getTransactionCount(sender, 'latest'),
+            data,
+          },
+          senderXprv
+        );
+
+      return web3Provider.eth
+        .sendSignedTransaction(`${signedTokenTransaction.rawTransaction}`)
+        .then((result: TransactionReceipt) => result);
+    }
 
     const signedTransaction = await web3Provider.eth.accounts.signTransaction(
       {
