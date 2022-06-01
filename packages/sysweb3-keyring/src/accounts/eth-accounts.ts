@@ -8,7 +8,11 @@ import _ from 'lodash';
 import { Account, TransactionReceipt } from 'web3-core';
 
 import { web3Provider } from '@pollum-io/sysweb3-network';
-import { createContractUsingAbi, getErc20Abi, INetwork } from '@pollum-io/sysweb3-utils';
+import {
+  createContractUsingAbi,
+  getErc20Abi,
+  INetwork,
+} from '@pollum-io/sysweb3-utils';
 
 export const Web3Accounts = () => {
   /**
@@ -103,20 +107,22 @@ export const Web3Accounts = () => {
     network: INetwork
   ): Promise<object | undefined> => {
     try {
-      const {chainId, label} = network;
-  
-      let apiBaseUrl: string = '';
-  
-      chainId !== 1 ? apiBaseUrl = `https://api-${label.toLowerCase()}.etherscan.io/` : 'https://api.etherscan.io/';
-     
+      const { chainId, label } = network;
+
+      let apiBaseUrl = '';
+
+      chainId !== 1
+        ? (apiBaseUrl = `https://api-${label.toLowerCase()}.etherscan.io/`)
+        : 'https://api.etherscan.io/';
+
       const { data } = await axios.get(
         `${apiBaseUrl}api?module=account&action=tokennfttx&address=${address}&page=1&offset=100&&startblock=0&endblock=27025780&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`
       );
-  
+
       if (data.message === 'OK' && data.result !== []) {
         return data.result;
       }
-  
+
       return;
     } catch (error) {
       // todo: handle error
@@ -145,7 +151,7 @@ export const Web3Accounts = () => {
             address(
               address: { is: "${address}" }
             ) {
-              balances {
+              balances { 
                 currency {
                   symbol
                 }
@@ -216,9 +222,11 @@ export const Web3Accounts = () => {
     );
     try {
       const userTxs = etherscanProvider.getHistory(address);
+      
       if (userTxs) {
         return userTxs;
       }
+
       return [];
     } catch (error) {
       console.error(error);
