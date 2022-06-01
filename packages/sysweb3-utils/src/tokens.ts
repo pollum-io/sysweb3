@@ -91,14 +91,12 @@ export const getFiatValueByToken = async (
 }> => {
   try {
     const {
-      data: { market_data },
+      data: { market_data: marketData },
     } = await axios.get(`https://api.coingecko.com/api/v3/coins/${token}`);
 
-    const { price_change_24h, current_price } = market_data;
-
     return {
-      price: current_price[fiat],
-      priceChange: price_change_24h,
+      price: marketData.current_price[fiat],
+      priceChange: marketData.price_change_24h,
     };
   } catch (error) {
     throw new Error(`Unable to find a value of ${token} as ${fiat}`);
@@ -127,7 +125,12 @@ export const getTokenBySymbol = async (
   contract: string;
 }> => {
   const {
-    data: { symbol: _symbol, contract_address, description, image },
+    data: {
+      symbol: _symbol,
+      contract_address: contractAddress,
+      description,
+      image,
+    },
   } = await axios.get(
     `https://api.coingecko.com/api/v3/search?query=${symbol}`
   );
@@ -138,7 +141,7 @@ export const getTokenBySymbol = async (
     symbol: symbolToUpperCase,
     icon: image.small,
     description: description.en,
-    contract: contract_address,
+    contract: contractAddress,
   };
 };
 
@@ -160,12 +163,12 @@ export const getWeb3TokenData = async (tokenAddress: string) => {
         id,
         symbol,
         name,
-        asset_platform_id,
+        asset_platform_id: assetPlatformId,
         description: { en },
         links: { homepage },
-        blockchain_site,
+        blockchain_site: blockchainSite,
         image: { thumb },
-        current_price,
+        current_price: currentPrice,
       },
     } = await axios.get(
       `https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenAddress}`
@@ -175,12 +178,12 @@ export const getWeb3TokenData = async (tokenAddress: string) => {
       id,
       symbol,
       name,
-      asset_platform_id,
+      assetPlatformId,
       description: en,
       links: homepage,
-      explorer: blockchain_site,
+      explorer: blockchainSite,
       image: thumb,
-      current_price,
+      currentPrice,
     };
   } catch (error) {
     throw new Error('Token not found, verify the Token Contract Address.');

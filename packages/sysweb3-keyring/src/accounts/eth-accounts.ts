@@ -236,14 +236,14 @@ export const Web3Accounts = () => {
   const getTransactionCount = async (address: string) =>
     await web3Provider.eth.getTransactionCount(address);
 
-  const eth_signTypedData_v4 = (msgParams: object) => {
+  const ethSignTypedDataV4 = (msgParams: object) => {
     const msg = JSON.stringify(msgParams);
     const provider = window.pali.getProvider('ethereum');
 
     const from = provider.selectedAddress;
 
     const params = [from, msg];
-    const method = 'eth_signTypedData_v4';
+    const method = 'ethSignTypedDataV4';
 
     return provider.request(
       {
@@ -422,7 +422,7 @@ export const Web3Accounts = () => {
 
   const tx = {
     getTransactionCount,
-    eth_signTypedData_v4,
+    ethSignTypedDataV4,
     sendTransaction,
     getFeeByType,
     getGasLimit,
