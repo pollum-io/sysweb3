@@ -6,6 +6,8 @@ import abi20 from './abi/erc20.json';
 import abi from './abi/erc721.json';
 import tokens from './tokens.json';
 
+const COINGECKO_API = 'https://api.coingecko.com/api/v3';
+
 /**
  *
  * @param contract Address of the token contract
@@ -71,6 +73,18 @@ export const getHost = (url: string) => {
   }
 
   return url;
+};
+
+export const getToken = async (id: string): Promise<ICoingeckoToken> => {
+  let token;
+  try {
+    const response = await axios.get(`${COINGECKO_API}/coins/${id}`);
+    token = response.data;
+  } catch (error) {
+    throw new Error('Unable to retrieve token data');
+  }
+
+  return camelcaseKeys(token, { deep: true });
 };
 
 /**
@@ -245,6 +259,73 @@ export const countDecimals = (x: number) => {
 };
 
 /** types */
+
+// the source is in snake case
+export interface ICoingeckoToken {
+  id: string;
+  symbol: string;
+  name: string;
+  assetPlatformId: string;
+  platforms: object;
+  blockTimeInMinutes: number;
+  hashingAlgorithm?: string;
+  categories: string[];
+  localization: object;
+  description: object;
+  links: object;
+  image: {
+    thumb: string;
+    small: string;
+    large: string;
+  };
+  countryOrigin: string;
+  genesisDate?: string;
+  contractAddress?: string;
+  sentimentVotesUpPercentage: number;
+  sentimentVotesDownPercentage: number;
+  icoData?: object;
+  marketCapRank: number;
+  coingeckoRank: number;
+  coingeckoScore: number;
+  developerScore: number;
+  communityScore: number;
+  liquidityScore: number;
+  publicInterestScore: number;
+  marketData: {
+    currentPrice: { [fiat: string]: number };
+    marketCap: { [fiat: string]: number };
+    totalVolume: { [fiat: string]: number };
+    fullyDilutedValuation: object;
+    totalValueLocked?: object;
+    fdvToTvlRatio?: number;
+    mcapToTvlRatio?: number;
+    circulatingSupply: number;
+    totalSupply?: number;
+    maxSupply?: number;
+    priceChange24H: number;
+  };
+  communityData: object;
+  developerData: object;
+  publicInterestStats: object;
+  lastUpdated: string;
+  tickers: object[];
+}
+
+export interface ICoingeckoSearchResults {
+  coins: {
+    id: string;
+    name: string;
+    symbol: string;
+    marketCapRank: number;
+    thumb: string;
+    large: string;
+  }[];
+  exchanges: object[];
+  icos: object[];
+  categories: object[];
+  nfts: object[];
+}
+
 export type EthTokenDetails = {
   id: string;
   symbol: string;
