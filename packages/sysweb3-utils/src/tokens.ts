@@ -42,24 +42,16 @@ export const getNftImage = async (
   }
 };
 
-export const getTokenIconBySymbol = async (
-  symbol: string
-): Promise<string | undefined> => {
-  try {
-    const response = await axios.get(
-      `https://api.coingecko.com/api/v3/search?query=${symbol.toUpperCase()}`
-    );
+export const getTokenIconBySymbol = async (symbol: string): Promise<string> => {
+  symbol = symbol.toUpperCase();
+  const searchResults = await getSearch(symbol);
 
-    const tokens = response.data.coins.filter((token: any) => {
-      return token.symbol.toUpperCase() === symbol.toLocaleUpperCase();
-    });
+  const tokens = searchResults.coins.filter(
+    (token: any) => token.symbol.toUpperCase() === symbol
+  );
 
-    if (tokens) {
-      return tokens[0].thumb;
-    }
-  } catch (error) {
-    throw new Error('Token icon not found');
-  }
+  if (tokens[0]) return tokens[0].thumb;
+  else throw new Error('Token icon not found');
 };
 
 export const isNFT = (guid: number) => {
