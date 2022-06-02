@@ -138,41 +138,22 @@ export const getSearch = async (
 
 /**
  *
- * @param tokenAddress Contract address of the token to get info from
+ * @param contractAddress Contract address of the token to get info from
  */
-
-export const getWeb3TokenData = async (tokenAddress: string) => {
+export const getTokenByContract = async (
+  contractAddress: string
+): Promise<ICoingeckoToken> => {
+  let token;
   try {
-    const {
-      data: {
-        id,
-        symbol,
-        name,
-        asset_platform_id: assetPlatformId,
-        description: { en },
-        links: { homepage },
-        blockchain_site: blockchainSite,
-        image: { thumb },
-        current_price: currentPrice,
-      },
-    } = await axios.get(
-      `https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenAddress}`
+    const response = await axios.get(
+      `${COINGECKO_API}/coins/ethereum/contract/${contractAddress}`
     );
-
-    return {
-      id,
-      symbol,
-      name,
-      assetPlatformId,
-      description: en,
-      links: homepage,
-      explorer: blockchainSite,
-      image: thumb,
-      currentPrice,
-    };
+    token = response.data;
   } catch (error) {
-    throw new Error('Token not found, verify the Token Contract Address.');
+    throw new Error('Token not found');
   }
+
+  return camelcaseKeys(token, { deep: true });
 };
 
 /**
