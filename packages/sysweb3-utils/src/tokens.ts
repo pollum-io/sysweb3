@@ -1,4 +1,5 @@
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
+import camelcaseKeys from 'camelcase-keys';
 import sys from 'syscoinjs-lib';
 
 import { IEthereumAddress, createContractUsingAbi } from '.';
@@ -103,18 +104,12 @@ export const getFiatValueByToken = async (
   price: number;
   priceChange: number;
 }> => {
-  try {
-    const {
-      data: { market_data: marketData },
-    } = await axios.get(`https://api.coingecko.com/api/v3/coins/${token}`);
+  const { marketData } = await getToken(token);
 
-    return {
-      price: marketData.current_price[fiat],
-      priceChange: marketData.price_change_24h,
-    };
-  } catch (error) {
-    throw new Error(`Unable to find a value of ${token} as ${fiat}`);
-  }
+  return {
+    price: marketData.currentPrice[fiat],
+    priceChange: marketData.priceChange24H,
+  };
 };
 
 /**
@@ -123,11 +118,9 @@ export const getFiatValueByToken = async (
  * @example 'ethereum' | 'syscoin'
  */
 export const getSymbolByChain = async (chain: string): Promise<string> => {
-  const { data } = await axios.get(
-    `https://api.coingecko.com/api/v3/coins/${chain}`
-  );
+  const { symbol } = await getToken(chain);
 
-  return data.symbol.toString().toUpperCase();
+  return symbol.toUpperCase();
 };
 
 export const getTokenBySymbol = async (
@@ -159,10 +152,12 @@ export const getTokenBySymbol = async (
   };
 };
 
-export const getSearch = async (query: string): Promise<AxiosResponse> => {
-  return await axios.get(
-    `https://api.coingecko.com/api/v3/search?query=${query}`
-  );
+export const getSearch = async (
+  query: string
+): Promise<ICoingeckoSearchResults> => {
+  const response = await axios.get(`${COINGECKO_API}/search?query=${query}`);
+
+  return camelcaseKeys(response.data, { deep: true });
 };
 
 /**
