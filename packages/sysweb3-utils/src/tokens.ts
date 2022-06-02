@@ -117,31 +117,15 @@ export const getSymbolByChain = async (chain: string): Promise<string> => {
 
 export const getTokenBySymbol = async (
   symbol: string
-): Promise<{
-  symbol: string;
-  icon: string;
-  description: string;
-  contract: string;
-}> => {
-  const {
-    data: {
-      symbol: _symbol,
-      contract_address: contractAddress,
-      description,
-      image,
-    },
-  } = await axios.get(
-    `https://api.coingecko.com/api/v3/search?query=${symbol}`
-  );
+): Promise<ICoingeckoSearchResultToken> => {
+  const searchResults = await getSearch(symbol);
+  const firstCoin = searchResults.coins[0];
 
-  const symbolToUpperCase = _symbol.toString().toUpperCase();
+  const symbolsAreEqual =
+    firstCoin.symbol.toUpperCase() === symbol.toUpperCase();
 
-  return {
-    symbol: symbolToUpperCase,
-    icon: image.small,
-    description: description.en,
-    contract: contractAddress,
-  };
+  if (symbolsAreEqual) return firstCoin;
+  else throw new Error('Unable to find token');
 };
 
 export const getSearch = async (
@@ -298,15 +282,17 @@ export interface ICoingeckoToken {
   tickers: object[];
 }
 
+export interface ICoingeckoSearchResultToken {
+  id: string;
+  name: string;
+  symbol: string;
+  marketCapRank: number;
+  thumb: string;
+  large: string;
+}
+
 export interface ICoingeckoSearchResults {
-  coins: {
-    id: string;
-    name: string;
-    symbol: string;
-    marketCapRank: number;
-    thumb: string;
-    large: string;
-  }[];
+  coins: ICoingeckoSearchResultToken[];
   exchanges: object[];
   icos: object[];
   categories: object[];
