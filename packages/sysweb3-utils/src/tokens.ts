@@ -1,10 +1,13 @@
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
+import camelcaseKeys from 'camelcase-keys';
 import sys from 'syscoinjs-lib';
 
 import { IEthereumAddress, createContractUsingAbi } from '.';
 import abi20 from './abi/erc20.json';
 import abi from './abi/erc721.json';
 import tokens from './tokens.json';
+
+const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 
 /**
  *
@@ -39,24 +42,16 @@ export const getNftImage = async (
   }
 };
 
-export const getTokenIconBySymbol = async (
-  symbol: string
-): Promise<string | undefined> => {
-  try {
-    const response = await axios.get(
-      `https://api.coingecko.com/api/v3/search?query=${symbol.toUpperCase()}`
-    );
+export const getTokenIconBySymbol = async (symbol: string): Promise<string> => {
+  symbol = symbol.toUpperCase();
+  const searchResults = await getSearch(symbol);
 
-    const tokens = response.data.coins.filter((token: any) => {
-      return token.symbol.toUpperCase() === symbol.toLocaleUpperCase();
-    });
+  const tokens = searchResults.coins.filter(
+    (token: any) => token.symbol.toUpperCase() === symbol
+  );
 
-    if (tokens) {
-      return tokens[0].thumb;
-    }
-  } catch (error) {
-    throw new Error('Token icon not found');
-  }
+  if (tokens[0]) return tokens[0].thumb;
+  else throw new Error('Token icon not found');
 };
 
 export const isNFT = (guid: number) => {
@@ -71,6 +66,18 @@ export const getHost = (url: string) => {
   }
 
   return url;
+};
+
+export const getToken = async (id: string): Promise<ICoingeckoToken> => {
+  let token;
+  try {
+    const response = await axios.get(`${COINGECKO_API}/coins/${id}`);
+    token = response.data;
+  } catch (error) {
+    throw new Error('Unable to retrieve token data');
+  }
+
+  return camelcaseKeys(token, { deep: true });
 };
 
 /**
@@ -89,18 +96,12 @@ export const getFiatValueByToken = async (
   price: number;
   priceChange: number;
 }> => {
-  try {
-    const {
-      data: { market_data: marketData },
-    } = await axios.get(`https://api.coingecko.com/api/v3/coins/${token}`);
+  const { marketData } = await getToken(token);
 
-    return {
-      price: marketData.current_price[fiat],
-      priceChange: marketData.price_change_24h,
-    };
-  } catch (error) {
-    throw new Error(`Unable to find a value of ${token} as ${fiat}`);
-  }
+  return {
+    price: marketData.currentPrice[fiat],
+    priceChange: marketData.priceChange24H,
+  };
 };
 
 /**
@@ -109,85 +110,50 @@ export const getFiatValueByToken = async (
  * @example 'ethereum' | 'syscoin'
  */
 export const getSymbolByChain = async (chain: string): Promise<string> => {
-  const { data } = await axios.get(
-    `https://api.coingecko.com/api/v3/coins/${chain}`
-  );
+  const { symbol } = await getToken(chain);
 
-  return data.symbol.toString().toUpperCase();
+  return symbol.toUpperCase();
 };
 
 export const getTokenBySymbol = async (
   symbol: string
-): Promise<{
-  symbol: string;
-  icon: string;
-  description: string;
-  contract: string;
-}> => {
-  const {
-    data: {
-      symbol: _symbol,
-      contract_address: contractAddress,
-      description,
-      image,
-    },
-  } = await axios.get(
-    `https://api.coingecko.com/api/v3/search?query=${symbol}`
-  );
+): Promise<ICoingeckoSearchResultToken> => {
+  const searchResults = await getSearch(symbol);
+  const firstCoin = searchResults.coins[0];
 
-  const symbolToUpperCase = _symbol.toString().toUpperCase();
+  const symbolsAreEqual =
+    firstCoin.symbol.toUpperCase() === symbol.toUpperCase();
 
-  return {
-    symbol: symbolToUpperCase,
-    icon: image.small,
-    description: description.en,
-    contract: contractAddress,
-  };
+  if (symbolsAreEqual) return firstCoin;
+  else throw new Error('Unable to find token');
 };
 
-export const getSearch = async (query: string): Promise<AxiosResponse> => {
-  return await axios.get(
-    `https://api.coingecko.com/api/v3/search?query=${query}`
-  );
+export const getSearch = async (
+  query: string
+): Promise<ICoingeckoSearchResults> => {
+  const response = await axios.get(`${COINGECKO_API}/search?query=${query}`);
+
+  return camelcaseKeys(response.data, { deep: true });
 };
 
 /**
  *
- * @param tokenAddress Contract address of the token to get info from
+ * @param contractAddress Contract address of the token to get info from
  */
-
-export const getWeb3TokenData = async (tokenAddress: string) => {
+export const getTokenByContract = async (
+  contractAddress: string
+): Promise<ICoingeckoToken> => {
+  let token;
   try {
-    const {
-      data: {
-        id,
-        symbol,
-        name,
-        asset_platform_id: assetPlatformId,
-        description: { en },
-        links: { homepage },
-        blockchain_site: blockchainSite,
-        image: { thumb },
-        current_price: currentPrice,
-      },
-    } = await axios.get(
-      `https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenAddress}`
+    const response = await axios.get(
+      `${COINGECKO_API}/coins/ethereum/contract/${contractAddress}`
     );
-
-    return {
-      id,
-      symbol,
-      name,
-      assetPlatformId,
-      description: en,
-      links: homepage,
-      explorer: blockchainSite,
-      image: thumb,
-      currentPrice,
-    };
+    token = response.data;
   } catch (error) {
-    throw new Error('Token not found, verify the Token Contract Address.');
+    throw new Error('Token not found');
   }
+
+  return camelcaseKeys(token, { deep: true });
 };
 
 /**
@@ -245,6 +211,75 @@ export const countDecimals = (x: number) => {
 };
 
 /** types */
+
+// the source is in snake case
+export interface ICoingeckoToken {
+  id: string;
+  symbol: string;
+  name: string;
+  assetPlatformId: string;
+  platforms: object;
+  blockTimeInMinutes: number;
+  hashingAlgorithm?: string;
+  categories: string[];
+  localization: object;
+  description: object;
+  links: object;
+  image: {
+    thumb: string;
+    small: string;
+    large: string;
+  };
+  countryOrigin: string;
+  genesisDate?: string;
+  contractAddress?: string;
+  sentimentVotesUpPercentage: number;
+  sentimentVotesDownPercentage: number;
+  icoData?: object;
+  marketCapRank: number;
+  coingeckoRank: number;
+  coingeckoScore: number;
+  developerScore: number;
+  communityScore: number;
+  liquidityScore: number;
+  publicInterestScore: number;
+  marketData: {
+    currentPrice: { [fiat: string]: number };
+    marketCap: { [fiat: string]: number };
+    totalVolume: { [fiat: string]: number };
+    fullyDilutedValuation: object;
+    totalValueLocked?: object;
+    fdvToTvlRatio?: number;
+    mcapToTvlRatio?: number;
+    circulatingSupply: number;
+    totalSupply?: number;
+    maxSupply?: number;
+    priceChange24H: number;
+  };
+  communityData: object;
+  developerData: object;
+  publicInterestStats: object;
+  lastUpdated: string;
+  tickers: object[];
+}
+
+export interface ICoingeckoSearchResultToken {
+  id: string;
+  name: string;
+  symbol: string;
+  marketCapRank: number;
+  thumb: string;
+  large: string;
+}
+
+export interface ICoingeckoSearchResults {
+  coins: ICoingeckoSearchResultToken[];
+  exchanges: object[];
+  icos: object[];
+  categories: object[];
+  nfts: object[];
+}
+
 export type EthTokenDetails = {
   id: string;
   symbol: string;
