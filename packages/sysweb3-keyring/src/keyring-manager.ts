@@ -2,6 +2,7 @@ import SafeEventEmitter from '@metamask/safe-event-emitter';
 import axios from 'axios';
 import { generateMnemonic, validateMnemonic, mnemonicToSeed } from 'bip39';
 import { fromZPrv } from 'bip84';
+import crypto from 'crypto';
 import CryptoJS from 'crypto-js';
 import { hdkey } from 'ethereumjs-wallet';
 import sys from 'syscoinjs-lib';
@@ -36,6 +37,33 @@ export const KeyringManager = () => {
     wallet.activeNetwork.url
   );
 
+  const getSalt = () => crypto.randomBytes(16).toString('hex');
+
+  const encryptSHA512 = (password: string, salt: string) => {
+    const hash = crypto.createHmac('sha512', salt);
+
+    hash.update(password);
+
+    return {
+      salt,
+      hash: hash.digest('hex'),
+    };
+  };
+
+  const setWalletPassword = (pwd: string) => {
+    const salt = getSalt();
+
+    const saltHashPassword = encryptSHA512(pwd, salt);
+
+    const { hash, salt: passwordSalt } = saltHashPassword;
+
+    storage.set('vault', {
+      ...storage.get('vault'),
+      hash,
+      salt: passwordSalt,
+    });
+  };
+
   const hasHdMnemonic = () => Boolean(hd.mnemonic);
 
   const forgetSigners = () => {
@@ -45,17 +73,23 @@ export const KeyringManager = () => {
   /** end */
 
   /** validations */
-  const checkPassword = (pwd: string) => storage.get('vault').password === pwd;
+  const checkPassword = (pwd: string) => {
+    const { hash, salt } = storage.get('vault');
+
+    const hashPassword = encryptSHA512(pwd, salt);
+
+    return hashPassword.hash === hash;
+  };
 
   const isUnlocked = () =>
-    Boolean(hasHdMnemonic() && storage.get('vault').password);
+    Boolean(hasHdMnemonic() && storage.get('vault').hash);
   /** end */
 
   /** seeds */
   const getEncryptedMnemonic = () => {
-    const { mnemonic, password } = storage.get('vault');
+    const { mnemonic, hash } = storage.get('vault');
 
-    const encryptedMnemonic = CryptoJS.AES.encrypt(mnemonic, password);
+    const encryptedMnemonic = CryptoJS.AES.encrypt(mnemonic, hash);
 
     return String(encryptedMnemonic);
   };
@@ -103,18 +137,19 @@ export const KeyringManager = () => {
       ...storage.get('vault'),
       mnemonic: '',
       network: wallet.activeNetwork,
-      password: '',
+      salt: '',
+      hash: '',
     });
   };
 
   const _persistWallet = (
-    password: string = storage.get('vault').password
+    password: string = storage.get('vault').hash
   ): string | Error => {
     if (typeof password !== 'string') {
       return new Error('KeyringManager - password is not a string');
     }
 
-    storage.set('vault', { ...storage.get('vault'), password });
+    storage.set('vault', { ...storage.get('vault'), hash: password });
 
     return storage.get('vault').wallet;
   };
@@ -126,7 +161,7 @@ export const KeyringManager = () => {
   };
 
   const _fullUpdate = () => {
-    _persistWallet(storage.get('vault').password);
+    _persistWallet(storage.get('vault').hash);
 
     storage.set('vault', { ...storage.get('vault'), wallet });
 
@@ -139,18 +174,31 @@ export const KeyringManager = () => {
     eventEmitter.emit('unlock');
   };
 
-  const _unlockWallet = async (password: string): Promise<IWalletState> => {
+  const _unlockWallet = async (password: string) => {
     const vault = storage.get('vault');
 
+    const { salt } = vault;
+
+    const { hash, salt: _salt } = encryptSHA512(password, salt);
+
     if (!vault.wallet) {
-      storage.get('vault', { ...vault, password });
+      storage.get('vault', {
+        ...vault,
+        hash,
+        salt: _salt,
+      });
 
       throw new Error('Wallet not found');
     }
 
     _clearWallet();
 
-    storage.set('vault', { ...vault, password, wallet: vault.wallet });
+    storage.set('vault', {
+      ...vault,
+      hash,
+      salt: _salt,
+      wallet: vault.wallet,
+    });
 
     return vault.wallet;
   };
@@ -411,9 +459,6 @@ export const KeyringManager = () => {
   /** end */
 
   /** keyring */
-  const setWalletPassword = (pwd: string) =>
-    storage.set('vault', { ...storage.get('vault'), password: pwd });
-
   const createSeed = () => {
     const signers = storage.get('vault');
 
@@ -503,7 +548,7 @@ export const KeyringManager = () => {
   const getEncryptedXprv = () =>
     CryptoJS.AES.encrypt(
       _getEncryptedPrivateKeyFromHd(),
-      storage.get('vault').password
+      storage.get('vault').hash
     ).toString();
 
   const validateSeed = (seedphrase: string) => {
