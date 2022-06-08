@@ -98,7 +98,7 @@ export const getFiatValueByToken = async (
       `${COINGECKO_API}/simple/price?ids=${token}&vs_currencies=${fiat}`
     );
 
-    return response.data[fiat];
+    return response.data[token][fiat];
   } catch (error) {
     throw new Error(`Unable to retrieve ${token} price as ${fiat} `);
   }
