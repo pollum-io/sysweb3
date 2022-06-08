@@ -92,16 +92,16 @@ export const getToken = async (id: string): Promise<ICoingeckoToken> => {
 export const getFiatValueByToken = async (
   token: string,
   fiat: string
-): Promise<{
-  price: number;
-  priceChange: number;
-}> => {
-  const { marketData } = await getToken(token);
+): Promise<number> => {
+  try {
+    const response = await axios.get(
+      `${COINGECKO_API}/simple/price?ids=${token}&vs_currencies=${fiat}`
+    );
 
-  return {
-    price: marketData.currentPrice[fiat],
-    priceChange: marketData.priceChange24H,
-  };
+    return response.data[fiat];
+  } catch (error) {
+    throw new Error(`Unable to retrieve ${token} price as ${fiat} `);
+  }
 };
 
 /**
