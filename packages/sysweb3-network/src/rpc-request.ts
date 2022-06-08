@@ -49,7 +49,7 @@ export const jsonRpcRequest = async (
   const { error, result } = jsonRpcResponse;
 
   if (error) {
-    throw new Error(error?.message || error);
+    throw new Error(error.message || error);
   }
 
   return result;
