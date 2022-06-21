@@ -85,39 +85,3 @@ export interface LatestUpdateForSysAccount {
   };
   receivingAddress: any;
 }
-
-export interface KeyringManager {
-  validateSeed: (seedphrase: string) => boolean;
-  setWalletPassword: (pwd: string) => void;
-  createSeed: () => string;
-  createKeyringVault: () => Promise<IKeyringAccountState>;
-  getAccountById: (id: number) => IKeyringAccountState;
-  checkPassword: (pwd: string) => boolean;
-  isUnlocked: () => boolean;
-  getEncryptedMnemonic: () => string;
-  getDecryptedMnemonic: () => string;
-  getState: () => IWalletState;
-  getNetwork: () => INetwork;
-  getPrivateKeyByAccountId: (id: number) => string | null;
-  logout: () => void;
-  login: () => Promise<IKeyringAccountState>;
-  getAccounts: () => {
-    [accountId: number]: IKeyringAccountState;
-  };
-  removeAccount: (id: number) => void;
-  setActiveNetworkForSigner: (
-    network: INetwork
-  ) => Promise<IKeyringAccountState>;
-  forgetMainWallet: (pwd: string) => void | Error;
-  getEncryptedXprv: () => string;
-  txs: () => any;
-  trezor: () => any;
-  getAccountXpub: () => string;
-  getLatestUpdateForAccount: () => Promise<LatestUpdateForSysAccount>;
-  setSignerNetwork: (network: INetwork) => Promise<IKeyringAccountState>;
-  getSeed: () => string;
-  hasHdMnemonic: () => boolean;
-  forgetSigners: () => void;
-  setAccountIndexForDerivedAccount: (accountId: number) => void;
-  addNewAccount: (label?: string) => Promise<IKeyringAccountState>;
-}

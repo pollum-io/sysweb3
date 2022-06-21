@@ -7,8 +7,8 @@ import { hdkey } from 'ethereumjs-wallet';
 import sys from 'syscoinjs-lib';
 
 import { Web3Accounts } from './accounts';
-import { SyscoinTransactions } from './transactions';
-import { TrezorWallet } from './trezor';
+import { ISyscoinTransactions, SyscoinTransactions } from './transactions';
+import { ITrezorWallet, TrezorWallet } from './trezor';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
@@ -23,7 +23,47 @@ import {
   IKeyringBalances,
 } from '@pollum-io/sysweb3-utils';
 
-export const KeyringManager = () => {
+export interface IKeyringManager {
+  addNewAccount: (label?: string) => Promise<IKeyringAccountState>;
+  checkPassword: (password: string) => boolean;
+  createKeyringVault: () => Promise<IKeyringAccountState>;
+  createSeed: () => string;
+  forgetMainWallet: (password: string) => void;
+  forgetSigners: () => void;
+  getAccounts: () => IKeyringAccountState[];
+  getAccountById: (id: number) => IKeyringAccountState;
+  getAccountXpub: () => string;
+  getDecryptedMnemonic: () => string;
+  getEncryptedMnemonic: () => string;
+  getEncryptedXprv: () => string;
+  getLatestUpdateForAccount: () => Promise<any>;
+  getNetwork: () => INetwork;
+  getPrivateKeyByAccountId: (id: number) => string;
+  getSeed: (password: string) => string;
+  getState: () => IWalletState;
+  hasHdMnemonic: () => boolean;
+  isUnlocked: () => boolean;
+  login: (password: string) => Promise<IKeyringAccountState>;
+  logout: () => void;
+  removeAccount: (id: number) => void;
+  removeNetwork: (chain: string, chainId: number) => void;
+  setAccountIndexForDerivedAccount: (accountId: number) => void;
+  setActiveAccount: (accountId: number) => void;
+  setSignerNetwork: (
+    network: INetwork,
+    chain: string
+  ) => Promise<IKeyringAccountState>;
+  setWalletPassword: (password: string) => void;
+  signMessage: (
+    msgParams: { accountId: number; data: string },
+    options?: any
+  ) => void;
+  trezor: ITrezorWallet;
+  txs: ISyscoinTransactions;
+  validateSeed: (seed: string) => boolean;
+}
+
+export const KeyringManager = (): IKeyringManager => {
   /** keys */
   const web3Wallet = Web3Accounts();
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
@@ -62,7 +102,10 @@ export const KeyringManager = () => {
 
   const getDecryptedMnemonic = () => storage.get('vault').mnemonic;
 
-  const getSeed = (pwd: string) => (checkPassword(pwd) ? hd.mnemonic : null);
+  const getSeed = (pwd: string) => {
+    if (checkPassword(pwd)) return hd.mnemonic;
+    else throw new Error('Invalid password');
+  };
   /** end */
 
   /** state */
@@ -70,19 +113,27 @@ export const KeyringManager = () => {
   const getNetwork = () => wallet.activeNetwork;
   const getAccounts = () => Object.values(wallet.accounts);
 
-  const getPrivateKeyByAccountId = (id: number): string | null => {
+  const getPrivateKeyByAccountId = (id: number): string => {
     const account = Object.values(wallet.accounts).find(
-      (account: IKeyringAccountState) => account.id === id
+      (account) => account.id === id
     );
 
-    return account ? account.xprv : null;
+    if (!account) throw new Error('Account not found');
+
+    return account.xprv;
   };
 
   const getAccountXpub = (): string => hd.getAccountXpub();
 
-  const getAccountById = (id: number): IKeyringAccountState =>
-    Object.values(wallet.accounts).find((account) => account.id === id) ||
-    ({} as IKeyringAccountState);
+  const getAccountById = (id: number): IKeyringAccountState => {
+    const account = Object.values(wallet.accounts).find(
+      (account) => account.id === id
+    );
+
+    if (!account) throw new Error('Account not found');
+
+    return account;
+  };
 
   /** end */
 
@@ -445,10 +496,8 @@ export const KeyringManager = () => {
   };
 
   /** login/logout */
-  const login = async (
-    password: string
-  ): Promise<IKeyringAccountState | Error> => {
-    if (!checkPassword(password)) return new Error('Invalid password');
+  const login = async (password: string): Promise<IKeyringAccountState> => {
+    if (!checkPassword(password)) throw new Error('Invalid password');
 
     wallet = await _unlockWallet(password);
 
@@ -622,7 +671,7 @@ export const KeyringManager = () => {
   };
   /** end */
 
-  const addNewAccount = async (label: string) => {
+  const addNewAccount = async (label?: string) => {
     if (!hd.mnemonic) {
       const { _hd, _main } = getSigners();
 
@@ -745,7 +794,7 @@ export const KeyringManager = () => {
     delete wallet.networks[chain][chainId];
   };
 
-  const setActiveAccount = async (accountId: number) => {
+  const setActiveAccount = (accountId: number) => {
     const { wallet: _wallet } = storage.get('vault');
 
     wallet = {
@@ -757,36 +806,36 @@ export const KeyringManager = () => {
   };
 
   return {
-    validateSeed,
-    setWalletPassword,
-    createSeed,
-    createKeyringVault,
-    getAccountById,
+    addNewAccount,
     checkPassword,
-    isUnlocked,
-    getEncryptedMnemonic,
+    createKeyringVault,
+    createSeed,
+    forgetMainWallet,
+    forgetSigners,
+    getAccounts,
+    getAccountById,
+    getAccountXpub,
     getDecryptedMnemonic,
-    getState,
+    getEncryptedMnemonic,
+    getEncryptedXprv,
+    getLatestUpdateForAccount,
     getNetwork,
     getPrivateKeyByAccountId,
-    logout,
-    login,
-    getAccounts,
-    removeAccount,
-    signMessage,
-    forgetMainWallet,
-    getEncryptedXprv,
-    txs,
-    trezor,
-    getAccountXpub,
-    getLatestUpdateForAccount,
-    setSignerNetwork,
     getSeed,
+    getState,
     hasHdMnemonic,
-    forgetSigners,
-    setAccountIndexForDerivedAccount,
-    addNewAccount,
+    isUnlocked,
+    login,
+    logout,
+    removeAccount,
     removeNetwork,
+    signMessage,
+    setAccountIndexForDerivedAccount,
     setActiveAccount,
+    setSignerNetwork,
+    setWalletPassword,
+    trezor,
+    txs,
+    validateSeed,
   };
 };

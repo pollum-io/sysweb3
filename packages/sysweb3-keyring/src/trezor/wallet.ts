@@ -3,7 +3,13 @@ import sys from 'syscoinjs-lib';
 
 import { getSigners, IKeyringAccountState } from '@pollum-io/sysweb3-utils';
 
-export const TrezorWallet = () => {
+export interface ITrezorWallet {
+  createWallet: () => Promise<IKeyringAccountState>;
+  forgetWallet: () => void;
+  getAddress: (trezor: any, kdPath: any) => Promise<any>;
+}
+
+export const TrezorWallet = (): ITrezorWallet => {
   const getAccountInfo = async (
     xpub: string,
     sysjs: any,
