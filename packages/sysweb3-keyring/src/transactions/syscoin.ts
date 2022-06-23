@@ -2,6 +2,7 @@ import coinSelectSyscoin from 'coinselectsyscoin';
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
 
+import { IKeyringAccountState } from '../types';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
   INewNFT,
@@ -11,7 +12,6 @@ import {
   ITokenUpdate,
   ITxid,
   txUtils,
-  IKeyringAccountState,
   getSigners,
   getAsset,
   countDecimals,

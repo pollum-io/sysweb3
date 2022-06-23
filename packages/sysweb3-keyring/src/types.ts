@@ -5,9 +5,9 @@ import {
   TransactionConfig,
 } from 'web3-core';
 
-import { INetwork, INetworkType } from '.';
+import { INetwork, INetworkType } from '@pollum-io/sysweb3-utils';
 
-export enum IKeyringAccountType {
+export enum KeyringAccountType {
   Trezor,
   Default,
 }
@@ -39,7 +39,7 @@ export type IKeyringBalances = {
   [INetworkType.Ethereum]: number;
 };
 
-export interface Web3Account extends IKeyringAccountState {
+export interface IWeb3Account extends IKeyringAccountState {
   signTransaction: (
     transactionConfig: TransactionConfig,
     callback?: (signTransaction: SignedTransaction) => void
@@ -59,7 +59,6 @@ export interface IKeyringAccountState {
   xpub: string;
   transactions: any;
   assets: any;
-  nfts: any;
 }
 
 export interface ISyscoinBackendAccount {
@@ -75,7 +74,7 @@ export interface ISyscoinBackendAccount {
   txs: number;
 }
 
-export interface LatestUpdateForSysAccount {
+export interface ILatestUpdateForSysAccount {
   transactions: any;
   assets: any;
   xpub: any;

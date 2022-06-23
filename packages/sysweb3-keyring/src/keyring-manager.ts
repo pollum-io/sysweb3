@@ -7,20 +7,18 @@ import { hdkey } from 'ethereumjs-wallet';
 import sys from 'syscoinjs-lib';
 
 import { Web3Accounts } from './accounts';
+import { initialWalletState } from './initial-state';
 import { ISyscoinTransactions, SyscoinTransactions } from './transactions';
 import { ITrezorWallet, TrezorWallet } from './trezor';
+import { IKeyringAccountState, IWalletState, IKeyringBalances } from './types';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
-  IKeyringAccountState,
-  IWalletState,
-  initialWalletState,
   INetwork,
   getSigners,
   validateSysRpc,
   SyscoinHDSigner,
   SyscoinMainSigner,
-  IKeyringBalances,
 } from '@pollum-io/sysweb3-utils';
 
 export interface IKeyringManager {

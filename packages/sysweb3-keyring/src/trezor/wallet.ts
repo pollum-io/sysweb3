@@ -1,7 +1,8 @@
 import { fromZPub } from 'bip84';
 import sys from 'syscoinjs-lib';
 
-import { getSigners, IKeyringAccountState } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState } from '../types';
+import { getSigners } from '@pollum-io/sysweb3-utils';
 
 export interface ITrezorWallet {
   createWallet: () => Promise<IKeyringAccountState>;
