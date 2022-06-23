@@ -8,9 +8,14 @@ import sys from 'syscoinjs-lib';
 
 import { Web3Accounts } from './accounts';
 import { initialWalletState } from './initial-state';
-import { ISyscoinTransactions, SyscoinTransactions } from './transactions';
-import { ITrezorWallet, TrezorWallet } from './trezor';
-import { IKeyringAccountState, IWalletState, IKeyringBalances } from './types';
+import { SyscoinTransactions } from './transactions';
+import { TrezorWallet } from './trezor';
+import {
+  IKeyringAccountState,
+  IWalletState,
+  IKeyringBalances,
+  IKeyringManager,
+} from './types';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
@@ -20,46 +25,6 @@ import {
   SyscoinHDSigner,
   SyscoinMainSigner,
 } from '@pollum-io/sysweb3-utils';
-
-export interface IKeyringManager {
-  addNewAccount: (label?: string) => Promise<IKeyringAccountState>;
-  checkPassword: (password: string) => boolean;
-  createKeyringVault: () => Promise<IKeyringAccountState>;
-  createSeed: () => string;
-  forgetMainWallet: (password: string) => void;
-  forgetSigners: () => void;
-  getAccounts: () => IKeyringAccountState[];
-  getAccountById: (id: number) => IKeyringAccountState;
-  getAccountXpub: () => string;
-  getDecryptedMnemonic: () => string;
-  getEncryptedMnemonic: () => string;
-  getEncryptedXprv: () => string;
-  getLatestUpdateForAccount: () => Promise<any>;
-  getNetwork: () => INetwork;
-  getPrivateKeyByAccountId: (id: number) => string;
-  getSeed: (password: string) => string;
-  getState: () => IWalletState;
-  hasHdMnemonic: () => boolean;
-  isUnlocked: () => boolean;
-  login: (password: string) => Promise<IKeyringAccountState>;
-  logout: () => void;
-  removeAccount: (id: number) => void;
-  removeNetwork: (chain: string, chainId: number) => void;
-  setAccountIndexForDerivedAccount: (accountId: number) => void;
-  setActiveAccount: (accountId: number) => void;
-  setSignerNetwork: (
-    network: INetwork,
-    chain: string
-  ) => Promise<IKeyringAccountState>;
-  setWalletPassword: (password: string) => void;
-  signMessage: (
-    msgParams: { accountId: number; data: string },
-    options?: any
-  ) => void;
-  trezor: ITrezorWallet;
-  txs: ISyscoinTransactions;
-  validateSeed: (seed: string) => boolean;
-}
 
 export const KeyringManager = (): IKeyringManager => {
   /** keys */

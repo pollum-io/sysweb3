@@ -2,7 +2,7 @@ import coinSelectSyscoin from 'coinselectsyscoin';
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
 
-import { IKeyringAccountState } from '../types';
+import { IKeyringAccountState, ISyscoinTransactions } from '../types';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
   INewNFT,
@@ -24,27 +24,6 @@ type EstimateFeeParams = {
   xpub: string;
   explorerUrl: string;
 };
-
-export interface ISyscoinTransactions {
-  confirmMintNFT: (transaction: ITokenMint) => Promise<ITxid>;
-  confirmNftCreation: (transaction: INewNFT) => Promise<ITxid>;
-  confirmTokenMint: (transaction: ITokenMint) => Promise<ITxid>;
-  confirmTokenCreation: (transaction: any) => Promise<{
-    transactionData: any;
-    txid: string;
-    confirmations: number;
-    guid: string;
-  }>;
-  confirmUpdateToken: (transaction: ITokenUpdate) => Promise<ITxid>;
-  getRecommendedFee: (explorerUrl: string) => Promise<number>;
-  sendTransaction: (transaction: ITokenSend) => Promise<ITxid>;
-  signMessage: (account: IKeyringAccountState, tx: any, options: any) => void;
-  signTransaction: (
-    data: { psbt: string; assets: string },
-    isSendOnly: boolean,
-    isTrezor?: boolean
-  ) => Promise<any>;
-}
 
 export const SyscoinTransactions = (): ISyscoinTransactions => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();

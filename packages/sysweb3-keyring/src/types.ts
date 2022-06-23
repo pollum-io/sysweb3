@@ -5,7 +5,82 @@ import {
   TransactionConfig,
 } from 'web3-core';
 
-import { INetwork, INetworkType } from '@pollum-io/sysweb3-utils';
+import {
+  INetwork,
+  INetworkType,
+  INewNFT,
+  ITokenMint,
+  ITokenSend,
+  ITokenUpdate,
+  ITxid,
+} from '@pollum-io/sysweb3-utils';
+
+export interface ITrezorWallet {
+  createWallet: () => Promise<IKeyringAccountState>;
+  forgetWallet: () => void;
+  getAddress: (trezor: any, kdPath: any) => Promise<any>;
+}
+
+export interface ISyscoinTransactions {
+  confirmMintNFT: (transaction: ITokenMint) => Promise<ITxid>;
+  confirmNftCreation: (transaction: INewNFT) => Promise<ITxid>;
+  confirmTokenMint: (transaction: ITokenMint) => Promise<ITxid>;
+  confirmTokenCreation: (transaction: any) => Promise<{
+    transactionData: any;
+    txid: string;
+    confirmations: number;
+    guid: string;
+  }>;
+  confirmUpdateToken: (transaction: ITokenUpdate) => Promise<ITxid>;
+  getRecommendedFee: (explorerUrl: string) => Promise<number>;
+  sendTransaction: (transaction: ITokenSend) => Promise<ITxid>;
+  signMessage: (account: IKeyringAccountState, tx: any, options: any) => void;
+  signTransaction: (
+    data: { psbt: string; assets: string },
+    isSendOnly: boolean,
+    isTrezor?: boolean
+  ) => Promise<any>;
+}
+
+export interface IKeyringManager {
+  addNewAccount: (label?: string) => Promise<IKeyringAccountState>;
+  checkPassword: (password: string) => boolean;
+  createKeyringVault: () => Promise<IKeyringAccountState>;
+  createSeed: () => string;
+  forgetMainWallet: (password: string) => void;
+  forgetSigners: () => void;
+  getAccounts: () => IKeyringAccountState[];
+  getAccountById: (id: number) => IKeyringAccountState;
+  getAccountXpub: () => string;
+  getDecryptedMnemonic: () => string;
+  getEncryptedMnemonic: () => string;
+  getEncryptedXprv: () => string;
+  getLatestUpdateForAccount: () => Promise<any>;
+  getNetwork: () => INetwork;
+  getPrivateKeyByAccountId: (id: number) => string;
+  getSeed: (password: string) => string;
+  getState: () => IWalletState;
+  hasHdMnemonic: () => boolean;
+  isUnlocked: () => boolean;
+  login: (password: string) => Promise<IKeyringAccountState>;
+  logout: () => void;
+  removeAccount: (id: number) => void;
+  removeNetwork: (chain: string, chainId: number) => void;
+  setAccountIndexForDerivedAccount: (accountId: number) => void;
+  setActiveAccount: (accountId: number) => void;
+  setSignerNetwork: (
+    network: INetwork,
+    chain: string
+  ) => Promise<IKeyringAccountState>;
+  setWalletPassword: (password: string) => void;
+  signMessage: (
+    msgParams: { accountId: number; data: string },
+    options?: any
+  ) => void;
+  trezor: ITrezorWallet;
+  txs: ISyscoinTransactions;
+  validateSeed: (seed: string) => boolean;
+}
 
 export enum KeyringAccountType {
   Trezor,
