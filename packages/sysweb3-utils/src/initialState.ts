@@ -14,6 +14,7 @@ export const initialActiveAccountState = {
   xpub: '',
   transactions: [],
   assets: [],
+  nfts: [],
 };
 
 export const initialNetworksState = {

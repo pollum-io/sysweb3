@@ -24,9 +24,7 @@ describe('web3-NFT tests', () => {
   it('should retrieve a token price as fiat', async () => {
     const result = await getFiatValueByToken('syscoin', 'usd');
 
-    expect(typeof result.price).toBe('number');
-    expect(result.price).toBeGreaterThan(0);
-
-    expect(typeof result.priceChange).toBe('number');
+    expect(typeof result).toBe('number');
+    expect(result).toBeGreaterThan(0);
   });
 });
