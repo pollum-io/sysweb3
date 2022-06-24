@@ -461,9 +461,13 @@ export const KeyringManager = () => {
   /** keyring */
   const createSeed = () => {
     const signers = storage.get('vault');
+    const salt = getSalt();
 
     if (!signers.mnemonic)
-      storage.set('vault', { ...signers, mnemonic: generateMnemonic() });
+      storage.set('vault', {
+        ...signers,
+        mnemonic: encryptSHA512(generateMnemonic(), salt),
+      });
 
     return storage.get('vault').mnemonic;
   };
