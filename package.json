@@ -86,6 +86,7 @@
     "@pollum-io/sysweb3-core": "^1.0.13",
     "@pollum-io/sysweb3-keyring": "^1.0.209",
     "@pollum-io/sysweb3-network": "^1.0.19",
-    "@pollum-io/sysweb3-utils": "^1.1.109"
+    "@pollum-io/sysweb3-utils": "^1.1.109",
+    "syscoinjs-lib": "^1.0.214"
   }
 }
