@@ -59,7 +59,6 @@ export interface IKeyringAccountState {
   xpub: string;
   transactions: any;
   assets: any;
-  nfts: any;
 }
 
 export interface ISyscoinBackendAccount {

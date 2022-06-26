@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-keyring",
-  "version": "1.0.294",
+  "version": "1.0.295",
   "description": "",
   "main": "cjs/index.js",
   "types": "types/index.d.ts",
@@ -39,7 +39,7 @@
     "graphql": "^16.3.0",
     "graphql-request": "^4.1.0",
     "lodash": "^4.17.21",
-    "syscoinjs-lib": "^1.0.212",
+    "syscoinjs-lib": "^1.0.214",
     "syscointx-js": "^1.0.101",
     "web3": "^1.7.1",
     "web3-utils": "^1.7.1"
