@@ -1,9 +1,10 @@
 import { fromZPub } from 'bip84';
 import sys from 'syscoinjs-lib';
 
-import { getSigners, IKeyringAccountState } from '@pollum-io/sysweb3-utils';
+import { IKeyringAccountState, ITrezorWallet } from '../types';
+import { getSigners } from '@pollum-io/sysweb3-utils';
 
-export const TrezorWallet = () => {
+export const TrezorWallet = (): ITrezorWallet => {
   const getAccountInfo = async (
     xpub: string,
     sysjs: any,

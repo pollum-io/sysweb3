@@ -1,6 +1,6 @@
-import { IWalletState } from '.';
+import { IKeyringAccountState, IWalletState } from './types';
 
-export const initialActiveAccountState = {
+export const initialActiveAccountState: IKeyringAccountState = {
   address: '',
   balances: {
     ethereum: 0,
@@ -14,7 +14,6 @@ export const initialActiveAccountState = {
   xpub: '',
   transactions: [],
   assets: [],
-  nfts: [],
 };
 
 export const initialNetworksState = {
