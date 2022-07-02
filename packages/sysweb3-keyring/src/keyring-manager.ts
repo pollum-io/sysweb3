@@ -36,6 +36,7 @@ export const KeyringManager = () => {
     hd,
     wallet.activeNetwork.url
   );
+  let memMnemonic = '';
 
   const getSalt = () => crypto.randomBytes(16).toString('hex');
 
@@ -57,11 +58,20 @@ export const KeyringManager = () => {
 
     const { hash, salt: passwordSalt } = saltHashPassword;
 
+    const vault = storage.get('vault');
+
     storage.set('vault', {
-      ...storage.get('vault'),
+      ...vault,
       hash,
       salt: passwordSalt,
     });
+
+    if (memMnemonic) {
+      storage.set('vault', {
+        ...vault,
+        mnemonic: CryptoJS.AES.encrypt(memMnemonic, hash).toString(),
+      });
+    }
   };
 
   const hasHdMnemonic = () => Boolean(hd.mnemonic);
@@ -91,7 +101,7 @@ export const KeyringManager = () => {
   const getDecryptedMnemonic = () => {
     const { hash, mnemonic } = storage.get('vault');
 
-    return CryptoJS.AES.decrypt(mnemonic, hash).toString();
+    return CryptoJS.AES.decrypt(mnemonic, hash).toString(CryptoJS.enc.Utf8);
   };
 
   const getSeed = (pwd: string) => {
@@ -468,7 +478,7 @@ export const KeyringManager = () => {
     const encryptedMnemonic = CryptoJS.AES.encrypt(
       generateMnemonic(),
       vault.hash
-    );
+    ).toString();
 
     if (!vault.mnemonic)
       storage.set('vault', { ...vault, mnemonic: encryptedMnemonic });
@@ -561,14 +571,7 @@ export const KeyringManager = () => {
 
   const validateSeed = (seedphrase: string) => {
     if (validateMnemonic(seedphrase)) {
-      const vault = storage.get('vault');
-
-      const encryptedMnemonic = CryptoJS.AES.encrypt(seedphrase, vault.hash);
-
-      storage.set('vault', {
-        ...vault,
-        mnemonic: encryptedMnemonic,
-      });
+      memMnemonic = seedphrase;
 
       return true;
     }

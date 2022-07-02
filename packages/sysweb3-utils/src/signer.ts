@@ -76,7 +76,9 @@ export const getSigners = () => {
 
   const { mnemonic, network, isTestnet, hash } = storage.get('vault');
 
-  const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString();
+  const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString(
+    CryptoJS.enc.Utf8
+  );
 
   const { hd: _hd, main: _main } = MainSigner({
     walletMnemonic: decryptedMnemonic,
