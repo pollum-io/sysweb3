@@ -58,17 +58,15 @@ export const KeyringManager = () => {
 
     const { hash, salt: passwordSalt } = saltHashPassword;
 
-    const vault = storage.get('vault');
-
     storage.set('vault', {
-      ...vault,
+      ...storage.get('vault'),
       hash,
       salt: passwordSalt,
     });
 
     if (memMnemonic) {
       storage.set('vault', {
-        ...vault,
+        ...storage.get('vault'),
         mnemonic: CryptoJS.AES.encrypt(memMnemonic, hash).toString(),
       });
     }
