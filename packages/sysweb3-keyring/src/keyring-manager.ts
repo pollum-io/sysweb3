@@ -86,15 +86,19 @@ export const KeyringManager = () => {
   /** end */
 
   /** seeds */
-  const getEncryptedMnemonic = () => {
-    const { signers, hash } = storage.get('vault');
+  const getEncryptedMnemonic = () => storage.get('vault').mnemonic;
 
-    const encryptedMnemonic = CryptoJS.AES.encrypt(signers.hd.mnemonic, hash);
+  const getDecryptedMnemonic = () => {
+    const { hash, mnemonic } = storage.get('vault');
 
-    return String(encryptedMnemonic);
+    return CryptoJS.AES.decrypt(mnemonic, hash).toString();
   };
 
-  const getSeed = (pwd: string) => (checkPassword(pwd) ? hd.mnemonic : null);
+  const getSeed = (pwd: string) => {
+    if (!checkPassword(pwd)) throw new Error('Invalid password.');
+
+    return getDecryptedMnemonic();
+  };
   /** end */
 
   /** state */
@@ -235,10 +239,10 @@ export const KeyringManager = () => {
     hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
 
   const _getLatestUpdateForWeb3Accounts = async () => {
-    const { signers, network } = storage.get('vault');
+    const { network } = storage.get('vault');
 
     const { address, privateKey } = web3Wallet.importAccount(
-      signers.hd.mnemonic
+      getDecryptedMnemonic()
     );
     const balance = await web3Wallet.getBalance(address);
 
@@ -459,9 +463,17 @@ export const KeyringManager = () => {
 
   /** keyring */
   const createSeed = () => {
-    const { signers } = storage.get('vault');
+    const vault = storage.get('vault');
 
-    return signers.hd.mnemonic || generateMnemonic();
+    const encryptedMnemonic = CryptoJS.AES.encrypt(
+      generateMnemonic(),
+      vault.hash
+    );
+
+    if (!vault.mnemonic)
+      storage.set('vault', { ...vault, mnemonic: encryptedMnemonic });
+
+    return CryptoJS.AES.decrypt(vault.mnemonic, vault.hash);
   };
 
   const createKeyringVault = async (): Promise<IKeyringAccountState> => {
@@ -547,8 +559,22 @@ export const KeyringManager = () => {
       storage.get('vault').hash
     ).toString();
 
-  const validateSeed = (seedphrase: string) =>
-    Boolean(validateMnemonic(seedphrase));
+  const validateSeed = (seedphrase: string) => {
+    if (validateMnemonic(seedphrase)) {
+      const vault = storage.get('vault');
+
+      const encryptedMnemonic = CryptoJS.AES.encrypt(seedphrase, vault.hash);
+
+      storage.set('vault', {
+        ...vault,
+        mnemonic: encryptedMnemonic,
+      });
+
+      return true;
+    }
+
+    return false;
+  };
 
   /** get updates */
   const getLatestUpdateForAccount = async () => {

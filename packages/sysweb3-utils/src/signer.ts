@@ -1,5 +1,6 @@
 import { BIP32Interface } from 'bip32';
 import { Psbt } from 'bitcoinjs-lib';
+import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 
 import { BitcoinNetwork } from '.';
@@ -73,10 +74,12 @@ export const MainSigner = ({
 export const getSigners = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
-  const { mnemonic, network, isTestnet } = storage.get('vault');
+  const { mnemonic, network, isTestnet, hash } = storage.get('vault');
+
+  const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString();
 
   const { hd: _hd, main: _main } = MainSigner({
-    walletMnemonic: mnemonic,
+    walletMnemonic: decryptedMnemonic,
     isTestnet,
     blockbookURL: network.url,
   });
