@@ -110,10 +110,6 @@ export const KeyringManager = () => {
   /** end */
 
   /** state */
-  const getState = () => wallet;
-  const getNetwork = () => wallet.activeNetwork;
-  const getAccounts = () => Object.values(wallet.accounts);
-
   const getPrivateKeyByAccountId = (id: number): string | null => {
     const account = Object.values(wallet.accounts).find(
       (account: IKeyringAccountState) => account.id === id
@@ -824,12 +820,9 @@ export const KeyringManager = () => {
     checkPassword,
     isUnlocked,
     getEncryptedMnemonic,
-    getState,
-    getNetwork,
     getPrivateKeyByAccountId,
     logout,
     login,
-    getAccounts,
     removeAccount,
     signMessage,
     forgetMainWallet,
