@@ -74,7 +74,14 @@ export const MainSigner = ({
 export const getSigners = () => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
-  const { mnemonic, network, isTestnet, hash } = storage.get('vault');
+  const { hash } = storage.get('vault-keys');
+
+  const decryptedVault = CryptoJS.AES.decrypt(
+    storage.get('vault'),
+    hash
+  ).toString(CryptoJS.enc.Utf8);
+
+  const { network, isTestnet, mnemonic } = JSON.parse(decryptedVault);
 
   const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString(
     CryptoJS.enc.Utf8
