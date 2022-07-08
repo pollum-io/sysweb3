@@ -80,6 +80,8 @@ export const KeyringManager = () => {
 
     storage.set('vault-keys', { hash, salt: passwordSalt });
 
+    _clearWallet();
+
     if (memMnemonic) {
       setEncryptedVault({
         ...getDecryptedVault(),
@@ -87,6 +89,8 @@ export const KeyringManager = () => {
       });
     }
   };
+
+  const getState = () => wallet;
 
   const hasHdMnemonic = () => Boolean(hd.mnemonic);
 
@@ -113,7 +117,7 @@ export const KeyringManager = () => {
   const getEncryptedMnemonic = () => getDecryptedVault().mnemonic;
 
   const getDecryptedMnemonic = () => {
-    const { mnemonic } = storage.get('vault');
+    const { mnemonic } = getDecryptedVault();
     const { hash } = storage.get('vault-keys');
 
     return CryptoJS.AES.decrypt(mnemonic, hash).toString(CryptoJS.enc.Utf8);
@@ -162,12 +166,12 @@ export const KeyringManager = () => {
   };
 
   const _clearTemporaryLocalKeys = () => {
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      network: wallet.activeNetwork,
-    });
+    storage.deleteItem('vault');
+    storage.deleteItem('vault-keys');
 
-    storage.set('vault-keys', { salt: '', hash: '' });
+    forgetSigners();
+
+    memMnemonic = '';
   };
 
   const _persistWallet = (
@@ -357,7 +361,7 @@ export const KeyringManager = () => {
   }: {
     isSyscoinChain: boolean;
   }) => {
-    const { network, wallet: _wallet } = storage.get('vault');
+    const { network, wallet: _wallet } = getDecryptedVault();
 
     wallet = {
       ..._wallet,
@@ -572,12 +576,6 @@ export const KeyringManager = () => {
     if (!checkPassword(pwd)) throw new Error('Invalid password');
 
     _clearTemporaryLocalKeys();
-
-    forgetSigners();
-
-    wallet = initialWalletState;
-
-    _fullUpdate();
   };
 
   const getEncryptedXprv = () =>
@@ -843,6 +841,7 @@ export const KeyringManager = () => {
     isUnlocked,
     getEncryptedMnemonic,
     getPrivateKeyByAccountId,
+    getState,
     logout,
     login,
     removeAccount,
