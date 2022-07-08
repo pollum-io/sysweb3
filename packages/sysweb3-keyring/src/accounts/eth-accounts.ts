@@ -48,10 +48,7 @@ export const Web3Accounts = () => {
 
       return roundedBalance;
     } catch (error) {
-      // todo: handle error
-      console.error(`${error}`);
-
-      return 0;
+      console.error(error);
     }
   };
 
@@ -125,9 +122,7 @@ export const Web3Accounts = () => {
 
       return;
     } catch (error) {
-      // todo: handle error
       console.error(error);
-      throw error;
     }
   };
 
@@ -175,8 +170,7 @@ export const Web3Accounts = () => {
         return ethereum.address[0].balances;
       }
     } catch (error) {
-      // todo: handle error
-      throw new Error('Not available tokens');
+      throw new Error(`Not available tokens. Error: ${error}`);
     }
   };
 
@@ -205,9 +199,7 @@ export const Web3Accounts = () => {
 
       return account;
     } catch (error) {
-      // todo: handle
       console.error(error);
-      throw error;
     }
   };
 
