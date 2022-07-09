@@ -5,7 +5,6 @@ import * as ethUtil from 'ethereumjs-util';
 import { ethers } from 'ethers';
 import { request, gql } from 'graphql-request';
 import _ from 'lodash';
-import { Account, TransactionReceipt } from 'web3-core';
 
 import { web3Provider } from '@pollum-io/sysweb3-network';
 import {
@@ -15,12 +14,12 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export const Web3Accounts = () => {
-  const createAccount = (): Account => web3Provider.eth.accounts.create();
+  const createAccount = (privateKey: string) => new ethers.Wallet(privateKey);
 
   const getBalance = async (address: string): Promise<number> => {
     try {
-      const balance = await web3Provider.eth.getBalance(address);
-      const formattedBalance = web3Provider.utils.fromWei(balance);
+      const balance = await web3Provider.getBalance(address);
+      const formattedBalance = ethers.utils.formatEther(balance);
 
       const roundedBalance = _.floor(parseFloat(formattedBalance), 4);
 
@@ -39,14 +38,11 @@ export const Web3Accounts = () => {
   ): Promise<number> => {
     try {
       const abi = getErc20Abi() as any;
-      const balance = await (
-        await createContractUsingAbi(abi, tokenAddress)
-      ).methods
-        .balanceOf(walletAddress)
+      const balance = createContractUsingAbi(abi, tokenAddress)
+        .methods.balanceOf(walletAddress)
         .call();
 
-      const formattedBalance = web3Provider.utils.fromWei(balance);
-
+      const formattedBalance = ethers.utils.formatEther(balance);
       const roundedBalance = _.floor(parseFloat(formattedBalance), 4);
 
       return roundedBalance;
@@ -120,15 +116,15 @@ export const Web3Accounts = () => {
     }
   };
 
-  const importAccount = (mnemonic: string): Account => {
+  const importAccount = (mnemonic: string) => {
     try {
-      if (web3Provider.utils.isHexStrict(mnemonic)) {
-        return web3Provider.eth.accounts.privateKeyToAccount(mnemonic);
+      if (ethers.utils.isHexString(mnemonic)) {
+        return new ethers.Wallet(mnemonic);
       }
 
       const { privateKey } = ethers.Wallet.fromMnemonic(mnemonic);
 
-      const account = web3Provider.eth.accounts.privateKeyToAccount(privateKey);
+      const account = new ethers.Wallet(privateKey);
 
       return account;
     } catch (error) {
@@ -161,7 +157,7 @@ export const Web3Accounts = () => {
   };
 
   const getTransactionCount = async (address: string) =>
-    await web3Provider.eth.getTransactionCount(address);
+    await web3Provider.getTransactionCount(address);
 
   const ethSignTypedDataV4 = (msgParams: object) => {
     const msg = JSON.stringify(msgParams);
@@ -205,7 +201,7 @@ export const Web3Accounts = () => {
   };
 
   const getRecommendedGasPrice = async (formatted?: boolean) => {
-    const gasPriceBN = await web3Provider.eth.getGasPrice();
+    const gasPriceBN = await web3Provider.getGasPrice();
 
     if (formatted) {
       return ethers.utils.formatEther(gasPriceBN);
@@ -214,19 +210,20 @@ export const Web3Accounts = () => {
     return gasPriceBN.toString();
   };
 
+  const toBigNumber = (aBigNumberish: string) =>
+    ethers.BigNumber.from(String(aBigNumberish));
+
   const getFeeByType = async (type: string) => {
     const gasPrice = await getRecommendedGasPrice(false);
 
-    const low = web3Provider.utils
-      .toBN(gasPrice)
-      .mul(web3Provider.utils.toBN(8))
-      .div(web3Provider.utils.toBN(10))
+    const low = toBigNumber(gasPrice)
+      .mul(ethers.BigNumber.from('8'))
+      .div(ethers.BigNumber.from('10'))
       .toString();
 
-    const high = web3Provider.utils
-      .toBN(gasPrice)
-      .mul(web3Provider.utils.toBN(11))
-      .div(web3Provider.utils.toBN(10))
+    const high = toBigNumber(gasPrice)
+      .mul(ethers.BigNumber.from('11'))
+      .div(ethers.BigNumber.from('10'))
       .toString();
 
     if (type === 'low') return low;
@@ -236,7 +233,7 @@ export const Web3Accounts = () => {
   };
 
   const getGasLimit = async (toAddress: string) => {
-    return await web3Provider.eth.estimateGas({
+    return await web3Provider.estimateGas({
       to: toAddress,
     });
   };
@@ -251,7 +248,7 @@ export const Web3Accounts = () => {
     value: any;
   }) => {
     const abi = getErc20Abi() as any;
-    const contract = new web3Provider.eth.Contract(abi, contractAddress);
+    const contract = createContractUsingAbi(abi, contractAddress);
     const data = contract.methods.transfer(receivingAddress, value).encodeABI();
 
     return data;
@@ -259,7 +256,6 @@ export const Web3Accounts = () => {
 
   const sendTransaction = async ({
     sender,
-    senderXprv,
     receivingAddress,
     amount,
     gasLimit,
@@ -267,24 +263,23 @@ export const Web3Accounts = () => {
     token,
   }: {
     sender: string;
-    senderXprv: string;
     receivingAddress: string;
     amount: number;
     gasLimit?: number;
     gasPrice?: number;
     token?: any;
-  }): Promise<TransactionReceipt> => {
+  }): Promise<TransactionResponse> => {
     const tokenDecimals = token && token.decimals ? token.decimals : 18;
-    const decimals = web3Provider.utils.toBN(tokenDecimals);
-    const amountBN = web3Provider.utils.toBN(amount);
+    const decimals = toBigNumber(tokenDecimals);
+    const amountBN = toBigNumber(String(amount));
 
     const defaultGasPrice = await getRecommendedGasPrice(false);
     const defaultGasLimit = await getGasLimit(receivingAddress);
 
     const value =
       token && token.contract_address
-        ? amountBN.mul(web3Provider.utils.toBN(10).pow(decimals))
-        : web3Provider.utils.toWei(amount.toString(), 'ether');
+        ? amountBN.mul(toBigNumber('10').pow(decimals))
+        : ethers.utils.formatEther(amount.toString());
 
     const data =
       token && token.contract_address
@@ -295,43 +290,38 @@ export const Web3Accounts = () => {
           })
         : null;
 
+    const signer = web3Provider.getSigner();
+
     if (token && token.contract_address) {
-      const signedTokenTransaction =
-        await web3Provider.eth.accounts.signTransaction(
-          {
-            from: sender,
-            to: token.contract_address,
-            value: '0x00',
-            gas: gasLimit || defaultGasLimit,
-            gasPrice: gasPrice || defaultGasPrice,
-            nonce: await web3Provider.eth.getTransactionCount(sender, 'latest'),
-            data,
-          },
-          senderXprv
-        );
-
-      return web3Provider.eth
-        .sendSignedTransaction(`${signedTokenTransaction.rawTransaction}`)
-        .then((result: TransactionReceipt) => result);
-    }
-
-    const signedTransaction = await web3Provider.eth.accounts.signTransaction(
-      {
+      const tx = {
         from: sender,
-        to: receivingAddress,
-        value,
+        to: token.contract_address,
+        value: '0x00',
         gas: gasLimit || defaultGasLimit,
         gasPrice: gasPrice || defaultGasPrice,
-        nonce: await web3Provider.eth.getTransactionCount(sender, 'latest'),
+        nonce: await web3Provider.getTransactionCount(sender, 'latest'),
         data,
-      },
-      senderXprv
-    );
+      };
+
+      const signedTokenTransaction = await signer.signTransaction(tx);
+
+      return web3Provider.sendTransaction(signedTokenTransaction);
+    }
+
+    const tx = {
+      from: sender,
+      to: receivingAddress,
+      value,
+      gas: gasLimit || defaultGasLimit,
+      gasPrice: gasPrice || defaultGasPrice,
+      nonce: await web3Provider.getTransactionCount(sender, 'latest'),
+      data,
+    };
+
+    const signedTokenTransaction = await signer.signTransaction(tx);
 
     try {
-      return web3Provider.eth
-        .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
-        .then((result: TransactionReceipt) => result);
+      return web3Provider.sendTransaction(signedTokenTransaction);
     } catch (error: any) {
       throw new Error(error);
     }

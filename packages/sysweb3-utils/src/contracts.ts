@@ -1,21 +1,14 @@
-import { ethers } from 'ethers';
-import { Contract, ContractOptions } from 'web3-eth-contract';
+import { ethers, Contract, ContractInterface } from 'ethers';
 import { AbiItem } from 'web3-utils';
 
 import abi20 from './abi/erc20.json';
 import abi21 from './abi/erc721.json';
-import { web3Provider } from '@pollum-io/sysweb3-network';
 
-export const createContractUsingAbi = async (
+export const createContractUsingAbi = (
   AbiContract: AbiItem[] | AbiItem | object,
-  address?: string,
-  options?: ContractOptions
-): Promise<Contract> => {
-  return new web3Provider.eth.Contract(
-    AbiContract as AbiItem[],
-    address,
-    options
-  );
+  address?: string
+): Contract => {
+  return new ethers.Contract(String(address), AbiContract as ContractInterface);
 };
 
 const InfuraProvider = ethers.providers.InfuraProvider;
