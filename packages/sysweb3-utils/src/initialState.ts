@@ -70,6 +70,34 @@ export const initialNetworksState = {
       label: 'Goerli',
       url: 'https://goerli.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
     },
+    137: {
+      chainId: 137,
+      currency: 'matic',
+      default: true,
+      label: 'Polygon Mainnet',
+      url: 'https://polygon-rpc.com',
+    },
+    80001: {
+      chainId: 80001,
+      currency: 'matic',
+      default: true,
+      label: 'Polygon Mumbai Testnet',
+      url: 'https://rpc-mumbai.maticvigil.com',
+    },
+    57: {
+      chainId: 57,
+      currency: 'sys',
+      default: true,
+      label: 'Syscoin Mainnet',
+      url: 'https://rpc.syscoin.org',
+    },
+    5700: {
+      chainId: 5700,
+      currency: 'tsys',
+      default: true,
+      label: 'Syscoin Tanenbaum',
+      url: 'https://rpc.tanenbaum.io',
+    },
   },
 };
 

@@ -51,8 +51,8 @@ export const txUtils = () => {
       }
 
       return {
-        gasUsed,
-        effectiveGasPrice,
+        gasUsed: Number(gasUsed),
+        effectiveGasPrice: Number(effectiveGasPrice),
       };
     } catch (error) {
       throw new Error(
