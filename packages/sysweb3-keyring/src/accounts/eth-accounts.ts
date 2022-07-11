@@ -198,8 +198,8 @@ export const Web3Accounts = () => {
       const account = web3Provider.eth.accounts.privateKeyToAccount(privateKey);
 
       return account;
+    } catch {
       throw new Error(`Can't import account. Error: ${error}`);
-      console.error(error);
     }
   };
 
