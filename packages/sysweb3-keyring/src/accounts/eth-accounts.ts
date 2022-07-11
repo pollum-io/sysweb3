@@ -122,7 +122,7 @@ export const Web3Accounts = () => {
 
       return;
     } catch (error) {
-      console.error(error);
+      throw new Error(`No NFTs available for this address. Error: ${error}`);
     }
   };
 
