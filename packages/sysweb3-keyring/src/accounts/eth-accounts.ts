@@ -48,7 +48,7 @@ export const Web3Accounts = () => {
 
       return roundedBalance;
     } catch (error) {
-      console.error(error);
+      throw new Error(`No balance available for this address. Error: ${error}`);
     }
   };
 
