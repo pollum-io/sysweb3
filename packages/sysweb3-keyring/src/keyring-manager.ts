@@ -8,23 +8,26 @@ import { hdkey } from 'ethereumjs-wallet';
 import sys from 'syscoinjs-lib';
 
 import { Web3Accounts } from './accounts';
+import { initialWalletState } from './initial-state';
 import { SyscoinTransactions } from './transactions';
 import { TrezorWallet } from './trezor';
-import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
   IKeyringAccountState,
   IWalletState,
-  initialWalletState,
+  IKeyringBalances,
+  IKeyringManager,
+} from './types';
+import * as sysweb3 from '@pollum-io/sysweb3-core';
+import { setActiveNetwork } from '@pollum-io/sysweb3-network';
+import {
   INetwork,
   getSigners,
   validateSysRpc,
   SyscoinHDSigner,
   SyscoinMainSigner,
-  IKeyringBalances,
 } from '@pollum-io/sysweb3-utils';
 
-export const KeyringManager = () => {
+export const KeyringManager = (): IKeyringManager => {
   /** keys */
   const web3Wallet = Web3Accounts();
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
@@ -90,8 +93,6 @@ export const KeyringManager = () => {
     }
   };
 
-  const getState = () => wallet;
-
   const hasHdMnemonic = () => Boolean(hd.mnemonic);
 
   const forgetSigners = () => {
@@ -131,19 +132,31 @@ export const KeyringManager = () => {
   /** end */
 
   /** state */
-  const getPrivateKeyByAccountId = (id: number): string | null => {
+  const getState = () => wallet;
+  const getNetwork = () => wallet.activeNetwork;
+  const getAccounts = () => Object.values(wallet.accounts);
+
+  const getPrivateKeyByAccountId = (id: number): string => {
     const account = Object.values(wallet.accounts).find(
-      (account: IKeyringAccountState) => account.id === id
+      (account) => account.id === id
     );
 
-    return account ? account.xprv : null;
+    if (!account) throw new Error('Account not found');
+
+    return account.xprv;
   };
 
   const getAccountXpub = (): string => hd.getAccountXpub();
 
-  const getAccountById = (id: number): IKeyringAccountState =>
-    Object.values(wallet.accounts).find((account) => account.id === id) ||
-    ({} as IKeyringAccountState);
+  const getAccountById = (id: number): IKeyringAccountState => {
+    const account = Object.values(wallet.accounts).find(
+      (account) => account.id === id
+    );
+
+    if (!account) throw new Error('Account not found');
+
+    return account;
+  };
 
   /** end */
 
@@ -529,10 +542,8 @@ export const KeyringManager = () => {
   };
 
   /** login/logout */
-  const login = async (
-    password: string
-  ): Promise<IKeyringAccountState | Error> => {
-    if (!checkPassword(password)) return new Error('Invalid password');
+  const login = async (password: string): Promise<IKeyringAccountState> => {
+    if (!checkPassword(password)) throw new Error('Invalid password');
 
     wallet = await _unlockWallet(password);
 
@@ -696,7 +707,7 @@ export const KeyringManager = () => {
   };
   /** end */
 
-  const addNewAccount = async (label: string) => {
+  const addNewAccount = async (label?: string) => {
     if (!hd.mnemonic) {
       const { _hd, _main } = getSigners();
 
@@ -832,33 +843,36 @@ export const KeyringManager = () => {
   };
 
   return {
-    validateSeed,
-    setWalletPassword,
-    createSeed,
-    createKeyringVault,
-    getAccountById,
-    checkPassword,
-    isUnlocked,
-    getEncryptedMnemonic,
-    getPrivateKeyByAccountId,
-    getState,
-    logout,
-    login,
-    removeAccount,
-    signMessage,
-    forgetMainWallet,
-    getEncryptedXprv,
-    txs,
-    trezor,
-    getAccountXpub,
-    getLatestUpdateForAccount,
-    setSignerNetwork,
-    getSeed,
-    hasHdMnemonic,
-    forgetSigners,
-    setAccountIndexForDerivedAccount,
     addNewAccount,
+    checkPassword,
+    createKeyringVault,
+    createSeed,
+    forgetMainWallet,
+    forgetSigners,
+    getAccounts,
+    getAccountById,
+    getAccountXpub,
+    getDecryptedMnemonic,
+    getEncryptedMnemonic,
+    getEncryptedXprv,
+    getLatestUpdateForAccount,
+    getNetwork,
+    getPrivateKeyByAccountId,
+    getSeed,
+    getState,
+    hasHdMnemonic,
+    isUnlocked,
+    login,
+    logout,
+    removeAccount,
     removeNetwork,
+    signMessage,
+    setAccountIndexForDerivedAccount,
     setActiveAccount,
+    setSignerNetwork,
+    setWalletPassword,
+    trezor,
+    txs,
+    validateSeed,
   };
 };

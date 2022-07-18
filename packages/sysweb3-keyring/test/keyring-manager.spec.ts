@@ -1,8 +1,8 @@
+import { initialWalletState } from '../src/initial-state';
 import { KeyringManager } from '../src/keyring-manager';
 import { FAKE_PASSWORD, FAKE_SEED_PHRASE } from './constants';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { networks } from '@pollum-io/sysweb3-network';
-import { initialWalletState } from '@pollum-io/sysweb3-utils';
 
 describe('', () => {
   const keyringManager = KeyringManager();

@@ -2,6 +2,7 @@ import coinSelectSyscoin from 'coinselectsyscoin';
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
 
+import { IKeyringAccountState, ISyscoinTransactions } from '../types';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
   INewNFT,
@@ -11,7 +12,6 @@ import {
   ITokenUpdate,
   ITxid,
   txUtils,
-  IKeyringAccountState,
   getSigners,
   getAsset,
   countDecimals,
@@ -25,7 +25,7 @@ type EstimateFeeParams = {
   explorerUrl: string;
 };
 
-export const SyscoinTransactions = () => {
+export const SyscoinTransactions = (): ISyscoinTransactions => {
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
   const estimateSysTransactionFee = async ({
@@ -829,14 +829,14 @@ export const SyscoinTransactions = () => {
     console.log(account, tx, options);
 
   return {
-    confirmTokenCreation,
-    confirmTokenMint,
-    confirmNftCreation,
-    signTransaction,
-    confirmUpdateToken,
-    sendTransaction,
     confirmMintNFT,
-    signMessage,
+    confirmNftCreation,
+    confirmTokenMint,
+    confirmTokenCreation,
+    confirmUpdateToken,
     getRecommendedFee,
+    sendTransaction,
+    signMessage,
+    signTransaction,
   };
 };
