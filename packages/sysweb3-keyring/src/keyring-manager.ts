@@ -268,13 +268,9 @@ export const KeyringManager = () => {
     );
     const balance = await web3Wallet.getBalance(address);
 
-    // hd.Signer.accountIndex
     const { id } = wallet.activeAccount;
 
-    const transactions = await web3Wallet.getUserTransactions(
-      address,
-      network.chainId === 1 ? 'homestead' : network.label.toLowerCase()
-    );
+    const transactions = await web3Wallet.getUserTransactions(address, network);
 
     const {
       data: {

@@ -134,25 +134,116 @@ export const Web3Accounts = () => {
     }
   };
 
-  // const getRecommendedFee = () => { };
-  const getUserTransactions = async (
+  const checkLatestBlocksForTransactions = async (
     address: string,
-    network: string
-  ): Promise<TransactionResponse[] | undefined> => {
-    const etherscanProvider = new ethers.providers.EtherscanProvider(
-      network, // homestead === mainnet
-      'K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
-    );
-    try {
-      const userTxs = etherscanProvider.getHistory(address);
+    transactions: any[]
+  ) => {
+    const currentBlock = web3Provider.blockNumber;
 
-      if (userTxs) {
-        return userTxs;
+    let txCount = await web3Provider.getTransactionCount(address, currentBlock);
+    let balance = await web3Provider.getBalance(address, currentBlock);
+
+    if (txCount > 0 || balance) {
+      const blockTxs: any = {};
+
+      for (
+        let index = currentBlock;
+        index >= 20 && txCount > 0 && balance;
+        --index
+      ) {
+        try {
+          const block = await web3Provider.getBlock(index);
+
+          if (block && block.transactions) {
+            blockTxs[block.hash] = block.transactions;
+          }
+
+          const currentTx = blockTxs[block.hash];
+
+          if (currentTx.from === address || currentTx.to === address) {
+            if (address === currentTx.from) {
+              if (currentTx.from !== currentTx.to)
+                balance = balance.add(currentTx.value);
+
+              console.log({
+                index,
+                tx,
+                from: currentTx.from,
+                to: currentTx.to,
+                value: currentTx.value.toString(10),
+              });
+
+              txCount = txCount - 1;
+            }
+
+            if (address == currentTx.to) {
+              if (currentTx.from !== currentTx.to)
+                balance = balance.sub(currentTx.value);
+
+              console.log({
+                index,
+                tx,
+                from: currentTx.from,
+                to: currentTx.to,
+                value: currentTx.value.toString(10),
+              });
+            }
+
+            transactions.push(currentTx);
+          }
+        } catch (error) {
+          throw new Error(`Error in block. Error: ${error}`);
+        }
+      }
+    }
+  };
+
+  const getUserTransactions = async (address: string, network: INetwork) => {
+    const etherscanSupportedNetworks = [
+      'homestead',
+      'ropsten',
+      'rinkeby',
+      'goerli',
+      'kovan',
+    ];
+
+    try {
+      if (etherscanSupportedNetworks.includes(network.label)) {
+        const etherscanProvider = new ethers.providers.EtherscanProvider(
+          network.label,
+          'K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
+        );
+
+        return etherscanProvider.getHistory(address) || [];
       }
 
-      return [];
+      const wssProvider = new ethers.providers.WebSocketProvider(
+        String(network.wsUrl)
+      );
+
+      console.log({ wssProvider });
+
+      const transactions: any = {};
+
+      wssProvider.on('pending', async (txhash) => {
+        const tx = await wssProvider.getTransaction(txhash);
+
+        console.log('pending tx is not ours', { tx, transactions });
+
+        if (tx.from === address || tx.to === address) {
+          transactions[tx.hash] = tx;
+
+          console.log('pending tx is ours', { tx, transactions });
+        }
+      });
+
+      await checkLatestBlocksForTransactions(address, transactions);
+
+      return Object.values(transactions);
     } catch (error) {
-      console.error(error);
+      throw new Error(
+        `Could not get user transactions history. Error: ${error}`
+      );
     }
   };
 

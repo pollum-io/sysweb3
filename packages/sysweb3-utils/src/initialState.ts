@@ -14,7 +14,6 @@ export const initialActiveAccountState = {
   xpub: '',
   transactions: [],
   assets: [],
-  nfts: [],
 };
 
 export const initialNetworksState = {
@@ -25,6 +24,7 @@ export const initialNetworksState = {
       url: 'https://blockbook.elint.services/',
       default: true,
       currency: 'sys',
+      wsUrl: '',
     },
     5700: {
       chainId: 5700,
@@ -32,6 +32,7 @@ export const initialNetworksState = {
       url: 'https://blockbook-dev.elint.services/',
       default: true,
       currency: 'tsys',
+      wsUrl: '',
     },
   },
   ethereum: {
@@ -41,6 +42,7 @@ export const initialNetworksState = {
       label: 'Ethereum Mainnet',
       default: true,
       currency: 'eth',
+      wsUrl: 'wss://mainnet.infura.io/ws/v3/c42232a29f9d4bd89d53313eb16ec241',
     },
     42: {
       url: 'https://kovan.poa.network',
@@ -48,6 +50,7 @@ export const initialNetworksState = {
       label: 'Kovan',
       chainId: 42,
       currency: 'kov',
+      wsUrl: 'wss://kovan.infura.io/ws/v3/c42232a29f9d4bd89d53313eb16ec241',
     },
     4: {
       chainId: 4,
@@ -55,6 +58,7 @@ export const initialNetworksState = {
       url: 'https://rinkeby.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
       default: true,
       currency: 'rin',
+      wsUrl: 'wss://rinkeby.infura.io/ws/v3/c42232a29f9d4bd89d53313eb16ec241',
     },
     3: {
       chainId: 3,
@@ -62,6 +66,7 @@ export const initialNetworksState = {
       default: true,
       label: 'Ropsten',
       url: 'https://ropsten.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
+      wsUrl: 'wss://ropsten.infura.io/ws/v3/c42232a29f9d4bd89d53313eb16ec241',
     },
     5: {
       chainId: 5,
@@ -69,6 +74,7 @@ export const initialNetworksState = {
       default: true,
       label: 'Goerli',
       url: 'https://goerli.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
+      wsUrl: 'wss://goerli.infura.io/ws/v3/c42232a29f9d4bd89d53313eb16ec241',
     },
     137: {
       chainId: 137,
@@ -76,6 +82,7 @@ export const initialNetworksState = {
       default: true,
       label: 'Polygon Mainnet',
       url: 'https://polygon-rpc.com',
+      wsUrl: 'wss://rpc-mainnet.matic.network',
     },
     80001: {
       chainId: 80001,
@@ -83,6 +90,7 @@ export const initialNetworksState = {
       default: true,
       label: 'Polygon Mumbai Testnet',
       url: 'https://rpc-mumbai.maticvigil.com',
+      wsUrl: 'wss://rpc-mumbai.matic.today',
     },
     57: {
       chainId: 57,
@@ -90,6 +98,7 @@ export const initialNetworksState = {
       default: true,
       label: 'Syscoin Mainnet',
       url: 'https://rpc.syscoin.org',
+      wsUrl: 'wss://rpc.syscoin.org/wss',
     },
     5700: {
       chainId: 5700,
@@ -97,6 +106,7 @@ export const initialNetworksState = {
       default: true,
       label: 'Syscoin Tanenbaum',
       url: 'https://rpc.tanenbaum.io',
+      wsUrl: 'wss://rpc.tanenbaum.io/wss',
     },
   },
 };
@@ -111,5 +121,6 @@ export const initialWalletState: IWalletState = {
     url: 'https://blockbook.elint.services/',
     default: true,
     currency: 'sys',
+    wsUrl: '',
   },
 };
