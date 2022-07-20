@@ -8,6 +8,7 @@ export type INetwork = {
   url: string;
   default?: boolean;
   label: string;
+  key?: string;
   wsUrl?: string;
   currency?: string;
 };
