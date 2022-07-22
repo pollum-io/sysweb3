@@ -463,17 +463,19 @@ export const KeyringManager = (): IKeyringManager => {
     assets: any;
     receivingAddress: string;
   }> => {
-    if (!hd.mnemonic) {
+    const {
+      wallet: _wallet,
+      signers: { hd: _hd },
+      network,
+      isTestnet,
+    } = getDecryptedVault();
+
+    if (!hd.mnemonic || hd.Signer.isTestnet !== isTestnet) {
       const { _hd, _main } = getSigners();
 
       hd = _hd;
       main = _main;
     }
-
-    const {
-      wallet: _wallet,
-      signers: { hd: _hd },
-    } = getDecryptedVault();
 
     const hdAccounts = _hd.Signer.accounts;
 
@@ -491,7 +493,7 @@ export const KeyringManager = (): IKeyringManager => {
 
     const xpub = hd.getAccountXpub();
     const formattedBackendAccount = await _getFormattedBackendAccount({
-      url: main.blockbookURL || wallet.activeNetwork.url,
+      url: network.url,
       xpub,
     });
     const receivingAddress = await hd.getNewReceivingAddress(true);
@@ -613,9 +615,9 @@ export const KeyringManager = (): IKeyringManager => {
 
     setEncryptedVault({ ...vault, wallet });
 
-    const isSyscoinChain = Boolean(
-      wallet.networks.syscoin[wallet.activeNetwork.chainId]
-    );
+    const isSyscoinChain =
+      Boolean(wallet.networks.syscoin[wallet.activeNetwork.chainId]) &&
+      wallet.activeNetwork.url.includes('blockbook');
 
     const latestUpdate = isSyscoinChain
       ? await _getLatestUpdateForSysAccount()
