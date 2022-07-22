@@ -572,9 +572,12 @@ export const KeyringManager = () => {
 
     setEncryptedVault({ ...vault, wallet });
 
-    const isSyscoinChain = Boolean(
-      wallet.networks.syscoin[wallet.activeNetwork.chainId]
-    );
+    const {
+      activeNetwork: { chainId, url },
+    } = wallet;
+
+    const isSyscoinChain =
+      Boolean(wallet.networks.syscoin[chainId]) && url.includes('blockbook');
 
     const latestUpdate = isSyscoinChain
       ? await _getLatestUpdateForSysAccount()

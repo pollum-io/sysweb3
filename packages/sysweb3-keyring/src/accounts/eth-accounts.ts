@@ -148,7 +148,7 @@ export const Web3Accounts = () => {
 
       for (
         let index = currentBlock;
-        index >= 20 && txCount > 0 && balance;
+        index >= 10000 && txCount > 0 && balance;
         --index
       ) {
         try {
@@ -160,7 +160,10 @@ export const Web3Accounts = () => {
 
           const currentTx = blockTxs[block.hash];
 
-          if (currentTx.from === address || currentTx.to === address) {
+          if (
+            (currentTx && currentTx.from === address) ||
+            currentTx.to === address
+          ) {
             if (address === currentTx.from) {
               if (currentTx.from !== currentTx.to)
                 balance = balance.add(currentTx.value);
@@ -200,7 +203,7 @@ export const Web3Accounts = () => {
 
   const getUserTransactions = async (address: string, network: INetwork) => {
     const etherscanSupportedNetworks = [
-      'homestead',
+      'ethereum mainnet',
       'ropsten',
       'rinkeby',
       'goerli',
@@ -217,29 +220,51 @@ export const Web3Accounts = () => {
         return etherscanProvider.getHistory(address) || [];
       }
 
-      const wssProvider = new ethers.providers.WebSocketProvider(
-        String(network.wsUrl)
-      );
+      // const wssProvider = new ethers.providers.WebSocketProvider(
+      //   String(network.wsUrl)
+      // );
 
-      console.log({ wssProvider });
+      // console.log({ wssProvider });
 
-      const transactions: any = {};
+      // const transactions: any = {};
 
-      wssProvider.on('pending', async (txhash) => {
-        const tx = await wssProvider.getTransaction(txhash);
+      // wssProvider.on('pending', async (txhash) => {
+      //   const tx = await wssProvider.getTransaction(txhash);
 
-        console.log('pending tx is not ours', { tx, transactions });
+      //   console.log('pending tx is not ours', { tx, transactions });
 
-        if (tx.from === address || tx.to === address) {
-          transactions[tx.hash] = tx;
+      //   if (tx.from === address || tx.to === address) {
+      //     transactions[tx.hash] = tx;
 
-          console.log('pending tx is ours', { tx, transactions });
-        }
-      });
+      //     console.log('pending tx is ours', { tx, transactions });
+      //   }
+      // });
 
-      await checkLatestBlocksForTransactions(address, transactions);
+      // await checkLatestBlocksForTransactions(address, transactions);
 
-      return Object.values(transactions);
+      // return Object.values(transactions);
+
+      if (network.chainId === 57) {
+        const request = await axios.get(
+          `https://explorer.syscoin.org/api?module=account&action=txlist&address=${address}`
+        );
+
+        console.log({ request, network });
+
+        return request.data.result;
+      }
+
+      if (network.chainId === 5700) {
+        const request = await axios.get(
+          `https://tanenbaum.io/api?module=account&action=txlist&address=${address}`
+        );
+
+        console.log({ request, network });
+
+        return request.data.result;
+      }
+
+      return [];
     } catch (error) {
       throw new Error(
         `Could not get user transactions history. Error: ${error}`
