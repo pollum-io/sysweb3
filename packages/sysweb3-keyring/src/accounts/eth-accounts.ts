@@ -15,29 +15,7 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export const Web3Accounts = () => {
-  /**
-   * This function should return an Account Object.
-   *
-   * Use example:
-   *
-   * ```
-   * <button onClick={createAccount}>Create your Account!</button>
-   * ```
-   *
-   */
   const createAccount = (): Account => web3Provider.eth.accounts.create();
-
-  /**
-   * This function should return the balance of current account.
-   *
-   * @param {string} address
-   *
-   * @example
-   *
-   * ```
-   * <button onClick={getBalance('0x000000000000000')}>Get balance</button>
-   * ```
-   */
 
   const getBalance = async (address: string): Promise<number> => {
     try {
@@ -51,19 +29,6 @@ export const Web3Accounts = () => {
       throw new Error(`No balance available for this address. Error: ${error}`);
     }
   };
-
-  /**
-   * This function should return the balance of any token using the current account.
-   *
-   * @param {string} tokenAddress
-   * @param {string} walletAddress
-   *
-   * @example
-   *
-   * ```
-   * <button onClick={getBalanceOfAnyToken('0x000000000000000', '0x000000000000000')}>Get balance of token</button>
-   * ```
-   */
 
   const getBalanceOfAnyToken = async (
     tokenAddress: string,
@@ -86,18 +51,6 @@ export const Web3Accounts = () => {
       return 0;
     }
   };
-
-  /**
-   * This function should return a user NFT object (if account have any NFT).
-   *
-   * @param {string} address
-   *
-   * @example
-   *
-   * ```
-   * <button onClick={getUserNFT}>Get User Available NFTs from account</button>
-   * ```
-   */
 
   const getNftsByAddress = async (
     address: string,
@@ -126,19 +79,6 @@ export const Web3Accounts = () => {
     }
   };
 
-  /**
-   * This function should return an array with all available currencies of provide wallet address.
-   *
-   * @param {string} address
-   *
-   * @example
-   *
-   * ```
-   * <button onClick={getTokens('0x00000000000000000')}>Get all available tokens!</button>
-   * ```
-   *
-   */
-
   const getTokens = async (address: string): Promise<any> => {
     const query = gql`
         {
@@ -146,7 +86,7 @@ export const Web3Accounts = () => {
             address(
               address: { is: "${address}" }
             ) {
-              balances {
+              balances { 
                 currency {
                   symbol
                 }
@@ -173,19 +113,6 @@ export const Web3Accounts = () => {
       throw new Error(`Not available tokens. Error: ${error}`);
     }
   };
-
-  /**
-   * This function should return an Account Object from imported wallet.
-   *
-   * @param {string} mnemonic
-   *
-   * @example
-   *
-   * ```
-   * <button onClick={importAccount('this test mnemonic phrase for import my account')}>Import My account</button>
-   * ```
-   *
-   */
 
   const importAccount = (mnemonic: string): Account => {
     try {
@@ -214,9 +141,11 @@ export const Web3Accounts = () => {
     );
     try {
       const userTxs = etherscanProvider.getHistory(address);
+
       if (userTxs) {
         return userTxs;
       }
+
       return [];
     } catch (error) {
       console.error(error);

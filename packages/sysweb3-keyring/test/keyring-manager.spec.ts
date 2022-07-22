@@ -39,13 +39,6 @@ describe('', () => {
     expect(seed.split(' ').length).toBe(12);
   });
 
-  //* getState
-  it('should get the state', () => {
-    const state = keyringManager.getState();
-
-    expect(state).toBeDefined();
-  });
-
   //* createKeyringVault
   it('should create the keyring vault', async () => {
     const account = await keyringManager.createKeyringVault();
@@ -55,7 +48,7 @@ describe('', () => {
 
   //* addNewAccount
   it('should add a new account', async () => {
-    const account = await keyringManager.addNewAccount(undefined);
+    const account = await keyringManager.addNewAccount('undefined');
     expect(account.label).toBe('Account 2');
 
     const wallet = keyringManager.getState();
