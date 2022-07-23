@@ -659,10 +659,12 @@ export const KeyringManager = (): IKeyringManager => {
     network: INetwork,
     chain: string
   ): Promise<IKeyringAccountState> => {
+    const { wallet: _wallet } = getDecryptedVault();
+
     wallet = {
-      ...wallet,
+      ..._wallet,
       networks: {
-        ...wallet.networks,
+        ..._wallet.networks,
         [chain]: {
           [network.chainId]: network,
         },
@@ -696,6 +698,7 @@ export const KeyringManager = (): IKeyringManager => {
   /** accounts */
   const setAccountIndexForDerivedAccount = (accountId: number) => {
     if (accountId === 0) return;
+    if (hd.Signer.accounts[accountId]) return;
 
     const childAccount = hd.deriveAccount(accountId);
 
@@ -732,7 +735,7 @@ export const KeyringManager = (): IKeyringManager => {
       });
 
       const formattedBackendAccount = await _getFormattedBackendAccount({
-        url: main.blockbookURL || wallet.activeNetwork.url,
+        url: network.url,
         xpub,
       });
 
