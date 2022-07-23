@@ -128,7 +128,6 @@ export interface IKeyringAccountState {
   id: number;
   isTrezorWallet: boolean;
   label: string;
-  trezorId?: number;
   xprv: string;
   balances: IKeyringBalances;
   xpub: string;

@@ -9,7 +9,6 @@ export const initialActiveAccountState: IKeyringAccountState = {
   id: -1,
   isTrezorWallet: false,
   label: 'Account 1',
-  trezorId: -1,
   xprv: '',
   xpub: '',
   transactions: [],
