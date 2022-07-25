@@ -24,7 +24,6 @@ import {
   getSigners,
   validateSysRpc,
   SyscoinHDSigner,
-  SyscoinMainSigner,
 } from '@pollum-io/sysweb3-utils';
 
 export const KeyringManager = (): IKeyringManager => {
@@ -56,10 +55,6 @@ export const KeyringManager = (): IKeyringManager => {
   let wallet: IWalletState = initialWalletState;
 
   let hd: SyscoinHDSigner = new sys.utils.HDSigner('');
-  let main: SyscoinMainSigner = new sys.SyscoinJSLib(
-    hd,
-    wallet.activeNetwork.url
-  );
   let memMnemonic = '';
 
   const getSalt = () => crypto.randomBytes(16).toString('hex');
@@ -97,7 +92,6 @@ export const KeyringManager = (): IKeyringManager => {
 
   const forgetSigners = () => {
     hd = new sys.utils.HDSigner('');
-    main = new sys.SyscoinJSLib(hd, wallet.activeNetwork.url);
   };
   /** end */
 
@@ -255,15 +249,9 @@ export const KeyringManager = (): IKeyringManager => {
       network: wallet.activeNetwork,
     });
 
-    const { _hd, _main } = getSigners();
+    const { _hd } = getSigners();
 
     hd = _hd;
-    main = _main;
-
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      signers: { hd, main },
-    });
 
     const xprv = getEncryptedXprv();
     const createdAccount = await _getLatestUpdateForSysAccount();
@@ -273,7 +261,7 @@ export const KeyringManager = (): IKeyringManager => {
       xprv,
     });
 
-    hd && hd.setAccountIndex(account.id);
+    hd.setAccountIndex(account.id);
 
     return account;
   };
@@ -281,10 +269,8 @@ export const KeyringManager = (): IKeyringManager => {
   const _getEncryptedPrivateKeyFromHd = () =>
     hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
 
-  const _getBasicWeb3AccountInfo = async (address: string) => {
+  const _getBasicWeb3AccountInfo = async (address: string, id: number) => {
     const { network } = getDecryptedVault();
-
-    const { id } = wallet.activeAccount;
 
     const balance = await web3Wallet.getBalance(address);
 
@@ -331,16 +317,41 @@ export const KeyringManager = (): IKeyringManager => {
     };
   };
 
-  const _getLatestUpdateForWeb3Accounts = async () => {
-    const { wallet: _wallet } = getDecryptedVault();
+  const _setDerivedWeb3Accounts = async (id: number) => {
+    const seed = await mnemonicToSeed(getDecryptedMnemonic());
+    const privateRoot = hdkey.fromMasterSeed(seed);
+    const derivedCurrentAccount = privateRoot.derivePath(
+      `m/44'/60'/0'/1/${String(id)}`
+    );
+    const newWallet = derivedCurrentAccount.getWallet();
+    const address = newWallet.getAddressString();
+    const xprv = newWallet.getPrivateKeyString();
+    const xpub = newWallet.getPublicKeyString();
 
-    if (Object.values(_wallet.accounts).length <= 1) {
+    const basicAccountInfo = await _getBasicWeb3AccountInfo(address, id);
+    const createdAccount = {
+      address,
+      xpub,
+      xprv,
+      ...basicAccountInfo,
+    };
+
+    wallet = {
+      ...getDecryptedVault().wallet,
+      accounts: {
+        ...getDecryptedVault().wallet.accounts,
+        [id]: createdAccount,
+      },
+    };
+
+    setEncryptedVault({ ...getDecryptedVault(), wallet });
+
+    if (id === 0) {
       const { address, privateKey } = web3Wallet.importAccount(
         getDecryptedMnemonic()
       );
 
-      const basicAccountInfo = await _getBasicWeb3AccountInfo(address);
-
+      const basicAccountInfo = await _getBasicWeb3AccountInfo(address, 0);
       const account = {
         xprv: privateKey,
         xpub: address,
@@ -349,36 +360,44 @@ export const KeyringManager = (): IKeyringManager => {
       };
 
       wallet = {
-        ..._wallet,
+        ...getDecryptedVault().wallet,
         accounts: {
-          ..._wallet.accounts,
-          [account.id]: account,
+          ...getDecryptedVault().wallet.accounts,
+          [0]: account,
         },
       };
+
+      setEncryptedVault({ ...getDecryptedVault(), wallet });
 
       return account;
     }
 
-    const { activeAccount } = _wallet;
+    return createdAccount;
+  };
 
-    const basicAccountInfo = await _getBasicWeb3AccountInfo(
-      activeAccount.address
-    );
+  const _getLatestUpdateForWeb3Accounts = async () => {
+    const { wallet: _wallet } = getDecryptedVault();
 
-    const account = {
-      ...activeAccount,
-      ...basicAccountInfo,
-    };
+    for (const index in Object.values(_wallet.accounts)) {
+      const id = Number(index);
 
-    wallet = {
-      ..._wallet,
-      accounts: {
-        ..._wallet.accounts,
-        [account.id]: account,
-      },
-    };
+      await _setDerivedWeb3Accounts(id);
+    }
 
-    return account;
+    const { wallet: _updatedWallet } = getDecryptedVault();
+
+    const { accounts, activeAccount } = _updatedWallet;
+
+    if (accounts[activeAccount.id] !== activeAccount) {
+      wallet = {
+        ..._updatedWallet,
+        activeAccount: accounts[activeAccount.id],
+      };
+
+      _fullUpdate();
+    }
+
+    return getDecryptedVault().wallet.activeAccount;
   };
 
   const _getInitialAccountData = ({
@@ -392,8 +411,7 @@ export const KeyringManager = (): IKeyringManager => {
     createdAccount: any;
     xprv: string;
   }) => {
-    const { balances, receivingAddress, xpub, transactions, assets } =
-      createdAccount;
+    const { balances, address, xpub, transactions, assets } = createdAccount;
 
     const account = {
       id: signer.Signer.accountIndex,
@@ -401,7 +419,7 @@ export const KeyringManager = (): IKeyringManager => {
       balances,
       xpub,
       xprv,
-      address: receivingAddress,
+      address,
       isTrezorWallet: false,
       transactions,
       assets,
@@ -431,24 +449,9 @@ export const KeyringManager = (): IKeyringManager => {
 
       setEncryptedVault({ ...vault, network, isTestnet });
 
-      const { _hd, _main } = getSigners();
+      const { _hd } = getSigners();
 
       hd = _hd;
-      main = _main;
-
-      const {
-        signers: { hd: hdSignerFromStorage },
-      } = vault;
-
-      const hdAccounts = hdSignerFromStorage.Signer.accounts;
-
-      if (hdAccounts.length > 1) {
-        for (const id in hdAccounts) {
-          if (!hd.Signer.accounts[Number(id)]) {
-            setAccountIndexForDerivedAccount(Number(id));
-          }
-        }
-      }
 
       const xprv = getEncryptedXprv();
       const updatedAccountInfo = await _getLatestUpdateForSysAccount();
@@ -458,9 +461,11 @@ export const KeyringManager = (): IKeyringManager => {
         xprv,
       });
 
-      hd &&
-        wallet.activeAccount.id > -1 &&
-        hd.setAccountIndex(wallet.activeAccount.id);
+      const {
+        wallet: { activeAccount },
+      } = vault;
+
+      if (hd && activeAccount.id > -1) hd.setAccountIndex(activeAccount.id);
 
       return account;
     }
@@ -497,50 +502,94 @@ export const KeyringManager = (): IKeyringManager => {
     };
   };
 
+  const _getBasicSysAccountInfo = async (xpub: string, id: number) => {
+    const { network } = getDecryptedVault();
+
+    const formattedBackendAccount = await _getFormattedBackendAccount({
+      url: network.url,
+      xpub,
+    });
+
+    return {
+      id,
+      isTrezorWallet: false,
+      label: `Account ${Number(id) + 1}`,
+      ...formattedBackendAccount,
+    };
+  };
+
+  const _setDerivedSysAccounts = async (id: number) => {
+    if (hd && id > -1) hd.setAccountIndex(id);
+
+    const xpub = hd.getAccountXpub();
+    const xprv = getEncryptedXprv();
+    const address = await hd.getNewReceivingAddress(true);
+
+    const basicAccountInfo = await _getBasicSysAccountInfo(xpub, id);
+
+    const createdAccount = {
+      address,
+      xprv,
+      ...basicAccountInfo,
+    };
+
+    wallet = {
+      ...getDecryptedVault().wallet,
+      accounts: {
+        ...getDecryptedVault().wallet.accounts,
+        [id]: createdAccount,
+      },
+    };
+
+    setEncryptedVault({ ...getDecryptedVault(), wallet });
+
+    return createdAccount;
+  };
+
   const _getLatestUpdateForSysAccount = async (): Promise<{
     xpub: string;
     balances: IKeyringBalances;
     transactions: any;
     assets: any;
-    receivingAddress: string;
+    address: string;
   }> => {
-    const {
-      wallet: _wallet,
-      signers: { hd: _hd },
-      network,
-      isTestnet,
-    } = getDecryptedVault();
+    const { wallet: _wallet, network, isTestnet } = getDecryptedVault();
 
     if (!hd.mnemonic || hd.Signer.isTestnet !== isTestnet) {
-      const { _hd, _main } = getSigners();
+      const { _hd } = getSigners();
 
       hd = _hd;
-      main = _main;
     }
 
-    const hdAccounts = _hd.Signer.accounts;
+    const walletAccountsArray = Object.values(_wallet.accounts);
 
-    if (hdAccounts.length > 1) {
-      for (const id in hdAccounts) {
+    const { length } = hd.Signer.accounts;
+
+    if (length > 1 || walletAccountsArray.length > 1) {
+      for (const id in Object.values(_wallet.accounts)) {
         if (!hd.Signer.accounts[Number(id)]) {
-          setAccountIndexForDerivedAccount(Number(id));
+          addAccountToSigner(Number(id));
         }
       }
     }
 
-    hd &&
-      _wallet.activeAccount.id > -1 &&
+    for (const account of Object.values(_wallet.accounts)) {
+      // @ts-ignore
+      await _setDerivedSysAccounts(account.id);
+    }
+
+    if (hd && _wallet.activeAccount.id > -1)
       hd.setAccountIndex(_wallet.activeAccount.id);
 
-    const xpub = hd.getAccountXpub();
+    const xpub = getAccountXpub();
     const formattedBackendAccount = await _getFormattedBackendAccount({
       url: network.url,
       xpub,
     });
-    const receivingAddress = await hd.getNewReceivingAddress(true);
+    const address = await hd.getNewReceivingAddress(true);
 
     return {
-      receivingAddress,
+      address,
       ...formattedBackendAccount,
     };
   };
@@ -597,7 +646,7 @@ export const KeyringManager = (): IKeyringManager => {
 
     await getLatestUpdateForAccount();
 
-    setAccountIndexForDerivedAccount(wallet.activeAccount.id);
+    addAccountToSigner(wallet.activeAccount.id);
 
     return wallet.activeAccount;
   };
@@ -664,7 +713,12 @@ export const KeyringManager = (): IKeyringManager => {
       ? await _getLatestUpdateForSysAccount()
       : await _getLatestUpdateForWeb3Accounts();
 
-    return latestUpdate;
+    const { wallet: _updatedWallet } = getDecryptedVault();
+
+    return {
+      accountLatestUpdate: latestUpdate,
+      walleAccountstLatestUpdate: _updatedWallet.accounts,
+    };
   };
   /** end */
 
@@ -737,7 +791,7 @@ export const KeyringManager = (): IKeyringManager => {
   /** end */
 
   /** accounts */
-  const setAccountIndexForDerivedAccount = (accountId: number) => {
+  const addAccountToSigner = (accountId: number) => {
     if (accountId === 0) return;
     if (hd.Signer.accounts[accountId]) return;
 
@@ -754,8 +808,7 @@ export const KeyringManager = (): IKeyringManager => {
   /** end */
 
   const addNewAccount = async (label?: string) => {
-    const { network, signers } = getDecryptedVault();
-    const { mnemonic } = signers.hd;
+    const { network, mnemonic } = getDecryptedVault();
 
     const isSyscoinChain =
       Boolean(wallet.networks.syscoin[network.chainId]) &&
@@ -763,33 +816,26 @@ export const KeyringManager = (): IKeyringManager => {
 
     if (isSyscoinChain) {
       if (!hd.mnemonic) {
-        const { _hd, _main } = getSigners();
+        const { _hd } = getSigners();
 
         hd = _hd;
-        main = _main;
       }
 
       const id = hd.createAccount();
       const xpub = hd.getAccountXpub();
-
-      setEncryptedVault({
-        ...getDecryptedVault(),
-        signers: { hd, main },
-      });
+      const xprv = getEncryptedXprv();
 
       const formattedBackendAccount = await _getFormattedBackendAccount({
         url: network.url,
         xpub,
       });
 
-      const receivingAddress = await hd.getNewReceivingAddress(true);
+      const address = await hd.getNewReceivingAddress(true);
 
       const latestUpdate = {
-        receivingAddress,
+        address,
         ...formattedBackendAccount,
       };
-
-      const xprv = getEncryptedXprv();
 
       const account = _getInitialAccountData({
         label,
@@ -822,37 +868,23 @@ export const KeyringManager = (): IKeyringManager => {
     }
 
     const { wallet: _wallet } = getDecryptedVault();
-
     const { length } = Object.values(_wallet.accounts);
-
     const seed = await mnemonicToSeed(mnemonic);
     const privateRoot = hdkey.fromMasterSeed(seed);
-
     const derivedCurrentAccount = privateRoot.derivePath(
       `m/44'/60'/0'/1/${length + 1}`
     );
-
     const newWallet = derivedCurrentAccount.getWallet();
     const address = newWallet.getAddressString();
     const xprv = newWallet.getPrivateKeyString();
     const xpub = newWallet.getPublicKeyString();
 
-    let createdAccount = {
+    const basicAccountInfo = await _getBasicWeb3AccountInfo(address, length);
+
+    const createdAccount = {
       address,
       xpub,
       xprv,
-      id: length,
-    } as IKeyringAccountState;
-
-    wallet = {
-      ..._wallet,
-      activeAccount: createdAccount,
-    };
-
-    const basicAccountInfo = await _getBasicWeb3AccountInfo(address);
-
-    createdAccount = {
-      ...createdAccount,
       ...basicAccountInfo,
     };
 
@@ -862,6 +894,7 @@ export const KeyringManager = (): IKeyringManager => {
         ..._wallet.accounts,
         [createdAccount.id]: createdAccount,
       },
+      activeAccount: createdAccount,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
@@ -910,7 +943,7 @@ export const KeyringManager = (): IKeyringManager => {
     removeAccount,
     removeNetwork,
     signMessage,
-    setAccountIndexForDerivedAccount,
+    addAccountToSigner,
     setActiveAccount,
     setSignerNetwork,
     setWalletPassword,

@@ -66,7 +66,7 @@ export interface IKeyringManager {
   logout: () => void;
   removeAccount: (id: number) => void;
   removeNetwork: (chain: string, chainId: number) => void;
-  setAccountIndexForDerivedAccount: (accountId: number) => void;
+  addAccountToSigner: (accountId: number) => void;
   setActiveAccount: (accountId: number) => void;
   setSignerNetwork: (
     network: INetwork,

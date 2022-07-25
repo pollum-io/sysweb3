@@ -6,7 +6,7 @@ export const initialActiveAccountState: IKeyringAccountState = {
     ethereum: 0,
     syscoin: 0,
   },
-  id: -1,
+  id: 0,
   isTrezorWallet: false,
   label: 'Account 1',
   xprv: '',
@@ -72,7 +72,9 @@ export const initialNetworksState = {
 };
 
 export const initialWalletState: IWalletState = {
-  accounts: {},
+  accounts: {
+    [initialActiveAccountState.id]: initialActiveAccountState,
+  },
   activeAccount: initialActiveAccountState,
   networks: initialNetworksState,
   activeNetwork: {
