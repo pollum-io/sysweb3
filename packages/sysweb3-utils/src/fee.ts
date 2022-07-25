@@ -3,8 +3,6 @@ import { ethers } from 'ethers';
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
 
-import { web3Provider } from '@pollum-io/sysweb3-network';
-
 type EstimateFeeParams = {
   outputs: { value: number; address: string }[];
   changeAddress: string;
@@ -74,7 +72,7 @@ export const feeUtils = () => {
   };
 
   const convertGasFee = (value: string) =>
-    web3Provider.utils.fromWei(String(value), 'ether');
+    ethers.utils.formatEther(String(value));
 
   return {
     estimateSysTransactionFee,

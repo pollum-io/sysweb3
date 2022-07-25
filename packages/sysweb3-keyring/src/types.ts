@@ -73,10 +73,6 @@ export interface IKeyringManager {
     chain: string
   ) => Promise<IKeyringAccountState>;
   setWalletPassword: (password: string) => void;
-  signMessage: (
-    msgParams: { accountId: number; data: string },
-    options?: any
-  ) => void;
   trezor: ITrezorWallet;
   txs: ISyscoinTransactions;
   validateSeed: (seed: string) => boolean;

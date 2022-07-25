@@ -193,18 +193,10 @@ export const KeyringManager = (): IKeyringManager => {
     return getDecryptedVault().wallet;
   };
 
-  const _notifyUpdate = () => {
-    const eventEmitter = new SafeEventEmitter();
-
-    eventEmitter.emit('update', getDecryptedVault());
-  };
-
   const _fullUpdate = () => {
     _persistWallet(storage.get('vault-keys').hash);
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-    _notifyUpdate();
   };
 
   const _updateUnlocked = () => {
@@ -274,10 +266,7 @@ export const KeyringManager = (): IKeyringManager => {
 
     const balance = await web3Wallet.getBalance(address);
 
-    const transactions = await web3Wallet.getUserTransactions(
-      address,
-      network.chainId === 1 ? 'homestead' : network.label.toLowerCase()
-    );
+    const transactions = await web3Wallet.getUserTransactions(address, network);
 
     const {
       data: {
@@ -640,7 +629,6 @@ export const KeyringManager = (): IKeyringManager => {
     wallet = await _unlockWallet(password);
 
     _updateUnlocked();
-    _notifyUpdate();
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
 
@@ -651,28 +639,11 @@ export const KeyringManager = (): IKeyringManager => {
     return wallet.activeAccount;
   };
 
-  const logout = () => {
-    const eventEmitter = new SafeEventEmitter();
-
-    forgetSigners();
-
-    eventEmitter.emit('lock');
-
-    _notifyUpdate();
-  };
+  const logout = () => forgetSigners();
   /** end */
 
   const removeAccount = (accountId: number) => {
     delete wallet.accounts[accountId];
-  };
-
-  const signMessage = (
-    msgParams: { accountId: number; data: string },
-    opts?: any
-  ): void => {
-    const account = getAccountById(msgParams.accountId);
-
-    txs.signMessage(account, msgParams.data, opts);
   };
 
   const forgetMainWallet = (pwd: string) => {
@@ -942,7 +913,6 @@ export const KeyringManager = (): IKeyringManager => {
     logout,
     removeAccount,
     removeNetwork,
-    signMessage,
     addAccountToSigner,
     setActiveAccount,
     setSignerNetwork,

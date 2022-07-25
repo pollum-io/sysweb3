@@ -1,8 +1,8 @@
+import axios from 'axios';
+import bip44Constants from 'bip44-constants';
+
 import { jsonRpcRequest } from './rpc-request';
 import { web3Provider } from '@pollum-io/sysweb3-network';
-import axios from 'axios';
-//@ts-ignore
-import bip44Constants from 'bip44-constants';
 
 export const validateCurrentRpcUrl = () => {
   return web3Provider.eth.net.isListening((error: any, response: any) => {
@@ -18,33 +18,35 @@ const isValidChainIdForEthNetworks = (chainId: number | string) =>
 
 export const validateCustomEthRpc = async (
   chainId: number,
-  rpcUrl: string,
+  rpcUrl: string
 ): Promise<{ valid: boolean }> => {
-    if (!isValidChainIdForEthNetworks(Number(chainId)))
-      throw new Error('Invalid chain ID for ethereum networks.');
-  
-    const hexRegEx = /^0x[0-9a-f]+$/iu;
-    const chainIdRegEx = /^0x[1-9a-f]+[0-9a-f]*$/iu;
-  
-    const hexChainId = `0x${chainId.toString(16)}`;
-  
-    const isChainIdInvalid =
-      typeof hexChainId === 'string' &&
-      !chainIdRegEx.test(hexChainId) &&
-      hexRegEx.test(hexChainId);
-  
-    if (isChainIdInvalid) {
-      throw new Error('RPC has an invalid chain ID');
-    }
-  
-    const response = await jsonRpcRequest(rpcUrl, 'eth_chainId');
-  
-    const chainIdVerified = Boolean(Number(web3Provider.utils.hexToNumber(response)) === Number(chainId))
-  
-    return {
-      valid: Boolean(!!response && chainIdVerified),
-    };
+  if (!isValidChainIdForEthNetworks(Number(chainId)))
+    throw new Error('Invalid chain ID for ethereum networks.');
+
+  const hexRegEx = /^0x[0-9a-f]+$/iu;
+  const chainIdRegEx = /^0x[1-9a-f]+[0-9a-f]*$/iu;
+
+  const hexChainId = `0x${chainId.toString(16)}`;
+
+  const isChainIdInvalid =
+    typeof hexChainId === 'string' &&
+    !chainIdRegEx.test(hexChainId) &&
+    hexRegEx.test(hexChainId);
+
+  if (isChainIdInvalid) {
+    throw new Error('RPC has an invalid chain ID');
+  }
+
+  const response = await jsonRpcRequest(rpcUrl, 'eth_chainId');
+
+  const chainIdVerified = Boolean(
+    Number(web3Provider.utils.hexToNumber(response)) === Number(chainId)
+  );
+
+  return {
+    valid: Boolean(!!response && chainIdVerified),
   };
+};
 
 export const validateSysRpc = async (
   rpcUrl: string
