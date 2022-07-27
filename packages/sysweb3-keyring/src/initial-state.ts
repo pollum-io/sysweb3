@@ -24,6 +24,7 @@ export const initialNetworksState = {
       default: true,
       currency: 'sys',
       apiUrl: '',
+      explorer: 'https://blockbook.elint.services/',
     },
     5700: {
       chainId: 5700,
@@ -32,6 +33,7 @@ export const initialNetworksState = {
       default: true,
       currency: 'tsys',
       apiUrl: '',
+      explorer: '',
     },
   },
   ethereum: {
@@ -41,7 +43,8 @@ export const initialNetworksState = {
       label: 'Ethereum Mainnet',
       default: true,
       currency: 'eth',
-      apiUrl: 'wss://mainnet.infura.io/ws/v3/c42232a29f9d4bd89d53313eb16ec241',
+      explorer: 'https://etherscan.io/',
+      apiUrl: '',
     },
     42: {
       url: 'https://kovan.poa.network',
@@ -49,7 +52,8 @@ export const initialNetworksState = {
       label: 'Kovan',
       chainId: 42,
       currency: 'kov',
-      apiUrl: 'wss://kovan.infura.io/ws/v3/c42232a29f9d4bd89d53313eb16ec241',
+      explorer: 'https://kovan.etherscan.io/',
+      apiUrl: '',
     },
     4: {
       chainId: 4,
@@ -57,7 +61,8 @@ export const initialNetworksState = {
       url: 'https://rinkeby.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
       default: true,
       currency: 'rin',
-      apiUrl: 'wss://rinkeby.infura.io/ws/v3/c42232a29f9d4bd89d53313eb16ec241',
+      explorer: 'https://rinkeby.etherscan.io/',
+      apiUrl: '',
     },
     3: {
       chainId: 3,
@@ -65,7 +70,8 @@ export const initialNetworksState = {
       default: true,
       label: 'Ropsten',
       url: 'https://ropsten.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
-      apiUrl: 'wss://ropsten.infura.io/ws/v3/c42232a29f9d4bd89d53313eb16ec241',
+      explorer: 'https://ropsten.etherscan.io/',
+      apiUrl: '',
     },
     5: {
       chainId: 5,
@@ -73,7 +79,8 @@ export const initialNetworksState = {
       default: true,
       label: 'Goerli',
       url: 'https://goerli.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
-      apiUrl: 'wss://goerli.infura.io/ws/v3/c42232a29f9d4bd89d53313eb16ec241',
+      explorer: 'https://goerli.etherscan.io/',
+      apiUrl: '',
     },
     137: {
       chainId: 137,
@@ -82,6 +89,7 @@ export const initialNetworksState = {
       label: 'Polygon Mainnet',
       url: 'https://polygon-mainnet.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
       apiUrl: 'https://api.polygonscan.com/api',
+      explorer: 'https://polygonscan.com/',
     },
     80001: {
       chainId: 80001,
@@ -89,7 +97,8 @@ export const initialNetworksState = {
       default: true,
       label: 'Polygon Mumbai Testnet',
       url: 'https://rpc-mumbai.maticvigil.com',
-      apiUrl: 'wss://rpc-mumbai.matic.today',
+      apiUrl: 'https://api-testnet.polygonscan.com/api',
+      explorer: 'https://mumbai.polygonscan.com/',
     },
     57: {
       chainId: 57,
@@ -97,7 +106,8 @@ export const initialNetworksState = {
       default: true,
       label: 'Syscoin Mainnet',
       url: 'https://rpc.syscoin.org',
-      apiUrl: 'wss://rpc.syscoin.org/wss',
+      apiUrl: 'https://explorer.syscoin.org/api',
+      explorer: 'https://explorer.syscoin.org/',
     },
     5700: {
       chainId: 5700,
@@ -105,7 +115,8 @@ export const initialNetworksState = {
       default: true,
       label: 'Syscoin Tanenbaum',
       url: 'https://rpc.tanenbaum.io',
-      apiUrl: 'wss://rpc.tanenbaum.io/wss',
+      apiUrl: 'https://tanenbaum.io/api',
+      explorer: 'https://tanenbaum.io/',
     },
   },
 };

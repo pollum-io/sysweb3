@@ -9,6 +9,7 @@ export type INetwork = {
   default?: boolean;
   label: string;
   key?: string;
-  wsUrl?: string;
+  apiUrl?: string;
   currency?: string;
+  explorer?: string;
 };
