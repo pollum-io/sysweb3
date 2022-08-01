@@ -1,29 +1,28 @@
-import Web3 from 'web3';
+// import Web3 from 'web3';
 
 import { Web3Accounts } from '../src/accounts/eth-accounts';
 import { FAKE_ADDRESS, FAKE_PRIV_KEY, FAKE_SEED_PHRASE } from './constants';
-import {
-  networks,
-  web3Provider,
-  setActiveNetwork,
-} from '@pollum-io/sysweb3-network';
+// import {
+//   web3Provider,
+//   setActiveNetwork,
+// } from '@pollum-io/sysweb3-network';
 
 describe('Web3Accounts', () => {
   const {
     getBalance,
-    createAccount,
+    // createAccount,
     importAccount,
-    getNftsByAddress,
+    // getNftsByAddress,
     getTokens,
   } = Web3Accounts();
 
-  //* createAccount
-  it('should create an account', () => {
-    const newAccount = createAccount();
+  // //* createAccount
+  // it('should create an account', () => {
+  //   const newAccount = createAccount();
 
-    expect(newAccount).toBeTruthy();
-    expect(newAccount.address).toBeTruthy();
-  });
+  //   expect(newAccount).toBeTruthy();
+  //   expect(newAccount.address).toBeTruthy();
+  // });
 
   //* getBalance
   it('should get an account balance', async () => {
@@ -46,15 +45,15 @@ describe('Web3Accounts', () => {
     expect(importedAccount.address).toBeTruthy();
   });
 
-  //* getNftsByAddress
-  it('should get all NFTs from an account', async () => {
-    const userNFT = await getNftsByAddress(
-      '0xa3d42513a1affe8d0862cf51df6145523837393a'
-    );
-    expect(userNFT).not.toBeNull();
-    const blockNumber = userNFT[0].blockNumber;
-    expect(blockNumber.length).toBeGreaterThan(0);
-  });
+  // //* getNftsByAddress
+  // it('should get all NFTs from an account', async () => {
+  //   const userNFT = await getNftsByAddress(
+  //     '0xa3d42513a1affe8d0862cf51df6145523837393a'
+  //   );
+  //   expect(userNFT).not.toBeNull();
+  //   const blockNumber = userNFT[0].blockNumber;
+  //   expect(blockNumber.length).toBeGreaterThan(0);
+  // });
 
   //* getTokens
   it('should get the tokens from an account', async () => {
@@ -68,19 +67,19 @@ describe('Web3Accounts', () => {
     }
   });
 
-  //* setActiveNetwork
-  it('should change the network', () => {
-    // 5700 = testnet chainId
-    setActiveNetwork(networks.syscoin[5700]);
+  // //* setActiveNetwork
+  // it('should change the network', () => {
+  //   // 5700 = testnet chainId
+  //   setActiveNetwork(networks.syscoin[5700]);
 
-    const provider = web3Provider.currentProvider;
-    const { HttpProvider } = Web3.providers;
+  //   const provider = web3Provider.currentProvider;
+  //   const { HttpProvider } = Web3.providers;
 
-    expect(provider).toBeInstanceOf(HttpProvider);
-    if (!(provider instanceof HttpProvider)) return;
+  //   expect(provider).toBeInstanceOf(HttpProvider);
+  //   if (!(provider instanceof HttpProvider)) return;
 
-    expect(provider.host).toBe('https://blockbook-dev.elint.services/');
-  });
+  //   expect(provider.host).toBe('https://blockbook-dev.elint.services/');
+  // });
 
   jest.setTimeout(15000);
 

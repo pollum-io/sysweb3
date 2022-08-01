@@ -39,21 +39,10 @@ export const txUtils = () => {
 
   const getFeeRate = (fee: number): BigInt => new sys.utils.BN(fee * 1e8);
 
-  /**
-   * This function should return gas used and the effective gas price by transaction hash.
-   *
-   * @param {string} transactionHash
-   *
-   * @example
-   *
-   * ```
-   * <button onClick={getGasUsedInTransaction('0x00000000000000000000089000000000000000')}>Get gas used!</button>
-   * ```
-   */
   const getGasUsedInTransaction = async (transactionHash: string) => {
     try {
       const { gasUsed, effectiveGasPrice } =
-        await web3Provider.eth.getTransactionReceipt(transactionHash);
+        await web3Provider.getTransactionReceipt(transactionHash);
 
       if (!gasUsed || !effectiveGasPrice) {
         throw new Error(
@@ -62,8 +51,8 @@ export const txUtils = () => {
       }
 
       return {
-        gasUsed,
-        effectiveGasPrice,
+        gasUsed: Number(gasUsed),
+        effectiveGasPrice: Number(effectiveGasPrice),
       };
     } catch (error) {
       throw new Error(

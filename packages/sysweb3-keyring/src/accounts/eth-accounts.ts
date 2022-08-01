@@ -1,11 +1,12 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import axios from 'axios';
+import { chains } from 'eth-chains';
 import * as sigUtil from 'eth-sig-util';
 import * as ethUtil from 'ethereumjs-util';
 import { ethers } from 'ethers';
+import { Deferrable } from 'ethers/lib/utils';
 import { request, gql } from 'graphql-request';
 import _ from 'lodash';
-import { Account, TransactionReceipt } from 'web3-core';
 
 import { web3Provider } from '@pollum-io/sysweb3-network';
 import {
@@ -15,12 +16,12 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export const Web3Accounts = () => {
-  const createAccount = (): Account => web3Provider.eth.accounts.create();
+  const createAccount = (privateKey: string) => new ethers.Wallet(privateKey);
 
   const getBalance = async (address: string): Promise<number> => {
     try {
-      const balance = await web3Provider.eth.getBalance(address);
-      const formattedBalance = web3Provider.utils.fromWei(balance);
+      const balance = await web3Provider.getBalance(address);
+      const formattedBalance = ethers.utils.formatEther(balance);
 
       const roundedBalance = _.floor(parseFloat(formattedBalance), 4);
 
@@ -36,14 +37,11 @@ export const Web3Accounts = () => {
   ): Promise<number> => {
     try {
       const abi = getErc20Abi() as any;
-      const balance = await (
-        await createContractUsingAbi(abi, tokenAddress)
-      ).methods
-        .balanceOf(walletAddress)
+      const balance = createContractUsingAbi(abi, tokenAddress)
+        .methods.balanceOf(walletAddress)
         .call();
 
-      const formattedBalance = web3Provider.utils.fromWei(balance);
-
+      const formattedBalance = ethers.utils.formatEther(balance);
       const roundedBalance = _.floor(parseFloat(formattedBalance), 4);
 
       return roundedBalance;
@@ -114,15 +112,15 @@ export const Web3Accounts = () => {
     }
   };
 
-  const importAccount = (mnemonic: string): Account => {
+  const importAccount = (mnemonic: string) => {
     try {
-      if (web3Provider.utils.isHexStrict(mnemonic)) {
-        return web3Provider.eth.accounts.privateKeyToAccount(mnemonic);
+      if (ethers.utils.isHexString(mnemonic)) {
+        return new ethers.Wallet(mnemonic);
       }
 
       const { privateKey } = ethers.Wallet.fromMnemonic(mnemonic);
 
-      const account = web3Provider.eth.accounts.privateKeyToAccount(privateKey);
+      const account = new ethers.Wallet(privateKey);
 
       return account;
     } catch (error) {
@@ -130,30 +128,130 @@ export const Web3Accounts = () => {
     }
   };
 
-  // const getRecommendedFee = () => { };
-  const getUserTransactions = async (
-    address: string,
-    network: string
-  ): Promise<TransactionResponse[] | undefined> => {
-    const etherscanProvider = new ethers.providers.EtherscanProvider(
-      network, // homestead === mainnet
-      'K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
-    );
-    try {
-      const userTxs = etherscanProvider.getHistory(address);
+  const checkLatestBlocksForTransactions = async (address: string) => {
+    const currentBlock = web3Provider.blockNumber;
 
-      if (userTxs) {
-        return userTxs;
+    let txCount = await web3Provider.getTransactionCount(address, currentBlock);
+    let balance = await web3Provider.getBalance(address, currentBlock);
+
+    const transactions = [];
+
+    if (txCount > 0 || balance) {
+      for (
+        let index = currentBlock;
+        index >= 100 && txCount > 0 && balance;
+        --index
+      ) {
+        try {
+          const block = await web3Provider.getBlock(index);
+
+          if (block && block.transactions) {
+            for (const hash of block.transactions) {
+              const transaction = await web3Provider.getTransaction(hash);
+
+              if (transaction.from === address) {
+                balance = balance.add(transaction.value);
+
+                console.log({
+                  transaction,
+                  address,
+                  hash,
+                });
+
+                txCount = txCount - 1;
+              }
+
+              if (transaction.to === address) {
+                if (transaction.from !== transaction.to)
+                  balance = balance.sub(transaction.value);
+
+                console.log({
+                  transaction,
+                  address,
+                  hash,
+                });
+              }
+
+              transactions.push(transaction);
+            }
+          }
+        } catch (error) {
+          throw new Error(`Error in block. Error: ${error}`);
+        }
+      }
+    }
+
+    return transactions;
+  };
+
+  const getUserTransactions = async (address: string, network: INetwork) => {
+    const etherscanSupportedNetworks = [
+      'homestead',
+      'ropsten',
+      'rinkeby',
+      'goerli',
+      'kovan',
+    ];
+
+    try {
+      const { chainId, default: _default, label, apiUrl, url } = network;
+
+      const chain = chains.getById(chainId);
+
+      if (_default) {
+        const networkByLabel =
+          chainId === 1 ? 'homestead' : label.toLowerCase();
+
+        if (etherscanSupportedNetworks.includes(networkByLabel)) {
+          const etherscanProvider = new ethers.providers.EtherscanProvider(
+            networkByLabel,
+            'K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
+          );
+
+          return etherscanProvider.getHistory(address) || [];
+        }
+
+        const query = `?module=account&action=txlist&address=${address}`;
+
+        const {
+          data: { result },
+        } = await axios.get(`${apiUrl}${query}`);
+
+        console.log({ network, result, chain });
+
+        return result;
       }
 
-      return [];
+      const wsUrl = chain
+        ? chain.rpc.find((rpc: string) => rpc.startsWith('wss://'))
+        : url;
+
+      const wssProvider = new ethers.providers.WebSocketProvider(String(wsUrl));
+
+      const pendingTransactions: any = {};
+
+      wssProvider.on('pending', async (txhash: string) => {
+        const tx = await wssProvider.getTransaction(txhash);
+
+        if (tx.from === address || tx.to === address) {
+          pendingTransactions[tx.hash] = tx;
+        }
+      });
+
+      const transactions = await checkLatestBlocksForTransactions(address);
+
+      console.log({ transactions, address, network, pendingTransactions });
+
+      return Object.values(pendingTransactions);
     } catch (error) {
-      console.error(error);
+      throw new Error(
+        `Could not get user transactions history. Error: ${error}`
+      );
     }
   };
 
   const getTransactionCount = async (address: string) =>
-    await web3Provider.eth.getTransactionCount(address);
+    await web3Provider.getTransactionCount(address);
 
   const ethSignTypedDataV4 = (msgParams: object) => {
     const msg = JSON.stringify(msgParams);
@@ -197,7 +295,7 @@ export const Web3Accounts = () => {
   };
 
   const getRecommendedGasPrice = async (formatted?: boolean) => {
-    const gasPriceBN = await web3Provider.eth.getGasPrice();
+    const gasPriceBN = await web3Provider.getGasPrice();
 
     if (formatted) {
       return ethers.utils.formatEther(gasPriceBN);
@@ -206,19 +304,19 @@ export const Web3Accounts = () => {
     return gasPriceBN.toString();
   };
 
+  const toBigNumber = (aBigNumberish: string | number) =>
+    ethers.BigNumber.from(String(aBigNumberish));
   const getFeeByType = async (type: string) => {
     const gasPrice = await getRecommendedGasPrice(false);
 
-    const low = web3Provider.utils
-      .toBN(gasPrice)
-      .mul(web3Provider.utils.toBN(8))
-      .div(web3Provider.utils.toBN(10))
+    const low = toBigNumber(gasPrice)
+      .mul(ethers.BigNumber.from('8'))
+      .div(ethers.BigNumber.from('10'))
       .toString();
 
-    const high = web3Provider.utils
-      .toBN(gasPrice)
-      .mul(web3Provider.utils.toBN(11))
-      .div(web3Provider.utils.toBN(10))
+    const high = toBigNumber(gasPrice)
+      .mul(ethers.BigNumber.from('11'))
+      .div(ethers.BigNumber.from('10'))
       .toString();
 
     if (type === 'low') return low;
@@ -228,7 +326,7 @@ export const Web3Accounts = () => {
   };
 
   const getGasLimit = async (toAddress: string) => {
-    return await web3Provider.eth.estimateGas({
+    return await web3Provider.estimateGas({
       to: toAddress,
     });
   };
@@ -243,40 +341,61 @@ export const Web3Accounts = () => {
     value: any;
   }) => {
     const abi = getErc20Abi() as any;
-    const contract = new web3Provider.eth.Contract(abi, contractAddress);
+    const contract = createContractUsingAbi(abi, contractAddress);
     const data = contract.methods.transfer(receivingAddress, value).encodeABI();
 
     return data;
   };
 
+  const getFeeDataWithDynamicMaxPriorityFeePerGas = async () => {
+    let maxFeePerGas = toBigNumber(0);
+    let maxPriorityFeePerGas = toBigNumber(0);
+
+    const provider = web3Provider;
+
+    const [block, ethMaxPriorityFee] = await Promise.all([
+      await provider.getBlock('latest'),
+      await provider.send('eth_maxPriorityFeePerGas', []),
+    ]);
+
+    if (block && block.baseFeePerGas) {
+      maxPriorityFeePerGas = ethers.BigNumber.from(ethMaxPriorityFee);
+
+      if (maxPriorityFeePerGas) {
+        maxFeePerGas = block.baseFeePerGas.mul(2).add(maxPriorityFeePerGas);
+      }
+    }
+
+    return { maxFeePerGas, maxPriorityFeePerGas };
+  };
+
   const sendTransaction = async ({
     sender,
-    senderXprv,
     receivingAddress,
     amount,
     gasLimit,
     gasPrice,
     token,
+    senderXprv,
   }: {
     sender: string;
-    senderXprv: string;
     receivingAddress: string;
     amount: number;
     gasLimit?: number;
     gasPrice?: number;
     token?: any;
-  }): Promise<TransactionReceipt> => {
+    senderXprv: string;
+  }): Promise<TransactionResponse> => {
     const tokenDecimals = token && token.decimals ? token.decimals : 18;
-    const decimals = web3Provider.utils.toBN(tokenDecimals);
-    const amountBN = web3Provider.utils.toBN(amount);
+    const decimals = toBigNumber(tokenDecimals);
 
-    const defaultGasPrice = await getRecommendedGasPrice(false);
-    const defaultGasLimit = await getGasLimit(receivingAddress);
+    const parsedAmount = ethers.utils.parseEther(String(amount));
+    const wallet = new ethers.Wallet(senderXprv, web3Provider);
 
     const value =
       token && token.contract_address
-        ? amountBN.mul(web3Provider.utils.toBN(10).pow(decimals))
-        : web3Provider.utils.toWei(amount.toString(), 'ether');
+        ? parsedAmount.mul(toBigNumber('10').pow(decimals))
+        : parsedAmount;
 
     const data =
       token && token.contract_address
@@ -287,44 +406,27 @@ export const Web3Accounts = () => {
           })
         : null;
 
-    if (token && token.contract_address) {
-      const signedTokenTransaction =
-        await web3Provider.eth.accounts.signTransaction(
-          {
-            from: sender,
-            to: token.contract_address,
-            value: '0x00',
-            gas: gasLimit || defaultGasLimit,
-            gasPrice: gasPrice || defaultGasPrice,
-            nonce: await web3Provider.eth.getTransactionCount(sender, 'latest'),
-            data,
-          },
-          senderXprv
-        );
+    const { maxFeePerGas, maxPriorityFeePerGas } =
+      await getFeeDataWithDynamicMaxPriorityFeePerGas();
 
-      return web3Provider.eth
-        .sendSignedTransaction(`${signedTokenTransaction.rawTransaction}`)
-        .then((result: TransactionReceipt) => result);
-    }
+    const tx: Deferrable<ethers.providers.TransactionRequest> = {
+      to: receivingAddress,
+      value,
+      maxPriorityFeePerGas,
+      maxFeePerGas,
+      nonce: await web3Provider.getTransactionCount(sender, 'latest'),
+      type: 2,
+      chainId: web3Provider.network.chainId,
+      gasLimit: toBigNumber(0) || gasLimit,
+      data,
+      gasPrice: gasPrice || undefined,
+    };
 
-    const signedTransaction = await web3Provider.eth.accounts.signTransaction(
-      {
-        from: sender,
-        to: receivingAddress,
-        value,
-        gas: gasLimit || defaultGasLimit,
-        gasPrice: gasPrice || defaultGasPrice,
-        nonce: await web3Provider.eth.getTransactionCount(sender, 'latest'),
-        data,
-      },
-      senderXprv
-    );
+    tx.gasLimit = await web3Provider.estimateGas(tx);
 
     try {
-      return web3Provider.eth
-        .sendSignedTransaction(`${signedTransaction.rawTransaction}`)
-        .then((result: TransactionReceipt) => result);
-    } catch (error: any) {
+      return await wallet.sendTransaction(tx);
+    } catch (error) {
       throw new Error(error);
     }
   };

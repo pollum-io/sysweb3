@@ -66,17 +66,13 @@ export interface IKeyringManager {
   logout: () => void;
   removeAccount: (id: number) => void;
   removeNetwork: (chain: string, chainId: number) => void;
-  setAccountIndexForDerivedAccount: (accountId: number) => void;
+  addAccountToSigner: (accountId: number) => void;
   setActiveAccount: (accountId: number) => void;
   setSignerNetwork: (
     network: INetwork,
     chain: string
   ) => Promise<IKeyringAccountState>;
   setWalletPassword: (password: string) => void;
-  signMessage: (
-    msgParams: { accountId: number; data: string },
-    options?: any
-  ) => void;
   trezor: ITrezorWallet;
   txs: ISyscoinTransactions;
   validateSeed: (seed: string) => boolean;
@@ -128,7 +124,6 @@ export interface IKeyringAccountState {
   id: number;
   isTrezorWallet: boolean;
   label: string;
-  trezorId?: number;
   xprv: string;
   balances: IKeyringBalances;
   xpub: string;

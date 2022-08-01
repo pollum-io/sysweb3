@@ -1,13 +1,15 @@
-import Web3 from 'web3';
+import { ethers } from 'ethers';
 
 import { INetwork } from '@pollum-io/sysweb3-utils';
 
-export const web3Provider = new Web3(
-  new Web3.providers.HttpProvider('https://rpc.syscoin.org/')
+export let web3Provider = new ethers.providers.JsonRpcProvider(
+  'https://rpc.syscoin.org/'
 );
 
-export const setActiveNetwork = (network: INetwork): void => {
-  const { HttpProvider } = Web3.providers;
+export const getWeb3Provider = () => web3Provider;
 
-  web3Provider.setProvider(new HttpProvider(network.url));
+export const setActiveNetwork = (network: INetwork) => {
+  const { JsonRpcProvider } = ethers.providers;
+
+  web3Provider = new JsonRpcProvider(network.url);
 };

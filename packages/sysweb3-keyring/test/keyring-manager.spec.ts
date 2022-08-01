@@ -2,7 +2,6 @@ import { initialWalletState } from '../src/initial-state';
 import { KeyringManager } from '../src/keyring-manager';
 import { FAKE_PASSWORD, FAKE_SEED_PHRASE } from './constants';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { networks } from '@pollum-io/sysweb3-network';
 
 describe('', () => {
   const keyringManager = KeyringManager();
@@ -13,7 +12,7 @@ describe('', () => {
   //* validateSeed
   it('should validate a seed / add mnemonic', () => {
     const wrong = keyringManager.validateSeed('invalid seed');
-    const right = keyringManager.validateSeed(FAKE_SEED_PHRASE);
+    const right = keyringManager.validateSeed(String(FAKE_SEED_PHRASE));
 
     expect(wrong).toBe(false);
     expect(right).toBe(true);
@@ -78,7 +77,7 @@ describe('', () => {
     let privateKey = keyringManager.getPrivateKeyByAccountId(id);
 
     expect(privateKey).toBeDefined();
-    expect(privateKey.length).toBeGreaterThan(50);
+    expect(privateKey?.length).toBeGreaterThan(50);
 
     id = 3; // id 3 does not exist
     privateKey = keyringManager.getPrivateKeyByAccountId(id);
@@ -86,38 +85,14 @@ describe('', () => {
     expect(privateKey).toBeNull();
   });
 
-  //* getAccounts
-  it('should get accounts', () => {
-    const accounts = keyringManager.getAccounts();
+  // //* setSignerNetwork
+  // it('should set the network', async () => {
+  //   const testnet = networks.syscoin[5700];
+  //   await keyringManager.setSignerNetwork(testnet, 'syscoin');
 
-    expect(accounts).toBeDefined();
-    expect(accounts.length).toBe(2);
-  });
-
-  //* removeAccount
-  it('should remove an account', async () => {
-    keyringManager.removeAccount(1);
-
-    const accounts = keyringManager.getAccounts();
-    expect(accounts.length).toBe(1);
-  });
-
-  //* getNetwork
-  it('should get the active network', async () => {
-    const activeNetwork = keyringManager.getNetwork();
-
-    const syscoinChainId = 57;
-    expect(activeNetwork.chainId).toBe(syscoinChainId);
-  });
-
-  //* setSignerNetwork
-  it('should set the network', async () => {
-    const testnet = networks.syscoin[5700];
-    await keyringManager.setSignerNetwork(testnet, 'syscoin');
-
-    const network = keyringManager.getNetwork();
-    expect(network).toEqual(testnet);
-  });
+  //   const network = keyringManager.getNetwork();
+  //   expect(network).toEqual(testnet);
+  // });
 
   //* getEncryptedXprv
   it('should get the encrypted private key', async () => {
@@ -150,13 +125,13 @@ describe('', () => {
     expect(hasMnemonic).toBe(true);
   });
 
-  //* removeNetwork
-  it('should remove a network', async () => {
-    keyringManager.removeNetwork('syscoin', 57);
+  // //* removeNetwork
+  // it('should remove a network', async () => {
+  //   keyringManager.removeNetwork('syscoin', 57);
 
-    const wallet = keyringManager.getState();
-    expect(57 in wallet.networks.syscoin).toBe(false);
-  });
+  //   const wallet = keyringManager.getState();
+  //   expect(57 in wallet.networks.syscoin).toBe(false);
+  // });
 
   //* getLatestUpdateForAccount
   it('should get an updated account', async () => {
