@@ -1,14 +1,14 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import axios from 'axios';
-import { chains } from 'eth-chains';
-import * as sigUtil from 'eth-sig-util';
-import * as ethUtil from 'ethereumjs-util';
+import { Chain, chains } from 'eth-chains';
+import { recoverTypedSignature_v4 as recoverTypedSignatureV4 } from 'eth-sig-util';
+import { toChecksumAddress } from 'ethereumjs-util';
 import { ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import { request, gql } from 'graphql-request';
 import _ from 'lodash';
 
-import { web3Provider } from '@pollum-io/sysweb3-network';
+import { jsonRpcRequest, web3Provider } from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
   getErc20Abi,
@@ -128,63 +128,78 @@ export const Web3Accounts = () => {
     }
   };
 
-  const checkLatestBlocksForTransactions = async (address: string) => {
-    const currentBlock = web3Provider.blockNumber;
+  const getPendingTransactions = (
+    chainId: number,
+    address: string
+  ): TransactionResponse[] => {
+    const chain = chains.getById(chainId) as Chain;
+    const chainWsUrl = chain.rpc.find((rpc) => rpc.startsWith('wss://'));
 
-    let txCount = await web3Provider.getTransactionCount(address, currentBlock);
-    let balance = await web3Provider.getBalance(address, currentBlock);
+    const wsUrl = chain && chainWsUrl ? chainWsUrl : '';
 
-    const transactions = [];
+    const needsApiKey = Boolean(wsUrl.includes('API_KEY'));
 
-    if (txCount > 0 || balance) {
-      for (
-        let index = currentBlock;
-        index >= 100 && txCount > 0 && balance;
-        --index
-      ) {
-        try {
-          const block = await web3Provider.getBlock(index);
+    const url = needsApiKey ? null : wsUrl;
 
-          if (block && block.transactions) {
-            for (const hash of block.transactions) {
-              const transaction = await web3Provider.getTransaction(hash);
+    if (!url) return [];
 
-              if (transaction.from === address) {
-                balance = balance.add(transaction.value);
+    const wssProvider = new ethers.providers.WebSocketProvider(String(url));
 
-                console.log({
-                  transaction,
-                  address,
-                  hash,
-                });
+    wssProvider.on('error', (error) => {
+      console.error(`WS: Could not get pending transactions. ${error}`);
 
-                txCount = txCount - 1;
-              }
+      return;
+    });
 
-              if (transaction.to === address) {
-                if (transaction.from !== transaction.to)
-                  balance = balance.sub(transaction.value);
+    const pendingTransactions: TransactionResponse[] = [];
 
-                console.log({
-                  transaction,
-                  address,
-                  hash,
-                });
-              }
+    wssProvider.on('pending', async (txhash) => {
+      const tx = await wssProvider.getTransaction(txhash);
 
-              transactions.push(transaction);
-            }
-          }
-        } catch (error) {
-          throw new Error(`Error in block. Error: ${error}`);
-        }
+      const { from, to, hash, blockNumber } = tx;
+
+      if (tx && (from === address || to === address)) {
+        const { timestamp } = await wssProvider.getBlock(Number(blockNumber));
+
+        const formattedTx = {
+          ...tx,
+          timestamp,
+        };
+
+        const isPendingTxIncluded =
+          pendingTransactions.findIndex(
+            (transaction: TransactionResponse) => transaction.hash === hash
+          ) > -1;
+
+        if (isPendingTxIncluded) return;
+
+        pendingTransactions.push(formattedTx);
       }
-    }
+    });
 
-    return transactions;
+    return pendingTransactions;
   };
 
-  const getUserTransactions = async (address: string, network: INetwork) => {
+  const getFormattedTransactionResponse = async (
+    provider:
+      | ethers.providers.EtherscanProvider
+      | ethers.providers.JsonRpcProvider,
+    transaction: TransactionResponse
+  ) => {
+    const tx = await provider.getTransaction(transaction.hash);
+
+    const { timestamp } = await provider.getBlock(Number(tx.blockNumber));
+
+    return {
+      ...tx,
+      timestamp,
+    };
+  };
+
+  const getUserTransactions = async (
+    address: string,
+    network: INetwork
+  ): Promise<TransactionResponse[]> => {
     const etherscanSupportedNetworks = [
       'homestead',
       'ropsten',
@@ -194,21 +209,31 @@ export const Web3Accounts = () => {
     ];
 
     try {
-      const { chainId, default: _default, label, apiUrl, url } = network;
+      const { chainId, default: _default, label, apiUrl } = network;
 
-      const chain = chains.getById(chainId);
+      const networkByLabel = chainId === 1 ? 'homestead' : label.toLowerCase();
+
+      const pendingTransactions = getPendingTransactions(chainId, address);
 
       if (_default) {
-        const networkByLabel =
-          chainId === 1 ? 'homestead' : label.toLowerCase();
-
         if (etherscanSupportedNetworks.includes(networkByLabel)) {
           const etherscanProvider = new ethers.providers.EtherscanProvider(
             networkByLabel,
             'K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
           );
 
-          return etherscanProvider.getHistory(address) || [];
+          const txHistory = await etherscanProvider.getHistory(address);
+
+          const history = await Promise.all(
+            txHistory.map(
+              async (tx) =>
+                await getFormattedTransactionResponse(etherscanProvider, tx)
+            )
+          );
+
+          return (
+            [...pendingTransactions, ...history] || [...pendingTransactions]
+          );
         }
 
         const query = `?module=account&action=txlist&address=${address}`;
@@ -217,32 +242,17 @@ export const Web3Accounts = () => {
           data: { result },
         } = await axios.get(`${apiUrl}${query}`);
 
-        console.log({ network, result, chain });
+        const txs = await Promise.all(
+          result.map(
+            async (tx: TransactionResponse) =>
+              await getFormattedTransactionResponse(web3Provider, tx)
+          )
+        );
 
-        return result;
+        return [...pendingTransactions, ...txs];
       }
 
-      const wsUrl = chain
-        ? chain.rpc.find((rpc: string) => rpc.startsWith('wss://'))
-        : url;
-
-      const wssProvider = new ethers.providers.WebSocketProvider(String(wsUrl));
-
-      const pendingTransactions: any = {};
-
-      wssProvider.on('pending', async (txhash: string) => {
-        const tx = await wssProvider.getTransaction(txhash);
-
-        if (tx.from === address || tx.to === address) {
-          pendingTransactions[tx.hash] = tx;
-        }
-      });
-
-      const transactions = await checkLatestBlocksForTransactions(address);
-
-      console.log({ transactions, address, network, pendingTransactions });
-
-      return Object.values(pendingTransactions);
+      return [...pendingTransactions];
     } catch (error) {
       throw new Error(
         `Could not get user transactions history. Error: ${error}`
@@ -253,45 +263,33 @@ export const Web3Accounts = () => {
   const getTransactionCount = async (address: string) =>
     await web3Provider.getTransactionCount(address);
 
-  const ethSignTypedDataV4 = (msgParams: object) => {
+  const signTypedDataV4 = async (
+    msgParams: object,
+    address: string,
+    url: string
+  ) => {
     const msg = JSON.stringify(msgParams);
-    const provider = window.pali.getProvider('ethereum');
+    const params = [address, msg];
 
-    const from = provider.selectedAddress;
-
-    const params = [from, msg];
-    const method = 'ethSignTypedDataV4';
-
-    return provider.request(
-      {
-        method,
-        params,
-        from,
-      },
-      (err: any, result: any) => {
-        if (err) return console.dir(err);
-        if (result.error) {
-          alert(result.error.message);
-        }
-        if (result.error) return console.error('ERROR', result);
-
-        const recovered = sigUtil.recoverTypedSignature_v4({
-          data: JSON.parse(msg),
-          sig: result.result,
-        });
-
-        if (
-          ethUtil.toChecksumAddress(recovered) ===
-          ethUtil.toChecksumAddress(from)
-        ) {
-          alert('Successfully recovered signer as ' + from);
-        } else {
-          alert(
-            'Failed to verify signer when comparing ' + result + ' to ' + from
-          );
-        }
-      }
+    const { error, result } = await jsonRpcRequest(
+      url,
+      'ethSignTypedDataV4',
+      // @ts-ignore
+      params
     );
+
+    if (error) throw new Error(error);
+
+    const recovered = recoverTypedSignatureV4({
+      data: JSON.parse(msg),
+      sig: result,
+    });
+
+    return {
+      success: toChecksumAddress(recovered) === toChecksumAddress(address),
+      result,
+      recovered,
+    };
   };
 
   const getRecommendedGasPrice = async (formatted?: boolean) => {
@@ -306,6 +304,7 @@ export const Web3Accounts = () => {
 
   const toBigNumber = (aBigNumberish: string | number) =>
     ethers.BigNumber.from(String(aBigNumberish));
+
   const getFeeByType = async (type: string) => {
     const gasPrice = await getRecommendedGasPrice(false);
 
@@ -374,7 +373,6 @@ export const Web3Accounts = () => {
     receivingAddress,
     amount,
     gasLimit,
-    gasPrice,
     token,
     senderXprv,
   }: {
@@ -419,13 +417,14 @@ export const Web3Accounts = () => {
       chainId: web3Provider.network.chainId,
       gasLimit: toBigNumber(0) || gasLimit,
       data,
-      gasPrice: gasPrice || undefined,
     };
 
     tx.gasLimit = await web3Provider.estimateGas(tx);
 
     try {
-      return await wallet.sendTransaction(tx);
+      const transaction = await wallet.sendTransaction(tx);
+
+      return await getFormattedTransactionResponse(web3Provider, transaction);
     } catch (error) {
       throw new Error(error);
     }
@@ -443,7 +442,7 @@ export const Web3Accounts = () => {
 
   const tx = {
     getTransactionCount,
-    ethSignTypedDataV4,
+    signTypedDataV4,
     sendTransaction,
     getFeeByType,
     getGasLimit,

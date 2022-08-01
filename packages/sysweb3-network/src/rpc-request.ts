@@ -5,7 +5,7 @@ const fetchWithTimeout = getFetchWithTimeout(1000 * 30);
 export const jsonRpcRequest = async (
   rpcUrl: string,
   rpcMethod: string,
-  rpcParams = []
+  rpcParams: any[] = []
 ) => {
   let fetchUrl = rpcUrl;
 
@@ -36,7 +36,14 @@ export const jsonRpcRequest = async (
     }),
     headers,
     cache: 'default',
-  }).then((httpResponse) => httpResponse.json());
+  })
+    .then((httpResponse: any) =>
+      // eslint-disable-next-line prettier/prettier
+      (httpResponse.status === 200 ? httpResponse.json() : httpResponse)
+    )
+    .catch((error) => {
+      throw new Error(error);
+    });
 
   if (
     !jsonRpcResponse ||
@@ -48,8 +55,15 @@ export const jsonRpcRequest = async (
 
   const { error, result } = jsonRpcResponse;
 
-  if (error) {
-    throw new Error(error.message || error);
+  const requestFailed =
+    jsonRpcResponse.status && jsonRpcResponse.status !== 200;
+
+  if (error || requestFailed) {
+    throw new Error(
+      requestFailed
+        ? `Bad request. Request returned status ${jsonRpcResponse.status}.`
+        : error.message || error
+    );
   }
 
   return result;
