@@ -2,7 +2,7 @@ import coinSelectSyscoin from 'coinselectsyscoin';
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
 
-import { IKeyringAccountState, ISyscoinTransactions } from '../types';
+import { ISyscoinTransactions } from '../types';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
   INewNFT,
@@ -825,9 +825,6 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     }
   };
 
-  const signMessage = (account: IKeyringAccountState, tx: any, options: any) =>
-    console.log(account, tx, options);
-
   return {
     confirmMintNFT,
     confirmNftCreation,
@@ -836,7 +833,6 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     confirmUpdateToken,
     getRecommendedFee,
     sendTransaction,
-    signMessage,
     signTransaction,
   };
 };

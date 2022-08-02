@@ -88,7 +88,7 @@ export const KeyringManager = (): IKeyringManager => {
     }
   };
 
-  const hasHdMnemonic = () => Boolean(hd.mnemonic);
+  const hasHdAccounts = () => Boolean(hd.Signer.accounts);
 
   const forgetSigners = () => {
     hd = new sys.utils.HDSigner('');
@@ -105,7 +105,11 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const isUnlocked = () =>
-    Boolean(hasHdMnemonic() && storage.get('vault-keys').hash);
+    Boolean(
+      hasHdAccounts() &&
+        storage.get('vault-keys') &&
+        storage.get('vault-keys').hash
+    );
   /** end */
 
   /** seeds */
@@ -901,7 +905,7 @@ export const KeyringManager = (): IKeyringManager => {
     getPrivateKeyByAccountId,
     getSeed,
     getState,
-    hasHdMnemonic,
+    hasHdAccounts,
     isUnlocked,
     login,
     logout,
