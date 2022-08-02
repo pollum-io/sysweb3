@@ -18,7 +18,7 @@ import {
   IKeyringManager,
 } from './types';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { setActiveNetwork } from '@pollum-io/sysweb3-network';
+import { jsonRpcRequest, setActiveNetwork } from '@pollum-io/sysweb3-network';
 import {
   INetwork,
   getSigners,
@@ -88,7 +88,7 @@ export const KeyringManager = (): IKeyringManager => {
     }
   };
 
-  const hasHdMnemonic = () => Boolean(hd.mnemonic);
+  const hasHdAccounts = () => Boolean(hd.Signer.accounts);
 
   const forgetSigners = () => {
     hd = new sys.utils.HDSigner('');
@@ -105,7 +105,11 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const isUnlocked = () =>
-    Boolean(hasHdMnemonic() && storage.get('vault-keys').hash);
+    Boolean(
+      hasHdAccounts() &&
+        storage.get('vault-keys') &&
+        storage.get('vault-keys').hash
+    );
   /** end */
 
   /** seeds */
@@ -179,24 +183,6 @@ export const KeyringManager = (): IKeyringManager => {
     forgetSigners();
 
     memMnemonic = '';
-  };
-
-  const _persistWallet = (
-    password: string = storage.get('vault-keys').hash
-  ): string | Error => {
-    if (typeof password !== 'string') {
-      return new Error('KeyringManager - password is not a string');
-    }
-
-    storage.set('vault-keys', { ...storage.get('vault-keys'), hash: password });
-
-    return getDecryptedVault().wallet;
-  };
-
-  const _fullUpdate = () => {
-    _persistWallet(storage.get('vault-keys').hash);
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
   };
 
   const _updateUnlocked = () => {
@@ -383,7 +369,7 @@ export const KeyringManager = (): IKeyringManager => {
         activeAccount: accounts[activeAccount.id],
       };
 
-      _fullUpdate();
+      setEncryptedVault({ ...getDecryptedVault(), wallet });
     }
 
     return getDecryptedVault().wallet.activeAccount;
@@ -429,7 +415,7 @@ export const KeyringManager = (): IKeyringManager => {
       activeNetwork: network,
     };
 
-    _fullUpdate();
+    setEncryptedVault({ ...getDecryptedVault(), wallet });
 
     if (isSyscoinChain) {
       const { isTestnet } = await validateSysRpc(network.url);
@@ -617,8 +603,6 @@ export const KeyringManager = (): IKeyringManager => {
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
 
-    _fullUpdate();
-
     return vault;
   };
 
@@ -708,16 +692,23 @@ export const KeyringManager = (): IKeyringManager => {
       return;
     }
 
-    const newNetwork = wallet.networks.ethereum[network.chainId];
+    const newNetwork =
+      getDecryptedVault().wallet.networks.ethereum[network.chainId];
 
     if (!newNetwork) throw new Error('Network not found');
 
-    setActiveNetwork(newNetwork);
+    try {
+      await jsonRpcRequest(network.url, 'eth_chainId');
 
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      isTestnet: false,
-    });
+      setActiveNetwork(newNetwork);
+
+      setEncryptedVault({
+        ...getDecryptedVault(),
+        isTestnet: false,
+      });
+    } catch (error) {
+      throw new Error(`Could not set network. Error: ${error}`);
+    }
   };
 
   /** networks */
@@ -727,20 +718,27 @@ export const KeyringManager = (): IKeyringManager => {
   ): Promise<IKeyringAccountState> => {
     const { wallet: _wallet } = getDecryptedVault();
 
+    const networksByChain = _wallet.networks[chain];
+
     wallet = {
       ..._wallet,
       networks: {
         ..._wallet.networks,
         [chain]: {
+          ...networksByChain,
           [network.chainId]: network,
         },
       },
       activeNetwork: network,
     };
 
-    _fullUpdate();
+    setEncryptedVault({ ...getDecryptedVault(), wallet });
 
-    await _setSignerByChain(network, chain);
+    try {
+      await _setSignerByChain(network, chain);
+    } catch (error) {
+      throw new Error(error);
+    }
 
     const account = await _getAccountForNetwork({
       isSyscoinChain: chain === 'syscoin' && network.url.includes('blockbook'),
@@ -755,7 +753,7 @@ export const KeyringManager = (): IKeyringManager => {
       activeAccount: account,
     };
 
-    _fullUpdate();
+    setEncryptedVault({ ...getDecryptedVault(), wallet });
 
     return account;
   };
@@ -907,7 +905,7 @@ export const KeyringManager = (): IKeyringManager => {
     getPrivateKeyByAccountId,
     getSeed,
     getState,
-    hasHdMnemonic,
+    hasHdAccounts,
     isUnlocked,
     login,
     logout,

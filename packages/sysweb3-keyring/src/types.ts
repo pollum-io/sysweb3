@@ -34,7 +34,6 @@ export interface ISyscoinTransactions {
   confirmUpdateToken: (transaction: ITokenUpdate) => Promise<ITxid>;
   getRecommendedFee: (explorerUrl: string) => Promise<number>;
   sendTransaction: (transaction: ITokenSend) => Promise<ITxid>;
-  signMessage: (account: IKeyringAccountState, tx: any, options: any) => void;
   signTransaction: (
     data: { psbt: string; assets: string },
     isSendOnly: boolean,
@@ -60,7 +59,7 @@ export interface IKeyringManager {
   getPrivateKeyByAccountId: (id: number) => string;
   getSeed: (password: string) => string;
   getState: () => IWalletState;
-  hasHdMnemonic: () => boolean;
+  hasHdAccounts: () => boolean;
   isUnlocked: () => boolean;
   login: (password: string) => Promise<IKeyringAccountState>;
   logout: () => void;
