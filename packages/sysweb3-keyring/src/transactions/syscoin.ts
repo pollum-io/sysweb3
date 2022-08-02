@@ -3,7 +3,6 @@ import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
 
 import { ISyscoinTransactions } from '../types';
-import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
   INewNFT,
   isBase64,
@@ -15,6 +14,7 @@ import {
   getSigners,
   getAsset,
   countDecimals,
+  getDecryptedVault,
 } from '@pollum-io/sysweb3-utils';
 
 type EstimateFeeParams = {
@@ -26,8 +26,6 @@ type EstimateFeeParams = {
 };
 
 export const SyscoinTransactions = (): ISyscoinTransactions => {
-  const storage = sysweb3.sysweb3Di.getStateStorageDb();
-
   const estimateSysTransactionFee = async ({
     outputs,
     changeAddress,
@@ -83,7 +81,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     receivingAddress: string;
     fee: number;
   }) => {
-    const { network } = storage.get('signers-key');
+    const { network } = getDecryptedVault();
 
     const { _hd, _main } = getSigners();
 
@@ -277,7 +275,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     confirmations: number;
     guid: string;
   }> => {
-    const { network } = storage.get('signers-key');
+    const { network } = getDecryptedVault();
     const { _hd, _main } = getSigners();
 
     const { precision, initialSupply, maxsupply, fee, receiver } =
@@ -332,7 +330,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    // const { decimals } = await getAsset(_main.blockbookURL, assetGuid);
+    const { decimals } = await getAsset(_main.blockbookURL, assetGuid);
 
     const receivingAddress = await _hd.getNewReceivingAddress(true);
     const txOptions = { rbf: true };
@@ -340,7 +338,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     const tokenMap = getTokenMap({
       guid: assetGuid,
       changeAddress: await _hd.getNewChangeAddress(true),
-      amount: new sys.utils.BN(amount * 10 ** 8),
+      amount: new sys.utils.BN(amount * 10 ** decimals),
       receivingAddress,
     });
 
@@ -494,7 +492,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
   const confirmNftCreation = async (
     temporaryTransaction: INewNFT
   ): Promise<ITxid> => {
-    const { network } = storage.get('signers-key');
+    const { network } = getDecryptedVault();
 
     const { fee, symbol, description, receivingAddress, precision } =
       temporaryTransaction;

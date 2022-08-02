@@ -24,33 +24,14 @@ import {
   getSigners,
   validateSysRpc,
   SyscoinHDSigner,
+  setEncryptedVault,
+  getDecryptedVault,
 } from '@pollum-io/sysweb3-utils';
 
 export const KeyringManager = (): IKeyringManager => {
   /** keys */
   const web3Wallet = Web3Accounts();
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
-
-  const setEncryptedVault = (decryptedVault: any) => {
-    const encryptedVault = CryptoJS.AES.encrypt(
-      JSON.stringify(decryptedVault),
-      storage.get('vault-keys').hash
-    );
-
-    storage.set('vault', encryptedVault.toString());
-  };
-
-  const getDecryptedVault = () => {
-    const vault = storage.get('vault');
-
-    const { hash } = storage.get('vault-keys');
-
-    const decryptedVault = CryptoJS.AES.decrypt(vault, hash).toString(
-      CryptoJS.enc.Utf8
-    );
-
-    return JSON.parse(decryptedVault);
-  };
 
   let wallet: IWalletState = initialWalletState;
 
