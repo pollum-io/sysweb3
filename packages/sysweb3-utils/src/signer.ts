@@ -3,7 +3,7 @@ import { Psbt } from 'bitcoinjs-lib';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 
-import { BitcoinNetwork } from '.';
+import { BitcoinNetwork, getDecryptedVault } from '.';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 
 export const MainSigner = ({
@@ -76,12 +76,7 @@ export const getSigners = () => {
 
   const { hash } = storage.get('vault-keys');
 
-  const decryptedVault = CryptoJS.AES.decrypt(
-    storage.get('vault'),
-    hash
-  ).toString(CryptoJS.enc.Utf8);
-
-  const { network, isTestnet, mnemonic } = JSON.parse(decryptedVault);
+  const { network, isTestnet, mnemonic } = getDecryptedVault();
 
   const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString(
     CryptoJS.enc.Utf8

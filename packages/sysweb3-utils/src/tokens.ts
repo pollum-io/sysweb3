@@ -2,7 +2,7 @@ import axios from 'axios';
 import camelcaseKeys from 'camelcase-keys';
 import sys from 'syscoinjs-lib';
 
-import { IEthereumAddress, createContractUsingAbi } from '.';
+import { createContractUsingAbi } from '.';
 import abi20 from './abi/erc20.json';
 import abi from './abi/erc721.json';
 import tokens from './tokens.json';
@@ -289,6 +289,21 @@ export type EthTokenDetails = {
   contract: string;
 };
 
+export type IEthereumAddress = {
+  address: IEthereumBalance[];
+};
+
+export type IEthereumBalance = {
+  balances: IEthereumCurrency[];
+};
+
+export type IEthereumCurrency = {
+  currency: {
+    symbol: string;
+  };
+  value: number;
+};
+
 export type IEthereumTokensResponse = {
   ethereum: IEthereumAddress;
 };
@@ -309,7 +324,7 @@ export type TokenIcon = {
 
 export type IEthereumNft = {
   blockNumber: string;
-  timeStamp: string;
+  timestamp: string;
   hash: string;
   nonce: string;
   blockHash: string;

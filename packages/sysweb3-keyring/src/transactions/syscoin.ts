@@ -35,7 +35,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     xpub,
     explorerUrl,
   }: EstimateFeeParams) => {
-    const { _main } = getSigners();
+    const { _hd } = getSigners();
 
     const txOpts = { rbf: true };
 
@@ -43,7 +43,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     const utxosSanitized = sys.utils.sanitizeBlockbookUTXOs(
       null,
       utxos,
-      _main.network
+      _hd.Signer.network
     );
 
     // 0 feerate to create tx, then find bytes and multiply feeRate by bytes to get estimated txfee
