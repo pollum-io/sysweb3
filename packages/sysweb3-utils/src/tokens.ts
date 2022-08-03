@@ -316,7 +316,7 @@ export const fetchMetadata = async (url: string): Promise<NftJsonMetadata> => {
   };
 };
 
-export const getNftImage = async (
+export const getNftStandardMetadata = async (
   contractAddress: string,
   tokenId: string,
   provider: JsonRpcProvider
@@ -325,19 +325,11 @@ export const getNftImage = async (
     const config = { provider, ethers: ethersModule };
     const loaded = await loadEthers(config);
 
-    const nft = await fetchStandardNftContractData(
-      contractAddress,
-      tokenId,
-      loaded
-    );
-
-    console.log({ nft });
+    return await fetchStandardNftContractData(contractAddress, tokenId, loaded);
   } catch (error) {
-    console.error(
-      'Verify current network. Set the same network of NFT contract.'
+    throw new Error(
+      `Verify current network. Set the same network of NFT contract. Error: ${error}`
     );
-
-    throw new Error(error);
   }
 };
 
@@ -350,7 +342,8 @@ export const getTokenIconBySymbol = async (symbol: string): Promise<string> => {
   );
 
   if (tokens[0]) return tokens[0].thumb;
-  else throw new Error('Token icon not found');
+
+  throw new Error('Token icon not found');
 };
 
 export const isNFT = (guid: number) => {
@@ -621,9 +614,17 @@ export type TokenIcon = {
   largeImage: string;
 };
 
-export type IEthereumNft = {
+export type NftResultDone = {
+  status: 'done';
+  loading: false;
+  error: undefined;
+  nft: NftMetadata;
+  reload: () => Promise<boolean>;
+};
+
+export interface IEtherscanNFT {
   blockNumber: string;
-  timestamp: string;
+  timeStamp: string;
   hash: string;
   nonce: string;
   blockHash: string;
@@ -641,7 +642,19 @@ export type IEthereumNft = {
   cumulativeGasUsed: string;
   input: string;
   confirmations: string;
-};
+}
+
+export interface NftMetadata {
+  description: string;
+  image: string;
+  imageType: 'image' | 'video' | 'unknown';
+  metadataUrl: string;
+  name: string;
+  owner: Address;
+  rawData: Record<string, unknown> | null;
+}
+
+export interface IEthereumNftDetails extends IEtherscanNFT, NftMetadata {}
 
 export type IErc20Token = {
   name: string;
@@ -725,25 +738,7 @@ export type NftResultError = {
   reload: () => Promise<boolean>;
 };
 
-export type NftResultDone = {
-  status: 'done';
-  loading: false;
-  error: undefined;
-  nft: NftMetadata;
-  reload: () => Promise<boolean>;
-};
-
 export type NftResult = NftResultLoading | NftResultError | NftResultDone;
-
-export type NftMetadata = {
-  description: string;
-  image: string;
-  imageType: 'image' | 'video' | 'unknown';
-  metadataUrl: string;
-  name: string;
-  owner: Address;
-  rawData: Record<string, unknown> | null;
-};
 
 export type NftJsonMetadata = {
   description: string;

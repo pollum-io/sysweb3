@@ -16,7 +16,8 @@ import {
 import {
   createContractUsingAbi,
   getErc20Abi,
-  getNftImage,
+  getNftStandardMetadata,
+  IEthereumNftDetails,
   INetwork,
 } from '@pollum-io/sysweb3-utils';
 
@@ -58,7 +59,7 @@ export const Web3Accounts = () => {
   const getNftsByAddress = async (
     address: string,
     network: INetwork
-  ): Promise<any[]> => {
+  ): Promise<IEthereumNftDetails[] | []> => {
     const etherscanSupportedNetworks = [
       'homestead',
       'ropsten',
@@ -100,7 +101,7 @@ export const Web3Accounts = () => {
 
       await Promise.all(
         result.map(async (nft: any) => {
-          const image = await getNftImage(
+          const details = await getNftStandardMetadata(
             nft.contractAddress,
             nft.tokenID,
             web3Provider
@@ -108,7 +109,8 @@ export const Web3Accounts = () => {
 
           tokens.push({
             ...nft,
-            image,
+            isNFT: true,
+            details,
           });
         })
       );

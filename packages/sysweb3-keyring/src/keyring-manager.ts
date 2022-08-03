@@ -234,7 +234,7 @@ export const KeyringManager = (): IKeyringManager => {
     const balance = await web3Wallet.getBalance(address);
 
     const transactions = await web3Wallet.getUserTransactions(address, network);
-    const assets = [await web3Wallet.getNftsByAddress(address, network)];
+    const nfts = await web3Wallet.getNftsByAddress(address, network);
 
     const {
       data: {
@@ -262,7 +262,7 @@ export const KeyringManager = (): IKeyringManager => {
           marketCapRank,
           explorerLink: blockchainSite[0],
         },
-        ...assets,
+        ...nfts,
       ],
       id,
       isTrezorWallet: false,
