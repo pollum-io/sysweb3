@@ -18,11 +18,14 @@ import {
   IKeyringManager,
 } from './types';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { jsonRpcRequest, setActiveNetwork } from '@pollum-io/sysweb3-network';
+import {
+  jsonRpcRequest,
+  setActiveNetwork,
+  validateSysRpc,
+} from '@pollum-io/sysweb3-network';
 import {
   INetwork,
   getSigners,
-  validateSysRpc,
   SyscoinHDSigner,
   setEncryptedVault,
   getDecryptedVault,
@@ -234,7 +237,7 @@ export const KeyringManager = (): IKeyringManager => {
     const balance = await web3Wallet.getBalance(address);
 
     const transactions = await web3Wallet.getUserTransactions(address, network);
-    const nfts = await web3Wallet.getNftsByAddress(address, network);
+    const assets = await web3Wallet.getAssetsByAddress(address, network);
 
     const {
       data: {
@@ -262,7 +265,7 @@ export const KeyringManager = (): IKeyringManager => {
           marketCapRank,
           explorerLink: blockchainSite[0],
         },
-        ...nfts,
+        ...assets,
       ],
       id,
       isTrezorWallet: false,
@@ -446,7 +449,7 @@ export const KeyringManager = (): IKeyringManager => {
     const latestAssets = tokensAsset ? tokensAsset.slice(0, 30) : [];
     const assets = latestAssets.map((token: any) => ({
       ...token,
-      symbol: atob(token.symbol),
+      symbol: token.symmbol ? atob(token.symbol) : '',
     }));
 
     return {

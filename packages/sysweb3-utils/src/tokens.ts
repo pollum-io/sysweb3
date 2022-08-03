@@ -7,7 +7,11 @@ import { createContractUsingAbi } from '.';
 import abi20 from './abi/erc20.json';
 import tokens from './tokens.json';
 
-import type { Contract, ContractFunction } from '@ethersproject/contracts';
+import type {
+  Contract,
+  ContractFunction,
+  Event,
+} from '@ethersproject/contracts';
 import type { BaseProvider, JsonRpcProvider } from '@ethersproject/providers';
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
@@ -112,10 +116,26 @@ export const ABI = [
   'function uri(uint256 _id) external view returns (string)',
 ];
 
+export const ERC20ABI = [
+  'function balanceOf(address owner) view returns (uint256)',
+  'function decimals() view returns (uint8)',
+  'function symbol() view returns (string)',
+  'function transfer(address to, uint amount) returns (bool)',
+  'event Transfer(address indexed from, address indexed to, uint amount)',
+];
+
 type NftContract = InstanceType<typeof Contract> & {
   ownerOf: ContractFunction<string>;
   tokenURI: ContractFunction<string>;
   uri: ContractFunction<string>;
+};
+
+type TokenContract = InstanceType<typeof Contract> & {
+  balanceOf: ContractFunction<number>;
+  decimals: ContractFunction<number>;
+  symbol: ContractFunction<string>;
+  transfer: ContractFunction<any>;
+  Transfer: Event;
 };
 
 export const url = async (
@@ -161,10 +181,31 @@ export const fetchStandardNftContractData = async (
   };
 };
 
-const ETHERS_NOT_FOUND =
-  'Ethers couldn’t be imported. ' +
-  'Please add the ethers module to your project dependencies, ' +
-  'or inject it in the Ethers fetcher options.';
+export const fetchStandardTokenContractData = async (
+  contractAddress: Address,
+  address: Address,
+  config: EthersFetcherConfigEthersLoaded
+): Promise<{ balance: number; decimals: number; symbol: string }> => {
+  const contract = new config.ethers.Contract(
+    contractAddress,
+    ERC20ABI,
+    config.provider
+  ) as TokenContract;
+
+  const [balance, decimals, symbol] = await Promise.all([
+    contract.balanceOf(address),
+    contract.decimals(),
+    contract.symbol(),
+  ]);
+
+  return {
+    balance,
+    decimals,
+    symbol,
+  };
+};
+
+const ETHERS_NOT_FOUND = `Ethers couldn't be imported. Please add the ethers module to your project dependencies, or inject it in the Ethers fetcher options.`;
 
 export const loadEthers = async (
   config: EthersFetcherConfig
@@ -372,6 +413,27 @@ export const getToken = async (id: string): Promise<ICoingeckoToken> => {
   return camelcaseKeys(token, { deep: true });
 };
 
+export const getTokenStandardMetadata = async (
+  contractAddress: string,
+  address: string,
+  provider: JsonRpcProvider
+) => {
+  try {
+    const config = { provider, ethers: ethersModule };
+    const loaded = await loadEthers(config);
+
+    return await fetchStandardTokenContractData(
+      contractAddress,
+      address,
+      loaded
+    );
+  } catch (error) {
+    throw new Error(
+      `Verify current network. Set the same network of token contract. Error: ${error}`
+    );
+  }
+};
+
 /**
  * Converts a token to a fiat value
  *
@@ -456,7 +518,7 @@ export const validateToken = async (
   address: string
 ): Promise<IErc20Token | any> => {
   try {
-    const contract = await createContractUsingAbi(abi20, address);
+    const contract = createContractUsingAbi(abi20, address);
 
     const [decimals, name, symbol]: IErc20Token[] = await Promise.all([
       contract.methods.decimals().call(),
@@ -704,23 +766,12 @@ export type EthersFetcherConfigEthersLoaded = EthersFetcherConfig & {
   ethers: { Contract: EthersContract };
 };
 
-export type EthersFetcher = Fetcher<EthersFetcherConfig>;
 export type EthereumProviderEip1193 = {
   request: (args: {
     method: string;
     params?: unknown[] | Record<string, unknown>;
   }) => Promise<unknown>;
 };
-
-export type EthereumFetcherConfigDeclaration = {
-  ethereum?: EthereumProviderEip1193;
-};
-
-export type EthereumFetcherConfig = {
-  ethereum: EthereumProviderEip1193;
-};
-
-export type EthereumFetcher = Fetcher<EthereumFetcherConfig>;
 
 export type Address = string;
 
@@ -740,6 +791,8 @@ export type NftResultError = {
   reload: () => Promise<boolean>;
 };
 
+export type IQueryFilterResult = Promise<Array<Event>>;
+
 export type NftResult = NftResultLoading | NftResultError | NftResultDone;
 
 export type NftJsonMetadata = {
@@ -754,32 +807,6 @@ export type ContractMethod = {
   methodName: string;
   methodHash: string;
   humanReadableAbi: [string];
-};
-
-export type Fetcher<Config> = {
-  config: Config;
-  fetchNft: (contractAddress: Address, tokenId: string) => Promise<NftMetadata>;
-};
-
-export type FetcherDeclarationEthers = ['ethers', EthersFetcherConfig];
-export type FetcherDeclarationEthereum = [
-  'ethereum',
-  EthereumFetcherConfigDeclaration
-];
-export type FetcherDeclaration =
-  | FetcherDeclarationEthers
-  | FetcherDeclarationEthereum;
-
-export type FetcherProp = Fetcher<unknown> | FetcherDeclaration;
-
-export type ImageProxyFn = (url: string, metadata: NftMetadata) => string;
-export type JsonProxyFn = (url: string) => string;
-export type IpfsUrlFn = (cid: string, path?: string) => string;
-
-export type FetchContext = {
-  imageProxy: ImageProxyFn;
-  ipfsUrl: IpfsUrlFn;
-  jsonProxy: JsonProxyFn;
 };
 
 export type ITokenMap = Map<string, IAddressMap>;

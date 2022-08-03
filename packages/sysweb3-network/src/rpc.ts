@@ -13,7 +13,7 @@ export const validateCurrentRpcUrl = () => {
   });
 };
 
-const isValidChainIdForEthNetworks = (chainId: number | string) =>
+export const isValidChainIdForEthNetworks = (chainId: number | string) =>
   Number.isSafeInteger(chainId) && chainId > 0 && chainId <= 4503599627370476;
 
 export const validateCustomEthRpc = async (
@@ -50,7 +50,7 @@ export const validateCustomEthRpc = async (
 
 export const validateSysRpc = async (
   rpcUrl: string
-): Promise<{ data: any; valid: boolean }> => {
+): Promise<{ data: any; valid: boolean; isTestnet: boolean }> => {
   const response = await axios.get(`${rpcUrl}/api/v2`);
 
   const {
@@ -62,8 +62,10 @@ export const validateSysRpc = async (
 
   if (!valid) throw new Error('Invalid RPC URL');
 
+  const isTestnetCoin = String(coin).includes('Testnet');
+
   const bip44Coin = bip44Constants.find(
-    (item: [number, string, string]) => item[2] === coin
+    (item: any) => item[2] === (isTestnetCoin ? bip44Constants[1][2] : coin)
   );
 
   const coinTypeInDecimal = bip44Coin[0];
@@ -78,8 +80,11 @@ export const validateSysRpc = async (
     currency: symbol.toString().toLowerCase(),
   };
 
+  const isTestnet = !(chain === 'main');
+
   return {
     valid,
     data,
+    isTestnet,
   };
 };
