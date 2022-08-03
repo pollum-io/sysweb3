@@ -654,7 +654,9 @@ export interface NftMetadata {
   rawData: Record<string, unknown> | null;
 }
 
-export interface IEthereumNftDetails extends IEtherscanNFT, NftMetadata {}
+export interface IEthereumNftDetails extends IEtherscanNFT, NftMetadata {
+  isNFT: boolean;
+}
 
 export type IErc20Token = {
   name: string;

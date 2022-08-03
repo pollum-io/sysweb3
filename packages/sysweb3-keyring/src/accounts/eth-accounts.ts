@@ -18,6 +18,7 @@ import {
   getErc20Abi,
   getNftStandardMetadata,
   IEthereumNftDetails,
+  IEtherscanNFT,
   INetwork,
 } from '@pollum-io/sysweb3-utils';
 
@@ -87,7 +88,7 @@ export const Web3Accounts = () => {
 
       const etherscanQuery = `?module=account&action=tokennfttx&address=${address}&page=1&offset=100&&startblock=0&endblock=99999999&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`;
 
-      const apiUrlQuery = `?module=account&action=tokentx&address=0x48b4c5c295CF6913219947A7aefD5b1a473916f7`;
+      const apiUrlQuery = `?module=account&action=tokentx&address=${address}`;
 
       const query = isSupported ? etherscanQuery : apiUrlQuery;
 
@@ -100,7 +101,14 @@ export const Web3Accounts = () => {
       if (web3Provider.connection.url !== url) setActiveNetwork(network);
 
       await Promise.all(
-        result.map(async (nft: any) => {
+        result.map(async (nft: IEtherscanNFT) => {
+          const isInTokensList =
+            tokens.findIndex(
+              (token) => token.contractAddress === nft.contractAddress
+            ) > -1;
+
+          if (isInTokensList) return;
+
           const details = await getNftStandardMetadata(
             nft.contractAddress,
             nft.tokenID,
@@ -109,8 +117,8 @@ export const Web3Accounts = () => {
 
           tokens.push({
             ...nft,
+            ...details,
             isNFT: true,
-            details,
           });
         })
       );
