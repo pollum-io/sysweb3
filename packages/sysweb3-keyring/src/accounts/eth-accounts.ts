@@ -53,27 +53,58 @@ export const Web3Accounts = () => {
   const getNftsByAddress = async (
     address: string,
     network: INetwork
-  ): Promise<object | undefined> => {
+  ): Promise<any[]> => {
+    const etherscanSupportedNetworks = [
+      'homestead',
+      'ropsten',
+      'rinkeby',
+      'goerli',
+      'kovan',
+      'polygon',
+      'mumbai',
+    ];
+
     try {
-      const { chainId, label } = network;
+      const { chainId, label, apiUrl } = network;
 
-      let apiBaseUrl = '';
+      const networksLabels: { [chainId: number]: string } = {
+        137: 'polygon',
+        80001: 'mumbai',
+        1: 'homestead',
+      };
 
-      chainId !== 1
-        ? (apiBaseUrl = `https://api-${label.toLowerCase()}.etherscan.io/`)
-        : 'https://api.etherscan.io/';
+      const networkByLabel = networksLabels[chainId]
+        ? networksLabels[chainId]
+        : label.toLowerCase();
 
-      const { data } = await axios.get(
-        `${apiBaseUrl}api?module=account&action=tokennfttx&address=${address}&page=1&offset=100&&startblock=0&endblock=27025780&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`
-      );
+      const isSupported = etherscanSupportedNetworks.includes(networkByLabel);
 
-      if (data.message === 'OK' && data.result !== []) {
-        return data.result;
-      }
+      const etherscanQuery = `?module=account&action=tokennfttx&address=${address}&page=1&offset=100&&startblock=0&endblock=99999999&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`;
 
-      return;
+      const apiUrlQuery = `?module=account&action=tokentx&address=0x48b4c5c295CF6913219947A7aefD5b1a473916f7`;
+
+      const query = isSupported ? etherscanQuery : apiUrlQuery;
+
+      const {
+        data: { result },
+      } = await axios.get(`${apiUrl}${query}`);
+
+      const tokens = result ? result : [];
+
+      const filter = {
+        address,
+        topics: [ethers.utils.id('Transfer(address,address,uint256)')],
+      };
+
+      web3Provider.on(filter, (transferToken) => {
+        tokens.push(transferToken);
+      });
+
+      return tokens;
     } catch (error) {
-      throw new Error(`No NFTs available for this address. Error: ${error}`);
+      throw new Error(
+        `Could not get user transactions history. Error: ${error}`
+      );
     }
   };
 
