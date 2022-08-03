@@ -270,16 +270,6 @@ export const reversePromise = (promise: Promise<unknown>): Promise<unknown> =>
     Promise.resolve(promise).then(reject, resolve);
   });
 
-// To replace with AggregateError when useNft() will target ES2021 environments
-export class MultipleErrors extends Error {
-  errors: Error[];
-  constructor(message: string, errors: Error[]) {
-    super(message);
-    this.name = 'MultipleErrors';
-    this.errors = errors;
-  }
-}
-
 export const IMAGE_EXT_RE = /\.(?:png|svg|jpg|jepg|gif|webp|jxl|avif)$/;
 export const VIDEO_EXT_RE = /\.(?:mp4|mov|webm|ogv)$/;
 
