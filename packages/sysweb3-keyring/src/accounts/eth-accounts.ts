@@ -95,7 +95,7 @@ export const Web3Accounts = () => {
         data: { result },
       } = await axios.get(`${apiUrl}${query}`);
 
-      const tokens = result ? result : [];
+      const tokens: IEthereumNftDetails[] = [];
 
       if (web3Provider.connection.url !== url) setActiveNetwork(network);
 
