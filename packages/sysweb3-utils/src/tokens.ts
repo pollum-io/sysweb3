@@ -1,20 +1,17 @@
 import axios from 'axios';
 import camelcaseKeys from 'camelcase-keys';
+import { ethers as ethersModule } from 'ethers';
 import sys from 'syscoinjs-lib';
 
 import { createContractUsingAbi } from '.';
 import abi20 from './abi/erc20.json';
 import tokens from './tokens.json';
-import { web3Provider } from '@pollum-io/sysweb3-network';
 
 import type { Contract, ContractFunction } from '@ethersproject/contracts';
 import type { BaseProvider, JsonRpcProvider } from '@ethersproject/providers';
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 
-// Some NFT minting services misinterpreted the JSON schema from the EIP as
-// literal JSON, e.g. portion.io:
-// https://ipfs.io/ipfs/QmNt5T9HSXKLXZ3kmciU4Tm6q9R8JEm5ifJkPoxapjyRUR
 type NftMetadataMixedInJsonSchema = {
   title: string;
   type: 'object';
@@ -25,26 +22,25 @@ type NftMetadataMixedInJsonSchema = {
   };
 };
 
-const RARIBLE_MATCH_RE =
+export const RARIBLE_MATCH_RE =
   /^https:\/\/rarible\.com\/token\/(0x[a-fA-F0-9]{40}):([0-9]+)/;
 
-export function isAddress(value: string): value is Address {
-  return /^0x[a-fA-F0-9]{40}$/.test(value);
-}
+export const isAddress = (value: string): value is Address =>
+  /^0x[a-fA-F0-9]{40}$/.test(value);
 
-export function identity<T = unknown>(arg: T): T {
-  return arg;
-}
+export const identity = <T = unknown>(arg: T): T => arg;
 
-export function parseNftUrl(url: string): [string, string] | null {
+export const parseNftUrl = (url: string): [string, string] | null => {
   const raribleMatch = RARIBLE_MATCH_RE.exec(url);
+
   if (raribleMatch) {
     return [raribleMatch[1], raribleMatch[2]];
   }
-  return null;
-}
 
-export function fetchImage(src: string): Promise<HTMLImageElement> {
+  return null;
+};
+
+export const fetchImage = (src: string): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.src = src;
@@ -52,84 +48,32 @@ export function fetchImage(src: string): Promise<HTMLImageElement> {
     image.onload = () => resolve(image);
     image.onerror = (error) => reject(error);
   });
-}
+};
 
-// Scale the image and add some extra padding. Returns the image as base64.
-// The padding and scale are expressed as proportions of the image size.
-export function frameImage(
-  image: HTMLImageElement,
-  { scale = 1, padding = 0 } = {}
-): string | null {
-  const width = image.naturalWidth * scale;
-  const height = image.naturalHeight * scale;
-  const _padding = Math.max(width * padding, height * padding);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = width + _padding * 2;
-  canvas.height = height + _padding * 2;
-
-  const ctx = canvas.getContext('2d');
-  if (ctx === null) {
-    return null;
-  }
-
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(image, _padding, _padding, width, height);
-
-  return canvas.toDataURL();
-}
-
-export function ipfsUrlDefault(cid: string, path = ''): string {
-  return `https://ipfs.io/ipfs/${cid}${path}`;
-}
-
-const IPFS_PROTOCOL_RE = /^ipfs:\/\/(?:ipfs\/)?([^/]+)(\/.+)?$/;
-const IPFS_HASH_RE = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/;
-
-export function ipfsUrlFromString(
-  ipfsString: string,
-  ipfsUrl: IpfsUrlFn
-): string {
-  // ipfs:// URI
-  const ipfsProtocolMatch = IPFS_PROTOCOL_RE.exec(ipfsString);
-  if (ipfsProtocolMatch) {
-    const [, cid, path = ''] = ipfsProtocolMatch;
-    return ipfsUrl(cid, path);
-  }
-
-  // standalone cid, probably
-  if (IPFS_HASH_RE.test(ipfsString)) {
-    return ipfsUrl(ipfsString);
-  }
-
-  // maybe URL
-  return ipfsString;
-}
-
-export function normalizeOpenSeaUrl(url: string, tokenId: string): string {
-  // url can be anything so we need to try / catch to pass it to new URL()
+export const normalizeOpenSeaUrl = (url: string, tokenId: string): string => {
   try {
     const _url = new URL(url);
 
+    const { host, pathname, searchParams } = _url;
+
     // 0x%7Bid%7D" = 0x{id} (url encoded)
     if (
-      (_url.host !== 'api.opensea.io' &&
-        _url.host !== 'testnets-api.opensea.io') ||
-      !_url.pathname.includes('0x%7Bid%7D')
+      (host !== 'api.opensea.io' && host !== 'testnets-api.opensea.io') ||
+      !pathname.includes('0x%7Bid%7D')
     ) {
       return url;
     }
 
-    _url.pathname = _url.pathname.replace(/0x%7Bid%7D/g, tokenId);
-    _url.searchParams.set('format', 'json');
+    _url.pathname = pathname.replace(/0x%7Bid%7D/g, tokenId);
+    searchParams.set('format', 'json');
 
     return String(_url);
-  } catch (err) {
+  } catch (error) {
     return url;
   }
-}
+};
 
-export function normalizeNiftyGatewayUrl(url: string): string {
+export const normalizeNiftyGatewayUrl = (url: string): string => {
   try {
     const _url = new URL(url);
 
@@ -140,33 +84,27 @@ export function normalizeNiftyGatewayUrl(url: string): string {
     // Without final slash, the Nifty Gateway API server
     // doesn’t set the CORS headers properly.
     _url.pathname = _url.pathname + '/';
+
     return String(_url);
-  } catch (err) {
+  } catch (error) {
     return url;
   }
-}
+};
 
 export const normalizeTokenUrl = (url: string): string =>
   String(url).replace('ipfs://', 'https://ipfs.io/ipfs/');
 
-export function normalizeImageUrl(
-  url: string,
-  fetchContext: FetchContext
-): string {
-  return ipfsUrlFromString(url, fetchContext.ipfsUrl);
-}
+export const normalizeImageUrl = (url: string): string =>
+  normalizeTokenUrl(url);
 
-export function normalizeNftMetadata(
-  data: NftJsonMetadata,
-  fetchContext: FetchContext
-): NftJsonMetadata {
-  return {
-    ...data,
-    image: normalizeImageUrl(data.image, fetchContext),
-  };
-}
+export const normalizeNftMetadata = (
+  data: NftJsonMetadata
+): NftJsonMetadata => ({
+  ...data,
+  image: normalizeImageUrl(data.image),
+});
 
-const ABI = [
+export const ABI = [
   // ERC-721
   'function tokenURI(uint256 _tokenId) external view returns (string)',
   'function ownerOf(uint256 _tokenId) external view returns (address)',
@@ -180,25 +118,27 @@ type NftContract = InstanceType<typeof Contract> & {
   uri: ContractFunction<string>;
 };
 
-async function url(contract: NftContract, tokenId: string): Promise<string> {
+export const url = async (
+  contract: NftContract,
+  tokenId: string
+): Promise<string> => {
   const uri = await promiseAny([
     contract.tokenURI(tokenId),
     contract.uri(tokenId),
-  ]).catch((errors) => {
-    throw new MultipleErrors(
-      'An error occurred while trying to fetch the token URI from the NFT' +
-        ' contract. See the “errors” property on this error for details.',
-      errors
+  ]).catch((error: Error) => {
+    throw new Error(
+      `An error occurred while trying to fetch the token URI from the NFT contract. Error: ${error}`
     );
   });
-  return normalizeTokenUrl(uri);
-}
 
-export async function fetchStandardNftContractData(
+  return normalizeTokenUrl(uri);
+};
+
+export const fetchStandardNftContractData = async (
   contractAddress: Address,
   tokenId: string,
   config: EthersFetcherConfigEthersLoaded
-): Promise<NftMetadata> {
+): Promise<NftMetadata> => {
   const contract = new config.ethers.Contract(
     contractAddress,
     ABI,
@@ -219,59 +159,38 @@ export async function fetchStandardNftContractData(
     metadataUrl,
     owner,
   };
-}
+};
 
 const ETHERS_NOT_FOUND =
   'Ethers couldn’t be imported. ' +
   'Please add the ethers module to your project dependencies, ' +
   'or inject it in the Ethers fetcher options.';
 
-async function loadEthers(
+export const loadEthers = async (
   config: EthersFetcherConfig
-): Promise<EthersFetcherConfigEthersLoaded> {
-  if (config.ethers?.Contract) {
+): Promise<EthersFetcherConfigEthersLoaded> => {
+  if (config.ethers.Contract) {
     return config as EthersFetcherConfigEthersLoaded;
   }
 
   try {
-    const ethers = await import('@ethersproject/contracts').then(
-      (m) => m?.default ?? m
-    );
-    if (!ethers?.Contract) {
+    const ethers = await Promise.resolve()
+      .then(() => import('@ethersproject/contracts'))
+      .then((m) => (m.default ? m.default : m));
+
+    if (!ethers.Contract) {
       throw new Error();
     }
+
     return { ...config, ethers };
-  } catch (err) {
+  } catch (error) {
     throw new Error(ETHERS_NOT_FOUND);
   }
-}
+};
 
-export default function ethersFetcher(
-  config: EthersFetcherConfig
-): EthersFetcher {
-  return {
-    config,
-    async fetchNft(
-      contractAddress: Address,
-      tokenId: string
-    ): Promise<NftMetadata> {
-      if (!isAddress(contractAddress)) {
-        throw new Error(`Invalid contract address: ${contractAddress}`);
-      }
-      const configWithEthersLoaded = await loadEthers(config);
-      const metadata = await fetchStandardNftContractData(
-        contractAddress,
-        tokenId,
-        configWithEthersLoaded
-      );
-      return metadata;
-    },
-  };
-}
-
-export function fixIncorrectImageField(
+export const fixIncorrectImageField = (
   data: Record<string, unknown>
-): Record<string, unknown> {
+): Record<string, unknown> => {
   if (!data || typeof data !== 'object') {
     return data;
   }
@@ -283,74 +202,73 @@ export function fixIncorrectImageField(
 
   // makersplace.com is using `imageUrl` rather than `image`
   if (
-    typeof _data?.image === 'undefined' &&
-    typeof _data?.imageUrl === 'string'
+    typeof _data.image === 'undefined' &&
+    typeof _data.imageUrl === 'string'
   ) {
-    return { ..._data, image: _data?.imageUrl };
+    return { ..._data, image: _data.imageUrl };
   }
 
   return data;
-}
+};
 
-// See NftMetadataMixedInJsonSchema for why this is needed.
-export function isNftMetadataMixedInJsonSchema(
+export const isNftMetadataMixedInJsonSchema = (
   data: unknown
-): data is NftMetadataMixedInJsonSchema {
+): data is NftMetadataMixedInJsonSchema => {
   if (!data || typeof data !== 'object') {
     return false;
   }
+
   const _data = data as NftMetadataMixedInJsonSchema;
+
   return (
     _data.title === 'Asset Metadata' &&
     _data.type === 'object' &&
-    typeof _data.properties?.name?.description === 'string' &&
-    typeof _data.properties?.image?.description === 'string' &&
-    typeof _data.properties?.description?.description === 'string' &&
-    _data.properties?.name?.type === 'string' &&
-    _data.properties?.image?.type === 'string' &&
-    _data.properties?.description?.type === 'string'
+    typeof _data.properties.name.description === 'string' &&
+    typeof _data.properties.image.description === 'string' &&
+    typeof _data.properties.description.description === 'string' &&
+    _data.properties.name.type === 'string' &&
+    _data.properties.image.type === 'string' &&
+    _data.properties.description.type === 'string'
   );
-}
+};
 
-export function fixNftMetadataMixedInJsonSchema(
+export const fixNftMetadataMixedInJsonSchema = (
   data: NftMetadataMixedInJsonSchema
-): NftJsonMetadata {
-  return {
-    name: data.properties?.name?.description || '',
-    description: data.properties?.description?.description || '',
-    image: data.properties?.image?.description || '',
-    rawData: { ...data },
-  };
-}
+): NftJsonMetadata => ({
+  name: data.properties.name.description || '',
+  description: data.properties.description.description || '',
+  image: data.properties.image.description || '',
+  rawData: { ...data },
+});
 
-export function isNftMetadata(data: unknown): data is NftMetadata {
+export const isNftMetadata = (data: unknown): data is NftMetadata => {
   if (!data || typeof data !== 'object') {
     return false;
   }
+
   const _data = data as NftMetadata;
 
-  // We don’t test for the exact type here, because some NFT minting services
-  // set some of the fields as null.
-  // We also only test for the presence of either `name` or `image`, as some
-  // NFT formats don’t declare them all (e.g. BAYC only declares `image`).
   return 'name' in _data || 'image' in _data;
-}
+};
 
-export function addressesEqual(addr1: Address, addr2: Address): boolean {
-  return addr1?.toLowerCase() === addr2?.toLowerCase();
-}
+export const addressesEqual = (
+  address: Address,
+  addressToCompare: Address
+): boolean => {
+  return address.toLowerCase() === addressToCompare.toLowerCase();
+};
 
 // Promise.any() implementation from https://github.com/m0ppers/promise-any
-export function promiseAny<T>(promises: Promise<T>[]): Promise<T> {
+export const promiseAny = (promises: Promise<any>[]): Promise<any> => {
   return reversePromise(
     Promise.all([...promises].map(reversePromise))
-  ) as Promise<T>;
-}
-export function reversePromise(promise: Promise<unknown>): Promise<unknown> {
-  return new Promise((resolve, reject) => {
+  ) as Promise<any>;
+};
+
+export const reversePromise = (promise: Promise<unknown>): Promise<unknown> =>
+  new Promise((resolve, reject) => {
     Promise.resolve(promise).then(reject, resolve);
   });
-}
 
 // To replace with AggregateError when useNft() will target ES2021 environments
 export class MultipleErrors extends Error {
@@ -362,17 +280,18 @@ export class MultipleErrors extends Error {
   }
 }
 
-const IMAGE_EXT_RE = /\.(?:png|svg|jpg|jepg|gif|webp|jxl|avif)$/;
-const VIDEO_EXT_RE = /\.(?:mp4|mov|webm|ogv)$/;
+export const IMAGE_EXT_RE = /\.(?:png|svg|jpg|jepg|gif|webp|jxl|avif)$/;
+export const VIDEO_EXT_RE = /\.(?:mp4|mov|webm|ogv)$/;
 
 // Guess a file type from the extension used in a URL
-export function urlExtensionType(url: string): NftMetadata['imageType'] {
+export const urlExtensionType = (url: string): NftMetadata['imageType'] => {
   if (IMAGE_EXT_RE.test(url)) return 'image';
   if (VIDEO_EXT_RE.test(url)) return 'video';
-  return 'unknown';
-}
 
-export async function fetchMetadata(url: string): Promise<NftJsonMetadata> {
+  return 'unknown';
+};
+
+export const fetchMetadata = async (url: string): Promise<NftJsonMetadata> => {
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -384,7 +303,6 @@ export async function fetchMetadata(url: string): Promise<NftJsonMetadata> {
   try {
     rawData = (await response.json()) as Record<string, unknown>;
   } catch (error) {
-    // If it can’t be parsed as JSON, it must be an image URL
     rawData = { name: '', description: '', image: url };
   }
 
@@ -406,15 +324,24 @@ export async function fetchMetadata(url: string): Promise<NftJsonMetadata> {
     name: data.name || '',
     rawData,
   };
-}
+};
 
-export const getNftImage = async (contractAddress: string, tokenId: string) => {
+export const getNftImage = async (
+  contractAddress: string,
+  tokenId: string,
+  provider: JsonRpcProvider
+) => {
   try {
-    const { config, fetchNft } = ethersFetcher({ provider: web3Provider });
+    const config = { provider, ethers: ethersModule };
     const loaded = await loadEthers(config);
-    const nft = fetchStandardNftContractData(contractAddress, tokenId, loaded);
-    const fetchNFT = await fetchNft(contractAddress, tokenId);
-    console.log({ nft, fetchNFT, loaded });
+
+    const nft = await fetchStandardNftContractData(
+      contractAddress,
+      tokenId,
+      loaded
+    );
+
+    console.log({ nft });
   } catch (error) {
     console.error(
       'Verify current network. Set the same network of NFT contract.'
@@ -764,7 +691,7 @@ export type IAddressMap = {
 export type EthersContract = typeof Contract;
 
 export type EthersFetcherConfig = {
-  ethers?: { Contract: EthersContract };
+  ethers: { Contract: EthersContract };
   provider: BaseProvider | JsonRpcProvider;
 };
 

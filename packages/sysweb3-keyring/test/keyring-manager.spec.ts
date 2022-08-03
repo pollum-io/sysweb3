@@ -77,7 +77,7 @@ describe('', () => {
     let privateKey = keyringManager.getPrivateKeyByAccountId(id);
 
     expect(privateKey).toBeDefined();
-    expect(privateKey?.length).toBeGreaterThan(50);
+    expect(privateKey.length).toBeGreaterThan(50);
 
     id = 3; // id 3 does not exist
     privateKey = keyringManager.getPrivateKeyByAccountId(id);
@@ -121,7 +121,7 @@ describe('', () => {
 
   //* hasHdMnemonic
   it('should have a mnemonic', async () => {
-    const hasMnemonic = keyringManager.hasHdMnemonic();
+    const hasMnemonic = keyringManager.hasHdAccounts();
     expect(hasMnemonic).toBe(true);
   });
 
@@ -160,7 +160,7 @@ describe('', () => {
 
   //* hasHdMnemonic
   it('should not have a mnemonic', async () => {
-    const hasMnemonic = keyringManager.hasHdMnemonic();
+    const hasMnemonic = keyringManager.hasHdAccounts();
     expect(hasMnemonic).toBe(false);
   });
 });

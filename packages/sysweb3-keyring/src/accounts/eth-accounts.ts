@@ -8,10 +8,15 @@ import { Deferrable } from 'ethers/lib/utils';
 import { request, gql } from 'graphql-request';
 import _ from 'lodash';
 
-import { jsonRpcRequest, web3Provider } from '@pollum-io/sysweb3-network';
+import {
+  jsonRpcRequest,
+  setActiveNetwork,
+  web3Provider,
+} from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
   getErc20Abi,
+  getNftImage,
   INetwork,
 } from '@pollum-io/sysweb3-utils';
 
@@ -65,7 +70,7 @@ export const Web3Accounts = () => {
     ];
 
     try {
-      const { chainId, label, apiUrl } = network;
+      const { chainId, label, apiUrl, url } = network;
 
       const networksLabels: { [chainId: number]: string } = {
         137: 'polygon',
@@ -90,6 +95,23 @@ export const Web3Accounts = () => {
       } = await axios.get(`${apiUrl}${query}`);
 
       const tokens = result ? result : [];
+
+      if (web3Provider.connection.url !== url) setActiveNetwork(network);
+
+      await Promise.all(
+        result.map(async (nft: any) => {
+          const image = await getNftImage(
+            nft.contractAddress,
+            nft.tokenID,
+            web3Provider
+          );
+
+          tokens.push({
+            ...nft,
+            image,
+          });
+        })
+      );
 
       const filter = {
         address,
