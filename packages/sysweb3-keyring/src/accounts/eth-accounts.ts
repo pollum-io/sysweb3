@@ -34,7 +34,7 @@ export const Web3Accounts = () => {
 
       return roundedBalance;
     } catch (error) {
-      throw new Error(`No balance available for this address. Error: ${error}`);
+      return 0;
     }
   };
 
@@ -196,7 +196,7 @@ export const Web3Accounts = () => {
 
       return [...nfts, ...erc20Tokens, ...tokensTransfers];
     } catch (error) {
-      throw new Error(`Could not get user tokens. Error: ${error}`);
+      return [];
     }
   };
 
@@ -342,9 +342,7 @@ export const Web3Accounts = () => {
 
       return [...pendingTransactions];
     } catch (error) {
-      throw new Error(
-        `Could not get user transactions history. Error: ${error}`
-      );
+      return [];
     }
   };
 

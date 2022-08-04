@@ -58,7 +58,7 @@ export const validateSysRpc = async (
     backend: { chain },
   } = response.data;
 
-  const valid = Boolean(response && coin && chain);
+  const valid = Boolean(response && coin);
 
   if (!valid) throw new Error('Invalid RPC URL');
 
@@ -80,7 +80,7 @@ export const validateSysRpc = async (
     currency: symbol.toString().toLowerCase(),
   };
 
-  const isTestnet = !(chain === 'main');
+  const isTestnet = chain === 'test';
 
   return {
     valid,
