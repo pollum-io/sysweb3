@@ -61,16 +61,12 @@ export const txUtils = () => {
     }
   };
 
-  const getRecommendedFee = async (explorerUrl: string): Promise<number> =>
-    (await sys.utils.fetchEstimateFee(explorerUrl, 1)) / 10 ** 8;
-
   return {
     getPsbtFromJson,
     getRawTransaction,
     getTokenMap,
     getFeeRate,
     getGasUsedInTransaction,
-    getRecommendedFee,
   };
 };
 

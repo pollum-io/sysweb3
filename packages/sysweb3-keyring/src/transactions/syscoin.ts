@@ -25,7 +25,7 @@ type EstimateFeeParams = {
   explorerUrl: string;
 };
 
-export const SyscoinTransactions: ISyscoinTransactions = () => {
+export const SyscoinTransactions = (): ISyscoinTransactions => {
   const estimateSysTransactionFee = async ({
     outputs,
     changeAddress,
@@ -60,9 +60,6 @@ export const SyscoinTransactions: ISyscoinTransactions = () => {
 
     return txFee;
   };
-
-  const getRecommendedFee = async (explorerUrl: string): Promise<number> =>
-    (await sys.utils.fetchEstimateFee(explorerUrl, 1)) / 10 ** 8;
 
   const { getFeeRate, getRawTransaction, getTokenMap } = txUtils();
 
@@ -267,15 +264,14 @@ export const SyscoinTransactions: ISyscoinTransactions = () => {
   };
 
   const confirmTokenCreation = async (
-    // todo: type
     temporaryTransaction: any
   ): Promise<{
     transactionData: any;
     txid: string;
     confirmations: number;
     guid: string;
+    json: any;
   }> => {
-    const { network } = getDecryptedVault();
     const { _hd, _main } = getSigners();
 
     const { precision, initialSupply, maxsupply, fee, receiver } =
@@ -296,7 +292,7 @@ export const SyscoinTransactions: ISyscoinTransactions = () => {
 
     const txid = pendingTransaction.extractTransaction().getId();
 
-    const transactionData = await getRawTransaction(network.url, txid);
+    const transactionData = await getRawTransaction(_main.blockbookURL, txid);
     const assets = syscointx.getAssetsFromTx(
       pendingTransaction.extractTransaction()
     );
@@ -313,11 +309,14 @@ export const SyscoinTransactions: ISyscoinTransactions = () => {
       });
     }
 
+    const json = sys.utils.exportPsbtToJson(pendingTransaction, null);
+
     return {
       transactionData,
       txid,
       confirmations: transactionData.confirmations,
       guid: createdTokenGuid,
+      json,
     };
   };
 
@@ -409,7 +408,6 @@ export const SyscoinTransactions: ISyscoinTransactions = () => {
     receivingAddress,
     feeRate,
   }: {
-    // todo: create types
     parentTokenTransaction: any;
     parentToken: any;
     precision: number;
@@ -672,7 +670,7 @@ export const SyscoinTransactions: ISyscoinTransactions = () => {
     const { decimals } = await getAsset(_main.blockbookURL, token);
 
     const txOptions = { rbf };
-    const value = new sys.utils.BN(amount * 10 ** 8);
+    const value = new sys.utils.BN(amount * 10 ** decimals);
     const valueDecimals = countDecimals(amount);
     const feeRate = new sys.utils.BN(fee * 1e8);
 
@@ -787,15 +785,16 @@ export const SyscoinTransactions: ISyscoinTransactions = () => {
     const { _hd, _main } = getSigners();
 
     const { fee, amount, assetGuid }: ITokenMint = temporaryTransaction;
+    const { blockbookURL } = _main;
 
-    // const { decimals } = await getAsset(assetGuid);
+    const { decimals } = await getAsset(blockbookURL, assetGuid);
     const feeRate = new sys.utils.BN(fee * 1e8);
     const txOptions = { rbf: true };
 
     const tokenMap = getTokenMap({
       guid: assetGuid,
       changeAddress: await _hd.getNewChangeAddress(true),
-      amount: new sys.utils.BN(amount * 10 ** 8),
+      amount: new sys.utils.BN(amount * 10 ** decimals),
       receivingAddress: await _hd.getNewReceivingAddress(true),
     });
 
@@ -829,7 +828,6 @@ export const SyscoinTransactions: ISyscoinTransactions = () => {
     confirmTokenMint,
     confirmTokenCreation,
     confirmUpdateToken,
-    getRecommendedFee,
     sendTransaction,
     signTransaction,
   };
