@@ -32,7 +32,6 @@ export interface ISyscoinTransactions {
     guid: string;
   }>;
   confirmUpdateToken: (transaction: ITokenUpdate) => Promise<ITxid>;
-  getRecommendedFee: (explorerUrl: string) => Promise<number>;
   sendTransaction: (transaction: ITokenSend) => Promise<ITxid>;
   signTransaction: (
     data: { psbt: string; assets: string },

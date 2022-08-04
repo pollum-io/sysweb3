@@ -25,7 +25,7 @@ type EstimateFeeParams = {
   explorerUrl: string;
 };
 
-export const SyscoinTransactions = (): ISyscoinTransactions => {
+export const SyscoinTransactions: ISyscoinTransactions = () => {
   const estimateSysTransactionFee = async ({
     outputs,
     changeAddress,
@@ -786,7 +786,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
   ): Promise<ITxid> => {
     const { _hd, _main } = getSigners();
 
-    const { fee, amount, assetGuid }: any = temporaryTransaction;
+    const { fee, amount, assetGuid }: ITokenMint = temporaryTransaction;
 
     // const { decimals } = await getAsset(assetGuid);
     const feeRate = new sys.utils.BN(fee * 1e8);
