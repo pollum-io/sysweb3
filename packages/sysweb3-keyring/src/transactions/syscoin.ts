@@ -788,14 +788,14 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
 
     const { fee, amount, assetGuid }: any = temporaryTransaction;
 
-    // const { decimals } = await getAsset(assetGuid);
+    const { decimals } = await getAsset(_main.blockbookURL, assetGuid);
     const feeRate = new sys.utils.BN(fee * 1e8);
     const txOptions = { rbf: true };
 
     const tokenMap = getTokenMap({
       guid: assetGuid,
       changeAddress: await _hd.getNewChangeAddress(true),
-      amount: new sys.utils.BN(amount * 10 ** 8),
+      amount: new sys.utils.BN(amount * 10 ** decimals),
       receivingAddress: await _hd.getNewReceivingAddress(true),
     });
 
