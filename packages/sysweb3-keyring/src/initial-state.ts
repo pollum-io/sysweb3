@@ -44,7 +44,7 @@ export const initialNetworksState = {
       default: true,
       currency: 'eth',
       explorer: 'https://etherscan.io/',
-      apiUrl: '',
+      apiUrl: 'https://api.etherscan.io/api',
     },
     42: {
       url: 'https://kovan.poa.network',
@@ -53,7 +53,7 @@ export const initialNetworksState = {
       chainId: 42,
       currency: 'kov',
       explorer: 'https://kovan.etherscan.io/',
-      apiUrl: '',
+      apiUrl: 'https://api-kovan.etherscan.io/api',
     },
     4: {
       chainId: 4,
@@ -62,7 +62,7 @@ export const initialNetworksState = {
       default: true,
       currency: 'rin',
       explorer: 'https://rinkeby.etherscan.io/',
-      apiUrl: '',
+      apiUrl: 'https://api-rinkeby.etherscan.io/api',
     },
     3: {
       chainId: 3,
@@ -71,7 +71,7 @@ export const initialNetworksState = {
       label: 'Ropsten',
       url: 'https://ropsten.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
       explorer: 'https://ropsten.etherscan.io/',
-      apiUrl: '',
+      apiUrl: 'https://api-ropsten.etherscan.io/api',
     },
     5: {
       chainId: 5,
@@ -80,7 +80,7 @@ export const initialNetworksState = {
       label: 'Goerli',
       url: 'https://goerli.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
       explorer: 'https://goerli.etherscan.io/',
-      apiUrl: '',
+      apiUrl: 'https://api-goerli.etherscan.io/api',
     },
     137: {
       chainId: 137,

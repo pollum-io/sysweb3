@@ -5,13 +5,20 @@ import { recoverTypedSignature_v4 as recoverTypedSignatureV4 } from 'eth-sig-uti
 import { toChecksumAddress } from 'ethereumjs-util';
 import { ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
-import { request, gql } from 'graphql-request';
 import _ from 'lodash';
 
-import { jsonRpcRequest, web3Provider } from '@pollum-io/sysweb3-network';
+import {
+  jsonRpcRequest,
+  setActiveNetwork,
+  web3Provider,
+} from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
   getErc20Abi,
+  getNftStandardMetadata,
+  getTokenStandardMetadata,
+  IEthereumNftDetails,
+  IEtherscanNFT,
   INetwork,
 } from '@pollum-io/sysweb3-utils';
 
@@ -27,19 +34,19 @@ export const Web3Accounts = () => {
 
       return roundedBalance;
     } catch (error) {
-      throw new Error(`No balance available for this address. Error: ${error}`);
+      return 0;
     }
   };
 
-  const getBalanceOfAnyToken = async (
+  const getErc20TokenBalance = async (
     tokenAddress: string,
     walletAddress: string
   ): Promise<number> => {
     try {
       const abi = getErc20Abi() as any;
-      const balance = createContractUsingAbi(abi, tokenAddress)
-        .methods.balanceOf(walletAddress)
-        .call();
+      const balance = await createContractUsingAbi(abi, tokenAddress).balanceOf(
+        walletAddress
+      );
 
       const formattedBalance = ethers.utils.formatEther(balance);
       const roundedBalance = _.floor(parseFloat(formattedBalance), 4);
@@ -52,63 +59,144 @@ export const Web3Accounts = () => {
 
   const getNftsByAddress = async (
     address: string,
-    network: INetwork
-  ): Promise<object | undefined> => {
-    try {
-      const { chainId, label } = network;
+    isSupported: boolean,
+    apiUrl: string
+  ) => {
+    const etherscanQuery = `?module=account&action=tokennfttx&address=${address}&page=1&offset=100&&startblock=0&endblock=99999999&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`;
 
-      let apiBaseUrl = '';
+    const apiUrlQuery = `?module=account&action=tokentx&address=${address}`;
 
-      chainId !== 1
-        ? (apiBaseUrl = `https://api-${label.toLowerCase()}.etherscan.io/`)
-        : 'https://api.etherscan.io/';
+    const query = isSupported ? etherscanQuery : apiUrlQuery;
 
-      const { data } = await axios.get(
-        `${apiBaseUrl}api?module=account&action=tokennfttx&address=${address}&page=1&offset=100&&startblock=0&endblock=27025780&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`
-      );
+    const {
+      data: { result },
+    } = await axios.get(`${apiUrl}${query}`);
 
-      if (data.message === 'OK' && data.result !== []) {
-        return data.result;
-      }
+    const nfts: IEthereumNftDetails[] = [];
 
-      return;
-    } catch (error) {
-      throw new Error(`No NFTs available for this address. Error: ${error}`);
-    }
+    await Promise.all(
+      result.map(async (nft: IEtherscanNFT) => {
+        const isInTokensList =
+          nfts.findIndex(
+            (listedNft) => listedNft.contractAddress === nft.contractAddress
+          ) > -1;
+
+        if (isInTokensList) return;
+
+        const details = await getNftStandardMetadata(
+          nft.contractAddress,
+          nft.tokenID,
+          web3Provider
+        );
+
+        nfts.push({
+          ...nft,
+          ...details,
+          isNft: true,
+          id: nft.contractAddress,
+        });
+      })
+    );
+
+    return nfts;
   };
 
-  const getTokens = async (address: string): Promise<any> => {
-    const query = gql`
-        {
-          ethereum {
-            address(
-              address: { is: "${address}" }
-            ) {
-              balances { 
-                currency {
-                  symbol
-                }
-                value
-              }
-            }
-          }
-        }
-      `;
+  const getErc20TokensByAddress = async (
+    address: string,
+    isSupported: boolean,
+    apiUrl: string
+  ) => {
+    const etherscanQuery = `?module=account&action=tokentx&address=${address}&page=1&offset=100&&startblock=0&endblock=99999999&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`;
+
+    const apiUrlQuery = `?module=account&action=tokenlist&address=${address}`;
+
+    const query = isSupported ? etherscanQuery : apiUrlQuery;
+
+    const {
+      data: { result },
+    } = await axios.get(`${apiUrl}${query}`);
+
+    const tokens: any[] = [];
+
+    await Promise.all(
+      result.map(async (token: any) => {
+        const isInTokensList =
+          tokens.findIndex(
+            (listedToken) =>
+              listedToken.contractAddress === token.contractAddress
+          ) > -1;
+
+        if (isInTokensList) return;
+
+        const details = await getTokenStandardMetadata(
+          token.contractAddress,
+          address,
+          web3Provider
+        );
+
+        tokens.push({
+          ...token,
+          ...details,
+          isNft: false,
+          id: token.contractAddress,
+        });
+      })
+    );
+
+    return tokens;
+  };
+
+  const getAssetsByAddress = async (
+    address: string,
+    network: INetwork
+  ): Promise<IEthereumNftDetails[] | []> => {
+    const etherscanSupportedNetworks = [
+      'homestead',
+      'ropsten',
+      'rinkeby',
+      'goerli',
+      'kovan',
+      'polygon',
+      'mumbai',
+    ];
 
     try {
-      const { ethereum } = await request({
-        url: 'https://graphql.bitquery.io/',
-        document: query,
-        requestHeaders: {
-          'X-API-KEY': 'BQYvhnv04csZHaprIBZNwtpRiDIwEIW9',
-        },
+      const { chainId, label, apiUrl, url } = network;
+
+      const networksLabels: { [chainId: number]: string } = {
+        137: 'polygon',
+        80001: 'mumbai',
+        1: 'homestead',
+      };
+
+      const networkByLabel = networksLabels[chainId]
+        ? networksLabels[chainId]
+        : label.toLowerCase();
+
+      const isSupported = etherscanSupportedNetworks.includes(networkByLabel);
+
+      if (web3Provider.connection.url !== url) setActiveNetwork(network);
+
+      const nfts = await getNftsByAddress(address, isSupported, String(apiUrl));
+      const erc20Tokens = await getErc20TokensByAddress(
+        address,
+        isSupported,
+        String(apiUrl)
+      );
+      const tokensTransfers: any = [];
+
+      const filter = {
+        address,
+        topics: [ethers.utils.id('Transfer(address,address,uint256)')],
+      };
+
+      web3Provider.on(filter, (transferToken) => {
+        tokensTransfers.push(transferToken);
       });
 
-      if (ethereum.address[0].balances) {
-        return ethereum.address[0].balances;
-      }
+      return [...nfts, ...erc20Tokens, ...tokensTransfers];
     } catch (error) {
-      throw new Error(`Not available tokens. Error: ${error}`);
+      return [];
     }
   };
 
@@ -254,9 +342,7 @@ export const Web3Accounts = () => {
 
       return [...pendingTransactions];
     } catch (error) {
-      throw new Error(
-        `Could not get user transactions history. Error: ${error}`
-      );
+      return [];
     }
   };
 
@@ -453,9 +539,10 @@ export const Web3Accounts = () => {
   return {
     createAccount,
     getBalance,
-    getBalanceOfAnyToken,
-    getTokens,
+    getErc20TokenBalance,
+    getErc20TokensByAddress,
     getNftsByAddress,
+    getAssetsByAddress,
     importAccount,
     getUserTransactions,
     tx,

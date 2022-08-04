@@ -1,14 +1,13 @@
 import { ethers, Contract, ContractInterface } from 'ethers';
-import { AbiItem } from 'web3-utils';
 
 import abi20 from './abi/erc20.json';
 import abi21 from './abi/erc721.json';
 
 export const createContractUsingAbi = (
-  AbiContract: AbiItem[] | AbiItem | object,
+  AbiContract: ContractInterface,
   address?: string
 ): Contract => {
-  return new ethers.Contract(String(address), AbiContract as ContractInterface);
+  return new ethers.Contract(String(address), AbiContract);
 };
 
 const InfuraProvider = ethers.providers.InfuraProvider;
