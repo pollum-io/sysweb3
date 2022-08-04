@@ -456,7 +456,7 @@ export const KeyringManager = (): IKeyringManager => {
 
         return {
           ...token,
-          symbol: token.symmbol ? atob(token.symbol) : '',
+          symbol: token.symbol ? atob(String(token.symbol)) : '',
           image,
         };
       })
