@@ -185,7 +185,7 @@ export const fetchStandardTokenContractData = async (
   contractAddress: Address,
   address: Address,
   config: EthersFetcherConfigEthersLoaded
-): Promise<{ balance: number; decimals: number; symbol: string }> => {
+): Promise<{ balance: number; decimals: number; tokenSymbol: string }> => {
   const contract = new config.ethers.Contract(
     contractAddress,
     ERC20ABI,
@@ -201,7 +201,7 @@ export const fetchStandardTokenContractData = async (
   return {
     balance,
     decimals,
-    symbol,
+    tokenSymbol: symbol,
   };
 };
 
@@ -717,7 +717,8 @@ export interface NftMetadata {
 }
 
 export interface IEthereumNftDetails extends IEtherscanNFT, NftMetadata {
-  isNFT: boolean;
+  isNft: boolean;
+  id: string | number;
 }
 
 export type IErc20Token = {

@@ -92,7 +92,8 @@ export const Web3Accounts = () => {
         nfts.push({
           ...nft,
           ...details,
-          isNFT: true,
+          isNft: true,
+          id: nft.contractAddress,
         });
       })
     );
@@ -136,7 +137,8 @@ export const Web3Accounts = () => {
         tokens.push({
           ...token,
           ...details,
-          isNFT: false,
+          isNft: false,
+          id: token.contractAddress,
         });
       })
     );

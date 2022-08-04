@@ -242,10 +242,9 @@ export const KeyringManager = (): IKeyringManager => {
     const {
       data: {
         id: tokenId,
-        symbol,
+        symbol: tokenSymbol,
         name,
         description: { en },
-        image: { thumb },
         current_price: currentPrice,
         market_cap_rank: marketCapRank,
         links: { blockchain_site: blockchainSite },
@@ -257,13 +256,13 @@ export const KeyringManager = (): IKeyringManager => {
         {
           id: tokenId,
           name,
-          symbol: String(symbol).toUpperCase(),
+          tokenSymbol: String(tokenSymbol).toUpperCase(),
           decimals: 18,
           description: en,
-          image: thumb,
           currentPrice,
           marketCapRank,
           explorerLink: blockchainSite[0],
+          isNft: false,
         },
         ...assets,
       ],
@@ -447,10 +446,21 @@ export const KeyringManager = (): IKeyringManager => {
       await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
 
     const latestAssets = tokensAsset ? tokensAsset.slice(0, 30) : [];
-    const assets = latestAssets.map((token: any) => ({
-      ...token,
-      symbol: token.symmbol ? atob(token.symbol) : '',
-    }));
+    const assets = await Promise.all(
+      latestAssets.map(async (token: any) => {
+        const image =
+          token.description &&
+          token.description.startsWith('https://ipfs.io/ipfs/')
+            ? await axios.get(token.description)
+            : '';
+
+        return {
+          ...token,
+          symbol: token.symmbol ? atob(token.symbol) : '',
+          image,
+        };
+      })
+    );
 
     return {
       transactions: transactions ? transactions.slice(0, 20) : [],
