@@ -264,11 +264,13 @@ export const KeyringManager = (): IKeyringManager => {
     const xprv = newWallet.getPrivateKeyString();
     const xpub = newWallet.getPublicKeyString();
 
+    const { hash } = storage.get('vault-keys');
+
     const basicAccountInfo = await _getBasicWeb3AccountInfo(address, id);
     const createdAccount = {
       address,
       xpub,
-      xprv,
+      xprv: CryptoJS.AES.encrypt(xprv, hash).toString(),
       ...basicAccountInfo,
     };
 
@@ -283,14 +285,14 @@ export const KeyringManager = (): IKeyringManager => {
     setEncryptedVault({ ...getDecryptedVault(), wallet });
 
     if (id === 0) {
-      const { address, privateKey } = web3Wallet.importAccount(
+      const { address, privateKey, publicKey } = web3Wallet.importAccount(
         getDecryptedMnemonic()
       );
 
       const basicAccountInfo = await _getBasicWeb3AccountInfo(address, 0);
       const account = {
-        xprv: privateKey,
-        xpub: address,
+        xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
+        xpub: publicKey,
         address,
         ...basicAccountInfo,
       };
@@ -641,6 +643,17 @@ export const KeyringManager = (): IKeyringManager => {
     return false;
   };
 
+  const getDecryptedPrivateKey = (key: string) => {
+    if (!checkPassword(key)) return '';
+
+    const { wallet: _wallet } = getDecryptedVault();
+    const { hash } = storage.get('vault-keys');
+
+    const accountXprv = _wallet.activeAccount.xprv;
+
+    return CryptoJS.AES.decrypt(accountXprv, hash).toString(CryptoJS.enc.Utf8);
+  };
+
   /** get updates */
   const getLatestUpdateForAccount = async () => {
     const vault = getDecryptedVault();
@@ -839,10 +852,12 @@ export const KeyringManager = (): IKeyringManager => {
 
     const basicAccountInfo = await _getBasicWeb3AccountInfo(address, length);
 
+    const { hash } = storage.get('vault-keys');
+
     const createdAccount = {
       address,
       xpub,
-      xprv,
+      xprv: CryptoJS.AES.encrypt(xprv, hash).toString(),
       ...basicAccountInfo,
     };
 
@@ -887,6 +902,7 @@ export const KeyringManager = (): IKeyringManager => {
     getAccountById,
     getAccountXpub,
     getDecryptedMnemonic,
+    getDecryptedPrivateKey,
     getEncryptedMnemonic,
     getEncryptedXprv,
     getLatestUpdateForAccount,
