@@ -448,6 +448,7 @@ export const KeyringManager = (): IKeyringManager => {
           description,
           symbol: token.symbol ? atob(String(token.symbol)) : '',
           image,
+          balance: Number(token.balance) / 10 ** Number(token.decimals),
         };
 
         if (!filteredAssets.includes(asset)) filteredAssets.push(asset);
