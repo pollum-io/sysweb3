@@ -29,6 +29,7 @@ import {
   SyscoinHDSigner,
   setEncryptedVault,
   getDecryptedVault,
+  getAsset,
 } from '@pollum-io/sysweb3-utils';
 
 export const KeyringManager = (): IKeyringManager => {
@@ -239,33 +240,8 @@ export const KeyringManager = (): IKeyringManager => {
     const transactions = await web3Wallet.getUserTransactions(address, network);
     const assets = await web3Wallet.getAssetsByAddress(address, network);
 
-    const {
-      data: {
-        id: tokenId,
-        symbol: tokenSymbol,
-        name,
-        description: { en },
-        current_price: currentPrice,
-        market_cap_rank: marketCapRank,
-        links: { blockchain_site: blockchainSite },
-      },
-    } = await axios.get('https://api.coingecko.com/api/v3/coins/ethereum');
-
     return {
-      assets: [
-        {
-          id: tokenId,
-          name,
-          tokenSymbol: String(tokenSymbol).toUpperCase(),
-          decimals: 18,
-          description: en,
-          currentPrice,
-          marketCapRank,
-          explorerLink: blockchainSite[0],
-          isNft: false,
-        },
-        ...assets,
-      ],
+      assets,
       id,
       isTrezorWallet: false,
       label: `Account ${id + 1}`,
@@ -448,14 +424,25 @@ export const KeyringManager = (): IKeyringManager => {
     const latestAssets = tokensAsset ? tokensAsset.slice(0, 30) : [];
     const assets = await Promise.all(
       latestAssets.map(async (token: any) => {
-        const image =
-          token.description &&
-          token.description.startsWith('https://ipfs.io/ipfs/')
-            ? await axios.get(token.description)
+        const details = await getAsset(url, token.assetGuid);
+
+        const description =
+          details.pubData && details.pubData.desc
+            ? atob(details.pubData.desc)
             : '';
+
+        const ipfsUrl = description.startsWith('https://ipfs.io/ipfs/')
+          ? description
+          : '';
+
+        const { data } = await axios.get(ipfsUrl);
+
+        const image = data && data.image ? data.image : '';
 
         return {
           ...token,
+          ...details,
+          description,
           symbol: token.symbol ? atob(String(token.symbol)) : '',
           image,
         };
