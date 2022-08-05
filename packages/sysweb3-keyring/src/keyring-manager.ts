@@ -432,7 +432,7 @@ export const KeyringManager = (): IKeyringManager => {
         const details = await getAsset(url, token.assetGuid);
 
         const description =
-          details.pubData && details.pubData.desc
+          details && details.pubData && details.pubData.desc
             ? atob(details.pubData.desc)
             : '';
 
