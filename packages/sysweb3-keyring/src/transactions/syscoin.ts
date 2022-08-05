@@ -736,24 +736,24 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
 
     const txOptions = { rbf: true };
 
-    const txFee = await estimateSysTransactionFee({
-      outputs,
-      changeAddress,
-      feeRateBN: feeRate,
-      xpub,
-      explorerUrl: _main.blockbookURL,
-    });
-
-    if (value.add(txFee).gte(backendAccount.balance)) {
-      outputs = [
-        {
-          address: receivingAddress,
-          value: value.sub(txFee),
-        },
-      ];
-    }
-
     try {
+      const txFee = await estimateSysTransactionFee({
+        outputs,
+        changeAddress,
+        feeRateBN: feeRate,
+        xpub,
+        explorerUrl: _main.blockbookURL,
+      });
+
+      if (value.add(txFee).gte(backendAccount.balance)) {
+        outputs = [
+          {
+            address: receivingAddress,
+            value: value.sub(txFee),
+          },
+        ];
+      }
+
       const pendingTransaction = await _main.createTransaction(
         txOptions,
         changeAddress,
@@ -765,7 +765,9 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
 
       return { txid };
     } catch (error) {
-      throw new Error('Bad Request: Could not create transaction.');
+      throw new Error(
+        `Bad Request: Could not create transaction. Error: ${error}`
+      );
     }
   };
 
