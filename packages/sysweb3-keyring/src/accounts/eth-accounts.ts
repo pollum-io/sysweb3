@@ -160,6 +160,8 @@ export const Web3Accounts = () => {
       'mumbai',
     ];
 
+    const tokensTransfers: any = [];
+
     try {
       const { chainId, label, apiUrl, url } = network;
 
@@ -183,7 +185,6 @@ export const Web3Accounts = () => {
         isSupported,
         String(apiUrl)
       );
-      const tokensTransfers: any = [];
 
       const filter = {
         address,
@@ -194,9 +195,11 @@ export const Web3Accounts = () => {
         tokensTransfers.push(transferToken);
       });
 
-      return [...nfts, ...erc20Tokens, ...tokensTransfers];
+      if (apiUrl) return [...nfts, ...erc20Tokens, ...tokensTransfers];
+
+      return tokensTransfers;
     } catch (error) {
-      return [];
+      return tokensTransfers;
     }
   };
 
