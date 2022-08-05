@@ -422,7 +422,10 @@ export const KeyringManager = (): IKeyringManager => {
       await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
 
     const latestAssets = tokensAsset ? tokensAsset.slice(0, 30) : [];
-    const assets = await Promise.all(
+
+    const filteredAssets: any = [];
+
+    await Promise.all(
       latestAssets.map(async (token: any) => {
         const details = await getAsset(url, token.assetGuid);
 
@@ -439,19 +442,21 @@ export const KeyringManager = (): IKeyringManager => {
 
         const image = data && data.image ? data.image : '';
 
-        return {
+        const asset = {
           ...token,
           ...details,
           description,
           symbol: token.symbol ? atob(String(token.symbol)) : '',
           image,
         };
+
+        if (!filteredAssets.includes(asset)) filteredAssets.push(asset);
       })
     );
 
     return {
       transactions: transactions ? transactions.slice(0, 20) : [],
-      assets,
+      assets: filteredAssets,
       xpub: address,
       balances: {
         syscoin: balance / 1e8,
