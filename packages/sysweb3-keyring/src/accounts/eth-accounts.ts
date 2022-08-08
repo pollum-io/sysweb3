@@ -1,5 +1,6 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import axios from 'axios';
+import CryptoJS from 'crypto-js';
 import { Chain, chains } from 'eth-chains';
 import { recoverTypedSignature_v4 as recoverTypedSignatureV4 } from 'eth-sig-util';
 import { toChecksumAddress } from 'ethereumjs-util';
