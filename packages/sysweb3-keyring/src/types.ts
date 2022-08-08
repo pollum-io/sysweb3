@@ -52,6 +52,7 @@ export interface IKeyringManager {
   getAccountById: (id: number) => IKeyringAccountState;
   getAccountXpub: () => string;
   getDecryptedMnemonic: () => string;
+  getDecryptedPrivateKey: (key: string) => string;
   getEncryptedMnemonic: () => string;
   getEncryptedXprv: () => string;
   getLatestUpdateForAccount: () => Promise<any>;

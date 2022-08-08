@@ -719,6 +719,7 @@ export interface NftMetadata {
 export interface IEthereumNftDetails extends IEtherscanNFT, NftMetadata {
   isNft: boolean;
   id: string | number;
+  balance: number;
 }
 
 export type IErc20Token = {

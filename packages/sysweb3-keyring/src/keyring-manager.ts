@@ -257,18 +257,20 @@ export const KeyringManager = (): IKeyringManager => {
     const seed = await mnemonicToSeed(getDecryptedMnemonic());
     const privateRoot = hdkey.fromMasterSeed(seed);
     const derivedCurrentAccount = privateRoot.derivePath(
-      `m/44'/60'/0'/1/${String(id)}`
+      `m/44'/60'/0'/0/${String(id)}`
     );
     const newWallet = derivedCurrentAccount.getWallet();
     const address = newWallet.getAddressString();
     const xprv = newWallet.getPrivateKeyString();
     const xpub = newWallet.getPublicKeyString();
 
+    const { hash } = storage.get('vault-keys');
+
     const basicAccountInfo = await _getBasicWeb3AccountInfo(address, id);
     const createdAccount = {
       address,
       xpub,
-      xprv,
+      xprv: CryptoJS.AES.encrypt(xprv, hash).toString(),
       ...basicAccountInfo,
     };
 
@@ -283,14 +285,14 @@ export const KeyringManager = (): IKeyringManager => {
     setEncryptedVault({ ...getDecryptedVault(), wallet });
 
     if (id === 0) {
-      const { address, privateKey } = web3Wallet.importAccount(
+      const { address, privateKey, publicKey } = web3Wallet.importAccount(
         getDecryptedMnemonic()
       );
 
       const basicAccountInfo = await _getBasicWeb3AccountInfo(address, 0);
       const account = {
-        xprv: privateKey,
-        xpub: address,
+        xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
+        xpub: publicKey,
         address,
         ...basicAccountInfo,
       };
@@ -422,12 +424,15 @@ export const KeyringManager = (): IKeyringManager => {
       await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
 
     const latestAssets = tokensAsset ? tokensAsset.slice(0, 30) : [];
-    const assets = await Promise.all(
+
+    const filteredAssets: any = [];
+
+    await Promise.all(
       latestAssets.map(async (token: any) => {
         const details = await getAsset(url, token.assetGuid);
 
         const description =
-          details.pubData && details.pubData.desc
+          details && details.pubData && details.pubData.desc
             ? atob(details.pubData.desc)
             : '';
 
@@ -439,19 +444,22 @@ export const KeyringManager = (): IKeyringManager => {
 
         const image = data && data.image ? data.image : '';
 
-        return {
+        const asset = {
           ...token,
           ...details,
           description,
           symbol: token.symbol ? atob(String(token.symbol)) : '',
           image,
+          balance: Number(token.balance) / 10 ** Number(token.decimals),
         };
+
+        if (!filteredAssets.includes(asset)) filteredAssets.push(asset);
       })
     );
 
     return {
       transactions: transactions ? transactions.slice(0, 20) : [],
-      assets,
+      assets: filteredAssets,
       xpub: address,
       balances: {
         syscoin: balance / 1e8,
@@ -635,6 +643,17 @@ export const KeyringManager = (): IKeyringManager => {
     return false;
   };
 
+  const getDecryptedPrivateKey = (key: string) => {
+    if (!checkPassword(key)) return '';
+
+    const { wallet: _wallet } = getDecryptedVault();
+    const { hash } = storage.get('vault-keys');
+
+    const accountXprv = _wallet.activeAccount.xprv;
+
+    return CryptoJS.AES.decrypt(accountXprv, hash).toString(CryptoJS.enc.Utf8);
+  };
+
   /** get updates */
   const getLatestUpdateForAccount = async () => {
     const vault = getDecryptedVault();
@@ -669,6 +688,8 @@ export const KeyringManager = (): IKeyringManager => {
 
     if (chain === 'syscoin') {
       const { isTestnet } = await validateSysRpc(network.url);
+
+      // add network & pubtypes
 
       setEncryptedVault({ ...getDecryptedVault(), isTestnet });
 
@@ -824,7 +845,7 @@ export const KeyringManager = (): IKeyringManager => {
     const seed = await mnemonicToSeed(mnemonic);
     const privateRoot = hdkey.fromMasterSeed(seed);
     const derivedCurrentAccount = privateRoot.derivePath(
-      `m/44'/60'/0'/1/${length + 1}`
+      `m/44'/60'/0'/0/${length + 1}`
     );
     const newWallet = derivedCurrentAccount.getWallet();
     const address = newWallet.getAddressString();
@@ -833,10 +854,12 @@ export const KeyringManager = (): IKeyringManager => {
 
     const basicAccountInfo = await _getBasicWeb3AccountInfo(address, length);
 
+    const { hash } = storage.get('vault-keys');
+
     const createdAccount = {
       address,
       xpub,
-      xprv,
+      xprv: CryptoJS.AES.encrypt(xprv, hash).toString(),
       ...basicAccountInfo,
     };
 
@@ -881,6 +904,7 @@ export const KeyringManager = (): IKeyringManager => {
     getAccountById,
     getAccountXpub,
     getDecryptedMnemonic,
+    getDecryptedPrivateKey,
     getEncryptedMnemonic,
     getEncryptedXprv,
     getLatestUpdateForAccount,

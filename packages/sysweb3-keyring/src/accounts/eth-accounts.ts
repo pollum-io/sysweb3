@@ -1,5 +1,6 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import axios from 'axios';
+import CryptoJS from 'crypto-js';
 import { Chain, chains } from 'eth-chains';
 import { recoverTypedSignature_v4 as recoverTypedSignatureV4 } from 'eth-sig-util';
 import { toChecksumAddress } from 'ethereumjs-util';
@@ -7,6 +8,7 @@ import { ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import _ from 'lodash';
 
+import { sysweb3Di } from '@pollum-io/sysweb3-core';
 import {
   jsonRpcRequest,
   setActiveNetwork,
@@ -14,6 +16,7 @@ import {
 } from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
+  getDecryptedVault,
   getErc20Abi,
   getNftStandardMetadata,
   getTokenStandardMetadata,
@@ -23,6 +26,8 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export const Web3Accounts = () => {
+  const storage = sysweb3Di.getStateStorageDb();
+
   const createAccount = (privateKey: string) => new ethers.Wallet(privateKey);
 
   const getBalance = async (address: string): Promise<number> => {
@@ -94,6 +99,7 @@ export const Web3Accounts = () => {
           ...details,
           isNft: true,
           id: nft.contractAddress,
+          balance: 1,
         });
       })
     );
@@ -139,6 +145,7 @@ export const Web3Accounts = () => {
           ...details,
           isNft: false,
           id: token.contractAddress,
+          balance: ethers.utils.formatEther(details.balance),
         });
       })
     );
@@ -159,6 +166,8 @@ export const Web3Accounts = () => {
       'polygon',
       'mumbai',
     ];
+
+    const tokensTransfers: any = [];
 
     try {
       const { chainId, label, apiUrl, url } = network;
@@ -183,7 +192,6 @@ export const Web3Accounts = () => {
         isSupported,
         String(apiUrl)
       );
-      const tokensTransfers: any = [];
 
       const filter = {
         address,
@@ -194,9 +202,11 @@ export const Web3Accounts = () => {
         tokensTransfers.push(transferToken);
       });
 
-      return [...nfts, ...erc20Tokens, ...tokensTransfers];
+      if (apiUrl) return [...nfts, ...erc20Tokens, ...tokensTransfers];
+
+      return tokensTransfers;
     } catch (error) {
-      return [];
+      return tokensTransfers;
     }
   };
 
@@ -382,7 +392,10 @@ export const Web3Accounts = () => {
     const gasPriceBN = await web3Provider.getGasPrice();
 
     if (formatted) {
-      return ethers.utils.formatEther(gasPriceBN);
+      return {
+        gwei: Number(ethers.utils.formatUnits(gasPriceBN, 'gwei')).toFixed(2),
+        ethers: ethers.utils.formatEther(gasPriceBN),
+      };
     }
 
     return gasPriceBN.toString();
@@ -394,12 +407,12 @@ export const Web3Accounts = () => {
   const getFeeByType = async (type: string) => {
     const gasPrice = await getRecommendedGasPrice(false);
 
-    const low = toBigNumber(gasPrice)
+    const low = toBigNumber(String(gasPrice))
       .mul(ethers.BigNumber.from('8'))
       .div(ethers.BigNumber.from('10'))
       .toString();
 
-    const high = toBigNumber(gasPrice)
+    const high = toBigNumber(String(gasPrice))
       .mul(ethers.BigNumber.from('11'))
       .div(ethers.BigNumber.from('10'))
       .toString();
@@ -411,9 +424,11 @@ export const Web3Accounts = () => {
   };
 
   const getGasLimit = async (toAddress: string) => {
-    return await web3Provider.estimateGas({
+    const estimated = await web3Provider.estimateGas({
       to: toAddress,
     });
+
+    return Number(ethers.utils.formatUnits(estimated, 'gwei')).toFixed(2);
   };
 
   const getData = ({
@@ -454,13 +469,13 @@ export const Web3Accounts = () => {
     return { maxFeePerGas, maxPriorityFeePerGas };
   };
 
+  // tip numerador eip 1559
   const sendTransaction = async ({
     sender,
     receivingAddress,
     amount,
     gasLimit,
     token,
-    senderXprv,
   }: {
     sender: string;
     receivingAddress: string;
@@ -468,13 +483,23 @@ export const Web3Accounts = () => {
     gasLimit?: number;
     gasPrice?: number;
     token?: any;
-    senderXprv: string;
   }): Promise<TransactionResponse> => {
     const tokenDecimals = token && token.decimals ? token.decimals : 18;
     const decimals = toBigNumber(tokenDecimals);
 
     const parsedAmount = ethers.utils.parseEther(String(amount));
-    const wallet = new ethers.Wallet(senderXprv, web3Provider);
+
+    const { wallet: _wallet } = getDecryptedVault();
+    const { hash } = storage.get('vault-keys');
+
+    const accountXprv = _wallet.activeAccount.xprv;
+
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      hash
+    ).toString(CryptoJS.enc.Utf8);
+
+    const wallet = new ethers.Wallet(decryptedPrivateKey, web3Provider);
 
     const value =
       token && token.contract_address
@@ -490,6 +515,7 @@ export const Web3Accounts = () => {
           })
         : null;
 
+    // gas price, gas limit e maxPriorityFeePerGas (tip)
     const { maxFeePerGas, maxPriorityFeePerGas } =
       await getFeeDataWithDynamicMaxPriorityFeePerGas();
 
