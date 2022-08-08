@@ -387,7 +387,10 @@ export const Web3Accounts = () => {
     const gasPriceBN = await web3Provider.getGasPrice();
 
     if (formatted) {
-      return ethers.utils.formatEther(gasPriceBN);
+      return {
+        gwei: Number(ethers.utils.formatUnits(gasPriceBN, 'gwei')).toFixed(2),
+        ethers: ethers.utils.formatEther(gasPriceBN),
+      };
     }
 
     return gasPriceBN.toString();
@@ -399,12 +402,12 @@ export const Web3Accounts = () => {
   const getFeeByType = async (type: string) => {
     const gasPrice = await getRecommendedGasPrice(false);
 
-    const low = toBigNumber(gasPrice)
+    const low = toBigNumber(String(gasPrice))
       .mul(ethers.BigNumber.from('8'))
       .div(ethers.BigNumber.from('10'))
       .toString();
 
-    const high = toBigNumber(gasPrice)
+    const high = toBigNumber(String(gasPrice))
       .mul(ethers.BigNumber.from('11'))
       .div(ethers.BigNumber.from('10'))
       .toString();
@@ -420,7 +423,7 @@ export const Web3Accounts = () => {
       to: toAddress,
     });
 
-    return ethers.utils.formatEther(estimated);
+    return Number(ethers.utils.formatUnits(estimated, 'gwei')).toFixed(2);
   };
 
   const getData = ({
