@@ -7,6 +7,7 @@ import { ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import _ from 'lodash';
 
+import { sysweb3Di } from '@pollum-io/sysweb3-core';
 import {
   jsonRpcRequest,
   setActiveNetwork,
@@ -14,6 +15,7 @@ import {
 } from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
+  getDecryptedVault,
   getErc20Abi,
   getNftStandardMetadata,
   getTokenStandardMetadata,
@@ -23,6 +25,8 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export const Web3Accounts = () => {
+  const storage = sysweb3Di.getStateStorageDb();
+
   const createAccount = (privateKey: string) => new ethers.Wallet(privateKey);
 
   const getBalance = async (address: string): Promise<number> => {
@@ -471,7 +475,6 @@ export const Web3Accounts = () => {
     amount,
     gasLimit,
     token,
-    senderXprv,
   }: {
     sender: string;
     receivingAddress: string;
@@ -479,13 +482,23 @@ export const Web3Accounts = () => {
     gasLimit?: number;
     gasPrice?: number;
     token?: any;
-    senderXprv: string;
   }): Promise<TransactionResponse> => {
     const tokenDecimals = token && token.decimals ? token.decimals : 18;
     const decimals = toBigNumber(tokenDecimals);
 
     const parsedAmount = ethers.utils.parseEther(String(amount));
-    const wallet = new ethers.Wallet(senderXprv, web3Provider);
+
+    const { wallet: _wallet } = getDecryptedVault();
+    const { hash } = storage.get('vault-keys');
+
+    const accountXprv = _wallet.activeAccount.xprv;
+
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      hash
+    ).toString(CryptoJS.enc.Utf8);
+
+    const wallet = new ethers.Wallet(decryptedPrivateKey, web3Provider);
 
     const value =
       token && token.contract_address
