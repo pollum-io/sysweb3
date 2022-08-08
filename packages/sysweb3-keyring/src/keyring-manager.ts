@@ -257,7 +257,7 @@ export const KeyringManager = (): IKeyringManager => {
     const seed = await mnemonicToSeed(getDecryptedMnemonic());
     const privateRoot = hdkey.fromMasterSeed(seed);
     const derivedCurrentAccount = privateRoot.derivePath(
-      `m/44'/60'/0'/1/${String(id)}`
+      `m/44'/60'/0'/0/${String(id)}`
     );
     const newWallet = derivedCurrentAccount.getWallet();
     const address = newWallet.getAddressString();
@@ -689,6 +689,8 @@ export const KeyringManager = (): IKeyringManager => {
     if (chain === 'syscoin') {
       const { isTestnet } = await validateSysRpc(network.url);
 
+      // add network & pubtypes
+
       setEncryptedVault({ ...getDecryptedVault(), isTestnet });
 
       return;
@@ -843,7 +845,7 @@ export const KeyringManager = (): IKeyringManager => {
     const seed = await mnemonicToSeed(mnemonic);
     const privateRoot = hdkey.fromMasterSeed(seed);
     const derivedCurrentAccount = privateRoot.derivePath(
-      `m/44'/60'/0'/1/${length + 1}`
+      `m/44'/60'/0'/0/${length + 1}`
     );
     const newWallet = derivedCurrentAccount.getWallet();
     const address = newWallet.getAddressString();

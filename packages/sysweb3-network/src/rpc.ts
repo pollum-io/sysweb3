@@ -100,6 +100,8 @@ export const validateSysRpc = async (
 }> => {
   const response = await axios.get(`${rpcUrl}/api/v2`);
 
+  // sig bitcoin network
+
   const {
     blockbook: { coin },
     backend: { chain },

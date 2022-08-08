@@ -94,6 +94,7 @@ export const Web3Accounts = () => {
           ...details,
           isNft: true,
           id: nft.contractAddress,
+          balance: 1,
         });
       })
     );
@@ -139,6 +140,7 @@ export const Web3Accounts = () => {
           ...details,
           isNft: false,
           id: token.contractAddress,
+          balance: ethers.utils.formatEther(details.balance),
         });
       })
     );
@@ -414,9 +416,11 @@ export const Web3Accounts = () => {
   };
 
   const getGasLimit = async (toAddress: string) => {
-    return await web3Provider.estimateGas({
+    const estimated = await web3Provider.estimateGas({
       to: toAddress,
     });
+
+    return ethers.utils.formatEther(estimated);
   };
 
   const getData = ({
@@ -457,6 +461,7 @@ export const Web3Accounts = () => {
     return { maxFeePerGas, maxPriorityFeePerGas };
   };
 
+  // tip numerador eip 1559
   const sendTransaction = async ({
     sender,
     receivingAddress,
@@ -493,6 +498,7 @@ export const Web3Accounts = () => {
           })
         : null;
 
+    // gas price, gas limit e maxPriorityFeePerGas (tip)
     const { maxFeePerGas, maxPriorityFeePerGas } =
       await getFeeDataWithDynamicMaxPriorityFeePerGas();
 
