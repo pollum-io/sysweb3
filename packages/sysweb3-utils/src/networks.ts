@@ -1,5 +1,5 @@
-import { coins } from 'coins';
-import { BitcoinNetwork } from 'spsbt';
+import { coins } from './coins';
+import { BitcoinNetwork } from './spsbt';
 
 export enum INetworkType {
   Ethereum = 'ethereum',
