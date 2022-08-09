@@ -43,8 +43,8 @@ export const MainSigner = ({
   }: {
     SLIP44?: string;
     isTestnet: boolean;
-    networks?: BitcoinNetwork;
-    pubTypes?: ISyscoinPubTypes;
+    networks?: { [chain: string]: BitcoinNetwork };
+    pubTypes?: { [chain: string]: IPubTypes };
     walletMnemonic: string;
     walletPassword?: string;
   }): SyscoinHDSigner => {
@@ -275,7 +275,7 @@ export interface SyscoinHDSigner {
   getRootNode: () => BIP32Interface;
 }
 
-export type ISyscoinPubTypes = {
+export type IPubTypes = {
   mainnet: { zprv: string; zpub: string };
   testnet: { vprv: string; vpub: string };
 };

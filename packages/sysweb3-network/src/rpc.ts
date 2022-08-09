@@ -100,8 +100,6 @@ export const validateSysRpc = async (
 }> => {
   const response = await axios.get(`${rpcUrl}/api/v2`);
 
-  // sig bitcoin network
-
   const {
     blockbook: { coin },
     backend: { chain },
@@ -112,6 +110,8 @@ export const validateSysRpc = async (
   if (!valid) throw new Error('Invalid RPC URL');
 
   const { nativeCurrency, chainId } = getBip44Chain(coin);
+
+  // sig bitcoin network
 
   const data = {
     url: rpcUrl,
