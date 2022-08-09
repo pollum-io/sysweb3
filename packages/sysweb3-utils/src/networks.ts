@@ -22,11 +22,10 @@ export const toDecimalFromHex = (hexString: string) => parseInt(hexString, 16);
 
 export const getFormattedBitcoinLikeNetwork = (
   slip44: number,
-  isTestnet: boolean
+  coinName: string
 ) => {
-  const coin = coins.bitcoin.find((network: any) =>
-    // eslint-disable-next-line prettier/prettier
-    (isTestnet ? slip44 === 1 : network.slip44 === slip44)
+  const coin = coins.bitcoin.find(
+    (network: any) => coinName === network.coinName && network.slip44 === slip44
   );
 
   if (!coin) throw new Error(`Coin info not found`);
