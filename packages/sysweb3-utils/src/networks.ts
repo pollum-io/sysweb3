@@ -39,12 +39,13 @@ export const getFormattedBitcoinLikeNetwork = (
     addressTypeP2sh,
   } = coin;
 
+  const isTestnet = coin.coinName.toLowerCase().includes('test');
+
   const hexXpubMagic = toHexFromNumber(xpubMagic);
   const hexXprvMagic = toHexFromNumber(xprvMagic);
   const pubKeyHash = toHexFromNumber(addressType);
   const scriptHash = toHexFromNumber(addressTypeP2sh);
 
-  // get wif
   const network: BitcoinNetwork = {
     messagePrefix: `\x18${signedMessageHeader}`,
     bech32: String(bech32Prefix),
@@ -54,7 +55,7 @@ export const getFormattedBitcoinLikeNetwork = (
     },
     pubKeyHash,
     scriptHash,
-    wif: '',
+    wif: isTestnet ? '0xef' : '0x80',
   };
 
   return network;
