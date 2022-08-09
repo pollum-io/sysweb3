@@ -28,6 +28,7 @@
     "@pollum-io/sysweb3-network": "^1.0.55",
     "axios": "^0.26.1",
     "bech32": "^2.0.0",
+    "bip32": "^3.0.1",
     "bip44-constants": "^114.0.0",
     "bip84": "^0.2.7",
     "bitcoinjs-lib": "^6.0.1",
