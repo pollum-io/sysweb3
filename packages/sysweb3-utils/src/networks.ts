@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { coins } from 'coins';
 import { BitcoinNetwork } from 'spsbt';
 
@@ -33,23 +32,23 @@ export const getFormattedBitcoinLikeNetwork = (
   if (!coin) throw new Error(`Coin info not found`);
 
   const {
-    signed_message_header,
-    bech32_prefix,
-    xprv_magic,
-    xpub_magic,
-    address_type,
-    address_type_p2sh,
+    signedMessageHeader,
+    bech32Prefix,
+    xprvMagic,
+    xpubMagic,
+    addressType,
+    addressTypeP2sh,
   } = coin;
 
-  const hexXpubMagic = toHexFromNumber(xpub_magic);
-  const hexXprvMagic = toHexFromNumber(xprv_magic);
-  const pubKeyHash = toHexFromNumber(address_type);
-  const scriptHash = toHexFromNumber(address_type_p2sh);
+  const hexXpubMagic = toHexFromNumber(xpubMagic);
+  const hexXprvMagic = toHexFromNumber(xprvMagic);
+  const pubKeyHash = toHexFromNumber(addressType);
+  const scriptHash = toHexFromNumber(addressTypeP2sh);
 
   // get wif
   const network: BitcoinNetwork = {
-    messagePrefix: `\x18${signed_message_header}`,
-    bech32: String(bech32_prefix),
+    messagePrefix: `\x18${signedMessageHeader}`,
+    bech32: String(bech32Prefix),
     bip32: {
       public: hexXpubMagic,
       private: hexXprvMagic,
