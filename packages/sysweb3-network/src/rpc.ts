@@ -44,6 +44,7 @@ export const validateEthRpc = async (
   valid: boolean;
   formattedNetwork: INetwork;
   isTestnet: boolean;
+  formattedBitcoinLikeNetwork: null;
 }> => {
   if (!isValidChainIdForEthNetworks(Number(chainId)))
     throw new Error('Invalid chain ID for ethereum networks.');
@@ -85,6 +86,7 @@ export const validateEthRpc = async (
     valid: Boolean(response),
     formattedNetwork,
     isTestnet: false,
+    formattedBitcoinLikeNetwork: null,
   };
 };
 
@@ -140,7 +142,7 @@ export const validateSysRpc = async (
 
     const valid = Boolean(response && coin);
 
-    if (!valid) throw new Error('Invalid RPC URL');
+    if (!valid) throw new Error('Invalid Trezor Blockbook Explorer URL');
 
     const { nativeCurrency, chainId } = getBip44Chain(coin);
 

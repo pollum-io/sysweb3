@@ -3,7 +3,7 @@ import { Psbt } from 'bitcoinjs-lib';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 
-import { BitcoinNetwork, getDecryptedVault } from '.';
+import { BitcoinNetwork, getDecryptedVault, IPubTypes } from '.';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 
 export const MainSigner = ({
@@ -43,8 +43,8 @@ export const MainSigner = ({
   }: {
     SLIP44?: string;
     isTestnet: boolean;
-    networks?: { [chain: string]: BitcoinNetwork };
-    pubTypes?: { [chain: string]: IPubTypes };
+    networks?: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork };
+    pubTypes?: IPubTypes;
     walletMnemonic: string;
     walletPassword?: string;
   }): SyscoinHDSigner => {
@@ -95,51 +95,12 @@ export const getSigners = () => {
 };
 
 export type SyscoinHdAccount = {
-  pubTypes: {
-    mainnet: {
-      zprv: string;
-      zpub: string;
-    };
-    testnet: {
-      vprv: string;
-      vpub: string;
-    };
-  };
+  pubTypes: IPubTypes;
   networks: {
-    mainnet: {
-      messagePrefix: string;
-      bech32: string;
-      bip32: {
-        public: number;
-        private: number;
-      };
-      pubKeyHash: number;
-      scriptHash: number;
-      wif: number;
-    };
-    testnet: {
-      messagePrefix: string;
-      bech32: string;
-      bip32: {
-        public: number;
-        private: number;
-      };
-      pubKeyHash: number;
-      scriptHash: number;
-      wif: number;
-    };
+    mainnet: BitcoinNetwork;
+    testnet: BitcoinNetwork;
   };
-  network: {
-    messagePrefix: string;
-    bech32: string;
-    bip32: {
-      public: number;
-      private: number;
-    };
-    pubKeyHash: number;
-    scriptHash: number;
-    wif: number;
-  };
+  network: BitcoinNetwork;
   isTestnet: boolean;
   zprv: string;
 };
@@ -171,53 +132,11 @@ export interface Bip84FromMnemonic {
 export interface SyscoinHDSigner {
   Signer: {
     isTestnet: boolean;
-    networks: {
-      mainnet: {
-        messagePrefix: string;
-        bech32: string;
-        bip32: {
-          public: number;
-          private: number;
-        };
-        pubKeyHash: number;
-        scriptHash: number;
-        wif: number;
-      };
-      testnet: {
-        messagePrefix: string;
-        bech32: string;
-        bip32: {
-          public: number;
-          private: number;
-        };
-        pubKeyHash: number;
-        scriptHash: number;
-        wif: number;
-      };
-    };
+    networks: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork };
     password: string | null;
     SLIP44: number;
-    network: {
-      messagePrefix: string;
-      bech32: string;
-      bip32: {
-        public: number;
-        private: number;
-      };
-      pubKeyHash: number;
-      scriptHash: number;
-      wif: number;
-    };
-    pubTypes: {
-      mainnet: {
-        zprv: string;
-        zpub: string;
-      };
-      testnet: {
-        vprv: string;
-        vpub: string;
-      };
-    };
+    network: BitcoinNetwork;
+    pubTypes: IPubTypes;
     accounts: SyscoinFromZprvAccount[];
     changeIndex: number;
     receivingIndex: number;
@@ -230,27 +149,8 @@ export interface SyscoinHDSigner {
     seed: Buffer;
     isTestnet: boolean;
     coinType: number;
-    pubTypes: {
-      mainnet: {
-        zprv: string;
-        zpub: string;
-      };
-      testnet: {
-        vprv: string;
-        vpub: string;
-      };
-    };
-    network: {
-      messagePrefix: string;
-      bech32: string;
-      bip32: {
-        public: number;
-        private: number;
-      };
-      pubKeyHash: number;
-      scriptHash: number;
-      wif: number;
-    };
+    pubTypes: IPubTypes;
+    network: BitcoinNetwork;
   };
   blockbookURL: string;
   signPSBT: (psbt: Psbt, pathIn?: string) => Psbt;
@@ -275,23 +175,8 @@ export interface SyscoinHDSigner {
   getRootNode: () => BIP32Interface;
 }
 
-export type IPubTypes = {
-  mainnet: { zprv: string; zpub: string };
-  testnet: { vprv: string; vpub: string };
-};
-
 export type SyscoinMainSigner = {
   blockbookURL: string;
   Signer: SyscoinHDSigner;
-  network: {
-    messagePrefix: string;
-    bech32: string;
-    bip32: {
-      public: number;
-      private: number;
-    };
-    pubKeyHash: number;
-    scriptHash: number;
-    wif: number;
-  };
+  network: BitcoinNetwork;
 };

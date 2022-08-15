@@ -1,4 +1,6 @@
 /* eslint-disable camelcase */
+
+// todo: add Testnet PIVX and pivx
 export const coins = {
   bitcoin: [
     {
@@ -58,6 +60,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 43365439,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: 80,
     },
     {
       addressType: 111,
@@ -104,6 +107,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 37915119,
       xpubMagicSegwitNative: 73342198,
       xpubMagicSegwitP2sh: 71979618,
+      wif: '',
     },
     {
       addressType: 111,
@@ -134,7 +138,7 @@ export const coins = {
       maxfeeKb: 10000000,
       minAddressLength: 27,
       minfeeKb: 1000,
-      name: 'Testnet',
+      name: 'Bitcoin Testnet',
       segwit: true,
       shortcut: 'TEST',
       signedMessageHeader: 'Bitcoin Signed Message:\n',
@@ -153,6 +157,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 37915119,
       xpubMagicSegwitNative: 73342198,
       xpubMagicSegwitP2sh: 71979618,
+      wif: '',
     },
     {
       addressType: 53,
@@ -199,6 +204,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 76067358,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 55,
@@ -245,6 +251,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 0,
@@ -303,6 +310,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 111,
@@ -349,6 +357,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 38,
@@ -407,6 +416,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 76067358,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 111,
@@ -456,6 +466,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 70617039,
       xpubMagicSegwitNative: 73342198,
       xpubMagicSegwitP2sh: 71979618,
+      wif: '',
     },
     {
       addressType: 4901,
@@ -502,6 +513,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 3,
@@ -548,6 +560,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 76067358,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 76,
@@ -603,6 +616,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 140,
@@ -649,6 +663,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 1855,
@@ -695,6 +710,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 3873,
@@ -741,6 +757,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 30,
@@ -793,6 +810,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 76067358,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 30,
@@ -829,7 +847,7 @@ export const coins = {
       maxfeeKb: 1200000000000,
       minAddressLength: 27,
       minfeeKb: 100000,
-      name: 'Dogecoin',
+      name: 'Dogecoin Testnet',
       segwit: false,
       shortcut: 'DOGE',
       signedMessageHeader: 'Dogecoin Signed Message:\n',
@@ -848,6 +866,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 14,
@@ -894,6 +913,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 76069926,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 82,
@@ -943,6 +963,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 65,
@@ -992,6 +1013,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 35,
@@ -1038,6 +1060,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 1526049,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 28471030,
+      wif: '',
     },
     {
       addressType: 36,
@@ -1090,6 +1113,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 43365439,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 38,
@@ -1139,6 +1163,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 27108450,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 28471030,
+      wif: '',
     },
     {
       addressType: 60,
@@ -1185,6 +1210,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 6198,
@@ -1234,10 +1260,11 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 48,
-      addressTypeP2sh: 50,
+      addressTypeP2sh: 5,
       bech32Prefix: 'ltc',
       blockchainLink: {
         type: 'blockbook',
@@ -1289,10 +1316,11 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 27108450,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 28471030,
+      wif: '',
     },
     {
       addressType: 111,
-      addressTypeP2sh: 58,
+      addressTypeP2sh: 196,
       bech32Prefix: 'tltc',
       blockchainLink: null,
       blocktimeSeconds: 150,
@@ -1335,6 +1363,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 70617039,
       xpubMagicSegwitNative: 73342198,
       xpubMagicSegwitP2sh: 71979618,
+      wif: '',
     },
     {
       addressType: 50,
@@ -1384,6 +1413,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 76067358,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 16,
@@ -1414,7 +1444,7 @@ export const coins = {
       maxfeeKb: 600000000000,
       minAddressLength: 27,
       minfeeKb: 1000,
-      name: 'MonetaryUnit',
+      name: 'MonetaryUnit Testnet',
       segwit: false,
       shortcut: 'MUE',
       signedMessageHeader: 'MonetaryUnit Signed Message:\n',
@@ -1433,6 +1463,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 38,
@@ -1479,6 +1510,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 76067358,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 52,
@@ -1528,6 +1560,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 55,
@@ -1577,6 +1610,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 76067358,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 111,
@@ -1626,6 +1660,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 70617039,
       xpubMagicSegwitNative: 73342198,
       xpubMagicSegwitP2sh: 71979618,
+      wif: '',
     },
     {
       addressType: 55,
@@ -1675,6 +1710,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 23,
@@ -1721,6 +1757,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 60,
@@ -1770,6 +1807,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 25,
@@ -1819,6 +1857,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 76,
@@ -1868,6 +1907,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 76067358,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 63,
@@ -1920,6 +1960,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 76067358,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 130,
@@ -1975,6 +2016,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 30,
@@ -2021,6 +2063,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 71,
@@ -2076,6 +2119,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 76067358,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 71,
@@ -2125,6 +2169,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: 76067358,
       xpubMagicSegwitNative: 78792518,
       xpubMagicSegwitP2sh: 77429938,
+      wif: '',
     },
     {
       addressType: 142,
@@ -2174,6 +2219,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 7352,
@@ -2229,6 +2275,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 7461,
@@ -2275,6 +2322,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
     {
       addressType: 61,
@@ -2330,6 +2378,7 @@ export const coins = {
       xpubMagicMultisigSegwitP2sh: null,
       xpubMagicSegwitNative: null,
       xpubMagicSegwitP2sh: null,
+      wif: '',
     },
   ],
   erc20: [],

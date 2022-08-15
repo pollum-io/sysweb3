@@ -1,18 +1,6 @@
 import { Transaction, Psbt } from 'bitcoinjs-lib';
 
-export type Bip32 = {
-  public: string;
-  private: string;
-};
-
-export type BitcoinNetwork = {
-  messagePrefix: string;
-  bech32: string;
-  bip32: Bip32;
-  pubKeyHash: string;
-  scriptHash: string;
-  wif: string;
-};
+import { BitcoinNetwork } from './networks';
 
 export interface SPSBT extends Psbt {
   getFeeRate: () => number;
