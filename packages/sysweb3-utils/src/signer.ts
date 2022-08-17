@@ -3,8 +3,9 @@ import { Psbt } from 'bitcoinjs-lib';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 
-import { BitcoinNetwork, getDecryptedVault, IPubTypes } from '.';
+import { getDecryptedVault } from '.';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
+import { BitcoinNetwork, IPubTypes } from '@pollum-io/sysweb3-network';
 
 export const MainSigner = ({
   walletMnemonic,

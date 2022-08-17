@@ -1,6 +1,6 @@
 import { Transaction, Psbt } from 'bitcoinjs-lib';
 
-import { BitcoinNetwork } from './networks';
+import { BitcoinNetwork } from '@pollum-io/sysweb3-network';
 
 export interface SPSBT extends Psbt {
   getFeeRate: () => number;
