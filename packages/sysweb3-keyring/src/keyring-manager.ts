@@ -520,7 +520,13 @@ export const KeyringManager = (): IKeyringManager => {
   }> => {
     const { wallet: _wallet, network, isTestnet } = getDecryptedVault();
 
-    if (!hd.mnemonic || hd.Signer.isTestnet !== isTestnet) {
+    if (
+      !(
+        hd.mnemonic ||
+        hd.Signer.isTestnet === isTestnet ||
+        hd.blockbookURL === network.url
+      )
+    ) {
       const { _hd } = getSigners();
 
       hd = _hd;

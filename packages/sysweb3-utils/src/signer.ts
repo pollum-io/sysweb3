@@ -7,15 +7,15 @@ import { getDecryptedVault, INetwork } from '.';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { BitcoinNetwork, IPubTypes } from '@pollum-io/sysweb3-network';
 
-let main = {} as SyscoinMainSigner;
-let hd = {} as SyscoinHDSigner;
-
 export const getSyscoinSigners = ({
   mnemonic,
   isTestnet,
   url,
   rpc,
 }: ISyscoinSignerParams): { hd: SyscoinHDSigner; main: any } => {
+  let main: any;
+  let hd: SyscoinHDSigner;
+
   let config: BitcoinNetwork | null = null;
   let slip44: number | null = null;
   let pubTypes: IPubTypes | null = null;
@@ -40,6 +40,7 @@ export const getSyscoinSigners = ({
     pubTypes = types.zPubType;
   }
 
+  // @ts-ignore
   if (!hd) {
     hd = new sys.utils.HDSigner(
       mnemonic,

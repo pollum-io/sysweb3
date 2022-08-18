@@ -3,12 +3,9 @@ import bip44Constants from 'bip44-constants';
 import { Chain, chain, chains } from 'eth-chains';
 import { ethers } from 'ethers';
 
+import { getFormattedBitcoinLikeNetwork } from './networks';
 import { jsonRpcRequest } from './rpc-request';
-import {
-  getFormattedBitcoinLikeNetwork,
-  INetwork,
-  toDecimalFromHex,
-} from '@pollum-io/sysweb3-utils';
+import { INetwork, toDecimalFromHex } from '@pollum-io/sysweb3-utils';
 
 export const validateChainId = (
   chainId: number | string
@@ -42,6 +39,7 @@ export const validateEthRpc = async (
   valid: boolean;
   hexChainId: string;
   details: Chain;
+  chain: string;
 }> => {
   try {
     if (!isValidChainIdForEthNetworks(Number(chainId)))
@@ -61,6 +59,7 @@ export const validateEthRpc = async (
 
     return {
       details,
+      chain: details.network || 'mainnet',
       hexChainId,
       valid: Boolean(response),
     };
