@@ -743,26 +743,32 @@ export const KeyringManager = (): IKeyringManager => {
 
     try {
       await _setSignerByChain(network, chain);
+
+      if (chain === 'syscoin') {
+        const { rpc, isTestnet } = await _setSignerByChain(network, chain);
+
+        setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
+      }
+
+      const account = await _getAccountForNetwork({
+        isSyscoinChain: chain === 'syscoin',
+      });
+
+      wallet = {
+        ...wallet,
+        accounts: {
+          ...wallet.accounts,
+          [account.id]: account,
+        },
+        activeAccount: account,
+      };
+
+      setEncryptedVault({ ...getDecryptedVault(), wallet });
+
+      return account;
     } catch (error) {
       throw new Error(error);
     }
-
-    const account = await _getAccountForNetwork({
-      isSyscoinChain: chain === 'syscoin' && network.url.includes('blockbook'),
-    });
-
-    wallet = {
-      ...wallet,
-      accounts: {
-        ...wallet.accounts,
-        [account.id]: account,
-      },
-      activeAccount: account,
-    };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-    return account;
   };
   /** end */
 
