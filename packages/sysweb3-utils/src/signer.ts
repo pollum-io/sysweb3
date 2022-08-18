@@ -3,68 +3,57 @@ import { Psbt } from 'bitcoinjs-lib';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 
-import { getDecryptedVault } from '.';
+import { getDecryptedVault, INetwork } from '.';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { BitcoinNetwork, IPubTypes } from '@pollum-io/sysweb3-network';
 
-export const MainSigner = ({
-  walletMnemonic,
+let main = {} as SyscoinMainSigner;
+let hd = {} as SyscoinHDSigner;
+
+export const getSyscoinSigners = ({
+  mnemonic,
   isTestnet,
-  blockbookURL,
-}: {
-  walletMnemonic: string;
-  isTestnet: boolean;
-  blockbookURL: string;
-}): { hd: SyscoinHDSigner; main: any } => {
-  let mainSigner: any;
-  let hdSigner: SyscoinHDSigner;
+  url,
+  rpc,
+}: ISyscoinSignerParams): { hd: SyscoinHDSigner; main: SyscoinMainSigner } => {
+  let config: BitcoinNetwork | null = null;
+  let slip44: number | null = null;
+  let pubTypes: IPubTypes | null = null;
 
-  const getMainSigner = ({
-    SignerIn,
-    blockbookURL,
-  }: {
-    SignerIn?: any;
-    blockbookURL?: string;
-    network?: any;
-  }) => {
-    if (!mainSigner) {
-      mainSigner = new sys.SyscoinJSLib(SignerIn, blockbookURL);
-    }
+  let networks: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork } | null =
+    null;
 
-    return mainSigner;
-  };
+  const hasRpcConfig = rpc && rpc.formattedBitcoinLikeNetwork;
 
-  const getHdSigner = ({
-    walletMnemonic,
-    walletPassword,
-    isTestnet,
-    networks,
-    SLIP44,
-    pubTypes,
-  }: {
-    SLIP44?: string;
-    isTestnet: boolean;
-    networks?: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork };
-    pubTypes?: IPubTypes;
-    walletMnemonic: string;
-    walletPassword?: string;
-  }): SyscoinHDSigner => {
-    if (!hdSigner) {
-      hdSigner = new sys.utils.HDSigner(
-        walletMnemonic,
-        walletPassword,
-        isTestnet,
-        networks,
-        SLIP44,
-        pubTypes
-      );
-    }
+  if (hasRpcConfig) {
+    const { formattedNetwork, formattedBitcoinLikeNetwork } = rpc;
 
-    return hdSigner;
-  };
+    const { networks: _bitcoinLikeNetworks, types } =
+      formattedBitcoinLikeNetwork;
 
-  const hd = getHdSigner({ walletMnemonic, isTestnet });
-  const main = getMainSigner({ SignerIn: hd, blockbookURL });
+    config = isTestnet
+      ? _bitcoinLikeNetworks.testnet
+      : _bitcoinLikeNetworks.mainnet;
+
+    networks = _bitcoinLikeNetworks;
+    slip44 = formattedNetwork.chainId;
+    pubTypes = types.zPubType;
+  }
+
+  if (!hd) {
+    hd = new sys.utils.HDSigner(
+      mnemonic,
+      null,
+      isTestnet,
+      networks,
+      slip44,
+      pubTypes
+    );
+  }
+
+  if (!main) {
+    main = new sys.SyscoinJSLib(hd, url, config);
+  }
 
   return {
     hd,
@@ -77,16 +66,17 @@ export const getSigners = () => {
 
   const { hash } = storage.get('vault-keys');
 
-  const { network, isTestnet, mnemonic } = getDecryptedVault();
+  const { network, isTestnet, mnemonic, rpc } = getDecryptedVault();
 
   const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString(
     CryptoJS.enc.Utf8
   );
 
-  const { hd: _hd, main: _main } = MainSigner({
-    walletMnemonic: decryptedMnemonic,
+  const { hd: _hd, main: _main } = getSyscoinSigners({
+    mnemonic: decryptedMnemonic,
     isTestnet,
-    blockbookURL: network.url,
+    url: network.url,
+    rpc,
   });
 
   return {
@@ -129,6 +119,34 @@ export interface Bip84FromMnemonic {
   getRootPublicKey: () => string;
   deriveAccount: () => string;
 }
+
+export type ISyscoinSignerParams = {
+  mnemonic: string;
+  isTestnet: boolean;
+  url: string;
+  rpc?: {
+    formattedNetwork: INetwork;
+    formattedBitcoinLikeNetwork: {
+      networks: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork };
+      types: { xPubType: IPubTypes; zPubType: IPubTypes };
+    };
+  };
+};
+
+export type IMainSignerParams = {
+  hd: SyscoinHDSigner;
+  url: string;
+  network?: BitcoinNetwork;
+};
+
+export type IHdSignerParams = {
+  mnemonic: string;
+  password?: string;
+  isTestnet?: boolean;
+  networks?: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork };
+  slip44?: number;
+  pubTypes?: IPubTypes;
+};
 
 export interface SyscoinHDSigner {
   Signer: {
