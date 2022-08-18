@@ -381,11 +381,11 @@ export const KeyringManager = (): IKeyringManager => {
     setEncryptedVault({ ...getDecryptedVault(), wallet });
 
     if (isSyscoinChain) {
-      const { isTestnet } = await validateSysRpc(network.url);
+      const { chain } = await validateSysRpc(network.url);
 
       const vault = getDecryptedVault();
 
-      setEncryptedVault({ ...vault, network, isTestnet });
+      setEncryptedVault({ ...vault, network, isTestnet: chain === 'test' });
 
       const { _hd } = getSigners();
 
@@ -687,11 +687,14 @@ export const KeyringManager = (): IKeyringManager => {
     });
 
     if (chain === 'syscoin') {
-      const { isTestnet } = await validateSysRpc(network.url);
+      const { chain } = await validateSysRpc(network.url);
 
       // add network & pubtypes
 
-      setEncryptedVault({ ...getDecryptedVault(), isTestnet });
+      setEncryptedVault({
+        ...getDecryptedVault(),
+        isTestnet: chain === 'test',
+      });
 
       return;
     }
