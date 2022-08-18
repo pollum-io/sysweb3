@@ -19,6 +19,7 @@ import {
 } from './types';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
+  getSysRpc,
   jsonRpcRequest,
   setActiveNetwork,
   validateSysRpc,
@@ -381,11 +382,9 @@ export const KeyringManager = (): IKeyringManager => {
     setEncryptedVault({ ...getDecryptedVault(), wallet });
 
     if (isSyscoinChain) {
-      const { chain } = await validateSysRpc(network.url);
-
       const vault = getDecryptedVault();
 
-      setEncryptedVault({ ...vault, network, isTestnet: chain === 'test' });
+      setEncryptedVault({ ...vault, network });
 
       const { _hd } = getSigners();
 
@@ -680,31 +679,34 @@ export const KeyringManager = (): IKeyringManager => {
   /** end */
 
   /** networks */
-  const _setSignerByChain = async (network: INetwork, chain: string) => {
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      network,
-    });
-
-    if (chain === 'syscoin') {
-      const { chain } = await validateSysRpc(network.url);
-
-      // add network & pubtypes
-
+  const _setSignerByChain = async (
+    network: INetwork,
+    chain: string
+  ): Promise<{ rpc: any; isTestnet: boolean }> => {
+    try {
       setEncryptedVault({
         ...getDecryptedVault(),
-        isTestnet: chain === 'test',
+        network,
       });
 
-      return;
-    }
+      if (chain === 'syscoin') {
+        const response = await validateSysRpc(network.url);
 
-    const newNetwork =
-      getDecryptedVault().wallet.networks.ethereum[network.chainId];
+        if (!response.valid) throw new Error('Invalid network');
 
-    if (!newNetwork) throw new Error('Network not found');
+        const rpc = network.default ? null : await getSysRpc(network);
 
-    try {
+        return {
+          rpc,
+          isTestnet: response.chain === 'test',
+        };
+      }
+
+      const newNetwork =
+        getDecryptedVault().wallet.networks.ethereum[network.chainId];
+
+      if (!newNetwork) throw new Error('Network not found');
+
       await jsonRpcRequest(network.url, 'eth_chainId');
 
       setActiveNetwork(newNetwork);
@@ -713,6 +715,11 @@ export const KeyringManager = (): IKeyringManager => {
         ...getDecryptedVault(),
         isTestnet: false,
       });
+
+      return {
+        rpc: null,
+        isTestnet: false,
+      };
     } catch (error) {
       throw new Error(`Could not set network. Error: ${error}`);
     }
