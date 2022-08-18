@@ -15,7 +15,7 @@ export const getSyscoinSigners = ({
   isTestnet,
   url,
   rpc,
-}: ISyscoinSignerParams): { hd: SyscoinHDSigner; main: SyscoinMainSigner } => {
+}: ISyscoinSignerParams): { hd: SyscoinHDSigner; main: any } => {
   let config: BitcoinNetwork | null = null;
   let slip44: number | null = null;
   let pubTypes: IPubTypes | null = null;
