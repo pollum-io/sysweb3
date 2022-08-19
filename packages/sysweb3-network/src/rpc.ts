@@ -33,8 +33,7 @@ export const isValidChainIdForEthNetworks = (chainId: number | string) =>
   Number.isSafeInteger(chainId) && chainId > 0 && chainId <= 4503599627370476;
 
 export const validateEthRpc = async (
-  chainId: number | string,
-  rpcUrl: string
+  url: string
 ): Promise<{
   valid: boolean;
   hexChainId: string;
@@ -42,12 +41,19 @@ export const validateEthRpc = async (
   chain: string;
 }> => {
   try {
-    if (!isValidChainIdForEthNetworks(Number(chainId)))
+    const hexChainIdForUrl = await jsonRpcRequest(url, 'eth_chainId');
+
+    if (!hexChainIdForUrl) {
+      throw new Error('Invalid RPC URL. Could not get chain ID for network.');
+    }
+
+    const numberChainId = parseInt(hexChainIdForUrl, 16);
+
+    if (!isValidChainIdForEthNetworks(Number(numberChainId)))
       throw new Error('Invalid chain ID for ethereum networks.');
 
-    const { valid, hexChainId } = validateChainId(chainId);
-
-    const details = typeof chainId === 'number' && chains.getById(chainId);
+    const { valid, hexChainId } = validateChainId(hexChainIdForUrl);
+    const details = chains.getById(numberChainId);
 
     const isChainIdValid = details && valid;
 
@@ -55,13 +61,11 @@ export const validateEthRpc = async (
       throw new Error('RPC has an invalid chain ID');
     }
 
-    const response = await jsonRpcRequest(rpcUrl, 'eth_chainId');
-
     return {
       details,
       chain: details.network || 'mainnet',
       hexChainId,
-      valid: Boolean(response),
+      valid,
     };
   } catch (error) {
     throw new Error(error);
@@ -73,10 +77,7 @@ export const getEthRpc = async (
 ): Promise<{
   formattedNetwork: INetwork;
 }> => {
-  const { valid, hexChainId, details } = await validateEthRpc(
-    data.chainId,
-    data.rpcUrl
-  );
+  const { valid, hexChainId, details } = await validateEthRpc(data.url);
 
   if (!valid) throw new Error('Invalid RPC.');
 
@@ -91,7 +92,7 @@ export const getEthRpc = async (
   const explorer = details.explorers ? details.explorers[0] : ethereumExplorer;
 
   const formattedNetwork = {
-    url: data.rpcUrl,
+    url: data.url,
     default: false,
     label: data.label || String(details.name),
     apiUrl: data.apiUrl,
