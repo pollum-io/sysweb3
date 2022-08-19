@@ -47,7 +47,6 @@ export interface IKeyringManager {
   createKeyringVault: () => Promise<IKeyringAccountState>;
   createSeed: () => string;
   forgetMainWallet: (password: string) => void;
-  forgetSigners: () => void;
   getAccounts: () => IKeyringAccountState[];
   getAccountById: (id: number) => IKeyringAccountState;
   getAccountXpub: () => string;
@@ -60,7 +59,6 @@ export interface IKeyringManager {
   getPrivateKeyByAccountId: (id: number) => string;
   getSeed: (password: string) => string;
   getState: () => IWalletState;
-  hasHdAccounts: () => boolean;
   isUnlocked: () => boolean;
   login: (password: string) => Promise<IKeyringAccountState>;
   logout: () => void;

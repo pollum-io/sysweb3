@@ -74,9 +74,22 @@ export const KeyringManager = (): IKeyringManager => {
     }
   };
 
-  const hasHdAccounts = () => Boolean(hd.Signer.accounts);
+  const isUnlocked = () => {
+    const isStorageSet =
+      storage && storage.get('vault-keys') && storage.get('vault-keys').hash;
 
-  const forgetSigners = () => {
+    if (isStorageSet && getDecryptedVault()) {
+      const { lastLogin } = getDecryptedVault();
+
+      return lastLogin === 0 || !lastLogin;
+    }
+
+    return false;
+  };
+
+  const logout = () => {
+    setEncryptedVault({ ...getDecryptedVault(), lastLogin: Date.now() });
+
     hd = new sys.utils.HDSigner('');
   };
   /** end */
@@ -89,13 +102,6 @@ export const KeyringManager = (): IKeyringManager => {
 
     return hashPassword.hash === hash;
   };
-
-  const isUnlocked = () =>
-    Boolean(
-      hasHdAccounts() &&
-        storage.get('vault-keys') &&
-        storage.get('vault-keys').hash
-    );
   /** end */
 
   /** seeds */
@@ -166,7 +172,7 @@ export const KeyringManager = (): IKeyringManager => {
     storage.deleteItem('vault');
     storage.deleteItem('vault-keys');
 
-    forgetSigners();
+    logout();
 
     memMnemonic = '';
   };
@@ -595,7 +601,7 @@ export const KeyringManager = (): IKeyringManager => {
       activeAccount: vault,
     };
 
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
+    setEncryptedVault({ ...getDecryptedVault(), wallet, lastLogin: 0 });
 
     return vault;
   };
@@ -608,7 +614,7 @@ export const KeyringManager = (): IKeyringManager => {
 
     _updateUnlocked();
 
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
+    setEncryptedVault({ ...getDecryptedVault(), wallet, lastLogin: 0 });
 
     await getLatestUpdateForAccount();
 
@@ -616,8 +622,6 @@ export const KeyringManager = (): IKeyringManager => {
 
     return wallet.activeAccount;
   };
-
-  const logout = () => forgetSigners();
   /** end */
 
   const removeAccount = (accountId: number) => {
@@ -919,7 +923,6 @@ export const KeyringManager = (): IKeyringManager => {
     createKeyringVault,
     createSeed,
     forgetMainWallet,
-    forgetSigners,
     getAccounts,
     getAccountById,
     getAccountXpub,
@@ -932,7 +935,6 @@ export const KeyringManager = (): IKeyringManager => {
     getPrivateKeyByAccountId,
     getSeed,
     getState,
-    hasHdAccounts,
     isUnlocked,
     login,
     logout,
