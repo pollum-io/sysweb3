@@ -3,67 +3,58 @@ import { Psbt } from 'bitcoinjs-lib';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 
-import { BitcoinNetwork, getDecryptedVault } from '.';
+import { getDecryptedVault, INetwork } from '.';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
+import { BitcoinNetwork, IPubTypes } from '@pollum-io/sysweb3-network';
 
-export const MainSigner = ({
-  walletMnemonic,
+export const getSyscoinSigners = ({
+  mnemonic,
   isTestnet,
-  blockbookURL,
-}: {
-  walletMnemonic: string;
-  isTestnet: boolean;
-  blockbookURL: string;
-}): { hd: SyscoinHDSigner; main: any } => {
-  let mainSigner: any;
-  let hdSigner: SyscoinHDSigner;
+  url,
+  rpc,
+}: ISyscoinSignerParams): { hd: SyscoinHDSigner; main: any } => {
+  let main: any;
+  let hd: SyscoinHDSigner;
 
-  const getMainSigner = ({
-    SignerIn,
-    blockbookURL,
-  }: {
-    SignerIn?: any;
-    blockbookURL?: string;
-    network?: any;
-  }) => {
-    if (!mainSigner) {
-      mainSigner = new sys.SyscoinJSLib(SignerIn, blockbookURL);
-    }
+  let config: BitcoinNetwork | null = null;
+  let slip44: number | null = null;
+  let pubTypes: IPubTypes | null = null;
 
-    return mainSigner;
-  };
+  let networks: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork } | null =
+    null;
 
-  const getHdSigner = ({
-    walletMnemonic,
-    walletPassword,
-    isTestnet,
-    networks,
-    SLIP44,
-    pubTypes,
-  }: {
-    SLIP44?: string;
-    isTestnet: boolean;
-    networks?: BitcoinNetwork;
-    pubTypes?: ISyscoinPubTypes;
-    walletMnemonic: string;
-    walletPassword?: string;
-  }): SyscoinHDSigner => {
-    if (!hdSigner) {
-      hdSigner = new sys.utils.HDSigner(
-        walletMnemonic,
-        walletPassword,
-        isTestnet,
-        networks,
-        SLIP44,
-        pubTypes
-      );
-    }
+  const hasRpcConfig = rpc && rpc.formattedBitcoinLikeNetwork;
 
-    return hdSigner;
-  };
+  if (hasRpcConfig) {
+    const { formattedNetwork, formattedBitcoinLikeNetwork } = rpc;
 
-  const hd = getHdSigner({ walletMnemonic, isTestnet });
-  const main = getMainSigner({ SignerIn: hd, blockbookURL });
+    const { networks: _bitcoinLikeNetworks, types } =
+      formattedBitcoinLikeNetwork;
+
+    config = isTestnet
+      ? _bitcoinLikeNetworks.testnet
+      : _bitcoinLikeNetworks.mainnet;
+
+    networks = _bitcoinLikeNetworks;
+    slip44 = formattedNetwork.chainId;
+    pubTypes = types.zPubType;
+  }
+
+  // @ts-ignore
+  if (!hd) {
+    hd = new sys.utils.HDSigner(
+      mnemonic,
+      null,
+      isTestnet,
+      networks,
+      slip44,
+      pubTypes
+    );
+  }
+
+  if (!main) {
+    main = new sys.SyscoinJSLib(hd, url, config);
+  }
 
   return {
     hd,
@@ -76,16 +67,17 @@ export const getSigners = () => {
 
   const { hash } = storage.get('vault-keys');
 
-  const { network, isTestnet, mnemonic } = getDecryptedVault();
+  const { network, isTestnet, mnemonic, rpc } = getDecryptedVault();
 
   const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString(
     CryptoJS.enc.Utf8
   );
 
-  const { hd: _hd, main: _main } = MainSigner({
-    walletMnemonic: decryptedMnemonic,
+  const { hd: _hd, main: _main } = getSyscoinSigners({
+    mnemonic: decryptedMnemonic,
     isTestnet,
-    blockbookURL: network.url,
+    url: network.url,
+    rpc,
   });
 
   return {
@@ -95,51 +87,12 @@ export const getSigners = () => {
 };
 
 export type SyscoinHdAccount = {
-  pubTypes: {
-    mainnet: {
-      zprv: string;
-      zpub: string;
-    };
-    testnet: {
-      vprv: string;
-      vpub: string;
-    };
-  };
+  pubTypes: IPubTypes;
   networks: {
-    mainnet: {
-      messagePrefix: string;
-      bech32: string;
-      bip32: {
-        public: number;
-        private: number;
-      };
-      pubKeyHash: number;
-      scriptHash: number;
-      wif: number;
-    };
-    testnet: {
-      messagePrefix: string;
-      bech32: string;
-      bip32: {
-        public: number;
-        private: number;
-      };
-      pubKeyHash: number;
-      scriptHash: number;
-      wif: number;
-    };
+    mainnet: BitcoinNetwork;
+    testnet: BitcoinNetwork;
   };
-  network: {
-    messagePrefix: string;
-    bech32: string;
-    bip32: {
-      public: number;
-      private: number;
-    };
-    pubKeyHash: number;
-    scriptHash: number;
-    wif: number;
-  };
+  network: BitcoinNetwork;
   isTestnet: boolean;
   zprv: string;
 };
@@ -168,56 +121,42 @@ export interface Bip84FromMnemonic {
   deriveAccount: () => string;
 }
 
+export type ISyscoinSignerParams = {
+  mnemonic: string;
+  isTestnet: boolean;
+  url: string;
+  rpc?: {
+    formattedNetwork: INetwork;
+    formattedBitcoinLikeNetwork: {
+      networks: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork };
+      types: { xPubType: IPubTypes; zPubType: IPubTypes };
+    };
+  };
+};
+
+export type IMainSignerParams = {
+  hd: SyscoinHDSigner;
+  url: string;
+  network?: BitcoinNetwork;
+};
+
+export type IHdSignerParams = {
+  mnemonic: string;
+  password?: string;
+  isTestnet?: boolean;
+  networks?: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork };
+  slip44?: number;
+  pubTypes?: IPubTypes;
+};
+
 export interface SyscoinHDSigner {
   Signer: {
     isTestnet: boolean;
-    networks: {
-      mainnet: {
-        messagePrefix: string;
-        bech32: string;
-        bip32: {
-          public: number;
-          private: number;
-        };
-        pubKeyHash: number;
-        scriptHash: number;
-        wif: number;
-      };
-      testnet: {
-        messagePrefix: string;
-        bech32: string;
-        bip32: {
-          public: number;
-          private: number;
-        };
-        pubKeyHash: number;
-        scriptHash: number;
-        wif: number;
-      };
-    };
+    networks: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork };
     password: string | null;
     SLIP44: number;
-    network: {
-      messagePrefix: string;
-      bech32: string;
-      bip32: {
-        public: number;
-        private: number;
-      };
-      pubKeyHash: number;
-      scriptHash: number;
-      wif: number;
-    };
-    pubTypes: {
-      mainnet: {
-        zprv: string;
-        zpub: string;
-      };
-      testnet: {
-        vprv: string;
-        vpub: string;
-      };
-    };
+    network: BitcoinNetwork;
+    pubTypes: IPubTypes;
     accounts: SyscoinFromZprvAccount[];
     changeIndex: number;
     receivingIndex: number;
@@ -230,27 +169,8 @@ export interface SyscoinHDSigner {
     seed: Buffer;
     isTestnet: boolean;
     coinType: number;
-    pubTypes: {
-      mainnet: {
-        zprv: string;
-        zpub: string;
-      };
-      testnet: {
-        vprv: string;
-        vpub: string;
-      };
-    };
-    network: {
-      messagePrefix: string;
-      bech32: string;
-      bip32: {
-        public: number;
-        private: number;
-      };
-      pubKeyHash: number;
-      scriptHash: number;
-      wif: number;
-    };
+    pubTypes: IPubTypes;
+    network: BitcoinNetwork;
   };
   blockbookURL: string;
   signPSBT: (psbt: Psbt, pathIn?: string) => Psbt;
@@ -275,23 +195,8 @@ export interface SyscoinHDSigner {
   getRootNode: () => BIP32Interface;
 }
 
-export type ISyscoinPubTypes = {
-  mainnet: { zprv: string; zpub: string };
-  testnet: { vprv: string; vpub: string };
-};
-
 export type SyscoinMainSigner = {
   blockbookURL: string;
   Signer: SyscoinHDSigner;
-  network: {
-    messagePrefix: string;
-    bech32: string;
-    bip32: {
-      public: number;
-      private: number;
-    };
-    pubKeyHash: number;
-    scriptHash: number;
-    wif: number;
-  };
+  network: BitcoinNetwork;
 };

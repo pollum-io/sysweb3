@@ -19,6 +19,7 @@ import {
 } from './types';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
+  getSysRpc,
   jsonRpcRequest,
   setActiveNetwork,
   validateSysRpc,
@@ -387,11 +388,9 @@ export const KeyringManager = (): IKeyringManager => {
     setEncryptedVault({ ...getDecryptedVault(), wallet });
 
     if (isSyscoinChain) {
-      const { isTestnet } = await validateSysRpc(network.url);
-
       const vault = getDecryptedVault();
 
-      setEncryptedVault({ ...vault, network, isTestnet });
+      setEncryptedVault({ ...vault, network });
 
       const { _hd } = getSigners();
 
@@ -527,7 +526,11 @@ export const KeyringManager = (): IKeyringManager => {
   }> => {
     const { wallet: _wallet, network, isTestnet } = getDecryptedVault();
 
-    if (!hd.mnemonic || hd.Signer.isTestnet !== isTestnet) {
+    if (
+      !hd.mnemonic ||
+      hd.Signer.isTestnet !== isTestnet ||
+      hd.blockbookURL !== network.url
+    ) {
       const { _hd } = getSigners();
 
       hd = _hd;
@@ -684,28 +687,34 @@ export const KeyringManager = (): IKeyringManager => {
   /** end */
 
   /** networks */
-  const _setSignerByChain = async (network: INetwork, chain: string) => {
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      network,
-    });
-
-    if (chain === 'syscoin') {
-      const { isTestnet } = await validateSysRpc(network.url);
-
-      // add network & pubtypes
-
-      setEncryptedVault({ ...getDecryptedVault(), isTestnet });
-
-      return;
-    }
-
-    const newNetwork =
-      getDecryptedVault().wallet.networks.ethereum[network.chainId];
-
-    if (!newNetwork) throw new Error('Network not found');
-
+  const _setSignerByChain = async (
+    network: INetwork,
+    chain: string
+  ): Promise<{ rpc: any; isTestnet: boolean }> => {
     try {
+      setEncryptedVault({
+        ...getDecryptedVault(),
+        network,
+      });
+
+      if (chain === 'syscoin') {
+        const response = await validateSysRpc(network.url);
+
+        if (!response.valid) throw new Error('Invalid network');
+
+        const rpc = network.default ? null : await getSysRpc(network);
+
+        return {
+          rpc,
+          isTestnet: response.chain === 'test',
+        };
+      }
+
+      const newNetwork =
+        getDecryptedVault().wallet.networks.ethereum[network.chainId];
+
+      if (!newNetwork) throw new Error('Network not found');
+
       await jsonRpcRequest(network.url, 'eth_chainId');
 
       setActiveNetwork(newNetwork);
@@ -714,6 +723,11 @@ export const KeyringManager = (): IKeyringManager => {
         ...getDecryptedVault(),
         isTestnet: false,
       });
+
+      return {
+        rpc: null,
+        isTestnet: false,
+      };
     } catch (error) {
       throw new Error(`Could not set network. Error: ${error}`);
     }
@@ -744,26 +758,32 @@ export const KeyringManager = (): IKeyringManager => {
 
     try {
       await _setSignerByChain(network, chain);
+
+      if (chain === 'syscoin') {
+        const { rpc, isTestnet } = await _setSignerByChain(network, chain);
+
+        setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
+      }
+
+      const account = await _getAccountForNetwork({
+        isSyscoinChain: chain === 'syscoin',
+      });
+
+      wallet = {
+        ...wallet,
+        accounts: {
+          ...wallet.accounts,
+          [account.id]: account,
+        },
+        activeAccount: account,
+      };
+
+      setEncryptedVault({ ...getDecryptedVault(), wallet });
+
+      return account;
     } catch (error) {
       throw new Error(error);
     }
-
-    const account = await _getAccountForNetwork({
-      isSyscoinChain: chain === 'syscoin' && network.url.includes('blockbook'),
-    });
-
-    wallet = {
-      ...wallet,
-      accounts: {
-        ...wallet.accounts,
-        [account.id]: account,
-      },
-      activeAccount: account,
-    };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-    return account;
   };
   /** end */
 

@@ -1,8 +1,3 @@
-export enum INetworkType {
-  Ethereum = 'ethereum',
-  Syscoin = 'syscoin',
-}
-
 export type INetwork = {
   chainId: number;
   url: string;
@@ -13,3 +8,8 @@ export type INetwork = {
   currency?: string;
   explorer?: string;
 };
+
+export enum INetworkType {
+  Ethereum = 'ethereum',
+  Syscoin = 'syscoin',
+}

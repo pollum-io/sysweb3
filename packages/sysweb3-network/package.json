@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-network",
-  "version": "1.0.55",
+  "version": "1.0.64",
   "description": "A network management tool for multi-chain accounts.",
   "main": "cjs/index.js",
   "types": "types/index.d.ts",
@@ -29,9 +29,10 @@
   },
   "dependencies": {
     "@pollum-io/sysweb3-core": "^1.0.18",
-    "@pollum-io/sysweb3-utils": "^1.1.190",
+    "@pollum-io/sysweb3-utils": "^1.1.195",
     "axios": "^0.26.1",
     "bip44-constants": "^114.0.0",
+    "bs58check": "^2.1.2",
     "eth-chains": "^1.0.0",
     "ethers": "^5.6.9",
     "web3": "^1.7.1"

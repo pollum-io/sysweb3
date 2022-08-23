@@ -1,29 +1,18 @@
 import axios from 'axios';
 import bip44Constants from 'bip44-constants';
-import { chain, chains } from 'eth-chains';
+import { Chain, chain, chains } from 'eth-chains';
 import { ethers } from 'ethers';
 
+import { getFormattedBitcoinLikeNetwork } from './networks';
 import { jsonRpcRequest } from './rpc-request';
-import { INetwork } from '@pollum-io/sysweb3-utils';
+import { INetwork, toDecimalFromHex } from '@pollum-io/sysweb3-utils';
 
-export const isValidChainIdForEthNetworks = (chainId: number | string) =>
-  Number.isSafeInteger(chainId) && chainId > 0 && chainId <= 4503599627370476;
-
-export const validateEthRpc = async (
-  chainId: number | string,
-  rpcUrl: string,
-  apiUrl?: string,
-  label?: string
-): Promise<{
-  valid: boolean;
-  formattedNetwork: INetwork;
-  isTestnet: boolean;
-}> => {
-  if (!isValidChainIdForEthNetworks(Number(chainId)))
-    throw new Error('Invalid chain ID for ethereum networks.');
-
+export const validateChainId = (
+  chainId: number | string
+): { valid: boolean; hexChainId: string } => {
   const hexRegEx = /^0x[0-9a-f]+$/iu;
   const chainIdRegEx = /^0x[1-9a-f]+[0-9a-f]*$/iu;
+
   const hexChainId = hexRegEx.test(String(chainId))
     ? String(chainId)
     : ethers.utils.hexlify(chainId);
@@ -33,51 +22,111 @@ export const validateEthRpc = async (
     !chainIdRegEx.test(hexChainId) &&
     hexRegEx.test(hexChainId);
 
-  const chainDetails = typeof chainId === 'number' && chains.getById(chainId);
+  return {
+    valid: !isHexChainIdInvalid,
+    hexChainId,
+  };
+};
 
-  const isChainIdValid = chainDetails && !isHexChainIdInvalid;
+/** eth rpc */
+export const isValidChainIdForEthNetworks = (chainId: number | string) =>
+  Number.isSafeInteger(chainId) && chainId > 0 && chainId <= 4503599627370476;
 
-  if (!isChainIdValid) {
-    throw new Error('RPC has an invalid chain ID');
+export const validateEthRpc = async (
+  url: string
+): Promise<{
+  valid: boolean;
+  hexChainId: string;
+  details: Chain;
+  chain: string;
+}> => {
+  try {
+    const hexChainIdForUrl = await jsonRpcRequest(url, 'eth_chainId');
+
+    if (!hexChainIdForUrl) {
+      throw new Error('Invalid RPC URL. Could not get chain ID for network.');
+    }
+
+    const numberChainId = parseInt(hexChainIdForUrl, 16);
+
+    if (!isValidChainIdForEthNetworks(Number(numberChainId)))
+      throw new Error('Invalid chain ID for ethereum networks.');
+
+    const { valid, hexChainId } = validateChainId(hexChainIdForUrl);
+    const details = chains.getById(numberChainId);
+
+    const isChainIdValid = details && valid;
+
+    if (!isChainIdValid) {
+      throw new Error('RPC has an invalid chain ID');
+    }
+
+    return {
+      details,
+      chain: details.network || 'mainnet',
+      hexChainId,
+      valid,
+    };
+  } catch (error) {
+    throw new Error(error);
   }
+};
 
-  const response = await jsonRpcRequest(rpcUrl, 'eth_chainId');
+export const getEthRpc = async (
+  data: any
+): Promise<{
+  formattedNetwork: INetwork;
+}> => {
+  const { valid, hexChainId, details } = await validateEthRpc(data.url);
+
+  if (!valid) throw new Error('Invalid RPC.');
 
   const ethereumChain = chain.ethereum;
+
   const ethereumExplorer = ethereumChain.mainnet.explorers
     ? ethereumChain.mainnet.explorers[0]
     : '';
 
-  const explorer = chainDetails.explorers
-    ? chainDetails.explorers[0]
-    : ethereumExplorer;
+  const chainIdNumber = toDecimalFromHex(hexChainId);
 
-  const chainIdNumber = parseInt(hexChainId, 16);
+  const explorer = details.explorers ? details.explorers[0] : ethereumExplorer;
 
   const formattedNetwork = {
-    url: rpcUrl,
+    url: data.url,
     default: false,
-    label: label || String(chainDetails.name),
-    apiUrl,
+    label: data.label || String(details.name),
+    apiUrl: data.apiUrl,
     explorer: String(explorer),
-    currency: chainDetails.nativeCurrency.symbol,
+    currency: details.nativeCurrency.symbol,
     chainId: chainIdNumber,
   };
 
   return {
-    valid: Boolean(response),
     formattedNetwork,
-    isTestnet: false,
   };
 };
+/** end */
 
-export const getBip44Chain = (coin: string) => {
-  const isTestnetCoin = coin.includes('Testnet');
+/** bitcoin-like rpc */
+export const getBip44Chain = (coin: string, isTestnet?: boolean) => {
   const bip44Coin = bip44Constants.find(
-    (item: any) => item[2] === (isTestnetCoin ? bip44Constants[1][2] : coin)
+    (item: any) => item[2] === (isTestnet ? bip44Constants[1][2] : coin)
   );
   const coinTypeInDecimal = bip44Coin[0];
   const symbol = bip44Coin[1];
+
+  const { valid, hexChainId } = validateChainId(coinTypeInDecimal);
+
+  const isChainValid = bip44Coin && valid;
+
+  const replacedCoinTypePrefix = hexChainId.replace('0x8', '');
+  const chainId = toDecimalFromHex(replacedCoinTypePrefix);
+
+  if (!isChainValid) {
+    throw new Error(
+      'RPC invalid. Not found in Trezor Blockbook list of RPCS. See https://github.com/satoshilabs/slips/blob/master/slip-0044.md for available networks.'
+    );
+  }
 
   return {
     nativeCurrency: {
@@ -85,53 +134,36 @@ export const getBip44Chain = (coin: string) => {
       symbol: symbol.toString().toLowerCase(),
       decimals: 8,
     },
-    chainId: coinTypeInDecimal,
+    coinType: coinTypeInDecimal,
+    chainId,
   };
 };
 
 export const validateSysRpc = async (
-  rpcUrl: string,
-  label?: string
+  url: string
 ): Promise<{
   valid: boolean;
-  isTestnet: boolean;
   coin: string;
-  formattedNetwork: INetwork;
+  chain: string;
 }> => {
-  const response = await axios.get(`${rpcUrl}/api/v2`);
+  try {
+    const response = await axios.get(`${url}/api/v2`);
 
-  // sig bitcoin network
+    const {
+      blockbook: { coin },
+      backend: { chain },
+    } = response.data;
 
-  const {
-    blockbook: { coin },
-    backend: { chain },
-  } = response.data;
+    const valid = Boolean(response && coin);
 
-  const valid = Boolean(response && coin);
-
-  if (!valid) throw new Error('Invalid RPC URL');
-
-  const { nativeCurrency, chainId } = getBip44Chain(coin);
-
-  const data = {
-    url: rpcUrl,
-    default: false,
-    label: label || String(coin),
-    apiUrl: rpcUrl,
-    explorer: rpcUrl,
-    currency: nativeCurrency.symbol,
-    chainId,
-  };
-
-  const isTestnet = chain === 'test';
-
-  return {
-    valid,
-    isTestnet,
-    coin: String(coin),
-    formattedNetwork: data,
-    ...data,
-  };
+    return {
+      valid,
+      coin,
+      chain,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
 };
 
 export const getBip44NetworkDetails = async (rpcUrl: string) => {
@@ -144,3 +176,35 @@ export const getBip44NetworkDetails = async (rpcUrl: string) => {
     ...details,
   };
 };
+
+export const getSysRpc = async (data: any) => {
+  try {
+    const { valid, coin, chain } = await validateSysRpc(data.url);
+    const { nativeCurrency, chainId } = getBip44Chain(coin, chain === 'test');
+
+    if (!valid) throw new Error('Invalid Trezor Blockbook Explorer URL');
+
+    const formattedBitcoinLikeNetwork = getFormattedBitcoinLikeNetwork(
+      chainId,
+      coin
+    );
+
+    const formattedNetwork = {
+      url: data.url,
+      apiUrl: data.url,
+      explorer: data.url,
+      currency: nativeCurrency.symbol,
+      label: coin,
+      default: false,
+      chainId,
+    };
+
+    return {
+      formattedNetwork,
+      formattedBitcoinLikeNetwork,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+/** end */
