@@ -10,7 +10,6 @@ import sys from 'syscoinjs-lib';
 import { Web3Accounts } from './accounts';
 import { initialWalletState } from './initial-state';
 import { SyscoinTransactions } from './transactions';
-import { TrezorWallet } from './trezor';
 import {
   IKeyringAccountState,
   IWalletState,
@@ -151,7 +150,6 @@ export const KeyringManager = (): IKeyringManager => {
   /** end */
 
   /** controllers */
-  const trezor = TrezorWallet();
   const txs = SyscoinTransactions();
   /** end */
 
@@ -606,6 +604,38 @@ export const KeyringManager = (): IKeyringManager => {
     return vault;
   };
 
+  const createHardwareWallet = async () => {
+    try {
+      const trezorSigner = new sys.utils.TrezorSigner();
+
+      const { _hd, _main } = getSigners();
+
+      await trezorSigner.createAccount();
+
+      const createdAccount = await _getFormattedBackendAccount({
+        url: _main.blockbookURL,
+        xpub: _hd.getAccountXpub(),
+      });
+
+      const address = await _hd.getNewReceivingAddress(true);
+
+      const basicAccountInfo = _getInitialAccountData({
+        label: `Trezor ${_hd.Signer.accountIndex + 1}`,
+        createdAccount: {
+          address,
+          isTrezorWallet: true,
+          ...createdAccount,
+        },
+        xprv: getEncryptedXprv(),
+        signer: _hd,
+      });
+
+      return basicAccountInfo;
+    } catch (error) {
+      throw new Error(error);
+    }
+  };
+
   /** login/logout */
   const login = async (password: string): Promise<IKeyringAccountState> => {
     if (!checkPassword(password)) throw new Error('Invalid password');
@@ -944,7 +974,9 @@ export const KeyringManager = (): IKeyringManager => {
     setActiveAccount,
     setSignerNetwork,
     setWalletPassword,
-    trezor,
+    trezor: {
+      createHardwareWallet,
+    },
     txs,
     validateSeed,
   };

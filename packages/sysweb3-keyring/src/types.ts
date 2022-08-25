@@ -16,9 +16,7 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export interface ITrezorWallet {
-  createWallet: () => Promise<IKeyringAccountState>;
-  forgetWallet: () => void;
-  getAddress: (trezor: any, kdPath: any) => Promise<any>;
+  createHardwareWallet: () => Promise<IKeyringAccountState>;
 }
 
 export interface ISyscoinTransactions {
