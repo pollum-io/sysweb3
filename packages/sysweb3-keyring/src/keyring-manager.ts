@@ -608,29 +608,48 @@ export const KeyringManager = (): IKeyringManager => {
     try {
       const trezorSigner = new sys.utils.TrezorSigner();
 
-      const { _hd, _main } = getSigners();
+      const { _main } = getSigners();
+
+      if (!hd.mnemonic) {
+        const { _hd } = getSigners();
+
+        hd = _hd;
+      }
 
       await trezorSigner.createAccount();
 
       const createdAccount = await _getFormattedBackendAccount({
         url: _main.blockbookURL,
-        xpub: _hd.getAccountXpub(),
+        xpub: hd.getAccountXpub(),
       });
 
-      const address = await _hd.getNewReceivingAddress(true);
+      const address = await hd.getNewReceivingAddress(true);
 
-      const basicAccountInfo = _getInitialAccountData({
-        label: `Trezor ${_hd.Signer.accountIndex + 1}`,
+      const account = _getInitialAccountData({
+        label: `Trezor ${hd.Signer.accountIndex + 1}`,
         createdAccount: {
           address,
           isTrezorWallet: true,
           ...createdAccount,
         },
         xprv: getEncryptedXprv(),
-        signer: _hd,
+        signer: hd,
       });
 
-      return basicAccountInfo;
+      const { wallet: _wallet } = getDecryptedVault();
+
+      wallet = {
+        ..._wallet,
+        accounts: {
+          ..._wallet.accounts,
+          [account.id]: account,
+        },
+        activeAccount: account,
+      };
+
+      setEncryptedVault({ ...getDecryptedVault(), wallet });
+
+      return account;
     } catch (error) {
       throw new Error(error);
     }
