@@ -10,6 +10,7 @@ import sys from 'syscoinjs-lib';
 import { Web3Accounts } from './accounts';
 import { initialWalletState } from './initial-state';
 import { SyscoinTransactions } from './transactions';
+import { initialize } from './trezor';
 import {
   IKeyringAccountState,
   IWalletState,
@@ -606,6 +607,8 @@ export const KeyringManager = (): IKeyringManager => {
 
   const createHardwareWallet = async () => {
     try {
+      await initialize();
+
       const trezorSigner = new sys.utils.TrezorSigner();
 
       const { _main } = getSigners();
