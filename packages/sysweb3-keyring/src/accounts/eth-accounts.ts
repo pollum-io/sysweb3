@@ -428,7 +428,7 @@ export const Web3Accounts = () => {
       to: toAddress,
     });
 
-    return Number(ethers.utils.formatUnits(estimated, 'gwei'));
+    return Number(ethers.utils.formatUnits(estimated, 'gwei')).toFixed(2);
   };
 
   const getData = ({
