@@ -73,7 +73,7 @@ export interface IWeb3Accounts {
     }>;
     sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
     getFeeByType: (type: string) => Promise<string>;
-    getGasLimit: (toAddress: string) => Promise<string>;
+    getGasLimit: (toAddress: string) => Promise<number>;
     getRecommendedGasPrice: (formatted?: boolean) => Promise<
       | string
       | {
