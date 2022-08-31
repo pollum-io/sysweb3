@@ -25,7 +25,67 @@ import {
   INetwork,
 } from '@pollum-io/sysweb3-utils';
 
-export const Web3Accounts = () => {
+interface ISendTransaction {
+  sender: string;
+  receivingAddress: string;
+  amount: number;
+  gasLimit?: number;
+  gasPrice?: number;
+  token?: any;
+}
+
+export interface IWeb3Accounts {
+  createAccount: (privateKey: string) => ethers.Wallet;
+  getBalance: (address: string) => Promise<number>;
+  getErc20TokenBalance: (
+    tokenAddress: string,
+    walletAddress: string
+  ) => Promise<number>;
+  getErc20TokensByAddress: (
+    address: string,
+    isSupported: boolean,
+    apiUrl: string
+  ) => Promise<any[]>;
+  getNftsByAddress: (
+    address: string,
+    isSupported: boolean,
+    apiUrl: string
+  ) => Promise<IEthereumNftDetails[]>;
+  getAssetsByAddress: (
+    address: string,
+    network: INetwork
+  ) => Promise<IEthereumNftDetails[]>;
+  importAccount: (mnemonic: string) => ethers.Wallet;
+  getUserTransactions: (
+    address: string,
+    network: INetwork
+  ) => Promise<TransactionResponse[]>;
+  tx: {
+    getTransactionCount: (address: string) => Promise<number>;
+    signTypedDataV4: (
+      msgParams: object,
+      address: string,
+      url: string
+    ) => Promise<{
+      success: boolean;
+      result: any;
+      recovered: string;
+    }>;
+    sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
+    getFeeByType: (type: string) => Promise<string>;
+    getGasLimit: (toAddress: string) => Promise<string>;
+    getRecommendedGasPrice: (formatted?: boolean) => Promise<
+      | string
+      | {
+          gwei: string;
+          ethers: string;
+        }
+    >;
+    getGasOracle: () => Promise<any>;
+  };
+}
+
+export const Web3Accounts = (): IWeb3Accounts => {
   const storage = sysweb3Di.getStateStorageDb();
 
   const createAccount = (privateKey: string) => new ethers.Wallet(privateKey);
@@ -156,7 +216,7 @@ export const Web3Accounts = () => {
   const getAssetsByAddress = async (
     address: string,
     network: INetwork
-  ): Promise<IEthereumNftDetails[] | []> => {
+  ): Promise<IEthereumNftDetails[]> => {
     const etherscanSupportedNetworks = [
       'homestead',
       'ropsten',
@@ -405,14 +465,14 @@ export const Web3Accounts = () => {
     ethers.BigNumber.from(String(aBigNumberish));
 
   const getFeeByType = async (type: string) => {
-    const gasPrice = await getRecommendedGasPrice(false);
+    const gasPrice = (await getRecommendedGasPrice(false)) as string;
 
-    const low = toBigNumber(String(gasPrice))
+    const low = toBigNumber(gasPrice)
       .mul(ethers.BigNumber.from('8'))
       .div(ethers.BigNumber.from('10'))
       .toString();
 
-    const high = toBigNumber(String(gasPrice))
+    const high = toBigNumber(gasPrice)
       .mul(ethers.BigNumber.from('11'))
       .div(ethers.BigNumber.from('10'))
       .toString();
@@ -428,7 +488,7 @@ export const Web3Accounts = () => {
       to: toAddress,
     });
 
-    return Number(ethers.utils.formatUnits(estimated, 'gwei')).toFixed(2);
+    return Number(ethers.utils.formatUnits(estimated, 'gwei'));
   };
 
   const getData = ({
@@ -476,14 +536,7 @@ export const Web3Accounts = () => {
     amount,
     gasLimit,
     token,
-  }: {
-    sender: string;
-    receivingAddress: string;
-    amount: number;
-    gasLimit?: number;
-    gasPrice?: number;
-    token?: any;
-  }): Promise<TransactionResponse> => {
+  }: ISendTransaction): Promise<TransactionResponse> => {
     const tokenDecimals = token && token.decimals ? token.decimals : 18;
     const decimals = toBigNumber(tokenDecimals);
 
