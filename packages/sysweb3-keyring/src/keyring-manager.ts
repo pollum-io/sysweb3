@@ -80,11 +80,10 @@ export const KeyringManager = (): IKeyringManager => {
   const isUnlocked = () => !!memPassword;
 
   const logout = () => {
-    setEncryptedVault({ ...getDecryptedVault(), lastLogin: Date.now() });
-
     hd = new sys.utils.HDSigner('');
 
     memPassword = '';
+    memMnemonic = '';
   };
 
   const checkPassword = (pwd: string) => {
@@ -151,12 +150,15 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const _clearTemporaryLocalKeys = () => {
-    storage.deleteItem('vault');
-    storage.deleteItem('vault-keys');
+    wallet = initialWalletState;
+
+    setEncryptedVault({
+      mnemonic: '',
+      wallet,
+      network: wallet.activeNetwork,
+    });
 
     logout();
-
-    memMnemonic = '';
   };
 
   const _updateUnlocked = () => {
