@@ -275,7 +275,6 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     confirmations: number;
     guid: string;
   }> => {
-    const { network } = getDecryptedVault();
     const { _hd, _main } = getSigners();
 
     const { precision, initialSupply, maxsupply, fee, receiver } =
@@ -296,7 +295,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
 
     const txid = pendingTransaction.extractTransaction().getId();
 
-    const transactionData = await getRawTransaction(network.url, txid);
+    const transactionData = await getRawTransaction(_main.blockbookURL, txid);
     const assets = syscointx.getAssetsFromTx(
       pendingTransaction.extractTransaction()
     );
