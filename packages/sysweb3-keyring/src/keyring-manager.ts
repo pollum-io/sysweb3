@@ -10,7 +10,7 @@ import sys from 'syscoinjs-lib';
 import { Web3Accounts } from './accounts';
 import { initialWalletState } from './initial-state';
 import { SyscoinTransactions } from './transactions';
-import { TrezorWallet } from './trezor';
+import { initialize } from './trezor';
 import {
   IKeyringAccountState,
   IWalletState,
@@ -34,7 +34,6 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export const KeyringManager = (): IKeyringManager => {
-  /** keys */
   const web3Wallet = Web3Accounts();
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
@@ -42,6 +41,7 @@ export const KeyringManager = (): IKeyringManager => {
 
   let hd: SyscoinHDSigner = new sys.utils.HDSigner('');
   let memMnemonic = '';
+  let memPassword = '';
 
   const getSalt = () => crypto.randomBytes(16).toString('hex');
 
@@ -64,37 +64,28 @@ export const KeyringManager = (): IKeyringManager => {
 
     storage.set('vault-keys', { hash, salt: passwordSalt });
 
-    _clearWallet();
+    memPassword = hash;
+
+    wallet = initialWalletState;
 
     if (memMnemonic) {
       setEncryptedVault({
-        ...getDecryptedVault(),
+        wallet,
+        network: wallet.activeNetwork,
         mnemonic: CryptoJS.AES.encrypt(memMnemonic, hash).toString(),
       });
     }
   };
 
-  const isUnlocked = () => {
-    const isStorageSet =
-      storage && storage.get('vault-keys') && storage.get('vault-keys').hash;
-
-    if (isStorageSet && getDecryptedVault()) {
-      const { lastLogin } = getDecryptedVault();
-
-      return lastLogin === 0 || !lastLogin;
-    }
-
-    return false;
-  };
+  const isUnlocked = () => !!memPassword;
 
   const logout = () => {
-    setEncryptedVault({ ...getDecryptedVault(), lastLogin: Date.now() });
-
     hd = new sys.utils.HDSigner('');
-  };
-  /** end */
 
-  /** validations */
+    memPassword = '';
+    memMnemonic = '';
+  };
+
   const checkPassword = (pwd: string) => {
     const { hash, salt } = storage.get('vault-keys');
 
@@ -102,9 +93,7 @@ export const KeyringManager = (): IKeyringManager => {
 
     return hashPassword.hash === hash;
   };
-  /** end */
 
-  /** seeds */
   const getEncryptedMnemonic = () => getDecryptedVault().mnemonic;
 
   const getDecryptedMnemonic = () => {
@@ -119,9 +108,7 @@ export const KeyringManager = (): IKeyringManager => {
 
     return getDecryptedMnemonic();
   };
-  /** end */
 
-  /** state */
   const getState = () => wallet;
   const getNetwork = () => wallet.activeNetwork;
   const getAccounts = () => Object.values(wallet.accounts);
@@ -148,14 +135,8 @@ export const KeyringManager = (): IKeyringManager => {
     return account;
   };
 
-  /** end */
-
-  /** controllers */
-  const trezor = TrezorWallet();
   const txs = SyscoinTransactions();
-  /** end */
 
-  /** private */
   const _clearWallet = () => {
     wallet = initialWalletState;
 
@@ -169,12 +150,15 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const _clearTemporaryLocalKeys = () => {
-    storage.deleteItem('vault');
-    storage.deleteItem('vault-keys');
+    wallet = initialWalletState;
+
+    setEncryptedVault({
+      mnemonic: '',
+      wallet,
+      network: wallet.activeNetwork,
+    });
 
     logout();
-
-    memMnemonic = '';
   };
 
   const _updateUnlocked = () => {
@@ -205,6 +189,8 @@ export const KeyringManager = (): IKeyringManager => {
       salt: _salt,
     });
 
+    memPassword = hash;
+
     setEncryptedVault({
       ...vault,
       wallet: vault.wallet,
@@ -214,11 +200,6 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const _createMainWallet = async (): Promise<IKeyringAccountState> => {
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      network: wallet.activeNetwork,
-    });
-
     const { _hd } = getSigners();
 
     hd = _hd;
@@ -568,9 +549,7 @@ export const KeyringManager = (): IKeyringManager => {
       ...formattedBackendAccount,
     };
   };
-  /** end */
 
-  /** keyring */
   const createSeed = () => {
     const { hash } = storage.get('vault-keys');
 
@@ -588,7 +567,13 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const createKeyringVault = async (): Promise<IKeyringAccountState> => {
-    _clearWallet();
+    wallet = initialWalletState;
+
+    setEncryptedVault({
+      ...getDecryptedVault(),
+      wallet,
+      network: wallet.activeNetwork,
+    });
 
     const vault = await _createMainWallet();
 
@@ -606,7 +591,59 @@ export const KeyringManager = (): IKeyringManager => {
     return vault;
   };
 
-  /** login/logout */
+  const createHardwareWallet = async () => {
+    try {
+      await initialize();
+
+      const trezorSigner = new sys.utils.TrezorSigner();
+
+      const { _main } = getSigners();
+
+      if (!hd.mnemonic) {
+        const { _hd } = getSigners();
+
+        hd = _hd;
+      }
+
+      await trezorSigner.createAccount();
+
+      const createdAccount = await _getFormattedBackendAccount({
+        url: _main.blockbookURL,
+        xpub: hd.getAccountXpub(),
+      });
+
+      const address = await hd.getNewReceivingAddress(true);
+
+      const account = _getInitialAccountData({
+        label: `Trezor ${hd.Signer.accountIndex + 1}`,
+        createdAccount: {
+          address,
+          isTrezorWallet: true,
+          ...createdAccount,
+        },
+        xprv: getEncryptedXprv(),
+        signer: hd,
+      });
+
+      const { wallet: _wallet } = getDecryptedVault();
+
+      wallet = {
+        ..._wallet,
+        accounts: {
+          ..._wallet.accounts,
+          [account.id]: account,
+        },
+        activeAccount: account,
+      };
+
+      setEncryptedVault({ ...getDecryptedVault(), wallet });
+
+      return account;
+    } catch (error) {
+      throw new Error(error);
+    }
+  };
+
   const login = async (password: string): Promise<IKeyringAccountState> => {
     if (!checkPassword(password)) throw new Error('Invalid password');
 
@@ -622,7 +659,6 @@ export const KeyringManager = (): IKeyringManager => {
 
     return wallet.activeAccount;
   };
-  /** end */
 
   const removeAccount = (accountId: number) => {
     delete wallet.accounts[accountId];
@@ -684,9 +720,7 @@ export const KeyringManager = (): IKeyringManager => {
       walleAccountstLatestUpdate: _updatedWallet.accounts,
     };
   };
-  /** end */
 
-  /** networks */
   const _setSignerByChain = async (
     network: INetwork,
     chain: string
@@ -785,9 +819,7 @@ export const KeyringManager = (): IKeyringManager => {
       throw new Error(error);
     }
   };
-  /** end */
 
-  /** accounts */
   const addAccountToSigner = (accountId: number) => {
     if (accountId === 0) return;
     if (hd.Signer.accounts[accountId]) return;
@@ -802,7 +834,6 @@ export const KeyringManager = (): IKeyringManager => {
 
     hd.Signer.accounts.push(derivedAccount);
   };
-  /** end */
 
   const addNewAccount = async (label?: string) => {
     const { network, mnemonic } = getDecryptedVault();
@@ -944,7 +975,9 @@ export const KeyringManager = (): IKeyringManager => {
     setActiveAccount,
     setSignerNetwork,
     setWalletPassword,
-    trezor,
+    trezor: {
+      createHardwareWallet,
+    },
     txs,
     validateSeed,
   };

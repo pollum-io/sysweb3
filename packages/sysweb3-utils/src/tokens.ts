@@ -542,7 +542,7 @@ export const validateToken = async (
   }
 };
 
-export const getTokenJson = () => tokens;
+export const getTokenJson = (): any => tokens;
 
 export const getAsset = async (
   explorerUrl: string,
