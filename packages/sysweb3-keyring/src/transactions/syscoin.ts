@@ -275,7 +275,6 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     confirmations: number;
     guid: string;
   }> => {
-    const { network } = getDecryptedVault();
     const { _hd, _main } = getSigners();
 
     const { precision, initialSupply, maxsupply, fee, receiver } =
@@ -296,7 +295,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
 
     const txid = pendingTransaction.extractTransaction().getId();
 
-    const transactionData = await getRawTransaction(network.url, txid);
+    const transactionData = await getRawTransaction(_main.blockbookURL, txid);
     const assets = syscointx.getAssetsFromTx(
       pendingTransaction.extractTransaction()
     );
@@ -586,10 +585,10 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
 
   const signTransaction = async (
     data: { psbt: string; assets: string },
-    isSendOnly: boolean,
-    isTrezor?: boolean
+    isSendOnly: boolean
   ): Promise<any> => {
-    const { _main } = getSigners();
+    // get trezor signer as well
+    const { _hd } = getSigners();
 
     if (!isBase64(data.psbt) || typeof data.assets !== 'string') {
       throw new Error(
@@ -600,21 +599,17 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     try {
       const response = sys.utils.importPsbtFromJson(data);
 
-      const trezorSigner = new sys.utils.TrezorSigner();
-
-      new sys.SyscoinJSLib(trezorSigner, _main.blockbookURL);
-
       if (isSendOnly) {
         return await _sendSignedPsbt({
           psbt: response.psbt,
-          signer: isTrezor ? trezorSigner : _main,
+          signer: _hd,
         });
       }
 
       return await _signAndSendPsbt({
         psbt: response.psbt,
         assets: response.assets,
-        signer: isTrezor ? trezorSigner : null,
+        signer: _hd,
       });
     } catch (error) {
       throw new Error('Bad Request: Could not create transaction.');
