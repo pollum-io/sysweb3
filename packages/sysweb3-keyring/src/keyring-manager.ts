@@ -551,28 +551,25 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const createSeed = () => {
-    const { hash } = storage.get('vault-keys');
+    memMnemonic = generateMnemonic();
 
-    const encryptedMnemonic = CryptoJS.AES.encrypt(
-      generateMnemonic(),
-      hash
-    ).toString();
-
-    const vault = getDecryptedVault();
-
-    if (!vault.mnemonic)
-      setEncryptedVault({ ...vault, mnemonic: encryptedMnemonic });
-
-    return getDecryptedMnemonic();
+    return memMnemonic;
   };
 
   const createKeyringVault = async (): Promise<IKeyringAccountState> => {
     wallet = initialWalletState;
 
+    const { hash } = storage.get('vault-keys');
+    const encryptedMnemonic = CryptoJS.AES.encrypt(
+      memMnemonic,
+      hash
+    ).toString();
+
     setEncryptedVault({
       ...getDecryptedVault(),
       wallet,
       network: wallet.activeNetwork,
+      mnemonic: encryptedMnemonic,
     });
 
     const vault = await _createMainWallet();
