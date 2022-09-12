@@ -1,19 +1,19 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
+import {
+  TypedDataDomain,
+  TypedDataField,
+} from '@ethersproject/abstract-signer';
 import axios from 'axios';
 import CryptoJS from 'crypto-js';
 import { Chain, chains } from 'eth-chains';
-import { recoverTypedSignature_v4 as recoverTypedSignatureV4 } from 'eth-sig-util';
-import { toChecksumAddress } from 'ethereumjs-util';
+// import { recoverTypedSignature_v4 as recoverTypedSignatureV4 } from 'eth-sig-util';
+// import { toChecksumAddress } from 'ethereumjs-util';
 import { ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import _ from 'lodash';
 
 import { sysweb3Di } from '@pollum-io/sysweb3-core';
-import {
-  jsonRpcRequest,
-  setActiveNetwork,
-  web3Provider,
-} from '@pollum-io/sysweb3-network';
+import { setActiveNetwork, web3Provider } from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
   getDecryptedVault,
@@ -63,17 +63,22 @@ export interface IWeb3Accounts {
   tx: {
     getTransactionCount: (address: string) => Promise<number>;
     signTypedDataV4: (
-      msgParams: object,
-      address: string,
-      url: string
-    ) => Promise<{
+      msgParams: {
+        domain: TypedDataDomain;
+        types: Record<string, Array<TypedDataField>>;
+        value: Record<string, any>;
+      }
+      // address: string,
+      // url: string
+    ) => Promise<string>;
+    /* ) => Promise<{
       success: boolean;
       result: any;
       recovered: string;
-    }>;
+    }>; */
     sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
     getFeeByType: (type: string) => Promise<string>;
-    getGasLimit: (toAddress: string) => Promise<string>;
+    getGasLimit: (toAddress: string) => Promise<number>;
     getRecommendedGasPrice: (formatted?: boolean) => Promise<
       | string
       | {
@@ -419,25 +424,49 @@ export const Web3Accounts = (): IWeb3Accounts => {
   const getTransactionCount = async (address: string) =>
     await web3Provider.getTransactionCount(address);
 
-  const signTypedDataV4 = async (
-    msgParams: object,
-    address: string,
-    url: string
-  ) => {
-    const msg = JSON.stringify(msgParams);
-    const params = [address, msg];
+  const _createEthersWallet = (): ethers.Wallet => {
+    const { wallet: _wallet } = getDecryptedVault();
+    const { hash } = storage.get('vault-keys');
 
-    const { error, result } = await jsonRpcRequest(
+    const accountXprv = _wallet.activeAccount.xprv;
+
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      hash
+    ).toString(CryptoJS.enc.Utf8);
+
+    return new ethers.Wallet(decryptedPrivateKey, web3Provider);
+  };
+
+  const signTypedDataV4 = async (
+    msgParams: {
+      domain: TypedDataDomain;
+      types: Record<string, Array<TypedDataField>>;
+      value: Record<string, any>;
+    }
+    // address: string,
+    // url: string
+  ) => {
+    // const msg = JSON.stringify(msgParams);
+    // const params = [address, msg];
+
+    /* const { error, result } = await jsonRpcRequest(
       url,
       'ethSignTypedDataV4',
       // @ts-ignore
       params
     );
 
-    if (error) throw new Error(error);
+    if (error) throw new Error(error); */
 
-    const recovered = recoverTypedSignatureV4({
-      data: JSON.parse(msg),
+    const { domain, types, value } = msgParams;
+    const wallet = _createEthersWallet();
+    const result = await wallet._signTypedData(domain, types, value);
+
+    return result;
+
+    /* const recovered = recoverTypedSignatureV4({
+      data: msgParams,
       sig: result,
     });
 
@@ -445,7 +474,7 @@ export const Web3Accounts = (): IWeb3Accounts => {
       success: toChecksumAddress(recovered) === toChecksumAddress(address),
       result,
       recovered,
-    };
+    }; */
   };
 
   const getRecommendedGasPrice = async (formatted?: boolean) => {
