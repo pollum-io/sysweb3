@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-keyring",
-  "version": "1.0.407",
+  "version": "1.0.409",
   "description": "",
   "main": "cjs/index.js",
   "types": "types/index.d.ts",
