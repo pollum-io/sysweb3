@@ -7,9 +7,8 @@ import CryptoJS from 'crypto-js';
 import { hdkey } from 'ethereumjs-wallet';
 import sys from 'syscoinjs-lib';
 
-import { Web3Accounts } from './accounts';
+import { Web3Accounts } from './eth-manager';
 import { initialWalletState } from './initial-state';
-import { SyscoinTransactions } from './transactions';
 import { initialize } from './trezor';
 import {
   IKeyringAccountState,
@@ -134,8 +133,6 @@ export const KeyringManager = (): IKeyringManager => {
 
     return account;
   };
-
-  const txs = SyscoinTransactions();
 
   const _clearWallet = () => {
     wallet = initialWalletState;
@@ -975,7 +972,6 @@ export const KeyringManager = (): IKeyringManager => {
     trezor: {
       createHardwareWallet,
     },
-    txs,
     validateSeed,
   };
 };

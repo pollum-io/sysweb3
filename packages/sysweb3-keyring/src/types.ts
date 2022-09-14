@@ -1,3 +1,6 @@
+import { TransactionResponse } from '@ethersproject/abstract-provider';
+import ethUtil from 'ethereumjs-util';
+import { TypedData } from 'ethers-eip712';
 import {
   EncryptedKeystoreV3Json,
   Sign,
@@ -17,6 +20,34 @@ import {
 
 export interface ITrezorWallet {
   createHardwareWallet: () => Promise<IKeyringAccountState>;
+}
+
+export interface ISendTransaction {
+  sender: string;
+  receivingAddress: string;
+  amount: number;
+  gasLimit?: number;
+  gasPrice?: number;
+  token?: any;
+}
+
+export interface IEthereumTransactions {
+  getTransactionCount: (address: string) => Promise<number>;
+  signTypedDataV4: (typedData: TypedData) => Promise<{
+    address: Buffer;
+    signature: ethUtil.ECDSASignature;
+  }>;
+  sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
+  getFeeByType: (type: string) => Promise<string>;
+  getGasLimit: (toAddress: string) => Promise<number>;
+  getRecommendedGasPrice: (formatted?: boolean) => Promise<
+    | string
+    | {
+        gwei: string;
+        ethers: string;
+      }
+  >;
+  getGasOracle: () => Promise<any>;
 }
 
 export interface ISyscoinTransactions {
@@ -70,7 +101,6 @@ export interface IKeyringManager {
   ) => Promise<IKeyringAccountState>;
   setWalletPassword: (password: string) => void;
   trezor: ITrezorWallet;
-  txs: ISyscoinTransactions;
   validateSeed: (seed: string) => boolean;
 }
 
