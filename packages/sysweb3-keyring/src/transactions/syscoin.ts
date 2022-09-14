@@ -491,7 +491,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
   const confirmNftCreation = async (
     temporaryTransaction: INewNFT
   ): Promise<ITxid> => {
-    const { network } = getDecryptedVault();
+    const { _main } = getSigners();
 
     const { fee, symbol, description, receivingAddress, precision } =
       temporaryTransaction;
@@ -510,11 +510,13 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     if (parentToken.guid) {
       try {
         return await new Promise((resolve) => {
-          const interval = setInterval(async () => {
+          let interval = setInterval(async () => {
             const parentTokenTransaction = await getRawTransaction(
-              network.url,
+              _main.blockbookURL,
               parentToken.txid
             );
+
+            if (parentTokenTransaction.confirmations <= 0) return;
 
             const txid = await _mintParentToken({
               parentTokenTransaction,
@@ -524,18 +526,20 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
               feeRate,
             });
 
-            const parentTokenMintTransaction = await getRawTransaction(
-              network.url,
-              txid
-            );
+            clearInterval(interval);
 
-            if (!parentTokenMintTransaction) {
-              throw new Error(
-                'Bad Request: Transaction not indexed on explorer yet.'
+            interval = setInterval(async () => {
+              const parentTokenMintTransaction = await getRawTransaction(
+                _main.blockbookURL,
+                txid
               );
-            }
 
-            if (parentTokenMintTransaction.confirmations > 1) {
+              if (parentTokenMintTransaction.confirmations <= 0) {
+                throw new Error(
+                  'Bad Request: Transaction not indexed on explorer yet.'
+                );
+              }
+
               const pendingTransaction = await _updateParentToken({
                 parentToken,
                 receivingAddress,
@@ -546,9 +550,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
               resolve({
                 txid: pendingTransaction.extractTransaction().getId(),
               });
-            }
-
-            return { txid: '' };
+            }, 16000);
           }, 16000);
         });
       } catch (error) {
