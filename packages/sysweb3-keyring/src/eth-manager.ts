@@ -2,9 +2,9 @@ import { TransactionResponse } from '@ethersproject/abstract-provider';
 import axios from 'axios';
 import { Chain, chains } from 'eth-chains';
 import { ethers } from 'ethers';
-import { getFormattedTransactionResponse } from 'format';
 import _ from 'lodash';
 
+import { getFormattedTransactionResponse } from './format';
 import { setActiveNetwork, web3Provider } from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
