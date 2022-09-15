@@ -547,16 +547,29 @@ export const getTokenJson = (): any => tokens;
 export const getAsset = async (
   explorerUrl: string,
   assetGuid: string
-): Promise<{
-  assetGuid: string;
-  contract: string;
-  decimals: number;
-  maxSupply: string;
-  pubData: any;
-  symbol: string;
-  totalSupply: string;
-  updateCapabilityFlags: number;
-}> => sys.utils.fetchBackendAsset(explorerUrl, assetGuid);
+): Promise<
+  | {
+      assetGuid: string;
+      contract: string;
+      decimals: number;
+      maxSupply: string;
+      pubData: any;
+      symbol: string;
+      totalSupply: string;
+      updateCapabilityFlags: number;
+    }
+  | undefined
+> => {
+  try {
+    const asset = await sys.utils.fetchBackendAsset(explorerUrl, assetGuid);
+
+    if (!asset) throw new Error(`Asset with guid ${assetGuid} not found`);
+
+    return asset;
+  } catch (error) {
+    return;
+  }
+};
 
 export const countDecimals = (x: number) => {
   if (Math.floor(x) === x) return 0;

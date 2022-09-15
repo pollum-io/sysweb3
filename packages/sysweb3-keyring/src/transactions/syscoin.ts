@@ -329,7 +329,12 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    const { decimals } = await getAsset(_main.blockbookURL, assetGuid);
+    const token = await getAsset(_main.blockbookURL, assetGuid);
+
+    if (!token)
+      throw new Error(
+        'Bad Request: Could not create transaction. Token not found.'
+      );
 
     const receivingAddress = await _hd.getNewReceivingAddress(true);
     const txOptions = { rbf: true };
@@ -337,7 +342,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     const tokenMap = getTokenMap({
       guid: assetGuid,
       changeAddress: await _hd.getNewChangeAddress(true),
-      amount: new sys.utils.BN(amount * 10 ** decimals),
+      amount: new sys.utils.BN(amount * 10 ** token.decimals),
       receivingAddress,
     });
 
@@ -401,65 +406,15 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     };
   };
 
-  const _mintParentToken = async ({
-    parentTokenTransaction,
-    parentToken,
-    precision,
-    receivingAddress,
-    feeRate,
-  }: {
-    // todo: create types
-    parentTokenTransaction: any;
-    parentToken: any;
-    precision: number;
-    receivingAddress: string;
-    feeRate: number;
-  }) => {
+  const _nftCreationStep3 = async (
+    tx: INewNFT,
+    guid: string
+  ): Promise<ITxid> => {
     const { _main } = getSigners();
 
-    if (parentTokenTransaction.confirmations >= 1) {
-      const tokenMap = getTokenMap({
-        guid: parentToken.guid,
-        changeAddress: '',
-        amount: new sys.utils.BN(1 * 10 ** precision),
-        receivingAddress,
-      });
-
-      try {
-        const txOptions = { rbf: true };
-        const pendingTransaction = await _main.assetSend(
-          txOptions,
-          tokenMap,
-          null,
-          feeRate
-        );
-
-        if (!pendingTransaction) {
-          throw new Error(
-            'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-          );
-        }
-
-        const txid = pendingTransaction.extractTransaction().getId();
-
-        return txid;
-      } catch (error: any) {
-        throw new Error(error);
-      }
-    }
-  };
-
-  const _updateParentToken = async ({
-    parentToken,
-    receivingAddress,
-  }: {
-    parentToken: any;
-    receivingAddress: string;
-  }) => {
-    const { _main } = getSigners();
+    const { receivingAddress } = tx;
 
     const feeRate = new sys.utils.BN(10);
-    const guid = parentToken.guid;
     const tokenOptions = { updatecapabilityflags: '0' };
     const txOptions = { rbf: true };
 
@@ -470,7 +425,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
       receivingAddress,
     });
 
-    const txid = await _main.assetUpdate(
+    const pendingTransaction = await _main.assetUpdate(
       guid,
       tokenOptions,
       txOptions,
@@ -479,22 +434,87 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
       feeRate
     );
 
-    if (!txid) {
+    if (!pendingTransaction) {
       throw new Error(
-        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+        'Bad Request: Could not update minted token. Invalid or incorrect data provided.'
       );
     }
 
-    return txid;
+    const txid = pendingTransaction.extractTransaction().getId();
+
+    return await new Promise((resolve, reject) => {
+      const interval = setInterval(async () => {
+        try {
+          const updateTx = await getRawTransaction(_main.blockbookURL, txid);
+
+          if (updateTx.confirmations <= 0) return;
+
+          clearInterval(interval);
+
+          return resolve({ txid });
+        } catch (error) {
+          reject(error);
+        }
+      }, 16000);
+    });
   };
 
-  const confirmNftCreation = async (
-    temporaryTransaction: INewNFT
+  const _nftCreationStep2 = async (
+    tx: INewNFT,
+    guid: string
   ): Promise<ITxid> => {
     const { _main } = getSigners();
 
-    const { fee, symbol, description, receivingAddress, precision } =
-      temporaryTransaction;
+    const { receivingAddress, precision, fee } = tx;
+
+    const feeRate = new sys.utils.BN(fee * 1e8);
+
+    const tokenMap = getTokenMap({
+      guid,
+      changeAddress: '',
+      amount: new sys.utils.BN(1 * 10 ** precision),
+      receivingAddress,
+    });
+
+    const txOptions = { rbf: true };
+    const pendingTransaction = await _main.assetSend(
+      txOptions,
+      tokenMap,
+      null,
+      feeRate
+    );
+
+    if (!pendingTransaction) {
+      throw new Error(
+        `Bad Request: Could not mint token ${guid}. Invalid or incorrect data provided.`
+      );
+    }
+
+    const txid = pendingTransaction.extractTransaction().getId();
+
+    return await new Promise((resolve, reject) => {
+      const interval = setInterval(async () => {
+        try {
+          const mintTx = await getRawTransaction(_main.blockbookURL, txid);
+
+          if (mintTx.confirmations <= 0) return;
+
+          clearInterval(interval);
+
+          return resolve({ txid });
+        } catch (error) {
+          reject(error);
+        }
+      }, 16000);
+    });
+  };
+
+  const _nftCreationStep1 = async (
+    tx: INewNFT
+  ): Promise<{ parent: { guid: string; txid: string } }> => {
+    const { _main } = getSigners();
+
+    const { fee, symbol, description, precision } = tx;
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
@@ -507,59 +527,31 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
 
     const parentToken = await _createParentToken({ tokenOptions, feeRate });
 
-    if (parentToken.guid) {
-      try {
-        return await new Promise((resolve) => {
-          let interval = setInterval(async () => {
-            const parentTokenTransaction = await getRawTransaction(
-              _main.blockbookURL,
-              parentToken.txid
-            );
+    return await new Promise((resolve, reject) => {
+      const interval = setInterval(async () => {
+        try {
+          const creationTx = await getRawTransaction(
+            _main.blockbookURL,
+            parentToken.txid
+          );
 
-            if (parentTokenTransaction.confirmations <= 0) return;
+          if (creationTx.confirmations <= 0) return;
 
-            const txid = await _mintParentToken({
-              parentTokenTransaction,
-              parentToken,
-              precision,
-              receivingAddress,
-              feeRate,
-            });
+          clearInterval(interval);
 
-            clearInterval(interval);
-
-            interval = setInterval(async () => {
-              const parentTokenMintTransaction = await getRawTransaction(
-                _main.blockbookURL,
-                txid
-              );
-
-              if (parentTokenMintTransaction.confirmations <= 0) {
-                throw new Error(
-                  'Bad Request: Transaction not indexed on explorer yet.'
-                );
-              }
-
-              const pendingTransaction = await _updateParentToken({
-                parentToken,
-                receivingAddress,
-              });
-
-              clearInterval(interval);
-
-              resolve({
-                txid: pendingTransaction.extractTransaction().getId(),
-              });
-            }, 16000);
-          }, 16000);
-        });
-      } catch (error) {
-        throw new Error('Bad Request: Could not create transaction.');
-      }
-    }
-
-    throw new Error('Bad Request: Could not create transaction.');
+          return resolve({ parent: parentToken });
+        } catch (error) {
+          reject(error);
+        }
+      }, 16000);
+    });
   };
+
+  const confirmNftCreation = () => ({
+    create: _nftCreationStep1,
+    mint: _nftCreationStep2,
+    update: _nftCreationStep3,
+  });
 
   const _sendSignedPsbt = async ({
     psbt,
@@ -666,12 +658,20 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     const { _main } = getSigners();
 
     const { amount, rbf, receivingAddress, fee, token } = temporaryTransaction;
-    const { decimals } = await getAsset(_main.blockbookURL, token);
+
+    const asset = await getAsset(_main.blockbookURL, token);
+
+    if (!asset)
+      throw new Error(
+        'Bad Request: Could not create transaction. Token not found.'
+      );
 
     const txOptions = { rbf };
     const value = new sys.utils.BN(amount * 10 ** 8);
     const valueDecimals = countDecimals(amount);
     const feeRate = new sys.utils.BN(fee * 1e8);
+
+    const { decimals } = asset;
 
     if (valueDecimals > decimals) {
       throw new Error(
@@ -787,14 +787,21 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
 
     const { fee, amount, assetGuid }: any = temporaryTransaction;
 
-    const { decimals } = await getAsset(_main.blockbookURL, assetGuid);
+    const token = await getAsset(_main.blockbookURL, assetGuid);
+
+    if (!token) {
+      throw new Error(
+        'Bad Request: Could not create transaction. NFT not found.'
+      );
+    }
+
     const feeRate = new sys.utils.BN(fee * 1e8);
     const txOptions = { rbf: true };
 
     const tokenMap = getTokenMap({
       guid: assetGuid,
       changeAddress: await _hd.getNewChangeAddress(true),
-      amount: new sys.utils.BN(amount * 10 ** decimals),
+      amount: new sys.utils.BN(amount * 10 ** token.decimals),
       receivingAddress: await _hd.getNewReceivingAddress(true),
     });
 
