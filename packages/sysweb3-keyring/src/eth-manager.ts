@@ -1,22 +1,13 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import axios from 'axios';
-import CryptoJS from 'crypto-js';
 import { Chain, chains } from 'eth-chains';
-import { recoverTypedSignature_v4 as recoverTypedSignatureV4 } from 'eth-sig-util';
-import { toChecksumAddress } from 'ethereumjs-util';
 import { ethers } from 'ethers';
-import { Deferrable } from 'ethers/lib/utils';
 import _ from 'lodash';
 
-import { sysweb3Di } from '@pollum-io/sysweb3-core';
-import {
-  jsonRpcRequest,
-  setActiveNetwork,
-  web3Provider,
-} from '@pollum-io/sysweb3-network';
+import { getFormattedTransactionResponse } from './format';
+import { setActiveNetwork, web3Provider } from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
-  getDecryptedVault,
   getErc20Abi,
   getNftStandardMetadata,
   getTokenStandardMetadata,
@@ -24,15 +15,6 @@ import {
   IEtherscanNFT,
   INetwork,
 } from '@pollum-io/sysweb3-utils';
-
-interface ISendTransaction {
-  sender: string;
-  receivingAddress: string;
-  amount: number;
-  gasLimit?: number;
-  gasPrice?: number;
-  token?: any;
-}
 
 export interface IWeb3Accounts {
   createAccount: (privateKey: string) => ethers.Wallet;
@@ -60,34 +42,9 @@ export interface IWeb3Accounts {
     address: string,
     network: INetwork
   ) => Promise<TransactionResponse[]>;
-  tx: {
-    getTransactionCount: (address: string) => Promise<number>;
-    signTypedDataV4: (
-      msgParams: object,
-      address: string,
-      url: string
-    ) => Promise<{
-      success: boolean;
-      result: any;
-      recovered: string;
-    }>;
-    sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
-    getFeeByType: (type: string) => Promise<string>;
-    getGasLimit: (toAddress: string) => Promise<number>;
-    getRecommendedGasPrice: (formatted?: boolean) => Promise<
-      | string
-      | {
-          gwei: string;
-          ethers: string;
-        }
-    >;
-    getGasOracle: () => Promise<any>;
-  };
 }
 
 export const Web3Accounts = (): IWeb3Accounts => {
-  const storage = sysweb3Di.getStateStorageDb();
-
   const createAccount = (privateKey: string) => new ethers.Wallet(privateKey);
 
   const getBalance = async (address: string): Promise<number> => {
@@ -338,22 +295,6 @@ export const Web3Accounts = (): IWeb3Accounts => {
     return pendingTransactions;
   };
 
-  const getFormattedTransactionResponse = async (
-    provider:
-      | ethers.providers.EtherscanProvider
-      | ethers.providers.JsonRpcProvider,
-    transaction: TransactionResponse
-  ) => {
-    const tx = await provider.getTransaction(transaction.hash);
-
-    const { timestamp } = await provider.getBlock(Number(tx.blockNumber));
-
-    return {
-      ...tx,
-      timestamp,
-    };
-  };
-
   const getUserTransactions = async (
     address: string,
     network: INetwork
@@ -416,205 +357,6 @@ export const Web3Accounts = (): IWeb3Accounts => {
     }
   };
 
-  const getTransactionCount = async (address: string) =>
-    await web3Provider.getTransactionCount(address);
-
-  const signTypedDataV4 = async (
-    msgParams: object,
-    address: string,
-    url: string
-  ) => {
-    const msg = JSON.stringify(msgParams);
-    const params = [address, msg];
-
-    const { error, result } = await jsonRpcRequest(
-      url,
-      'ethSignTypedDataV4',
-      // @ts-ignore
-      params
-    );
-
-    if (error) throw new Error(error);
-
-    const recovered = recoverTypedSignatureV4({
-      data: JSON.parse(msg),
-      sig: result,
-    });
-
-    return {
-      success: toChecksumAddress(recovered) === toChecksumAddress(address),
-      result,
-      recovered,
-    };
-  };
-
-  const getRecommendedGasPrice = async (formatted?: boolean) => {
-    const gasPriceBN = await web3Provider.getGasPrice();
-
-    if (formatted) {
-      return {
-        gwei: Number(ethers.utils.formatUnits(gasPriceBN, 'gwei')).toFixed(2),
-        ethers: ethers.utils.formatEther(gasPriceBN),
-      };
-    }
-
-    return gasPriceBN.toString();
-  };
-
-  const toBigNumber = (aBigNumberish: string | number) =>
-    ethers.BigNumber.from(String(aBigNumberish));
-
-  const getFeeByType = async (type: string) => {
-    const gasPrice = (await getRecommendedGasPrice(false)) as string;
-
-    const low = toBigNumber(gasPrice)
-      .mul(ethers.BigNumber.from('8'))
-      .div(ethers.BigNumber.from('10'))
-      .toString();
-
-    const high = toBigNumber(gasPrice)
-      .mul(ethers.BigNumber.from('11'))
-      .div(ethers.BigNumber.from('10'))
-      .toString();
-
-    if (type === 'low') return low;
-    if (type === 'high') return high;
-
-    return gasPrice;
-  };
-
-  const getGasLimit = async (toAddress: string) => {
-    const estimated = await web3Provider.estimateGas({
-      to: toAddress,
-    });
-
-    return Number(ethers.utils.formatUnits(estimated, 'gwei'));
-  };
-
-  const getData = ({
-    contractAddress,
-    receivingAddress,
-    value,
-  }: {
-    contractAddress: string;
-    receivingAddress: string;
-    value: any;
-  }) => {
-    const abi = getErc20Abi() as any;
-    const contract = createContractUsingAbi(abi, contractAddress);
-    const data = contract.methods.transfer(receivingAddress, value).encodeABI();
-
-    return data;
-  };
-
-  const getFeeDataWithDynamicMaxPriorityFeePerGas = async () => {
-    let maxFeePerGas = toBigNumber(0);
-    let maxPriorityFeePerGas = toBigNumber(0);
-
-    const provider = web3Provider;
-
-    const [block, ethMaxPriorityFee] = await Promise.all([
-      await provider.getBlock('latest'),
-      await provider.send('eth_maxPriorityFeePerGas', []),
-    ]);
-
-    if (block && block.baseFeePerGas) {
-      maxPriorityFeePerGas = ethers.BigNumber.from(ethMaxPriorityFee);
-
-      if (maxPriorityFeePerGas) {
-        maxFeePerGas = block.baseFeePerGas.mul(2).add(maxPriorityFeePerGas);
-      }
-    }
-
-    return { maxFeePerGas, maxPriorityFeePerGas };
-  };
-
-  // tip numerador eip 1559
-  const sendTransaction = async ({
-    sender,
-    receivingAddress,
-    amount,
-    gasLimit,
-    token,
-  }: ISendTransaction): Promise<TransactionResponse> => {
-    const tokenDecimals = token && token.decimals ? token.decimals : 18;
-    const decimals = toBigNumber(tokenDecimals);
-
-    const parsedAmount = ethers.utils.parseEther(String(amount));
-
-    const { wallet: _wallet } = getDecryptedVault();
-    const { hash } = storage.get('vault-keys');
-
-    const accountXprv = _wallet.activeAccount.xprv;
-
-    const decryptedPrivateKey = CryptoJS.AES.decrypt(
-      accountXprv,
-      hash
-    ).toString(CryptoJS.enc.Utf8);
-
-    const wallet = new ethers.Wallet(decryptedPrivateKey, web3Provider);
-
-    const value =
-      token && token.contract_address
-        ? parsedAmount.mul(toBigNumber('10').pow(decimals))
-        : parsedAmount;
-
-    const data =
-      token && token.contract_address
-        ? getData({
-            contractAddress: token.contract_address,
-            receivingAddress,
-            value,
-          })
-        : null;
-
-    // gas price, gas limit e maxPriorityFeePerGas (tip)
-    const { maxFeePerGas, maxPriorityFeePerGas } =
-      await getFeeDataWithDynamicMaxPriorityFeePerGas();
-
-    const tx: Deferrable<ethers.providers.TransactionRequest> = {
-      to: receivingAddress,
-      value,
-      maxPriorityFeePerGas,
-      maxFeePerGas,
-      nonce: await web3Provider.getTransactionCount(sender, 'latest'),
-      type: 2,
-      chainId: web3Provider.network.chainId,
-      gasLimit: toBigNumber(0) || gasLimit,
-      data,
-    };
-
-    tx.gasLimit = await web3Provider.estimateGas(tx);
-
-    try {
-      const transaction = await wallet.sendTransaction(tx);
-
-      return await getFormattedTransactionResponse(web3Provider, transaction);
-    } catch (error) {
-      throw new Error(error);
-    }
-  };
-
-  const getGasOracle = async () => {
-    const {
-      data: { result },
-    } = await axios.get(
-      'https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
-    );
-
-    return result;
-  };
-
-  const tx = {
-    getTransactionCount,
-    signTypedDataV4,
-    sendTransaction,
-    getFeeByType,
-    getGasLimit,
-    getRecommendedGasPrice,
-    getGasOracle,
-  };
-
   return {
     createAccount,
     getBalance,
@@ -624,6 +366,5 @@ export const Web3Accounts = (): IWeb3Accounts => {
     getAssetsByAddress,
     importAccount,
     getUserTransactions,
-    tx,
   };
 };
