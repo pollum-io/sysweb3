@@ -1,5 +1,6 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import ethUtil from 'ethereumjs-util';
+import { ethers } from 'ethers';
 import { TypedData } from 'ethers-eip712';
 import {
   EncryptedKeystoreV3Json,
@@ -30,6 +31,23 @@ export interface ISendTransaction {
   gasPrice?: number;
   token?: any;
 }
+export type SimpleTransactionRequest = {
+  to: string;
+  from: string;
+
+  data: ethers.BytesLike;
+  value?: ethers.BigNumberish;
+  chainId: number;
+
+  type?: number;
+  accessList?: ethers.utils.AccessListish;
+
+  maxPriorityFeePerGas: ethers.BigNumberish;
+  maxFeePerGas: ethers.BigNumberish;
+
+  customData?: Record<string, any>;
+  ccipReadEnabled?: boolean;
+};
 
 export interface IEthereumTransactions {
   getTransactionCount: (address: string) => Promise<number>;
@@ -38,7 +56,11 @@ export interface IEthereumTransactions {
     signature: ethUtil.ECDSASignature;
   }>;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
+  sendFormattedTransaction: (
+    data: SimpleTransactionRequest
+  ) => Promise<TransactionResponse>;
   getFeeByType: (type: string) => Promise<string>;
+  getFeeDataWithDynamicMaxPriorityFeePerGas: () => Promise<any>;
   getGasLimit: (toAddress: string) => Promise<number>;
   getRecommendedGasPrice: (formatted?: boolean) => Promise<
     | string

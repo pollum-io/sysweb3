@@ -7,7 +7,11 @@ import { TypedData, TypedDataUtils } from 'ethers-eip712';
 import { Deferrable } from 'ethers/lib/utils';
 
 import { getFormattedTransactionResponse } from '../format';
-import { IEthereumTransactions, ISendTransaction } from '../types';
+import {
+  IEthereumTransactions,
+  ISendTransaction,
+  SimpleTransactionRequest,
+} from '../types';
 import { sysweb3Di } from '@pollum-io/sysweb3-core';
 import { web3Provider } from '@pollum-io/sysweb3-network';
 import {
@@ -89,6 +93,28 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     return { maxFeePerGas, maxPriorityFeePerGas };
   };
 
+  const sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
+    const { wallet: _wallet } = getDecryptedVault();
+    const { hash } = storage.get('vault-keys');
+
+    const accountXprv = _wallet.activeAccount.xprv;
+
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      hash
+    ).toString(CryptoJS.enc.Utf8);
+    const tx: Deferrable<ethers.providers.TransactionRequest> = params;
+    const wallet = new ethers.Wallet(decryptedPrivateKey, web3Provider);
+    tx.nonce = await web3Provider.getTransactionCount(params.from, 'latest');
+    tx.gasLimit = await web3Provider.estimateGas(tx);
+    try {
+      const transaction = await wallet.sendTransaction(tx);
+
+      return await getFormattedTransactionResponse(web3Provider, transaction);
+    } catch (error) {
+      throw new Error(error);
+    }
+  };
   // tip numerador eip 1559
   const sendTransaction = async ({
     sender,
@@ -209,7 +235,9 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     getTransactionCount,
     signTypedDataV4,
     sendTransaction,
+    sendFormattedTransaction,
     getFeeByType,
+    getFeeDataWithDynamicMaxPriorityFeePerGas,
     getGasLimit,
     getRecommendedGasPrice,
     getGasOracle,
