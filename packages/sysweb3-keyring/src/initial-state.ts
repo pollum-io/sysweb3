@@ -26,17 +26,17 @@ export const initialNetworksState = {
       apiUrl: '',
       explorer: 'https://blockbook.elint.services/',
     },
+    5700: {
+      chainId: 5700,
+      label: 'Syscoin Testnet',
+      url: 'https://blockbook-dev.elint.services/',
+      default: true,
+      currency: 'tsys',
+      apiUrl: '',
+      explorer: '',
+    },
   },
   ethereum: {
-    1: {
-      chainId: 1,
-      url: 'https://mainnet.infura.io/v3/c42232a29f9d4bd89d53313eb16ec241',
-      label: 'Ethereum Mainnet',
-      default: true,
-      currency: 'eth',
-      explorer: 'https://etherscan.io/',
-      apiUrl: 'https://api.etherscan.io/api',
-    },
     137: {
       chainId: 137,
       currency: 'matic',
@@ -46,6 +46,15 @@ export const initialNetworksState = {
       apiUrl: 'https://api.polygonscan.com/api',
       explorer: 'https://polygonscan.com/',
     },
+    80001: {
+      chainId: 80001,
+      currency: 'matic',
+      default: true,
+      label: 'Polygon Mumbai Testnet',
+      url: 'https://rpc-mumbai.maticvigil.com',
+      apiUrl: 'https://api-testnet.polygonscan.com/api',
+      explorer: 'https://mumbai.polygonscan.com/',
+    },
     57: {
       chainId: 57,
       currency: 'sys',
@@ -54,6 +63,15 @@ export const initialNetworksState = {
       url: 'https://rpc.syscoin.org',
       apiUrl: 'https://explorer.syscoin.org/api',
       explorer: 'https://explorer.syscoin.org/',
+    },
+    5700: {
+      chainId: 5700,
+      currency: 'tsys',
+      default: true,
+      label: 'Syscoin Tanenbaum',
+      url: 'https://rpc.tanenbaum.io',
+      apiUrl: 'https://tanenbaum.io/api',
+      explorer: 'https://tanenbaum.io/',
     },
   },
 };
