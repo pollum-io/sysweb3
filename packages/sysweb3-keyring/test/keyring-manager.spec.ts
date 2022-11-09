@@ -1,5 +1,6 @@
 import { initialWalletState } from '../src/initial-state';
 import { KeyringManager } from '../src/keyring-manager';
+// import { EthereumTransactions } from '../src/transactions/ethereum';
 import { FAKE_PASSWORD, FAKE_SEED_PHRASE } from './constants';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 
@@ -32,9 +33,16 @@ describe('', () => {
   //* createSeed
   it('should create/get a seed', () => {
     const seed = keyringManager.createSeed() as string;
-
     expect(seed).toBeDefined();
     // expect to have 12 words
+    expect(seed.split(' ').length).toBe(12);
+  });
+
+  it('should overwrite current seed', () => {
+    keyringManager.validateSeed(String(FAKE_SEED_PHRASE));
+    const seed = keyringManager.getDecryptedMnemonic() as string;
+    // expect to have 12 words
+    expect(seed).toBeDefined();
     expect(seed.split(' ').length).toBe(12);
   });
 
@@ -47,7 +55,7 @@ describe('', () => {
 
   //* addNewAccount
   it('should add a new account', async () => {
-    const account = await keyringManager.addNewAccount('undefined');
+    const account = await keyringManager.addNewAccount(undefined);
     expect(account.label).toBe('Account 2');
 
     const wallet = keyringManager.getState();
@@ -74,15 +82,15 @@ describe('', () => {
   //* getPrivateKeyByAccountId
   it('should get an account private key by id', () => {
     let id = 1;
-    let privateKey = keyringManager.getPrivateKeyByAccountId(id);
+    const privateKey = keyringManager.getPrivateKeyByAccountId(id);
 
     expect(privateKey).toBeDefined();
     expect(privateKey.length).toBeGreaterThan(50);
 
     id = 3; // id 3 does not exist
-    privateKey = keyringManager.getPrivateKeyByAccountId(id);
-
-    expect(privateKey).toBeNull();
+    expect(() => {
+      keyringManager.getPrivateKeyByAccountId(id);
+    }).toThrow('Account not found');
   });
 
   // //* setSignerNetwork
@@ -112,11 +120,11 @@ describe('', () => {
 
   //* getSeed
   it('should get the seed', async () => {
-    let seed = keyringManager.getSeed(FAKE_PASSWORD);
+    const seed = keyringManager.getSeed(FAKE_PASSWORD);
     expect(seed).toBe(FAKE_SEED_PHRASE);
-
-    seed = keyringManager.getSeed('wrongp@ss123');
-    expect(seed).toBeNull();
+    expect(() => {
+      keyringManager.getSeed('wrongp@ss123');
+    }).toThrow('Invalid password.');
   });
 
   //* hasHdMnemonic
@@ -157,10 +165,16 @@ describe('', () => {
     const wallet = keyringManager.getState();
     expect(wallet).toEqual(initialWalletState);
   });
-
-  //* hasHdMnemonic
-  // it('should not have a mnemonic', async () => {
-  //   const hasMnemonic = keyringManager.hasHdAccounts();
-  //   expect(hasMnemonic).toBe(false);
+  //-----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------
+  // it('Validate get nounce', async () => {
+  // const ethereumTransactions = EthereumTransactions();
+  //TODO: Change active network setSignerNetwork and change it to syscoin mainnet on nevm
+  //TODO: after validating the network transaction getReccomended nonce, asseting with toBeDefined is enough
+  // ethereumTransactions.getRecommendedNonce();
   // });
+  //TODO: Create Test for getFeeDataWithDynamicMaxPriorityFeePerGas
+  //TODO: Create Test for toBigNumber
+  //TODO: Create Test for getTxGasLimit for this one we'll need to generate a mock transaction, we can use metamask example but with our addresses from the signer: https://docs.metamask.io/guide/sending-transactions.html#sending-transactions
+  //TODO: Create test for sendFormattedTX
+  //TODO: Create test for signTypedDataV4
 });
