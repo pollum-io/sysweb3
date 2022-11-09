@@ -34,6 +34,9 @@ export interface ISendTransaction {
 export type SimpleTransactionRequest = {
   to: string;
   from: string;
+  nonce?: ethers.BigNumberish;
+  gasLimit?: ethers.BigNumberish;
+  gasPrice?: ethers.BigNumberish;
 
   data: ethers.BytesLike;
   value?: ethers.BigNumberish;
@@ -59,9 +62,11 @@ export interface IEthereumTransactions {
   sendFormattedTransaction: (
     data: SimpleTransactionRequest
   ) => Promise<TransactionResponse>;
+  getRecommendedNonce: (address: string) => Promise<number>;
   getFeeByType: (type: string) => Promise<string>;
   getFeeDataWithDynamicMaxPriorityFeePerGas: () => Promise<any>;
   getGasLimit: (toAddress: string) => Promise<number>;
+  getTxGasLimit: (tx: SimpleTransactionRequest) => Promise<ethers.BigNumber>;
   getRecommendedGasPrice: (formatted?: boolean) => Promise<
     | string
     | {
@@ -70,6 +75,7 @@ export interface IEthereumTransactions {
       }
   >;
   getGasOracle: () => Promise<any>;
+  toBigNumber: (aBigNumberish: string | number) => ethers.BigNumber;
 }
 
 export interface ISyscoinTransactions {

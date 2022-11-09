@@ -120,10 +120,10 @@ describe('', () => {
   });
 
   //* hasHdMnemonic
-  it('should have a mnemonic', async () => {
-    const hasMnemonic = keyringManager.hasHdAccounts();
-    expect(hasMnemonic).toBe(true);
-  });
+  // it('should have a mnemonic', async () => {
+  //   const hasMnemonic = keyringManager.hasHdAccounts();
+  //   expect(hasMnemonic).toBe(true);
+  // });
 
   // //* removeNetwork
   // it('should remove a network', async () => {
@@ -141,14 +141,14 @@ describe('', () => {
   });
 
   //* forgetSigners
-  it('should forget the signers', async () => {
-    keyringManager.forgetSigners();
+  // it('should forget the signers', async () => {
+  //   keyringManager.forgetSigners();
 
-    const signers = storage.get('signers');
+  //   const signers = storage.get('signers');
 
-    expect(signers._hd).toBeNull();
-    expect(signers._main).toBeNull();
-  });
+  //   expect(signers._hd).toBeNull();
+  //   expect(signers._main).toBeNull();
+  // });
 
   //* forgetMainWallet
   it('should forget wallet / reset to initial state', async () => {
@@ -159,8 +159,8 @@ describe('', () => {
   });
 
   //* hasHdMnemonic
-  it('should not have a mnemonic', async () => {
-    const hasMnemonic = keyringManager.hasHdAccounts();
-    expect(hasMnemonic).toBe(false);
-  });
+  // it('should not have a mnemonic', async () => {
+  //   const hasMnemonic = keyringManager.hasHdAccounts();
+  //   expect(hasMnemonic).toBe(false);
+  // });
 });

@@ -105,8 +105,6 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     ).toString(CryptoJS.enc.Utf8);
     const tx: Deferrable<ethers.providers.TransactionRequest> = params;
     const wallet = new ethers.Wallet(decryptedPrivateKey, web3Provider);
-    tx.nonce = await web3Provider.getTransactionCount(params.from, 'latest');
-    tx.gasLimit = await web3Provider.estimateGas(tx);
     try {
       const transaction = await wallet.sendTransaction(tx);
 
@@ -180,6 +178,9 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       throw new Error(error);
     }
   };
+  const getRecommendedNonce = async (address: string) => {
+    return await web3Provider.getTransactionCount(address, 'pending');
+  };
 
   const getFeeByType = async (type: string) => {
     const gasPrice = (await getRecommendedGasPrice(false)) as string;
@@ -206,6 +207,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     });
 
     return Number(ethers.utils.formatUnits(estimated, 'gwei'));
+  };
+
+  const getTxGasLimit = async (tx: SimpleTransactionRequest) => {
+    return web3Provider.estimateGas(tx); // TODO: test
   };
 
   const getRecommendedGasPrice = async (formatted?: boolean) => {
@@ -237,9 +242,12 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     sendTransaction,
     sendFormattedTransaction,
     getFeeByType,
-    getFeeDataWithDynamicMaxPriorityFeePerGas,
+    getRecommendedNonce,
     getGasLimit,
+    getTxGasLimit,
     getRecommendedGasPrice,
     getGasOracle,
+    getFeeDataWithDynamicMaxPriorityFeePerGas,
+    toBigNumber,
   };
 };

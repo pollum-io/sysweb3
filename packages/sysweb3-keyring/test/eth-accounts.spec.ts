@@ -1,6 +1,6 @@
 // import Web3 from 'web3';
 
-import { Web3Accounts } from '../src/accounts/eth-accounts';
+import { Web3Accounts } from '../src/eth-manager';
 import { FAKE_ADDRESS, FAKE_PRIV_KEY, FAKE_SEED_PHRASE } from './constants';
 // import {
 //   web3Provider,
@@ -13,7 +13,7 @@ describe('Web3Accounts', () => {
     // createAccount,
     importAccount,
     // getNftsByAddress,
-    getTokens,
+    // getTokens,
   } = Web3Accounts();
 
   // //* createAccount
@@ -56,16 +56,16 @@ describe('Web3Accounts', () => {
   // });
 
   //* getTokens
-  it('should get the tokens from an account', async () => {
-    const tokens = await getTokens(
-      '0xa3d42513a1affe8d0862cf51df6145523837393a'
-    );
-    expect(tokens).not.toBeNull();
-    if (tokens.length > 0) {
-      const firstTokenValue = tokens[0].value;
-      expect(typeof firstTokenValue).toBe('number');
-    }
-  });
+  // it('should get the tokens from an account', async () => {
+  //   const tokens = await getTokens(
+  //     '0xa3d42513a1affe8d0862cf51df6145523837393a'
+  //   );
+  //   expect(tokens).not.toBeNull();
+  //   if (tokens.length > 0) {
+  //     const firstTokenValue = tokens[0].value;
+  //     expect(typeof firstTokenValue).toBe('number');
+  //   }
+  // });
 
   // //* setActiveNetwork
   // it('should change the network', () => {

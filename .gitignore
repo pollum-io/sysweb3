@@ -10,3 +10,5 @@ scratch/
 coverage/
 yarn-error.log
 .eslintcache
+.env
+yarn.lock
