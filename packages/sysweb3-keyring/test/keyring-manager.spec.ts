@@ -1,14 +1,16 @@
 import { initialWalletState } from '../src/initial-state';
 import { KeyringManager } from '../src/keyring-manager';
-// import { EthereumTransactions } from '../src/transactions/ethereum';
-import { FAKE_PASSWORD, FAKE_SEED_PHRASE } from './constants';
+import { EthereumTransactions } from '../src/transactions/ethereum';
+import { FAKE_PASSWORD, FAKE_SEED_PHRASE, SYS_EVM_NETWORK } from './constants';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
+import { INetwork } from '@pollum-io/sysweb3-utils';
 
 describe('', () => {
   const keyringManager = KeyringManager();
+  const ethereumTransactions = EthereumTransactions();
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
-  jest.setTimeout(20000); // 20s
+  jest.setTimeout(50000); // 20s
 
   //* validateSeed
   it('should validate a seed / add mnemonic', () => {
@@ -166,12 +168,25 @@ describe('', () => {
     expect(wallet).toEqual(initialWalletState);
   });
   //-----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------
-  // it('Validate get nounce', async () => {
-  // const ethereumTransactions = EthereumTransactions();
-  //TODO: Change active network setSignerNetwork and change it to syscoin mainnet on nevm
-  //TODO: after validating the network transaction getReccomended nonce, asseting with toBeDefined is enough
-  // ethereumTransactions.getRecommendedNonce();
-  // });
+  /**
+   * @jest-environment jsdom
+   */
+
+  it('Validate get nounce', async () => {
+    const account = await keyringManager.setSignerNetwork(
+      SYS_EVM_NETWORK as INetwork,
+      'ethereum'
+    );
+
+    const address = account.address;
+
+    console.log('address', address);
+    // TODO: Change active network setSignerNetwork and change it to syscoin mainnet on nevm
+    // TODO: after validating the network transaction getReccomended nonce, asseting with toBeDefined is enough
+    const nonce = await ethereumTransactions.getRecommendedNonce(address);
+
+    expect(typeof nonce).toBe('number');
+  });
   //TODO: Create Test for getFeeDataWithDynamicMaxPriorityFeePerGas
   //TODO: Create Test for toBigNumber
   //TODO: Create Test for getTxGasLimit for this one we'll need to generate a mock transaction, we can use metamask example but with our addresses from the signer: https://docs.metamask.io/guide/sending-transactions.html#sending-transactions

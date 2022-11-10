@@ -2,6 +2,15 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 export const FAKE_PASSWORD = 'Asdqwe123!';
 export const FAKE_INVALID_PASSWORD = '12345';
+export const SYS_EVM_NETWORK = {
+  chainId: 57,
+  currency: 'sys',
+  default: true,
+  label: 'Syscoin Mainnet',
+  url: 'https://rpc.syscoin.org',
+  apiUrl: 'https://explorer.syscoin.org/api',
+  explorer: 'https://explorer.syscoin.org/',
+};
 export const FAKE_SEED_PHRASE = process.env.SEED_PEACE_GLOBE;
 export const INVALID_SEED_PHRASE =
   'Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor';
