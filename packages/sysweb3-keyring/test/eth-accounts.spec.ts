@@ -39,7 +39,7 @@ describe('Web3Accounts', () => {
 
   //* importAccount
   it('should import an account using a seed phrase (mnemonic)', async () => {
-    const importedAccount = importAccount(FAKE_SEED_PHRASE);
+    const importedAccount = importAccount(FAKE_SEED_PHRASE as string);
 
     expect(importedAccount).toBeTruthy();
     expect(importedAccount.address).toBeTruthy();
@@ -81,7 +81,7 @@ describe('Web3Accounts', () => {
   //   expect(provider.host).toBe('https://blockbook-dev.elint.services/');
   // });
 
-  jest.setTimeout(15000);
+  // jest.setTimeout(15000);
 
   /* //* sendTransaction
   it('should send a transaction', async () => {

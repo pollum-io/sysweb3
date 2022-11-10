@@ -32,6 +32,7 @@
     "bip39": "^3.0.4",
     "coinselectsyscoin": "^1.0.77",
     "crypto-js": "^4.1.1",
+    "dotenv": "^16.0.3",
     "eth-chains": "^1.0.0",
     "eth-sig-util": "^3.0.1",
     "ethereumjs-util": "^7.1.5",
