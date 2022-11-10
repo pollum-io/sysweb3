@@ -1,7 +1,12 @@
 import { initialWalletState } from '../src/initial-state';
 import { KeyringManager } from '../src/keyring-manager';
 import { EthereumTransactions } from '../src/transactions/ethereum';
-import { FAKE_PASSWORD, FAKE_SEED_PHRASE, SYS_EVM_NETWORK } from './constants';
+import {
+  FAKE_PASSWORD,
+  FAKE_SEED_PHRASE,
+  SYS_EVM_NETWORK,
+  FAKE_ADDRESS,
+} from './constants';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { INetwork } from '@pollum-io/sysweb3-utils';
 
@@ -168,21 +173,24 @@ describe('', () => {
     expect(wallet).toEqual(initialWalletState);
   });
   //-----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------
-  /**
-   * @jest-environment jsdom
-   */
 
   it('Validate get nounce', async () => {
+    const { window } = global;
+
+    if (window === undefined) {
+      const nonce = await ethereumTransactions.getRecommendedNonce(
+        FAKE_ADDRESS
+      );
+
+      expect(typeof nonce).toBe('number');
+      return;
+    }
     const account = await keyringManager.setSignerNetwork(
       SYS_EVM_NETWORK as INetwork,
       'ethereum'
     );
 
     const address = account.address;
-
-    console.log('address', address);
-    // TODO: Change active network setSignerNetwork and change it to syscoin mainnet on nevm
-    // TODO: after validating the network transaction getReccomended nonce, asseting with toBeDefined is enough
     const nonce = await ethereumTransactions.getRecommendedNonce(address);
 
     expect(typeof nonce).toBe('number');
