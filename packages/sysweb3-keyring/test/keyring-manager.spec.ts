@@ -15,7 +15,7 @@ describe('', () => {
   const ethereumTransactions = EthereumTransactions();
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
-  jest.setTimeout(50000); // 20s
+  jest.setTimeout(60000); // 20s
 
   //* validateSeed
   it('should validate a seed / add mnemonic', () => {
@@ -195,8 +195,15 @@ describe('', () => {
 
     expect(typeof nonce).toBe('number');
   });
+
+  it('validate toBigNumber method', async () => {
+    const number = 1;
+
+    const toBigNumber = ethereumTransactions.toBigNumber(number);
+
+    expect(toBigNumber._isBigNumber).toBe(true);
+  });
   //TODO: Create Test for getFeeDataWithDynamicMaxPriorityFeePerGas
-  //TODO: Create Test for toBigNumber
   //TODO: Create Test for getTxGasLimit for this one we'll need to generate a mock transaction, we can use metamask example but with our addresses from the signer: https://docs.metamask.io/guide/sending-transactions.html#sending-transactions
   //TODO: Create test for sendFormattedTX
   //TODO: Create test for signTypedDataV4
