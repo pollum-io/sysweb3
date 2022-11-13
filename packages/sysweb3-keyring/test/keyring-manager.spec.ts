@@ -1,3 +1,5 @@
+import { ethers } from 'ethers';
+
 import { initialWalletState } from '../src/initial-state';
 import { KeyringManager } from '../src/keyring-manager';
 import { EthereumTransactions } from '../src/transactions/ethereum';
@@ -6,6 +8,7 @@ import {
   FAKE_SEED_PHRASE,
   SYS_EVM_NETWORK,
   FAKE_ADDRESS,
+  TX,
 } from './constants';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { INetwork } from '@pollum-io/sysweb3-utils';
@@ -15,7 +18,7 @@ describe('', () => {
   const ethereumTransactions = EthereumTransactions();
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
-  jest.setTimeout(60000); // 20s
+  jest.setTimeout(50000); // 20s
 
   //* validateSeed
   it('should validate a seed / add mnemonic', () => {
@@ -203,8 +206,19 @@ describe('', () => {
 
     expect(toBigNumber._isBigNumber).toBe(true);
   });
-  //TODO: Create Test for getFeeDataWithDynamicMaxPriorityFeePerGas
-  //TODO: Create Test for getTxGasLimit for this one we'll need to generate a mock transaction, we can use metamask example but with our addresses from the signer: https://docs.metamask.io/guide/sending-transactions.html#sending-transactions
+
+  it('should validate getFeeDataWithDynamicMaxPriorityFeePerGas method', async () => {
+    const fee =
+      await ethereumTransactions.getFeeDataWithDynamicMaxPriorityFeePerGas();
+
+    expect(fee).toBeDefined();
+  });
+
+  it('should validate getTxGasLimit method', async () => {
+    const fee = await ethereumTransactions.getTxGasLimit(TX as any);
+
+    expect(fee instanceof ethers.BigNumber).toBeTruthy();
+  });
   //TODO: Create test for sendFormattedTX
   //TODO: Create test for signTypedDataV4
 });
