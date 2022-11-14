@@ -208,16 +208,16 @@ describe('', () => {
   });
 
   it('should validate getFeeDataWithDynamicMaxPriorityFeePerGas method', async () => {
-    const fee =
+    const feeDataWithDynamicMaxPriorityFeePerGas =
       await ethereumTransactions.getFeeDataWithDynamicMaxPriorityFeePerGas();
 
-    expect(fee).toBeDefined();
+    expect(feeDataWithDynamicMaxPriorityFeePerGas).toBeDefined();
   });
 
   it('should validate getTxGasLimit method', async () => {
-    const fee = await ethereumTransactions.getTxGasLimit(TX as any);
+    const gasLimit = await ethereumTransactions.getTxGasLimit(TX as any);
 
-    expect(fee instanceof ethers.BigNumber).toBeTruthy();
+    expect(gasLimit instanceof ethers.BigNumber).toBeTruthy();
   });
   //TODO: Create test for sendFormattedTX
   //TODO: Create test for signTypedDataV4
