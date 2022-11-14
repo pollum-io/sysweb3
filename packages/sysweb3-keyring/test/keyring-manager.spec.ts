@@ -12,7 +12,6 @@ import {
 } from './constants';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { INetwork } from '@pollum-io/sysweb3-utils';
-
 describe('', () => {
   const keyringManager = KeyringManager();
   const ethereumTransactions = EthereumTransactions();
@@ -103,15 +102,6 @@ describe('', () => {
     }).toThrow('Account not found');
   });
 
-  // //* setSignerNetwork
-  // it('should set the network', async () => {
-  //   const testnet = networks.syscoin[5700];
-  //   await keyringManager.setSignerNetwork(testnet, 'syscoin');
-
-  //   const network = keyringManager.getNetwork();
-  //   expect(network).toEqual(testnet);
-  // });
-
   //* getEncryptedXprv
   it('should get the encrypted private key', async () => {
     const xprv = keyringManager.getEncryptedXprv();
@@ -168,13 +158,6 @@ describe('', () => {
   //   expect(signers._main).toBeNull();
   // });
 
-  //* forgetMainWallet
-  it('should forget wallet / reset to initial state', async () => {
-    keyringManager.forgetMainWallet(FAKE_PASSWORD);
-
-    const wallet = keyringManager.getState();
-    expect(wallet).toEqual(initialWalletState);
-  });
   //-----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------
 
   it('Validate get nounce', async () => {
@@ -215,10 +198,47 @@ describe('', () => {
   });
 
   it('should validate getTxGasLimit method', async () => {
-    const gasLimit = await ethereumTransactions.getTxGasLimit(TX as any);
-
+    const tx = TX;
+    tx.value = ethereumTransactions.toBigNumber(tx.value);
+    const gasLimit = await ethereumTransactions.getTxGasLimit(tx);
     expect(gasLimit instanceof ethers.BigNumber).toBeTruthy();
   });
-  //TODO: Create test for sendFormattedTX
-  //TODO: Create test for signTypedDataV4
+
+  // //* setSignerNetwork
+  it('should set the network', async () => {
+    const testnet = initialWalletState.networks.ethereum[5700];
+    await keyringManager.setSignerNetwork(testnet, 'ethereum');
+
+    const network = keyringManager.getNetwork();
+    expect(network).toEqual(testnet);
+  });
+  it('Should validate txSend', async () => {
+    const tx = TX;
+    const { maxFeePerGas, maxPriorityFeePerGas } =
+      await ethereumTransactions.getFeeDataWithDynamicMaxPriorityFeePerGas();
+    tx.maxFeePerGas = maxFeePerGas;
+    tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
+    const curState = await keyringManager.getState();
+    tx.from = curState.activeAccount.address;
+    console.log('Checking current state', curState);
+    tx.nonce = await ethereumTransactions.getRecommendedNonce(
+      curState.activeAccount.address
+    );
+    tx.chainId = curState.activeNetwork.chainId;
+    tx.gasLimit = await ethereumTransactions.getTxGasLimit(tx);
+    const resp = await ethereumTransactions.sendFormattedTransaction(tx);
+    expect(resp.hash).toBeDefined();
+  });
+  // it ('Should create a valide signature', async () => {
+  // await ethereumTransactions.signTypedDataV4()
+  // })
+  //-----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------
+
+  //* forgetMainWallet
+  it('should forget wallet / reset to initial state', async () => {
+    keyringManager.forgetMainWallet(FAKE_PASSWORD);
+
+    const wallet = keyringManager.getState();
+    expect(wallet).toEqual(initialWalletState);
+  });
 });

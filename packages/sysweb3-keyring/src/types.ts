@@ -38,7 +38,7 @@ export type SimpleTransactionRequest = {
   gasLimit?: ethers.BigNumberish;
   gasPrice?: ethers.BigNumberish;
 
-  data: ethers.BytesLike;
+  data?: ethers.BytesLike;
   value?: ethers.BigNumberish;
   chainId: number;
 

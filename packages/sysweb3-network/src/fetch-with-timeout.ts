@@ -29,6 +29,30 @@ export const getFetchWithTimeout = memoize((timeout: number) => {
       throw error;
     }
   };
+  const _nodeFetch = async (url: string, opts: any) => {
+    const abortController = new AbortController();
 
-  return _fetch;
+    const { signal } = abortController;
+
+    const nodeFetch = fetch(url, {
+      ...opts,
+      signal,
+    });
+
+    const timer = setTimeout(() => abortController.abort(), timeout);
+
+    try {
+      const response = await nodeFetch;
+
+      clearTimeout(timer);
+
+      return response;
+    } catch (error) {
+      clearTimeout(timer);
+
+      throw error;
+    }
+  };
+  if (typeof window !== undefined) return _fetch;
+  else return _nodeFetch;
 });

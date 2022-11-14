@@ -210,7 +210,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getTxGasLimit = async (tx: SimpleTransactionRequest) => {
-    return web3Provider.estimateGas(tx); // TODO: test
+    return web3Provider.estimateGas(tx);
   };
 
   const getRecommendedGasPrice = async (formatted?: boolean) => {

@@ -722,7 +722,6 @@ export const KeyringManager = (): IKeyringManager => {
         ...getDecryptedVault(),
         network,
       });
-
       if (chain === 'syscoin') {
         const response = await validateSysRpc(network.url);
 
@@ -735,7 +734,6 @@ export const KeyringManager = (): IKeyringManager => {
           isTestnet: response.chain === 'test',
         };
       }
-
       const newNetwork =
         getDecryptedVault().wallet.networks.ethereum[network.chainId];
 
@@ -744,12 +742,10 @@ export const KeyringManager = (): IKeyringManager => {
       await jsonRpcRequest(network.url, 'eth_chainId');
 
       setActiveNetwork(newNetwork);
-
       setEncryptedVault({
         ...getDecryptedVault(),
         isTestnet: false,
       });
-
       return {
         rpc: null,
         isTestnet: false,
