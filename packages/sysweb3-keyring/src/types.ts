@@ -58,6 +58,8 @@ export interface IEthereumTransactions {
     address: Buffer;
     signature: ethUtil.ECDSASignature;
   }>;
+  ethSign: (params: any) => any;
+  signPersonalMessage: (params: any) => any;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
   sendFormattedTransaction: (
     data: SimpleTransactionRequest

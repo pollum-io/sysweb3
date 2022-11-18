@@ -1,7 +1,9 @@
+import ethUtil, { ecsign, toBuffer, stripHexPrefix } from '@ethereumjs/util';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import axios from 'axios';
 import CryptoJS from 'crypto-js';
-import ethUtil from 'ethereumjs-util';
+import { concatSig, personalSign } from 'eth-sig-util';
+import { keccak256, keccakFromString } from 'ethereumjs-util';
 import { ethers } from 'ethers';
 import { TypedData, TypedDataUtils } from 'ethers-eip712';
 import { Deferrable } from 'ethers/lib/utils';
@@ -34,7 +36,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     const hashDomain = hashStruct(typedData, 'EIP712Domain', domain);
     const hashMessage = hashStruct(typedData, primaryType, message);
 
-    const sigHash = ethUtil.keccak256(
+    const sigHash = keccak256(
       Buffer.concat([Buffer.from('1901', 'hex'), hashDomain, hashMessage])
     );
 
@@ -42,7 +44,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       wallet: { activeAccount },
     } = getDecryptedVault();
 
-    const privateKey = ethUtil.keccakFromString(activeAccount.xpub, 256);
+    const privateKey = keccakFromString(activeAccount.xpub, 256);
     const address = ethUtil.privateToAddress(privateKey);
     const signature = ethUtil.ecsign(sigHash, privateKey);
 
@@ -50,6 +52,54 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       address,
       signature,
     };
+  };
+
+  const ethSign = (params: any) => {
+    const { wallet } = getDecryptedVault();
+    const { hash } = storage.get('vault-keys');
+
+    const accountXprv = wallet.activeAccount.xprv;
+    const address = wallet.activeAccount.address;
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      hash
+    ).toString(CryptoJS.enc.Utf8);
+    let msg = '';
+    if (params[0] === address) {
+      msg = stripHexPrefix(params[1]);
+    } else if (params[1] === address) {
+      msg = stripHexPrefix(params[0]);
+    } else {
+      throw { msg: 'Signing for wrong address' };
+    }
+    const bufPriv = toBuffer(decryptedPrivateKey);
+    const msgHash = Buffer.from(msg, 'hex');
+    const sig = ecsign(msgHash, bufPriv);
+    const resp = concatSig(toBuffer(sig.v), sig.r, sig.s);
+    return resp;
+  };
+
+  const signPersonalMessage = (params: any) => {
+    const { wallet } = getDecryptedVault();
+    const { hash } = storage.get('vault-keys');
+
+    const accountXprv = wallet.activeAccount.xprv;
+    const address = wallet.activeAccount.address;
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      hash
+    ).toString(CryptoJS.enc.Utf8);
+    let msg = '';
+    if (params[0] === address) {
+      msg = stripHexPrefix(params[1]);
+    } else if (params[1] === address) {
+      msg = stripHexPrefix(params[0]);
+    } else {
+      throw { msg: 'Signing for wrong address' };
+    }
+    const privateKey = Buffer.from(decryptedPrivateKey, 'hex');
+    const sig = personalSign(privateKey, msg);
+    return sig;
   };
 
   const toBigNumber = (aBigNumberish: string | number) =>
@@ -239,6 +289,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   return {
     getTransactionCount,
     signTypedDataV4,
+    ethSign,
     sendTransaction,
     sendFormattedTransaction,
     getFeeByType,

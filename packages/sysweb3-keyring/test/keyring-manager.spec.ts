@@ -15,7 +15,7 @@ import { INetwork } from '@pollum-io/sysweb3-utils';
 describe('', () => {
   const keyringManager = KeyringManager();
   const ethereumTransactions = EthereumTransactions();
-  const storage = sysweb3.sysweb3Di.getStateStorageDb();
+  // const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
   jest.setTimeout(50000); // 20s
 
@@ -62,7 +62,7 @@ describe('', () => {
     expect(account).toBeDefined();
   });
 
-  //* addNewAccount
+  // //* addNewAccount
   it('should add a new account', async () => {
     const account = await keyringManager.addNewAccount(undefined);
     expect(account.label).toBe('Account 2');
@@ -127,36 +127,12 @@ describe('', () => {
     }).toThrow('Invalid password.');
   });
 
-  //* hasHdMnemonic
-  // it('should have a mnemonic', async () => {
-  //   const hasMnemonic = keyringManager.hasHdAccounts();
-  //   expect(hasMnemonic).toBe(true);
-  // });
-
-  // //* removeNetwork
-  // it('should remove a network', async () => {
-  //   keyringManager.removeNetwork('syscoin', 57);
-
-  //   const wallet = keyringManager.getState();
-  //   expect(57 in wallet.networks.syscoin).toBe(false);
-  // });
-
   //* getLatestUpdateForAccount
   it('should get an updated account', async () => {
     const account = await keyringManager.getLatestUpdateForAccount();
 
     expect(account).toBeDefined();
   });
-
-  //* forgetSigners
-  // it('should forget the signers', async () => {
-  //   keyringManager.forgetSigners();
-
-  //   const signers = storage.get('signers');
-
-  //   expect(signers._hd).toBeNull();
-  //   expect(signers._main).toBeNull();
-  // });
 
   //-----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------
 
@@ -232,6 +208,17 @@ describe('', () => {
   // it ('Should create a valide signature', async () => {
   // await ethereumTransactions.signTypedDataV4()
   // })
+
+  it('Should create eth_sign signature', async () => {
+    const resp = ethereumTransactions.ethSign([
+      '0x6a92eF94F6Db88098625a30396e0fde7255E97d5',
+      '0x879a053d4800c6354e76c7985a865d2922c82fb5b3f4577b2fe08b998954f2e0',
+    ]);
+    console.log('Done it', resp);
+    expect(resp).toBe(
+      '0x9f2f4ce0b6dedd5f66aa83caae39b90aaf29ebc18c588610d27301dbd3b2aa2935ba8758757c531e851c92c2f103375906139c77d3fc3f3d3fba81a0063f01631c'
+    );
+  });
   //-----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------
 
   //* forgetMainWallet

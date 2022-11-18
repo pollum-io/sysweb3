@@ -423,7 +423,7 @@ export const KeyringManager = (): IKeyringManager => {
         // console.log('Check ipfs description', ipfsUrl);
         if (description.startsWith('https://ipfs.io/ipfs/')) {
           const { data } = await axios.get(description);
-          image = data?.image ? data.image : '';
+          image = data.image ? data.image : '';
         }
         const asset = {
           ...token,
