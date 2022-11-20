@@ -5,12 +5,14 @@ import CryptoJS from 'crypto-js';
 import {
   concatSig,
   decrypt,
-  MsgParams,
+  SignedMsgParams,
   signTypedMessage,
   TypedMessage,
   Version,
   TypedData,
   getEncryptionPublicKey,
+  recoverPersonalSignature,
+  recoverTypedMessage,
 } from 'eth-sig-util';
 import {
   ecsign,
@@ -45,7 +47,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
   const signTypedData = (
     addr: string,
-    typedData: MsgParams<TypedData | TypedMessage<any>>,
+    typedData: TypedData | TypedMessage<any>,
     version: Version
   ) => {
     const { wallet } = getDecryptedVault();
@@ -62,7 +64,19 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       hash
     ).toString(CryptoJS.enc.Utf8);
     const privKey = Buffer.from(stripHexPrefix(decryptedPrivateKey), 'hex');
-    return signTypedMessage(privKey, typedData, version);
+    return signTypedMessage(privKey, { data: typedData }, version);
+  };
+
+  const verifyTypedSignature = (
+    data: TypedData | TypedMessage<any>,
+    signature: string,
+    version: Version
+  ) => {
+    const msgParams: SignedMsgParams<TypedData | TypedMessage<any>> = {
+      data,
+      sig: signature,
+    };
+    return recoverTypedMessage(msgParams, version);
   };
 
   const ethSign = (params: string[]) => {
@@ -119,6 +133,14 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
   const parsePersonalMessage = (hexMsg: string) => {
     return toAscii(hexMsg);
+  };
+
+  const verifyPersonalMessage = (message: string, sign: string) => {
+    const msgParams: SignedMsgParams<string> = {
+      data: message,
+      sig: sign,
+    };
+    return recoverPersonalSignature(msgParams);
   };
 
   const getEncryptedPubKey = () => {
@@ -342,8 +364,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     ethSign,
     signPersonalMessage,
     parsePersonalMessage,
-    decryptMessage,
     signTypedData,
+    decryptMessage,
+    verifyPersonalMessage,
+    verifyTypedSignature,
     getEncryptedPubKey,
     sendTransaction,
     sendFormattedTransaction,

@@ -60,7 +60,7 @@ describe('', () => {
     expect(account).toBeDefined();
   });
 
-  //* addNewAccount
+  // * addNewAccount
   it('should add a new account', async () => {
     const account = await keyringManager.addNewAccount(undefined);
     expect(account.label).toBe('Account 2');
@@ -221,6 +221,13 @@ describe('', () => {
     expect(resp).toBe(
       '0x1e4c47c96d285648db99bf2bdf691aae354d2beb80ceeeaaffa643d37900bf510ea0f5cd06518fcfc67e607898308de1497b6036ccd343ab17e3f59eb87567e41c'
     );
+    const decoded = ethereumTransactions.verifyPersonalMessage(
+      '0x4578616d706c652060706572736f6e616c5f7369676e60206d657373616765',
+      resp
+    );
+    expect(decoded.toLowerCase()).toBe(
+      '0x6a92eF94F6Db88098625a30396e0fde7255E97d5'.toLowerCase()
+    );
   });
   it('Should emulate personal_sign long hash ', async () => {
     const sign = ethereumTransactions.signPersonalMessage([
@@ -243,12 +250,10 @@ describe('', () => {
   });
 
   it('Should emulate eth_signTypedData ', async () => {
-    const typedData = {
-      data: [
-        { type: 'string', name: 'Message', value: 'Hi, Alice!' },
-        { type: 'uint32', name: 'A number', value: '1337' },
-      ],
-    };
+    const typedData = [
+      { type: 'string', name: 'Message', value: 'Hi, Alice!' },
+      { type: 'uint32', name: 'A number', value: '1337' },
+    ];
     const resp = ethereumTransactions.signTypedData(
       '0x6a92eF94F6Db88098625a30396e0fde7255E97d5',
       typedData,
@@ -256,6 +261,14 @@ describe('', () => {
     );
     expect(resp).toBe(
       '0x6fd4f93623d151b487656cd3a0aaaec16aee409c353bad7c1f8eecbbab07b06f51ac8be73d7a2d4bba579505aff7c5a62f91141fee75ff2cbb0c111dcfe589c01b'
+    );
+    const decodedSig = ethereumTransactions.verifyTypedSignature(
+      typedData,
+      resp,
+      'V1'
+    );
+    expect(decodedSig.toLowerCase()).toBe(
+      '0x6a92eF94F6Db88098625a30396e0fde7255E97d5'.toLowerCase()
     );
   });
 
@@ -268,11 +281,9 @@ describe('', () => {
   });
 
   it('Should emulate eth_signTypedDataV3', async () => {
-    const typedData = {
-      data: JSON.parse(
-        '{"types":{"EIP712Domain":[{"name":"name","type":"string"},{"name":"version","type":"string"},{"name":"chainId","type":"uint256"},{"name":"verifyingContract","type":"address"}],"Person":[{"name":"name","type":"string"},{"name":"wallet","type":"address"}],"Mail":[{"name":"from","type":"Person"},{"name":"to","type":"Person"},{"name":"contents","type":"string"}]},"primaryType":"Mail","domain":{"name":"Ether Mail","version":"1","chainId":57,"verifyingContract":"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"},"message":{"from":{"name":"Cow","wallet":"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826"},"to":{"name":"Bob","wallet":"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB"},"contents":"Hello, Bob!"}}'
-      ),
-    };
+    const typedData = JSON.parse(
+      '{"types":{"EIP712Domain":[{"name":"name","type":"string"},{"name":"version","type":"string"},{"name":"chainId","type":"uint256"},{"name":"verifyingContract","type":"address"}],"Person":[{"name":"name","type":"string"},{"name":"wallet","type":"address"}],"Mail":[{"name":"from","type":"Person"},{"name":"to","type":"Person"},{"name":"contents","type":"string"}]},"primaryType":"Mail","domain":{"name":"Ether Mail","version":"1","chainId":57,"verifyingContract":"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"},"message":{"from":{"name":"Cow","wallet":"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826"},"to":{"name":"Bob","wallet":"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB"},"contents":"Hello, Bob!"}}'
+    );
     const resp = ethereumTransactions.signTypedData(
       '0x6a92eF94F6Db88098625a30396e0fde7255E97d5',
       typedData,
@@ -281,14 +292,20 @@ describe('', () => {
     expect(resp).toBe(
       '0xe49406911c08d5c8746636c2edaed9fd923b2d2d5659686352a9a4c897b847d36fc4283c62f387bd306e2fb4d241392c1f2ed519586fa532c31b1c2b0c1f85e11b'
     );
+    const decodedSign = ethereumTransactions.verifyTypedSignature(
+      typedData,
+      resp,
+      'V3'
+    );
+    expect(decodedSign.toLowerCase()).toBe(
+      '0x6a92eF94F6Db88098625a30396e0fde7255E97d5'.toLowerCase()
+    );
   });
 
   it('Should emulate eth_signTypedDataV4', async () => {
-    const typedData = {
-      data: JSON.parse(
-        '{"domain":{"chainId":"57","name":"Ether Mail","verifyingContract":"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC","version":"1"},"message":{"contents":"Hello, Bob!","from":{"name":"Cow","wallets":["0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826","0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF"]},"to":[{"name":"Bob","wallets":["0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB","0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57","0xB0B0b0b0b0b0B000000000000000000000000000"]}]},"primaryType":"Mail","types":{"EIP712Domain":[{"name":"name","type":"string"},{"name":"version","type":"string"},{"name":"chainId","type":"uint256"},{"name":"verifyingContract","type":"address"}],"Group":[{"name":"name","type":"string"},{"name":"members","type":"Person[]"}],"Mail":[{"name":"from","type":"Person"},{"name":"to","type":"Person[]"},{"name":"contents","type":"string"}],"Person":[{"name":"name","type":"string"},{"name":"wallets","type":"address[]"}]}}'
-      ),
-    };
+    const typedData = JSON.parse(
+      '{"domain":{"chainId":"57","name":"Ether Mail","verifyingContract":"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC","version":"1"},"message":{"contents":"Hello, Bob!","from":{"name":"Cow","wallets":["0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826","0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF"]},"to":[{"name":"Bob","wallets":["0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB","0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57","0xB0B0b0b0b0b0B000000000000000000000000000"]}]},"primaryType":"Mail","types":{"EIP712Domain":[{"name":"name","type":"string"},{"name":"version","type":"string"},{"name":"chainId","type":"uint256"},{"name":"verifyingContract","type":"address"}],"Group":[{"name":"name","type":"string"},{"name":"members","type":"Person[]"}],"Mail":[{"name":"from","type":"Person"},{"name":"to","type":"Person[]"},{"name":"contents","type":"string"}],"Person":[{"name":"name","type":"string"},{"name":"wallets","type":"address[]"}]}}'
+    );
     const resp = ethereumTransactions.signTypedData(
       '0x6a92eF94F6Db88098625a30396e0fde7255E97d5',
       typedData,
@@ -296,6 +313,14 @@ describe('', () => {
     );
     expect(resp).toBe(
       '0x3b891678723c3ded564278630ec47ea9d8c1b9f61fba1d00cebbe66a0d6209da45d4cd2c74c3c64526471d4da82d6b3b4c053036cee73efb9a78b49edf621ef51b'
+    );
+    const decodedSign = ethereumTransactions.verifyTypedSignature(
+      typedData,
+      resp,
+      'V4'
+    );
+    expect(decodedSign.toLowerCase()).toBe(
+      '0x6a92eF94F6Db88098625a30396e0fde7255E97d5'.toLowerCase()
     );
   });
   //-----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------

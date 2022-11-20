@@ -1,4 +1,5 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
+import { TypedData, TypedMessage } from 'eth-sig-util';
 import { ethers } from 'ethers';
 import {
   EncryptedKeystoreV3Json,
@@ -65,6 +66,12 @@ export interface IEthereumTransactions {
   signPersonalMessage: (params: string[]) => string;
   parsePersonalMessage: (hexMsg: string) => string;
   decryptMessage: (addr: string, encryptedData: EthEncryptedData) => string;
+  verifyPersonalMessage: (msg: string, sign: string) => string;
+  verifyTypedSignature: (
+    data: TypedData | TypedMessage<any>,
+    signature: string,
+    version: Version
+  ) => string;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
   sendFormattedTransaction: (
     data: SimpleTransactionRequest
