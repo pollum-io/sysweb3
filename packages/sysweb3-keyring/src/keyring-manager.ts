@@ -418,15 +418,13 @@ export const KeyringManager = (): IKeyringManager => {
           details && details.pubData && details.pubData.desc
             ? atob(details.pubData.desc)
             : '';
-
-        const ipfsUrl = description.startsWith('https://ipfs.io/ipfs/')
-          ? description
-          : '';
-
-        const { data } = await axios.get(ipfsUrl);
-
-        const image = data && data.image ? data.image : '';
-
+        // console.log('Check Description', description);
+        let image = '';
+        // console.log('Check ipfs description', ipfsUrl);
+        if (description.startsWith('https://ipfs.io/ipfs/')) {
+          const { data } = await axios.get(description);
+          image = data.image ? data.image : '';
+        }
         const asset = {
           ...token,
           ...details,
@@ -724,7 +722,6 @@ export const KeyringManager = (): IKeyringManager => {
         ...getDecryptedVault(),
         network,
       });
-
       if (chain === 'syscoin') {
         const response = await validateSysRpc(network.url);
 
@@ -737,7 +734,6 @@ export const KeyringManager = (): IKeyringManager => {
           isTestnet: response.chain === 'test',
         };
       }
-
       const newNetwork =
         getDecryptedVault().wallet.networks.ethereum[network.chainId];
 
@@ -746,12 +742,10 @@ export const KeyringManager = (): IKeyringManager => {
       await jsonRpcRequest(network.url, 'eth_chainId');
 
       setActiveNetwork(newNetwork);
-
       setEncryptedVault({
         ...getDecryptedVault(),
         isTestnet: false,
       });
-
       return {
         rpc: null,
         isTestnet: false,

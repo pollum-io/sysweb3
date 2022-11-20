@@ -1,6 +1,5 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
-import ethUtil from 'ethereumjs-util';
-import { TypedData } from 'ethers-eip712';
+import { ethers } from 'ethers';
 import {
   EncryptedKeystoreV3Json,
   Sign,
@@ -30,16 +29,51 @@ export interface ISendTransaction {
   gasPrice?: number;
   token?: any;
 }
+export type SimpleTransactionRequest = {
+  to: string;
+  from: string;
+  nonce?: ethers.BigNumberish;
+  gasLimit?: ethers.BigNumberish;
+  gasPrice?: ethers.BigNumberish;
+
+  data?: ethers.BytesLike;
+  value?: ethers.BigNumberish;
+  chainId: number;
+
+  type?: number;
+  accessList?: ethers.utils.AccessListish;
+
+  maxPriorityFeePerGas: ethers.BigNumberish;
+  maxFeePerGas: ethers.BigNumberish;
+
+  customData?: Record<string, any>;
+  ccipReadEnabled?: boolean;
+};
+
+export declare type Version = 'V1' | 'V2' | 'V3' | 'V4';
+export interface EthEncryptedData {
+  version: string;
+  nonce: string;
+  ephemPublicKey: string;
+  ciphertext: string;
+}
 
 export interface IEthereumTransactions {
   getTransactionCount: (address: string) => Promise<number>;
-  signTypedDataV4: (typedData: TypedData) => Promise<{
-    address: Buffer;
-    signature: ethUtil.ECDSASignature;
-  }>;
+  signTypedData: (addr: string, typedData: any, version: Version) => string;
+  ethSign: (params: string[]) => string;
+  signPersonalMessage: (params: string[]) => string;
+  parsePersonalMessage: (hexMsg: string) => string;
+  decryptMessage: (addr: string, encryptedData: EthEncryptedData) => string;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
+  sendFormattedTransaction: (
+    data: SimpleTransactionRequest
+  ) => Promise<TransactionResponse>;
+  getRecommendedNonce: (address: string) => Promise<number>;
   getFeeByType: (type: string) => Promise<string>;
+  getFeeDataWithDynamicMaxPriorityFeePerGas: () => Promise<any>;
   getGasLimit: (toAddress: string) => Promise<number>;
+  getTxGasLimit: (tx: SimpleTransactionRequest) => Promise<ethers.BigNumber>;
   getRecommendedGasPrice: (formatted?: boolean) => Promise<
     | string
     | {
@@ -48,6 +82,8 @@ export interface IEthereumTransactions {
       }
   >;
   getGasOracle: () => Promise<any>;
+  getEncryptedPubKey: () => string;
+  toBigNumber: (aBigNumberish: string | number) => ethers.BigNumber;
 }
 
 export interface ISyscoinTransactions {
