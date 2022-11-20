@@ -1,5 +1,4 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
-import { MsgParams, TypedMessage, TypedData } from 'eth-sig-util';
 import { ethers } from 'ethers';
 import {
   EncryptedKeystoreV3Json,

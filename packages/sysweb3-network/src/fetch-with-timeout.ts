@@ -53,6 +53,6 @@ export const getFetchWithTimeout = memoize((timeout: number) => {
       throw error;
     }
   };
-  if (typeof window !== undefined) return _fetch;
+  if (typeof window !== 'undefined') return _fetch;
   else return _nodeFetch;
 });

@@ -1,4 +1,4 @@
-import { ecsign, toBuffer, stripHexPrefix } from '@ethereumjs/util';
+// import { ecsign, toBuffer, stripHexPrefix, hashPersonalMessage, toAscii } from '@ethereumjs/util';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import axios from 'axios';
 import CryptoJS from 'crypto-js';
@@ -12,7 +12,13 @@ import {
   TypedData,
   getEncryptionPublicKey,
 } from 'eth-sig-util';
-import { hashPersonalMessage, toAscii } from 'ethereumjs-util';
+import {
+  ecsign,
+  toBuffer,
+  stripHexPrefix,
+  hashPersonalMessage,
+  toAscii,
+} from 'ethereumjs-util';
 import { ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 

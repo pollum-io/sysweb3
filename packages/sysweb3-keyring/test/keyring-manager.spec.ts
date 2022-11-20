@@ -194,7 +194,6 @@ describe('', () => {
     tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
     const curState = await keyringManager.getState();
     tx.from = curState.activeAccount.address;
-    console.log('Checking current state', curState);
     tx.nonce = await ethereumTransactions.getRecommendedNonce(
       curState.activeAccount.address
     );
@@ -231,7 +230,6 @@ describe('', () => {
   });
   it('GetEncryptedKey', async () => {
     const resp = ethereumTransactions.getEncryptedPubKey();
-    console.log('resp', resp);
     expect(resp).toBe('mg0LYtIw5fefbmqlu6sZ9pJtddfM/6/EEPW56qYwwRU=');
   });
 
@@ -266,7 +264,6 @@ describe('', () => {
         '{"types":{"EIP712Domain":[{"name":"name","type":"string"},{"name":"version","type":"string"},{"name":"chainId","type":"uint256"},{"name":"verifyingContract","type":"address"}],"Person":[{"name":"name","type":"string"},{"name":"wallet","type":"address"}],"Mail":[{"name":"from","type":"Person"},{"name":"to","type":"Person"},{"name":"contents","type":"string"}]},"primaryType":"Mail","domain":{"name":"Ether Mail","version":"1","chainId":57,"verifyingContract":"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"},"message":{"from":{"name":"Cow","wallet":"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826"},"to":{"name":"Bob","wallet":"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB"},"contents":"Hello, Bob!"}}'
       ),
     };
-    console.log('Typed Data', typedData.data);
     const resp = ethereumTransactions.signTypedData(
       '0x6a92eF94F6Db88098625a30396e0fde7255E97d5',
       typedData,
@@ -283,7 +280,6 @@ describe('', () => {
         '{"domain":{"chainId":"57","name":"Ether Mail","verifyingContract":"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC","version":"1"},"message":{"contents":"Hello, Bob!","from":{"name":"Cow","wallets":["0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826","0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF"]},"to":[{"name":"Bob","wallets":["0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB","0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57","0xB0B0b0b0b0b0B000000000000000000000000000"]}]},"primaryType":"Mail","types":{"EIP712Domain":[{"name":"name","type":"string"},{"name":"version","type":"string"},{"name":"chainId","type":"uint256"},{"name":"verifyingContract","type":"address"}],"Group":[{"name":"name","type":"string"},{"name":"members","type":"Person[]"}],"Mail":[{"name":"from","type":"Person"},{"name":"to","type":"Person[]"},{"name":"contents","type":"string"}],"Person":[{"name":"name","type":"string"},{"name":"wallets","type":"address[]"}]}}'
       ),
     };
-    console.log('Typed Data', typedData.data);
     const resp = ethereumTransactions.signTypedData(
       '0x6a92eF94F6Db88098625a30396e0fde7255E97d5',
       typedData,
