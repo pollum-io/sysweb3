@@ -76,9 +76,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       hash
     ).toString(CryptoJS.enc.Utf8);
     let msg = '';
-    if (params[0] === address) {
+    //Comparisions do not need to care for checksum address
+    if (params[0].toLowerCase() === address.toLowerCase()) {
       msg = stripHexPrefix(params[1]);
-    } else if (params[1] === address) {
+    } else if (params[1].toLowerCase() === address.toLowerCase()) {
       msg = stripHexPrefix(params[0]);
     } else {
       throw { msg: 'Signing for wrong address' };
@@ -101,9 +102,9 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       hash
     ).toString(CryptoJS.enc.Utf8);
     let msg = '';
-    if (params[0] === address) {
+    if (params[0].toLowerCase() === address.toLowerCase()) {
       msg = params[1];
-    } else if (params[1] === address) {
+    } else if (params[1].toLowerCase() === address.toLowerCase()) {
       msg = params[0];
     } else {
       throw { msg: 'Signing for wrong address' };
