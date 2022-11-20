@@ -1,7 +1,6 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
-import ethUtil from 'ethereumjs-util';
+import { MsgParams, TypedMessage, TypedData } from 'eth-sig-util';
 import { ethers } from 'ethers';
-import { TypedData } from 'ethers-eip712';
 import {
   EncryptedKeystoreV3Json,
   Sign,
@@ -52,14 +51,21 @@ export type SimpleTransactionRequest = {
   ccipReadEnabled?: boolean;
 };
 
+export declare type Version = 'V1' | 'V2' | 'V3' | 'V4';
+export interface EthEncryptedData {
+  version: string;
+  nonce: string;
+  ephemPublicKey: string;
+  ciphertext: string;
+}
+
 export interface IEthereumTransactions {
   getTransactionCount: (address: string) => Promise<number>;
-  signTypedDataV4: (typedData: TypedData) => Promise<{
-    address: Buffer;
-    signature: ethUtil.ECDSASignature;
-  }>;
-  ethSign: (params: any) => any;
-  signPersonalMessage: (params: any) => any;
+  signTypedData: (addr: string, typedData: any, version: Version) => string;
+  ethSign: (params: string[]) => string;
+  signPersonalMessage: (params: string[]) => string;
+  parsePersonalMessage: (hexMsg: string) => string;
+  decryptMessage: (addr: string, encryptedData: EthEncryptedData) => string;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
   sendFormattedTransaction: (
     data: SimpleTransactionRequest
@@ -77,6 +83,7 @@ export interface IEthereumTransactions {
       }
   >;
   getGasOracle: () => Promise<any>;
+  getEncryptedPubKey: () => string;
   toBigNumber: (aBigNumberish: string | number) => ethers.BigNumber;
 }
 

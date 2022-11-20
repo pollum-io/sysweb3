@@ -1,11 +1,19 @@
-import ethUtil, { ecsign, toBuffer, stripHexPrefix } from '@ethereumjs/util';
+import { ecsign, toBuffer, stripHexPrefix } from '@ethereumjs/util';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import axios from 'axios';
 import CryptoJS from 'crypto-js';
-import { concatSig, personalSign } from 'eth-sig-util';
-import { keccak256, keccakFromString } from 'ethereumjs-util';
+import {
+  concatSig,
+  decrypt,
+  MsgParams,
+  signTypedMessage,
+  TypedMessage,
+  Version,
+  TypedData,
+  getEncryptionPublicKey,
+} from 'eth-sig-util';
+import { hashPersonalMessage, toAscii } from 'ethereumjs-util';
 import { ethers } from 'ethers';
-import { TypedData, TypedDataUtils } from 'ethers-eip712';
 import { Deferrable } from 'ethers/lib/utils';
 
 import { getFormattedTransactionResponse } from '../format';
@@ -13,6 +21,7 @@ import {
   IEthereumTransactions,
   ISendTransaction,
   SimpleTransactionRequest,
+  EthEncryptedData,
 } from '../types';
 import { sysweb3Di } from '@pollum-io/sysweb3-core';
 import { web3Provider } from '@pollum-io/sysweb3-network';
@@ -25,36 +34,32 @@ import {
 export const EthereumTransactions = (): IEthereumTransactions => {
   const storage = sysweb3Di.getStateStorageDb();
 
-  const { hashStruct } = TypedDataUtils;
-
   const getTransactionCount = async (address: string) =>
     await web3Provider.getTransactionCount(address);
 
-  const signTypedDataV4 = async (typedData: TypedData) => {
-    const { domain, message, primaryType } = typedData;
+  const signTypedData = (
+    addr: string,
+    typedData: MsgParams<TypedData | TypedMessage<any>>,
+    version: Version
+  ) => {
+    const { wallet } = getDecryptedVault();
+    const { hash } = storage.get('vault-keys');
 
-    const hashDomain = hashStruct(typedData, 'EIP712Domain', domain);
-    const hashMessage = hashStruct(typedData, primaryType, message);
-
-    const sigHash = keccak256(
-      Buffer.concat([Buffer.from('1901', 'hex'), hashDomain, hashMessage])
-    );
-
-    const {
-      wallet: { activeAccount },
-    } = getDecryptedVault();
-
-    const privateKey = keccakFromString(activeAccount.xpub, 256);
-    const address = ethUtil.privateToAddress(privateKey);
-    const signature = ethUtil.ecsign(sigHash, privateKey);
-
-    return {
-      address,
-      signature,
-    };
+    const accountXprv = wallet.activeAccount.xprv;
+    const address = wallet.activeAccount.address;
+    if (addr !== address)
+      throw {
+        message: 'Decrypting for wrong address, change activeAccount maybe',
+      };
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      hash
+    ).toString(CryptoJS.enc.Utf8);
+    const privKey = Buffer.from(stripHexPrefix(decryptedPrivateKey), 'hex');
+    return signTypedMessage(privKey, typedData, version);
   };
 
-  const ethSign = (params: any) => {
+  const ethSign = (params: string[]) => {
     const { wallet } = getDecryptedVault();
     const { hash } = storage.get('vault-keys');
 
@@ -79,7 +84,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     return resp;
   };
 
-  const signPersonalMessage = (params: any) => {
+  const signPersonalMessage = (params: string[]) => {
     const { wallet } = getDecryptedVault();
     const { hash } = storage.get('vault-keys');
 
@@ -91,14 +96,53 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     ).toString(CryptoJS.enc.Utf8);
     let msg = '';
     if (params[0] === address) {
-      msg = stripHexPrefix(params[1]);
+      msg = params[1];
     } else if (params[1] === address) {
-      msg = stripHexPrefix(params[0]);
+      msg = params[0];
     } else {
       throw { msg: 'Signing for wrong address' };
     }
-    const privateKey = Buffer.from(decryptedPrivateKey, 'hex');
-    const sig = personalSign(privateKey, msg);
+    const privateKey = toBuffer(decryptedPrivateKey);
+    const message = toBuffer(msg);
+    const msgHash = hashPersonalMessage(message);
+    const sig = ecsign(msgHash, privateKey);
+    const serialized = concatSig(toBuffer(sig.v), sig.r, sig.s);
+    return serialized;
+  };
+
+  const parsePersonalMessage = (hexMsg: string) => {
+    return toAscii(hexMsg);
+  };
+
+  const getEncryptedPubKey = () => {
+    const { wallet } = getDecryptedVault();
+    const { hash } = storage.get('vault-keys');
+
+    const accountXprv = wallet.activeAccount.xprv;
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      hash
+    ).toString(CryptoJS.enc.Utf8);
+    return getEncryptionPublicKey(stripHexPrefix(decryptedPrivateKey));
+  };
+
+  // const encryptMessage()
+  // eth_decryptMessage
+  const decryptMessage = (addr: string, encryptedData: EthEncryptedData) => {
+    const { wallet } = getDecryptedVault();
+    const { hash } = storage.get('vault-keys');
+
+    const accountXprv = wallet.activeAccount.xprv;
+    const address = wallet.activeAccount.address;
+    if (addr !== address)
+      throw {
+        message: 'Decrypting for wrong address, change activeAccount maybe',
+      };
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      hash
+    ).toString(CryptoJS.enc.Utf8);
+    const sig = decrypt(encryptedData, decryptedPrivateKey);
     return sig;
   };
 
@@ -288,8 +332,12 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
   return {
     getTransactionCount,
-    signTypedDataV4,
     ethSign,
+    signPersonalMessage,
+    parsePersonalMessage,
+    decryptMessage,
+    signTypedData,
+    getEncryptedPubKey,
     sendTransaction,
     sendFormattedTransaction,
     getFeeByType,
