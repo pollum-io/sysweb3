@@ -37,7 +37,7 @@ export const txUtils = () => {
     ]);
   };
 
-  const getFeeRate = (fee: number): BigInt => new sys.utils.BN(fee * 1e8);
+  const getFeeRate = (fee: number): bigint => new sys.utils.BN(fee * 1e8);
 
   const getGasUsedInTransaction = async (transactionHash: string) => {
     try {
