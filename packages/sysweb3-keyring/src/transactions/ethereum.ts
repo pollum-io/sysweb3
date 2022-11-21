@@ -55,7 +55,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
     const accountXprv = wallet.activeAccount.xprv;
     const address = wallet.activeAccount.address;
-    if (addr !== address)
+    if (addr.toLowerCase() !== address.toLowerCase())
       throw {
         message: 'Decrypting for wrong address, change activeAccount maybe',
       };
