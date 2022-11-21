@@ -52,12 +52,6 @@ export type SimpleTransactionRequest = {
 };
 
 export declare type Version = 'V1' | 'V2' | 'V3' | 'V4';
-export interface EthEncryptedData {
-  version: string;
-  nonce: string;
-  ephemPublicKey: string;
-  ciphertext: string;
-}
 
 export interface IEthereumTransactions {
   getTransactionCount: (address: string) => Promise<number>;
@@ -65,7 +59,7 @@ export interface IEthereumTransactions {
   ethSign: (params: string[]) => string;
   signPersonalMessage: (params: string[]) => string;
   parsePersonalMessage: (hexMsg: string) => string;
-  decryptMessage: (addr: string, encryptedData: EthEncryptedData) => string;
+  decryptMessage: (msgParams: string[]) => string;
   verifyPersonalMessage: (msg: string, sign: string) => string;
   verifyTypedSignature: (
     data: TypedData | TypedMessage<any>,
