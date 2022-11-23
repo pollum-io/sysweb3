@@ -13,6 +13,7 @@ import {
   getEncryptionPublicKey,
   recoverPersonalSignature,
   recoverTypedMessage,
+  EthEncryptedData,
 } from 'eth-sig-util';
 import {
   ecsign,
@@ -29,7 +30,6 @@ import {
   IEthereumTransactions,
   ISendTransaction,
   SimpleTransactionRequest,
-  EthEncryptedData,
 } from '../types';
 import { sysweb3Di } from '@pollum-io/sysweb3-core';
 import { web3Provider } from '@pollum-io/sysweb3-network';
@@ -155,23 +155,29 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     return getEncryptionPublicKey(stripHexPrefix(decryptedPrivateKey));
   };
 
-  // const encryptMessage()
   // eth_decryptMessage
-  const decryptMessage = (addr: string, encryptedData: EthEncryptedData) => {
+  const decryptMessage = (msgParams: string[]) => {
     const { wallet } = getDecryptedVault();
     const { hash } = storage.get('vault-keys');
 
     const accountXprv = wallet.activeAccount.xprv;
     const address = wallet.activeAccount.address;
-    if (addr !== address)
-      throw {
-        message: 'Decrypting for wrong address, change activeAccount maybe',
-      };
+    let encryptedData = '';
+    if (msgParams[0].toLowerCase() === address.toLowerCase()) {
+      encryptedData = msgParams[1];
+    } else if (msgParams[1].toLowerCase() === address.toLowerCase()) {
+      encryptedData = msgParams[0];
+    } else {
+      throw { msg: 'Decrypting for wrong receiver' };
+    }
+    encryptedData = stripHexPrefix(encryptedData);
+    const buff = Buffer.from(encryptedData, 'hex');
+    const cleanData: EthEncryptedData = JSON.parse(buff.toString('utf8'));
     const decryptedPrivateKey = CryptoJS.AES.decrypt(
       accountXprv,
       hash
     ).toString(CryptoJS.enc.Utf8);
-    const sig = decrypt(encryptedData, decryptedPrivateKey);
+    const sig = decrypt(cleanData, stripHexPrefix(decryptedPrivateKey));
     return sig;
   };
 
