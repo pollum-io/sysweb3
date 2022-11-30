@@ -37,7 +37,7 @@ export const validateEthRpc = async (
 ): Promise<{
   valid: boolean;
   hexChainId: string;
-  details: Chain;
+  details: Chain | undefined;
   chain: string;
 }> => {
   try {
@@ -51,19 +51,16 @@ export const validateEthRpc = async (
 
     if (!isValidChainIdForEthNetworks(Number(numberChainId)))
       throw new Error('Invalid chain ID for ethereum networks.');
-
     const { valid, hexChainId } = validateChainId(hexChainIdForUrl);
     const details = chains.getById(numberChainId);
 
-    const isChainIdValid = details && valid;
-
-    if (!isChainIdValid) {
+    if (!valid) {
       throw new Error('RPC has an invalid chain ID');
     }
 
     return {
       details,
-      chain: details.network || 'mainnet',
+      chain: details?.network || 'mainnet',
       hexChainId,
       valid,
     };
@@ -81,23 +78,16 @@ export const getEthRpc = async (
 
   if (!valid) throw new Error('Invalid RPC.');
 
-  const ethereumChain = chain.ethereum;
-
-  const ethereumExplorer = ethereumChain.mainnet.explorers
-    ? ethereumChain.mainnet.explorers[0]
-    : '';
-
   const chainIdNumber = toDecimalFromHex(hexChainId);
-
-  const explorer = details.explorers ? details.explorers[0] : ethereumExplorer;
+  const explorer = details?.explorers ? details.explorers[0].url : '';
 
   const formattedNetwork = {
     url: data.url,
     default: false,
-    label: data.label || String(details.name),
+    label: data.label || String(details?.name ? details.name : ''),
     apiUrl: data.apiUrl,
-    explorer: String(explorer),
-    currency: details.nativeCurrency.symbol,
+    explorer: data?.explorer ? data.explorer : String(explorer),
+    currency: details ? details.nativeCurrency.symbol : undefined,
     chainId: chainIdNumber,
   };
 
