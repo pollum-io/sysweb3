@@ -1,6 +1,6 @@
 import axios from 'axios';
 import bip44Constants from 'bip44-constants';
-import { Chain, chain, chains } from 'eth-chains';
+import { Chain, chains } from 'eth-chains';
 import { ethers } from 'ethers';
 
 import { getFormattedBitcoinLikeNetwork } from './networks';
@@ -80,14 +80,15 @@ export const getEthRpc = async (
 
   const chainIdNumber = toDecimalFromHex(hexChainId);
   const explorer = details?.explorers ? details.explorers[0].url : '';
-
+  if (!details?.nativeCurrency.symbol && !data?.symbol)
+    throw new Error('Must define a symbol');
   const formattedNetwork = {
     url: data.url,
     default: false,
     label: data.label || String(details?.name ? details.name : ''),
     apiUrl: data.apiUrl,
     explorer: data?.explorer ? data.explorer : String(explorer),
-    currency: details ? details.nativeCurrency.symbol : undefined,
+    currency: details ? details.nativeCurrency.symbol : data?.symbol,
     chainId: chainIdNumber,
   };
 
