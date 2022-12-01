@@ -16,14 +16,6 @@ describe('Web3Accounts', () => {
     // getTokens,
   } = Web3Accounts();
 
-  // //* createAccount
-  // it('should create an account', () => {
-  //   const newAccount = createAccount();
-
-  //   expect(newAccount).toBeTruthy();
-  //   expect(newAccount.address).toBeTruthy();
-  // });
-
   //* getBalance
   it('should get an account balance', async () => {
     const balance = await getBalance(FAKE_ADDRESS);

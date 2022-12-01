@@ -217,7 +217,11 @@ export const KeyringManager = (): IKeyringManager => {
   const _getEncryptedPrivateKeyFromHd = () =>
     hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
 
-  const _getBasicWeb3AccountInfo = async (address: string, id: number) => {
+  const _getBasicWeb3AccountInfo = async (
+    address: string,
+    id: number,
+    label?: string
+  ) => {
     const { network } = getDecryptedVault();
 
     const balance = await web3Wallet.getBalance(address);
@@ -229,7 +233,7 @@ export const KeyringManager = (): IKeyringManager => {
       assets,
       id,
       isTrezorWallet: false,
-      label: `Account ${id + 1}`,
+      label: label ? label : `Account ${id + 1}`,
       balances: {
         syscoin: 0,
         ethereum: balance,
@@ -238,7 +242,7 @@ export const KeyringManager = (): IKeyringManager => {
     };
   };
 
-  const _setDerivedWeb3Accounts = async (id: number) => {
+  const _setDerivedWeb3Accounts = async (id: number, label: string) => {
     const seed = await mnemonicToSeed(getDecryptedMnemonic());
     const privateRoot = hdkey.fromMasterSeed(seed);
     const derivedCurrentAccount = privateRoot.derivePath(
@@ -251,7 +255,7 @@ export const KeyringManager = (): IKeyringManager => {
 
     const { hash } = storage.get('vault-keys');
 
-    const basicAccountInfo = await _getBasicWeb3AccountInfo(address, id);
+    const basicAccountInfo = await _getBasicWeb3AccountInfo(address, id, label);
     const createdAccount = {
       address,
       xpub,
@@ -274,7 +278,11 @@ export const KeyringManager = (): IKeyringManager => {
         getDecryptedMnemonic()
       );
 
-      const basicAccountInfo = await _getBasicWeb3AccountInfo(address, 0);
+      const basicAccountInfo = await _getBasicWeb3AccountInfo(
+        address,
+        0,
+        label
+      );
       const account = {
         xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
         xpub: publicKey,
@@ -303,8 +311,8 @@ export const KeyringManager = (): IKeyringManager => {
 
     for (const index in Object.values(_wallet.accounts)) {
       const id = Number(index);
-
-      await _setDerivedWeb3Accounts(id);
+      const label = _wallet.accounts[id].label;
+      await _setDerivedWeb3Accounts(id, label);
     }
 
     const { wallet: _updatedWallet } = getDecryptedVault();
@@ -377,6 +385,7 @@ export const KeyringManager = (): IKeyringManager => {
       const xprv = getEncryptedXprv();
       const updatedAccountInfo = await _getLatestUpdateForSysAccount();
       const account = _getInitialAccountData({
+        label: updatedAccountInfo.label,
         signer: hd,
         createdAccount: updatedAccountInfo,
         xprv,
@@ -418,9 +427,9 @@ export const KeyringManager = (): IKeyringManager => {
           details && details.pubData && details.pubData.desc
             ? atob(details.pubData.desc)
             : '';
-        // console.log('Check Description', description);
+
         let image = '';
-        // console.log('Check ipfs description', ipfsUrl);
+
         if (description.startsWith('https://ipfs.io/ipfs/')) {
           const { data } = await axios.get(description);
           image = data.image ? data.image : '';
@@ -499,6 +508,7 @@ export const KeyringManager = (): IKeyringManager => {
     transactions: any;
     assets: any;
     address: string;
+    label: string;
   }> => {
     const { wallet: _wallet, network, isTestnet } = getDecryptedVault();
 
@@ -538,8 +548,9 @@ export const KeyringManager = (): IKeyringManager => {
       xpub,
     });
     const address = await hd.getNewReceivingAddress(true);
-
+    const label = _wallet.activeAccount.label;
     return {
+      label,
       address,
       ...formattedBackendAccount,
     };
@@ -895,7 +906,11 @@ export const KeyringManager = (): IKeyringManager => {
     const xprv = newWallet.getPrivateKeyString();
     const xpub = newWallet.getPublicKeyString();
 
-    const basicAccountInfo = await _getBasicWeb3AccountInfo(address, length);
+    const basicAccountInfo = await _getBasicWeb3AccountInfo(
+      address,
+      length,
+      label
+    );
 
     const { hash } = storage.get('vault-keys');
 

@@ -334,6 +334,19 @@ describe('', () => {
   });
   //-----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------
 
+  // //* createAccount
+  it('should create an account', async () => {
+    const newAccount = await keyringManager.addNewAccount();
+    expect(newAccount).toBeTruthy();
+    expect(newAccount.address).toBeTruthy();
+  });
+
+  it('should create an account with name', async () => {
+    const newAccount = await keyringManager.addNewAccount('Teddy');
+    expect(newAccount).toBeTruthy();
+    expect(newAccount.label).toBe('Teddy');
+  });
+
   //* forgetMainWallet
   it('should forget wallet / reset to initial state', async () => {
     keyringManager.forgetMainWallet(FAKE_PASSWORD);

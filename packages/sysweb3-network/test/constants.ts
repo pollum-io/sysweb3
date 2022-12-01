@@ -17,12 +17,12 @@ export const EXAMPLE_L2 = {
 };
 
 export const SYS_L2 = {
-  url: 'https://bedrock.rollux.com:9545',
+  url: 'https://bedrock.rollux.com:9545/',
   chainId: 57000,
   apiUrl: undefined,
   isSyscoinRPC: false,
-  label: 'ROLLUX',
-  symbol: 'SYS',
+  label: 'Rollux Bedrock Testnet',
+  symbol: 'bSYS',
 };
 
 export const TESTNET = {
