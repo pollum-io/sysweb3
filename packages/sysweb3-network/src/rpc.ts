@@ -1,6 +1,6 @@
 import axios from 'axios';
 import bip44Constants from 'bip44-constants';
-import { Chain, chain, chains } from 'eth-chains';
+import { Chain, chains } from 'eth-chains';
 import { ethers } from 'ethers';
 
 import { getFormattedBitcoinLikeNetwork } from './networks';
@@ -37,7 +37,7 @@ export const validateEthRpc = async (
 ): Promise<{
   valid: boolean;
   hexChainId: string;
-  details: Chain;
+  details: Chain | undefined;
   chain: string;
 }> => {
   try {
@@ -51,19 +51,19 @@ export const validateEthRpc = async (
 
     if (!isValidChainIdForEthNetworks(Number(numberChainId)))
       throw new Error('Invalid chain ID for ethereum networks.');
-
     const { valid, hexChainId } = validateChainId(hexChainIdForUrl);
     const details = chains.getById(numberChainId);
 
-    const isChainIdValid = details && valid;
-
-    if (!isChainIdValid) {
+    if (!valid) {
       throw new Error('RPC has an invalid chain ID');
     }
-
+    let chain = 'unknown';
+    if (details) {
+      chain = details.network ? details.network : chain;
+    }
     return {
       details,
-      chain: details.network || 'mainnet',
+      chain,
       hexChainId,
       valid,
     };
@@ -81,23 +81,19 @@ export const getEthRpc = async (
 
   if (!valid) throw new Error('Invalid RPC.');
 
-  const ethereumChain = chain.ethereum;
-
-  const ethereumExplorer = ethereumChain.mainnet.explorers
-    ? ethereumChain.mainnet.explorers[0]
-    : '';
-
   const chainIdNumber = toDecimalFromHex(hexChainId);
-
-  const explorer = details.explorers ? details.explorers[0] : ethereumExplorer;
-
+  let explorer = '';
+  if (details) {
+    explorer = details.explorers ? details.explorers[0].url : explorer;
+  }
+  if (!details && !data.symbol) throw new Error('Must define a symbol');
   const formattedNetwork = {
     url: data.url,
     default: false,
-    label: data.label || String(details.name),
+    label: data.label || String(details ? details.name : ''),
     apiUrl: data.apiUrl,
-    explorer: String(explorer),
-    currency: details.nativeCurrency.symbol,
+    explorer: data.explorer ? data.explorer : String(explorer),
+    currency: details ? details.nativeCurrency.symbol : data.symbol,
     chainId: chainIdNumber,
   };
 
