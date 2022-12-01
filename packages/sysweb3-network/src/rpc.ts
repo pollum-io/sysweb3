@@ -57,10 +57,13 @@ export const validateEthRpc = async (
     if (!valid) {
       throw new Error('RPC has an invalid chain ID');
     }
-
+    let chain = 'mainnet';
+    if (details) {
+      chain = details.network ? details.network : chain;
+    }
     return {
       details,
-      chain: details?.network || 'mainnet',
+      chain,
       hexChainId,
       valid,
     };
@@ -79,16 +82,18 @@ export const getEthRpc = async (
   if (!valid) throw new Error('Invalid RPC.');
 
   const chainIdNumber = toDecimalFromHex(hexChainId);
-  const explorer = details?.explorers ? details.explorers[0].url : '';
-  if (!details?.nativeCurrency.symbol && !data?.symbol)
-    throw new Error('Must define a symbol');
+  let explorer = '';
+  if (details) {
+    explorer = details.explorers ? details.explorers[0].url : explorer;
+  }
+  if (!details && !data.symbol) throw new Error('Must define a symbol');
   const formattedNetwork = {
     url: data.url,
     default: false,
-    label: data.label || String(details?.name ? details.name : ''),
+    label: data.label || String(details ? details.name : ''),
     apiUrl: data.apiUrl,
-    explorer: data?.explorer ? data.explorer : String(explorer),
-    currency: details ? details.nativeCurrency.symbol : data?.symbol,
+    explorer: data.explorer ? data.explorer : String(explorer),
+    currency: details ? details.nativeCurrency.symbol : data.symbol,
     chainId: chainIdNumber,
   };
 
