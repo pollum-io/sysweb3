@@ -57,7 +57,7 @@ export const validateEthRpc = async (
     if (!valid) {
       throw new Error('RPC has an invalid chain ID');
     }
-    let chain = 'mainnet';
+    let chain = 'unknown';
     if (details) {
       chain = details.network ? details.network : chain;
     }

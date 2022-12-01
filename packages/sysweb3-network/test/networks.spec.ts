@@ -21,10 +21,12 @@ describe('Networks', () => {
   });
   it('should getNetwok Response L2', async () => {
     const { formattedNetwork } = await getEthRpc(EXAMPLE_L2);
+    console.log('check formattedNetwork', formattedNetwork);
     expect(formattedNetwork.chainId).toBe(EXAMPLE_L2.chainId);
   });
   it('should getNetwok Response L2 Syscoin', async () => {
     const { formattedNetwork } = await getEthRpc(SYS_L2);
+    console.log('check formattedNetwork', formattedNetwork);
     expect(formattedNetwork.chainId).toBe(SYS_L2.chainId);
   });
 });
