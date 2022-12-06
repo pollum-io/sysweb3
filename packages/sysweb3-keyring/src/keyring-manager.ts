@@ -896,10 +896,10 @@ export const KeyringManager = (): IKeyringManager => {
 
     const { wallet: _wallet } = getDecryptedVault();
     const { length } = Object.values(_wallet.accounts);
-    const seed = await mnemonicToSeed(mnemonic);
+    const seed = await mnemonicToSeed(getDecryptedMnemonic());
     const privateRoot = hdkey.fromMasterSeed(seed);
     const derivedCurrentAccount = privateRoot.derivePath(
-      `m/44'/60'/0'/0/${length + 1}`
+      `m/44'/60'/0'/0/${length}`
     );
     const newWallet = derivedCurrentAccount.getWallet();
     const address = newWallet.getAddressString();
