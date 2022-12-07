@@ -69,6 +69,11 @@ describe('', () => {
     expect(wallet.activeAccount.id).toBe(1);
   });
 
+  it('should derivate a new account with specific address', async () => {
+    const account = await keyringManager.addNewAccount();
+    expect(account.address).toBe('sys1qvw03l9y6thvsa5rm3sp8ajdsfqwakz5l9za8hv');
+  });
+
   //* setActiveAccount
   it('should set the active account', () => {
     keyringManager.setActiveAccount(0);
