@@ -62,16 +62,22 @@ describe('', () => {
 
   // * addNewAccount
   it('should add a new account', async () => {
-    const account = await keyringManager.addNewAccount(undefined);
-    expect(account.label).toBe('Account 2');
+    const account2 = await keyringManager.addNewAccount(undefined);
+    expect(account2.label).toBe('Account 2');
 
     const wallet = keyringManager.getState();
     expect(wallet.activeAccount.id).toBe(1);
   });
 
   it('should derivate a new account with specific address', async () => {
-    const account = await keyringManager.addNewAccount();
-    expect(account.address).toBe('sys1qvw03l9y6thvsa5rm3sp8ajdsfqwakz5l9za8hv');
+    const account2 = await keyringManager.addNewAccount();
+    expect(account2.address).toBe('0xd5e66a5d61690dd4d6675d1e9eb480ddd640fe06');
+
+    const account3 = await keyringManager.addNewAccount();
+    expect(account3.address).toBe('0x6a702c81d969627021c118b72f67d8bd70534c77');
+
+    const account4 = await keyringManager.addNewAccount();
+    expect(account4.address).toBe('0x04e8e913e05ffe66ebd8d9bfb2c1c9c5293ceb2d');
   });
 
   //* setActiveAccount
@@ -100,6 +106,8 @@ describe('', () => {
     expect(privateKey.length).toBeGreaterThan(50);
 
     id = 3; // id 3 does not exist
+
+    console.log(keyringManager.getPrivateKeyByAccountId(id));
     expect(() => {
       keyringManager.getPrivateKeyByAccountId(id);
     }).toThrow('Account not found');
