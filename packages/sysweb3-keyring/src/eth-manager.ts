@@ -47,7 +47,7 @@ export interface IWeb3Accounts {
 export const Web3Accounts = (): IWeb3Accounts => {
   const createAccount = (privateKey: string) => new ethers.Wallet(privateKey);
 
-  const getBalance = async (address: string): Promise<number> => {
+  const getBalance = async (address: string) => {
     try {
       const balance = await web3Provider.getBalance(address);
       const formattedBalance = ethers.utils.formatEther(balance);
@@ -56,7 +56,7 @@ export const Web3Accounts = (): IWeb3Accounts => {
 
       return roundedBalance;
     } catch (error) {
-      return 0;
+      throw error;
     }
   };
 
@@ -75,7 +75,7 @@ export const Web3Accounts = (): IWeb3Accounts => {
 
       return roundedBalance;
     } catch (error) {
-      return 0;
+      throw error;
     }
   };
 
@@ -223,7 +223,7 @@ export const Web3Accounts = (): IWeb3Accounts => {
 
       return tokensTransfers;
     } catch (error) {
-      return tokensTransfers;
+      throw error;
     }
   };
 
@@ -239,7 +239,7 @@ export const Web3Accounts = (): IWeb3Accounts => {
 
       return account;
     } catch (error) {
-      throw new Error(`Can't import account. Error: ${error}`);
+      throw error;
     }
   };
 
@@ -261,9 +261,7 @@ export const Web3Accounts = (): IWeb3Accounts => {
     const wssProvider = new ethers.providers.WebSocketProvider(String(url));
 
     wssProvider.on('error', (error) => {
-      console.error(`WS: Could not get pending transactions. ${error}`);
-
-      return;
+      throw error;
     });
 
     const pendingTransactions: TransactionResponse[] = [];
@@ -353,7 +351,7 @@ export const Web3Accounts = (): IWeb3Accounts => {
 
       return [...pendingTransactions];
     } catch (error) {
-      return [];
+      throw error;
     }
   };
 

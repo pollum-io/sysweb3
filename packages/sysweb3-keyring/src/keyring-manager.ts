@@ -643,7 +643,7 @@ export const KeyringManager = (): IKeyringManager => {
 
       return account;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   };
 
@@ -762,7 +762,7 @@ export const KeyringManager = (): IKeyringManager => {
         isTestnet: false,
       };
     } catch (error) {
-      throw new Error(`Could not set network. Error: ${error}`);
+      throw error;
     }
   };
 
@@ -815,7 +815,7 @@ export const KeyringManager = (): IKeyringManager => {
 
       return account;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   };
 
