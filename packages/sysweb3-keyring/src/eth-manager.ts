@@ -56,7 +56,7 @@ export const Web3Accounts = (): IWeb3Accounts => {
 
       return roundedBalance;
     } catch (error) {
-      throw error;
+      return 0;
     }
   };
 
@@ -75,7 +75,7 @@ export const Web3Accounts = (): IWeb3Accounts => {
 
       return roundedBalance;
     } catch (error) {
-      throw error;
+      return 0;
     }
   };
 
