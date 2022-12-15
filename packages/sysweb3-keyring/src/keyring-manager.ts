@@ -30,6 +30,7 @@ import {
   setEncryptedVault,
   getDecryptedVault,
   getAsset,
+  IEthereumNftDetails,
 } from '@pollum-io/sysweb3-utils';
 
 export const KeyringManager = (): IKeyringManager => {
@@ -227,8 +228,8 @@ export const KeyringManager = (): IKeyringManager => {
     const balance = await web3Wallet.getBalance(address);
 
     const transactions = await web3Wallet.getUserTransactions(address, network);
-    const assets = await web3Wallet.getAssetsByAddress(address, network);
-
+    // const assets = await web3Wallet.getAssetsByAddress(address, network);
+    const assets: IEthereumNftDetails[] = [];
     return {
       assets,
       id,
