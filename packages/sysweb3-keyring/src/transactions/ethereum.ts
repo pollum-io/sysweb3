@@ -50,25 +50,21 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     typedData: TypedData | TypedMessage<any>,
     version: Version
   ) => {
-    try {
-      const { wallet } = getDecryptedVault();
-      const { hash } = storage.get('vault-keys');
+    const { wallet } = getDecryptedVault();
+    const { hash } = storage.get('vault-keys');
 
-      const accountXprv = wallet.activeAccount.xprv;
-      const address = wallet.activeAccount.address;
-      if (addr.toLowerCase() !== address.toLowerCase())
-        throw {
-          message: 'Decrypting for wrong address, change activeAccount maybe',
-        };
-      const decryptedPrivateKey = CryptoJS.AES.decrypt(
-        accountXprv,
-        hash
-      ).toString(CryptoJS.enc.Utf8);
-      const privKey = Buffer.from(stripHexPrefix(decryptedPrivateKey), 'hex');
-      return signTypedMessage(privKey, { data: typedData }, version);
-    } catch (error) {
-      throw error;
-    }
+    const accountXprv = wallet.activeAccount.xprv;
+    const address = wallet.activeAccount.address;
+    if (addr.toLowerCase() !== address.toLowerCase())
+      throw {
+        message: 'Decrypting for wrong address, change activeAccount maybe',
+      };
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      hash
+    ).toString(CryptoJS.enc.Utf8);
+    const privKey = Buffer.from(stripHexPrefix(decryptedPrivateKey), 'hex');
+    return signTypedMessage(privKey, { data: typedData }, version);
   };
 
   const verifyTypedSignature = (
@@ -98,15 +94,16 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       hash
     ).toString(CryptoJS.enc.Utf8);
     let msg = '';
+    //Comparisions do not need to care for checksum address
+    if (params[0].toLowerCase() === address.toLowerCase()) {
+      msg = stripHexPrefix(params[1]);
+    } else if (params[1].toLowerCase() === address.toLowerCase()) {
+      msg = stripHexPrefix(params[0]);
+    } else {
+      throw { msg: 'Signing for wrong address' };
+    }
+
     try {
-      //Comparisions do not need to care for checksum address
-      if (params[0].toLowerCase() === address.toLowerCase()) {
-        msg = stripHexPrefix(params[1]);
-      } else if (params[1].toLowerCase() === address.toLowerCase()) {
-        msg = stripHexPrefix(params[0]);
-      } else {
-        throw { msg: 'Signing for wrong address' };
-      }
       const bufPriv = toBuffer(decryptedPrivateKey);
       const msgHash = Buffer.from(msg, 'hex');
       const sig = ecsign(msgHash, bufPriv);
@@ -129,14 +126,15 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     ).toString(CryptoJS.enc.Utf8);
     let msg = '';
 
+    if (params[0].toLowerCase() === address.toLowerCase()) {
+      msg = params[1];
+    } else if (params[1].toLowerCase() === address.toLowerCase()) {
+      msg = params[0];
+    } else {
+      throw { msg: 'Signing for wrong address' };
+    }
+
     try {
-      if (params[0].toLowerCase() === address.toLowerCase()) {
-        msg = params[1];
-      } else if (params[1].toLowerCase() === address.toLowerCase()) {
-        msg = params[0];
-      } else {
-        throw { msg: 'Signing for wrong address' };
-      }
       const privateKey = toBuffer(decryptedPrivateKey);
       const message = toBuffer(msg);
       const msgHash = hashPersonalMessage(message);
@@ -171,13 +169,13 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   const getEncryptedPubKey = () => {
     const { wallet } = getDecryptedVault();
     const { hash } = storage.get('vault-keys');
+    const accountXprv = wallet.activeAccount.xprv;
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      hash
+    ).toString(CryptoJS.enc.Utf8);
 
     try {
-      const accountXprv = wallet.activeAccount.xprv;
-      const decryptedPrivateKey = CryptoJS.AES.decrypt(
-        accountXprv,
-        hash
-      ).toString(CryptoJS.enc.Utf8);
       return getEncryptionPublicKey(stripHexPrefix(decryptedPrivateKey));
     } catch (error) {
       throw error;
@@ -200,13 +198,14 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       throw { msg: 'Decrypting for wrong receiver' };
     }
     encryptedData = stripHexPrefix(encryptedData);
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      hash
+    ).toString(CryptoJS.enc.Utf8);
+
     try {
       const buff = Buffer.from(encryptedData, 'hex');
       const cleanData: EthEncryptedData = JSON.parse(buff.toString('utf8'));
-      const decryptedPrivateKey = CryptoJS.AES.decrypt(
-        accountXprv,
-        hash
-      ).toString(CryptoJS.enc.Utf8);
       const sig = decrypt(cleanData, stripHexPrefix(decryptedPrivateKey));
       return sig;
     } catch (error) {
@@ -226,8 +225,8 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     receivingAddress: string;
     value: any;
   }) => {
+    const abi = getErc20Abi() as any;
     try {
-      const abi = getErc20Abi() as any;
       const contract = createContractUsingAbi(abi, contractAddress);
       const data = contract.methods
         .transfer(receivingAddress, value)
@@ -359,26 +358,22 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getFeeByType = async (type: string) => {
-    try {
-      const gasPrice = (await getRecommendedGasPrice(false)) as string;
+    const gasPrice = (await getRecommendedGasPrice(false)) as string;
 
-      const low = toBigNumber(gasPrice)
-        .mul(ethers.BigNumber.from('8'))
-        .div(ethers.BigNumber.from('10'))
-        .toString();
+    const low = toBigNumber(gasPrice)
+      .mul(ethers.BigNumber.from('8'))
+      .div(ethers.BigNumber.from('10'))
+      .toString();
 
-      const high = toBigNumber(gasPrice)
-        .mul(ethers.BigNumber.from('11'))
-        .div(ethers.BigNumber.from('10'))
-        .toString();
+    const high = toBigNumber(gasPrice)
+      .mul(ethers.BigNumber.from('11'))
+      .div(ethers.BigNumber.from('10'))
+      .toString();
 
-      if (type === 'low') return low;
-      if (type === 'high') return high;
+    if (type === 'low') return low;
+    if (type === 'high') return high;
 
-      return gasPrice;
-    } catch (error) {
-      throw error;
-    }
+    return gasPrice;
   };
 
   const getGasLimit = async (toAddress: string) => {

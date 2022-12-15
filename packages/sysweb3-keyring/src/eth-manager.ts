@@ -305,54 +305,48 @@ export const Web3Accounts = (): IWeb3Accounts => {
       'kovan',
     ];
 
-    try {
-      const { chainId, default: _default, label, apiUrl } = network;
+    const { chainId, default: _default, label, apiUrl } = network;
 
-      const networkByLabel = chainId === 1 ? 'homestead' : label.toLowerCase();
+    const networkByLabel = chainId === 1 ? 'homestead' : label.toLowerCase();
 
-      const pendingTransactions = getPendingTransactions(chainId, address);
+    const pendingTransactions = getPendingTransactions(chainId, address);
 
-      if (_default) {
-        if (etherscanSupportedNetworks.includes(networkByLabel)) {
-          const etherscanProvider = new ethers.providers.EtherscanProvider(
-            networkByLabel,
-            'K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
-          );
+    if (_default) {
+      if (etherscanSupportedNetworks.includes(networkByLabel)) {
+        const etherscanProvider = new ethers.providers.EtherscanProvider(
+          networkByLabel,
+          'K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
+        );
 
-          const txHistory = await etherscanProvider.getHistory(address);
+        const txHistory = await etherscanProvider.getHistory(address);
 
-          const history = await Promise.all(
-            txHistory.map(
-              async (tx) =>
-                await getFormattedTransactionResponse(etherscanProvider, tx)
-            )
-          );
-
-          return (
-            [...pendingTransactions, ...history] || [...pendingTransactions]
-          );
-        }
-
-        const query = `?module=account&action=txlist&address=${address}`;
-
-        const {
-          data: { result },
-        } = await axios.get(`${apiUrl}${query}`);
-
-        const txs = await Promise.all(
-          result.map(
-            async (tx: TransactionResponse) =>
-              await getFormattedTransactionResponse(web3Provider, tx)
+        const history = await Promise.all(
+          txHistory.map(
+            async (tx) =>
+              await getFormattedTransactionResponse(etherscanProvider, tx)
           )
         );
 
-        return [...pendingTransactions, ...txs];
+        return [...pendingTransactions, ...history] || [...pendingTransactions];
       }
 
-      return [...pendingTransactions];
-    } catch (error) {
-      throw error;
+      const query = `?module=account&action=txlist&address=${address}`;
+
+      const {
+        data: { result },
+      } = await axios.get(`${apiUrl}${query}`);
+
+      const txs = await Promise.all(
+        result.map(
+          async (tx: TransactionResponse) =>
+            await getFormattedTransactionResponse(web3Provider, tx)
+        )
+      );
+
+      return [...pendingTransactions, ...txs];
     }
+
+    return [...pendingTransactions];
   };
 
   return {
