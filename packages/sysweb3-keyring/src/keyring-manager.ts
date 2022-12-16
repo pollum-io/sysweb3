@@ -30,6 +30,7 @@ import {
   setEncryptedVault,
   getDecryptedVault,
   getAsset,
+  IEthereumNftDetails,
 } from '@pollum-io/sysweb3-utils';
 
 export const KeyringManager = (): IKeyringManager => {
@@ -227,8 +228,8 @@ export const KeyringManager = (): IKeyringManager => {
     const balance = await web3Wallet.getBalance(address);
 
     const transactions = await web3Wallet.getUserTransactions(address, network);
-    const assets = await web3Wallet.getAssetsByAddress(address, network);
-
+    // const assets = await web3Wallet.getAssetsByAddress(address, network);
+    const assets: IEthereumNftDetails[] = [];
     return {
       assets,
       id,
@@ -595,56 +596,52 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const createHardwareWallet = async () => {
-    try {
-      await initialize();
+    await initialize();
 
-      const trezorSigner = new sys.utils.TrezorSigner();
+    const trezorSigner = new sys.utils.TrezorSigner();
 
-      const { _main } = getSigners();
+    const { _main } = getSigners();
 
-      if (!hd.mnemonic) {
-        const { _hd } = getSigners();
+    if (!hd.mnemonic) {
+      const { _hd } = getSigners();
 
-        hd = _hd;
-      }
-
-      await trezorSigner.createAccount();
-
-      const createdAccount = await _getFormattedBackendAccount({
-        url: _main.blockbookURL,
-        xpub: hd.getAccountXpub(),
-      });
-
-      const address = await hd.getNewReceivingAddress(true);
-
-      const account = _getInitialAccountData({
-        label: `Trezor ${hd.Signer.accountIndex + 1}`,
-        createdAccount: {
-          address,
-          isTrezorWallet: true,
-          ...createdAccount,
-        },
-        xprv: getEncryptedXprv(),
-        signer: hd,
-      });
-
-      const { wallet: _wallet } = getDecryptedVault();
-
-      wallet = {
-        ..._wallet,
-        accounts: {
-          ..._wallet.accounts,
-          [account.id]: account,
-        },
-        activeAccount: account,
-      };
-
-      setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-      return account;
-    } catch (error) {
-      throw new Error(error);
+      hd = _hd;
     }
+
+    await trezorSigner.createAccount();
+
+    const createdAccount = await _getFormattedBackendAccount({
+      url: _main.blockbookURL,
+      xpub: hd.getAccountXpub(),
+    });
+
+    const address = await hd.getNewReceivingAddress(true);
+
+    const account = _getInitialAccountData({
+      label: `Trezor ${hd.Signer.accountIndex + 1}`,
+      createdAccount: {
+        address,
+        isTrezorWallet: true,
+        ...createdAccount,
+      },
+      xprv: getEncryptedXprv(),
+      signer: hd,
+    });
+
+    const { wallet: _wallet } = getDecryptedVault();
+
+    wallet = {
+      ..._wallet,
+      accounts: {
+        ..._wallet.accounts,
+        [account.id]: account,
+      },
+      activeAccount: account,
+    };
+
+    setEncryptedVault({ ...getDecryptedVault(), wallet });
+
+    return account;
   };
 
   const login = async (password: string): Promise<IKeyringAccountState> => {
@@ -728,42 +725,38 @@ export const KeyringManager = (): IKeyringManager => {
     network: INetwork,
     chain: string
   ): Promise<{ rpc: any; isTestnet: boolean }> => {
-    try {
-      setEncryptedVault({
-        ...getDecryptedVault(),
-        network,
-      });
-      if (chain === 'syscoin') {
-        const response = await validateSysRpc(network.url);
+    setEncryptedVault({
+      ...getDecryptedVault(),
+      network,
+    });
+    if (chain === 'syscoin') {
+      const response = await validateSysRpc(network.url);
 
-        if (!response.valid) throw new Error('Invalid network');
+      if (!response.valid) throw new Error('Invalid network');
 
-        const rpc = network.default ? null : await getSysRpc(network);
+      const rpc = network.default ? null : await getSysRpc(network);
 
-        return {
-          rpc,
-          isTestnet: response.chain === 'test',
-        };
-      }
-      const newNetwork =
-        getDecryptedVault().wallet.networks.ethereum[network.chainId];
-
-      if (!newNetwork) throw new Error('Network not found');
-
-      await jsonRpcRequest(network.url, 'eth_chainId');
-
-      setActiveNetwork(newNetwork);
-      setEncryptedVault({
-        ...getDecryptedVault(),
-        isTestnet: false,
-      });
       return {
-        rpc: null,
-        isTestnet: false,
+        rpc,
+        isTestnet: response.chain === 'test',
       };
-    } catch (error) {
-      throw new Error(`Could not set network. Error: ${error}`);
     }
+    const newNetwork =
+      getDecryptedVault().wallet.networks.ethereum[network.chainId];
+
+    if (!newNetwork) throw new Error('Network not found');
+
+    await jsonRpcRequest(network.url, 'eth_chainId');
+
+    setActiveNetwork(newNetwork);
+    setEncryptedVault({
+      ...getDecryptedVault(),
+      isTestnet: false,
+    });
+    return {
+      rpc: null,
+      isTestnet: false,
+    };
   };
 
   /** networks */
@@ -789,34 +782,30 @@ export const KeyringManager = (): IKeyringManager => {
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
 
-    try {
-      await _setSignerByChain(network, chain);
+    await _setSignerByChain(network, chain);
 
-      if (chain === 'syscoin') {
-        const { rpc, isTestnet } = await _setSignerByChain(network, chain);
+    if (chain === 'syscoin') {
+      const { rpc, isTestnet } = await _setSignerByChain(network, chain);
 
-        setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
-      }
-
-      const account = await _getAccountForNetwork({
-        isSyscoinChain: chain === 'syscoin',
-      });
-
-      wallet = {
-        ...wallet,
-        accounts: {
-          ...wallet.accounts,
-          [account.id]: account,
-        },
-        activeAccount: account,
-      };
-
-      setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-      return account;
-    } catch (error) {
-      throw new Error(error);
+      setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
     }
+
+    const account = await _getAccountForNetwork({
+      isSyscoinChain: chain === 'syscoin',
+    });
+
+    wallet = {
+      ...wallet,
+      accounts: {
+        ...wallet.accounts,
+        [account.id]: account,
+      },
+      activeAccount: account,
+    };
+
+    setEncryptedVault({ ...getDecryptedVault(), wallet });
+
+    return account;
   };
 
   const addAccountToSigner = (accountId: number) => {

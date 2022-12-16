@@ -72,11 +72,15 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     signature: string,
     version: Version
   ) => {
-    const msgParams: SignedMsgParams<TypedData | TypedMessage<any>> = {
-      data,
-      sig: signature,
-    };
-    return recoverTypedMessage(msgParams, version);
+    try {
+      const msgParams: SignedMsgParams<TypedData | TypedMessage<any>> = {
+        data,
+        sig: signature,
+      };
+      return recoverTypedMessage(msgParams, version);
+    } catch (error) {
+      throw error;
+    }
   };
 
   const ethSign = (params: string[]) => {
@@ -98,11 +102,16 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     } else {
       throw { msg: 'Signing for wrong address' };
     }
-    const bufPriv = toBuffer(decryptedPrivateKey);
-    const msgHash = Buffer.from(msg, 'hex');
-    const sig = ecsign(msgHash, bufPriv);
-    const resp = concatSig(toBuffer(sig.v), sig.r, sig.s);
-    return resp;
+
+    try {
+      const bufPriv = toBuffer(decryptedPrivateKey);
+      const msgHash = Buffer.from(msg, 'hex');
+      const sig = ecsign(msgHash, bufPriv);
+      const resp = concatSig(toBuffer(sig.v), sig.r, sig.s);
+      return resp;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const signPersonalMessage = (params: string[]) => {
@@ -116,6 +125,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       hash
     ).toString(CryptoJS.enc.Utf8);
     let msg = '';
+
     if (params[0].toLowerCase() === address.toLowerCase()) {
       msg = params[1];
     } else if (params[1].toLowerCase() === address.toLowerCase()) {
@@ -123,36 +133,53 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     } else {
       throw { msg: 'Signing for wrong address' };
     }
-    const privateKey = toBuffer(decryptedPrivateKey);
-    const message = toBuffer(msg);
-    const msgHash = hashPersonalMessage(message);
-    const sig = ecsign(msgHash, privateKey);
-    const serialized = concatSig(toBuffer(sig.v), sig.r, sig.s);
-    return serialized;
+
+    try {
+      const privateKey = toBuffer(decryptedPrivateKey);
+      const message = toBuffer(msg);
+      const msgHash = hashPersonalMessage(message);
+      const sig = ecsign(msgHash, privateKey);
+      const serialized = concatSig(toBuffer(sig.v), sig.r, sig.s);
+      return serialized;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const parsePersonalMessage = (hexMsg: string) => {
-    return toAscii(hexMsg);
+    try {
+      return toAscii(hexMsg);
+    } catch (error) {
+      throw error;
+    }
   };
 
   const verifyPersonalMessage = (message: string, sign: string) => {
-    const msgParams: SignedMsgParams<string> = {
-      data: message,
-      sig: sign,
-    };
-    return recoverPersonalSignature(msgParams);
+    try {
+      const msgParams: SignedMsgParams<string> = {
+        data: message,
+        sig: sign,
+      };
+      return recoverPersonalSignature(msgParams);
+    } catch (error) {
+      throw error;
+    }
   };
 
   const getEncryptedPubKey = () => {
     const { wallet } = getDecryptedVault();
     const { hash } = storage.get('vault-keys');
-
     const accountXprv = wallet.activeAccount.xprv;
     const decryptedPrivateKey = CryptoJS.AES.decrypt(
       accountXprv,
       hash
     ).toString(CryptoJS.enc.Utf8);
-    return getEncryptionPublicKey(stripHexPrefix(decryptedPrivateKey));
+
+    try {
+      return getEncryptionPublicKey(stripHexPrefix(decryptedPrivateKey));
+    } catch (error) {
+      throw error;
+    }
   };
 
   // eth_decryptMessage
@@ -171,14 +198,19 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       throw { msg: 'Decrypting for wrong receiver' };
     }
     encryptedData = stripHexPrefix(encryptedData);
-    const buff = Buffer.from(encryptedData, 'hex');
-    const cleanData: EthEncryptedData = JSON.parse(buff.toString('utf8'));
     const decryptedPrivateKey = CryptoJS.AES.decrypt(
       accountXprv,
       hash
     ).toString(CryptoJS.enc.Utf8);
-    const sig = decrypt(cleanData, stripHexPrefix(decryptedPrivateKey));
-    return sig;
+
+    try {
+      const buff = Buffer.from(encryptedData, 'hex');
+      const cleanData: EthEncryptedData = JSON.parse(buff.toString('utf8'));
+      const sig = decrypt(cleanData, stripHexPrefix(decryptedPrivateKey));
+      return sig;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const toBigNumber = (aBigNumberish: string | number) =>
@@ -194,10 +226,16 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     value: any;
   }) => {
     const abi = getErc20Abi() as any;
-    const contract = createContractUsingAbi(abi, contractAddress);
-    const data = contract.methods.transfer(receivingAddress, value).encodeABI();
+    try {
+      const contract = createContractUsingAbi(abi, contractAddress);
+      const data = contract.methods
+        .transfer(receivingAddress, value)
+        .encodeABI();
 
-    return data;
+      return data;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const getFeeDataWithDynamicMaxPriorityFeePerGas = async () => {
@@ -206,20 +244,24 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
     const provider = web3Provider;
 
-    const [block, ethMaxPriorityFee] = await Promise.all([
-      await provider.getBlock('latest'),
-      await provider.send('eth_maxPriorityFeePerGas', []),
-    ]);
+    try {
+      const [block, ethMaxPriorityFee] = await Promise.all([
+        await provider.getBlock('latest'),
+        await provider.send('eth_maxPriorityFeePerGas', []),
+      ]);
 
-    if (block && block.baseFeePerGas) {
-      maxPriorityFeePerGas = ethers.BigNumber.from(ethMaxPriorityFee);
+      if (block && block.baseFeePerGas) {
+        maxPriorityFeePerGas = ethers.BigNumber.from(ethMaxPriorityFee);
 
-      if (maxPriorityFeePerGas) {
-        maxFeePerGas = block.baseFeePerGas.mul(2).add(maxPriorityFeePerGas);
+        if (maxPriorityFeePerGas) {
+          maxFeePerGas = block.baseFeePerGas.mul(2).add(maxPriorityFeePerGas);
+        }
       }
-    }
 
-    return { maxFeePerGas, maxPriorityFeePerGas };
+      return { maxFeePerGas, maxPriorityFeePerGas };
+    } catch (error) {
+      throw error;
+    }
   };
 
   const sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
@@ -239,7 +281,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
       return await getFormattedTransactionResponse(web3Provider, transaction);
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   };
   // tip numerador eip 1559
@@ -304,11 +346,15 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
       return await getFormattedTransactionResponse(web3Provider, transaction);
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   };
   const getRecommendedNonce = async (address: string) => {
-    return await web3Provider.getTransactionCount(address, 'pending');
+    try {
+      return await web3Provider.getTransactionCount(address, 'pending');
+    } catch (error) {
+      throw error;
+    }
   };
 
   const getFeeByType = async (type: string) => {
@@ -331,28 +377,40 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getGasLimit = async (toAddress: string) => {
-    const estimated = await web3Provider.estimateGas({
-      to: toAddress,
-    });
+    try {
+      const estimated = await web3Provider.estimateGas({
+        to: toAddress,
+      });
 
-    return Number(ethers.utils.formatUnits(estimated, 'gwei'));
+      return Number(ethers.utils.formatUnits(estimated, 'gwei'));
+    } catch (error) {
+      throw error;
+    }
   };
 
   const getTxGasLimit = async (tx: SimpleTransactionRequest) => {
-    return web3Provider.estimateGas(tx);
+    try {
+      return web3Provider.estimateGas(tx);
+    } catch (error) {
+      throw error;
+    }
   };
 
   const getRecommendedGasPrice = async (formatted?: boolean) => {
-    const gasPriceBN = await web3Provider.getGasPrice();
+    try {
+      const gasPriceBN = await web3Provider.getGasPrice();
 
-    if (formatted) {
-      return {
-        gwei: Number(ethers.utils.formatUnits(gasPriceBN, 'gwei')).toFixed(2),
-        ethers: ethers.utils.formatEther(gasPriceBN),
-      };
+      if (formatted) {
+        return {
+          gwei: Number(ethers.utils.formatUnits(gasPriceBN, 'gwei')).toFixed(2),
+          ethers: ethers.utils.formatEther(gasPriceBN),
+        };
+      }
+
+      return gasPriceBN.toString();
+    } catch (error) {
+      throw error;
     }
-
-    return gasPriceBN.toString();
   };
 
   const getGasOracle = async () => {
