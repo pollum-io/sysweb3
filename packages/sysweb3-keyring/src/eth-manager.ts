@@ -336,14 +336,16 @@ export const Web3Accounts = (): IWeb3Accounts => {
         data: { result },
       } = await axios.get(`${apiUrl}${query}`);
 
-      const txs = await Promise.all(
-        result.map(
-          async (tx: TransactionResponse) =>
-            await getFormattedTransactionResponse(web3Provider, tx)
-        )
-      );
+      if (typeof result !== 'string') {
+        const txs = await Promise.all(
+          result.map(
+            async (tx: TransactionResponse) =>
+              await getFormattedTransactionResponse(web3Provider, tx)
+          )
+        );
 
-      return [...pendingTransactions, ...txs];
+        return [...pendingTransactions, ...txs];
+      }
     }
 
     return [...pendingTransactions];
