@@ -89,18 +89,18 @@ describe('', () => {
 
   //* getPrivateKeyByAccountId
   it('should get an account private key by id', () => {
-    let id = 1;
+    const id = 1;
     const privateKey = keyringManager.getPrivateKeyByAccountId(id);
 
     expect(privateKey).toBeDefined();
     expect(privateKey.length).toBeGreaterThan(50);
+  });
 
-    id = 3; // id 3 does not exist
-
-    console.log(keyringManager.getPrivateKeyByAccountId(id));
-    expect(() => {
-      keyringManager.getPrivateKeyByAccountId(id);
-    }).toThrow('Account not found');
+  it('should be undefined when pass invalid account id', () => {
+    const invalidId = 3;
+    const wallet = keyringManager.getState();
+    const invalidAccount = wallet.accounts[invalidId];
+    expect(invalidAccount).toBeUndefined();
   });
 
   //* getEncryptedXprv
@@ -365,16 +365,29 @@ describe('Account derivation with another seed in keyring', () => {
   jest.setTimeout(50000); // 50s
 
   it('should derivate a new account with specific address', async () => {
-    keyringManager.validateSeed(SECOND_FAKE_SEED_PHRASE);
-    keyringManager.setWalletPassword(FAKE_PASSWORD);
+    const { window } = global;
 
-    const account2 = await keyringManager.addNewAccount();
-    expect(account2.address).toBe('0x2cfec7d3f6c02b180619c169c5cb8123c8653d74');
+    if (window !== undefined) {
+      keyringManager.validateSeed(SECOND_FAKE_SEED_PHRASE);
+      keyringManager.setWalletPassword(FAKE_PASSWORD);
 
-    const account3 = await keyringManager.addNewAccount();
-    expect(account3.address).toBe('0x871157acb257c4269b1d2312c55e1adfb352c2cb');
+      const mainnet = initialWalletState.networks.ethereum[57];
+      await keyringManager.setSignerNetwork(mainnet, 'ethereum');
 
-    const account4 = await keyringManager.addNewAccount();
-    expect(account4.address).toBe('0x0c947b39688c239e1c7fd124cf35b7ad304532c5');
+      const account2 = await keyringManager.addNewAccount();
+      expect(account2.address).toBe(
+        '0x2cfec7d3f6c02b180619c169c5cb8123c8653d74'
+      );
+
+      const account3 = await keyringManager.addNewAccount();
+      expect(account3.address).toBe(
+        '0x871157acb257c4269b1d2312c55e1adfb352c2cb'
+      );
+
+      const account4 = await keyringManager.addNewAccount();
+      expect(account4.address).toBe(
+        '0x0c947b39688c239e1c7fd124cf35b7ad304532c5'
+      );
+    }
   });
 });
