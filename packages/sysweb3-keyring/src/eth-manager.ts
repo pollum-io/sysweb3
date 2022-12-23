@@ -47,7 +47,7 @@ export interface IWeb3Accounts {
 export const Web3Accounts = (): IWeb3Accounts => {
   const createAccount = (privateKey: string) => new ethers.Wallet(privateKey);
 
-  const getBalance = async (address: string): Promise<number> => {
+  const getBalance = async (address: string) => {
     try {
       const balance = await web3Provider.getBalance(address);
       const formattedBalance = ethers.utils.formatEther(balance);
@@ -186,61 +186,53 @@ export const Web3Accounts = (): IWeb3Accounts => {
 
     const tokensTransfers: any = [];
 
-    try {
-      const { chainId, label, apiUrl, url } = network;
+    const { chainId, label, apiUrl, url } = network;
 
-      const networksLabels: { [chainId: number]: string } = {
-        137: 'polygon',
-        80001: 'mumbai',
-        1: 'homestead',
-      };
+    const networksLabels: { [chainId: number]: string } = {
+      137: 'polygon',
+      80001: 'mumbai',
+      1: 'homestead',
+    };
 
-      const networkByLabel = networksLabels[chainId]
-        ? networksLabels[chainId]
-        : label.toLowerCase();
+    const networkByLabel = networksLabels[chainId]
+      ? networksLabels[chainId]
+      : label.toLowerCase();
 
-      const isSupported = etherscanSupportedNetworks.includes(networkByLabel);
+    const isSupported = etherscanSupportedNetworks.includes(networkByLabel);
 
-      if (web3Provider.connection.url !== url) setActiveNetwork(network);
+    if (web3Provider.connection.url !== url) setActiveNetwork(network);
 
-      const nfts = await getNftsByAddress(address, isSupported, String(apiUrl));
-      const erc20Tokens = await getErc20TokensByAddress(
-        address,
-        isSupported,
-        String(apiUrl)
-      );
+    const nfts = await getNftsByAddress(address, isSupported, String(apiUrl));
+    const erc20Tokens = await getErc20TokensByAddress(
+      address,
+      isSupported,
+      String(apiUrl)
+    );
 
-      const filter = {
-        address,
-        topics: [ethers.utils.id('Transfer(address,address,uint256)')],
-      };
+    const filter = {
+      address,
+      topics: [ethers.utils.id('Transfer(address,address,uint256)')],
+    };
 
-      web3Provider.on(filter, (transferToken) => {
-        tokensTransfers.push(transferToken);
-      });
+    web3Provider.on(filter, (transferToken) => {
+      tokensTransfers.push(transferToken);
+    });
 
-      if (apiUrl) return [...nfts, ...erc20Tokens, ...tokensTransfers];
+    if (apiUrl) return [...nfts, ...erc20Tokens, ...tokensTransfers];
 
-      return tokensTransfers;
-    } catch (error) {
-      return tokensTransfers;
-    }
+    return tokensTransfers;
   };
 
   const importAccount = (mnemonic: string) => {
-    try {
-      if (ethers.utils.isHexString(mnemonic)) {
-        return new ethers.Wallet(mnemonic);
-      }
-
-      const { privateKey } = ethers.Wallet.fromMnemonic(mnemonic);
-
-      const account = new ethers.Wallet(privateKey);
-
-      return account;
-    } catch (error) {
-      throw new Error(`Can't import account. Error: ${error}`);
+    if (ethers.utils.isHexString(mnemonic)) {
+      return new ethers.Wallet(mnemonic);
     }
+
+    const { privateKey } = ethers.Wallet.fromMnemonic(mnemonic);
+
+    const account = new ethers.Wallet(privateKey);
+
+    return account;
   };
 
   const getPendingTransactions = (
@@ -261,9 +253,7 @@ export const Web3Accounts = (): IWeb3Accounts => {
     const wssProvider = new ethers.providers.WebSocketProvider(String(url));
 
     wssProvider.on('error', (error) => {
-      console.error(`WS: Could not get pending transactions. ${error}`);
-
-      return;
+      throw error;
     });
 
     const pendingTransactions: TransactionResponse[] = [];
@@ -307,40 +297,38 @@ export const Web3Accounts = (): IWeb3Accounts => {
       'kovan',
     ];
 
-    try {
-      const { chainId, default: _default, label, apiUrl } = network;
+    const { chainId, default: _default, label, apiUrl } = network;
 
-      const networkByLabel = chainId === 1 ? 'homestead' : label.toLowerCase();
+    const networkByLabel = chainId === 1 ? 'homestead' : label.toLowerCase();
 
-      const pendingTransactions = getPendingTransactions(chainId, address);
+    const pendingTransactions = getPendingTransactions(chainId, address);
 
-      if (_default) {
-        if (etherscanSupportedNetworks.includes(networkByLabel)) {
-          const etherscanProvider = new ethers.providers.EtherscanProvider(
-            networkByLabel,
-            'K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
-          );
+    if (_default) {
+      if (etherscanSupportedNetworks.includes(networkByLabel)) {
+        const etherscanProvider = new ethers.providers.EtherscanProvider(
+          networkByLabel,
+          'K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
+        );
 
-          const txHistory = await etherscanProvider.getHistory(address);
+        const txHistory = await etherscanProvider.getHistory(address);
 
-          const history = await Promise.all(
-            txHistory.map(
-              async (tx) =>
-                await getFormattedTransactionResponse(etherscanProvider, tx)
-            )
-          );
+        const history = await Promise.all(
+          txHistory.map(
+            async (tx) =>
+              await getFormattedTransactionResponse(etherscanProvider, tx)
+          )
+        );
 
-          return (
-            [...pendingTransactions, ...history] || [...pendingTransactions]
-          );
-        }
+        return [...pendingTransactions, ...history] || [...pendingTransactions];
+      }
 
-        const query = `?module=account&action=txlist&address=${address}`;
+      const query = `?module=account&action=txlist&address=${address}`;
 
-        const {
-          data: { result },
-        } = await axios.get(`${apiUrl}${query}`);
+      const {
+        data: { result },
+      } = await axios.get(`${apiUrl}${query}`);
 
+      if (typeof result !== 'string') {
         const txs = await Promise.all(
           result.map(
             async (tx: TransactionResponse) =>
@@ -350,11 +338,9 @@ export const Web3Accounts = (): IWeb3Accounts => {
 
         return [...pendingTransactions, ...txs];
       }
-
-      return [...pendingTransactions];
-    } catch (error) {
-      return [];
     }
+
+    return [...pendingTransactions];
   };
 
   return {

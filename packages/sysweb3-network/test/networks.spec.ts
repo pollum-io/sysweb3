@@ -1,32 +1,26 @@
-import { getEthRpc, validateEthRpc } from '../src/index';
-import { EXAMPLE_L1, EXAMPLE_L2, SYS_L2, TESTNET } from './constants';
+import { getFormattedBitcoinLikeNetwork, getPubType } from '../src/networks';
+import {
+  VALID_BIP44_DATA_RESPONSE,
+  VALID_BITCOIN_LIKE_NETWORK,
+} from './constants';
 
-describe('Networks', () => {
-  it('should validate a L1 network', async () => {
-    const result = await validateEthRpc(EXAMPLE_L1.url);
-    expect(result.hexChainId).toBe('0x' + EXAMPLE_L1.chainId.toString(16));
-  });
-  it('should validate a L2 network', async () => {
-    const result = await validateEthRpc(EXAMPLE_L2.url);
-    expect(result.hexChainId).toBe('0x' + EXAMPLE_L2.chainId.toString(16));
+describe('networks tests', () => {
+  it('should return formatted bitcoin like network for a given coin', () => {
+    const {
+      nativeCurrency: { name },
+      chainId,
+    } = VALID_BIP44_DATA_RESPONSE;
+
+    const response = getFormattedBitcoinLikeNetwork(chainId, name);
+
+    expect(response.networks).toStrictEqual(
+      VALID_BITCOIN_LIKE_NETWORK.networks
+    );
   });
 
-  it('should validate a L2 network Syscoin', async () => {
-    const result = await validateEthRpc(SYS_L2.url);
-    expect(result.hexChainId).toBe('0x' + SYS_L2.chainId.toString(16));
-  });
-  it('should validate a Testnet network', async () => {
-    const result = await validateEthRpc(TESTNET.url);
-    expect(result.hexChainId).toBe('0x' + TESTNET.chainId.toString(16));
-  });
-  it('should getNetwok Response L2', async () => {
-    const { formattedNetwork } = await getEthRpc(EXAMPLE_L2);
-    console.log('check formattedNetwork', formattedNetwork);
-    expect(formattedNetwork.chainId).toBe(EXAMPLE_L2.chainId);
-  });
-  it('should getNetwok Response L2 Syscoin', async () => {
-    const { formattedNetwork } = await getEthRpc(SYS_L2);
-    console.log('check formattedNetwork', formattedNetwork);
-    expect(formattedNetwork.chainId).toBe(SYS_L2.chainId);
+  it('should return pub types for a given coin', () => {
+    const response = getPubType(VALID_BITCOIN_LIKE_NETWORK.networks.mainnet);
+
+    expect(response).toStrictEqual(VALID_BITCOIN_LIKE_NETWORK.types);
   });
 });
