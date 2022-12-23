@@ -186,61 +186,53 @@ export const Web3Accounts = (): IWeb3Accounts => {
 
     const tokensTransfers: any = [];
 
-    try {
-      const { chainId, label, apiUrl, url } = network;
+    const { chainId, label, apiUrl, url } = network;
 
-      const networksLabels: { [chainId: number]: string } = {
-        137: 'polygon',
-        80001: 'mumbai',
-        1: 'homestead',
-      };
+    const networksLabels: { [chainId: number]: string } = {
+      137: 'polygon',
+      80001: 'mumbai',
+      1: 'homestead',
+    };
 
-      const networkByLabel = networksLabels[chainId]
-        ? networksLabels[chainId]
-        : label.toLowerCase();
+    const networkByLabel = networksLabels[chainId]
+      ? networksLabels[chainId]
+      : label.toLowerCase();
 
-      const isSupported = etherscanSupportedNetworks.includes(networkByLabel);
+    const isSupported = etherscanSupportedNetworks.includes(networkByLabel);
 
-      if (web3Provider.connection.url !== url) setActiveNetwork(network);
+    if (web3Provider.connection.url !== url) setActiveNetwork(network);
 
-      const nfts = await getNftsByAddress(address, isSupported, String(apiUrl));
-      const erc20Tokens = await getErc20TokensByAddress(
-        address,
-        isSupported,
-        String(apiUrl)
-      );
+    const nfts = await getNftsByAddress(address, isSupported, String(apiUrl));
+    const erc20Tokens = await getErc20TokensByAddress(
+      address,
+      isSupported,
+      String(apiUrl)
+    );
 
-      const filter = {
-        address,
-        topics: [ethers.utils.id('Transfer(address,address,uint256)')],
-      };
+    const filter = {
+      address,
+      topics: [ethers.utils.id('Transfer(address,address,uint256)')],
+    };
 
-      web3Provider.on(filter, (transferToken) => {
-        tokensTransfers.push(transferToken);
-      });
+    web3Provider.on(filter, (transferToken) => {
+      tokensTransfers.push(transferToken);
+    });
 
-      if (apiUrl) return [...nfts, ...erc20Tokens, ...tokensTransfers];
+    if (apiUrl) return [...nfts, ...erc20Tokens, ...tokensTransfers];
 
-      return tokensTransfers;
-    } catch (error) {
-      throw error;
-    }
+    return tokensTransfers;
   };
 
   const importAccount = (mnemonic: string) => {
-    try {
-      if (ethers.utils.isHexString(mnemonic)) {
-        return new ethers.Wallet(mnemonic);
-      }
-
-      const { privateKey } = ethers.Wallet.fromMnemonic(mnemonic);
-
-      const account = new ethers.Wallet(privateKey);
-
-      return account;
-    } catch (error) {
-      throw error;
+    if (ethers.utils.isHexString(mnemonic)) {
+      return new ethers.Wallet(mnemonic);
     }
+
+    const { privateKey } = ethers.Wallet.fromMnemonic(mnemonic);
+
+    const account = new ethers.Wallet(privateKey);
+
+    return account;
   };
 
   const getPendingTransactions = (
@@ -336,14 +328,16 @@ export const Web3Accounts = (): IWeb3Accounts => {
         data: { result },
       } = await axios.get(`${apiUrl}${query}`);
 
-      const txs = await Promise.all(
-        result.map(
-          async (tx: TransactionResponse) =>
-            await getFormattedTransactionResponse(web3Provider, tx)
-        )
-      );
+      if (typeof result !== 'string') {
+        const txs = await Promise.all(
+          result.map(
+            async (tx: TransactionResponse) =>
+              await getFormattedTransactionResponse(web3Provider, tx)
+          )
+        );
 
-      return [...pendingTransactions, ...txs];
+        return [...pendingTransactions, ...txs];
+      }
     }
 
     return [...pendingTransactions];

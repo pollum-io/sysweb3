@@ -36,19 +36,6 @@ export const getPubType = (
   };
 };
 
-export const validateNetworkWif = (
-  wif: string,
-  start: string,
-  type: number
-) => {
-  const wifType = type === 0 ? 50 : 51;
-  const regex = new RegExp(
-    `^${start}[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{${wifType}}$`
-  );
-
-  return regex.test(wif);
-};
-
 export const getFormattedBitcoinLikeNetwork = (
   slip44: number,
   coinName: string
@@ -76,11 +63,8 @@ export const getFormattedBitcoinLikeNetwork = (
     const hexPubKeyHash = ethers.utils.hexlify(addressType);
     const hexScriptHash = ethers.utils.hexlify(addressTypeP2sh);
 
-    if (!validateNetworkWif)
-      throw new Error('Private key prefix not valid for this network.');
-
     const baseNetwork = {
-      messagePrefix: signedMessageHeader,
+      messagePrefix: String(signedMessageHeader).replace(/[\r\n]/gm, ''),
       bech32: String(bech32Prefix),
       bip32: {
         public: xpubMagic,

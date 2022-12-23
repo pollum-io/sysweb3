@@ -1,4 +1,5 @@
 import { memoize } from 'lodash';
+import fetch from 'node-fetch';
 
 export const getFetchWithTimeout = memoize((timeout: number) => {
   if (!Number.isInteger(timeout) || timeout < 1) {
@@ -10,7 +11,7 @@ export const getFetchWithTimeout = memoize((timeout: number) => {
 
     const { signal } = abortController;
 
-    const windowFetch = window.fetch(url, {
+    const response = await fetch(url, {
       ...opts,
       signal,
     });
@@ -18,8 +19,6 @@ export const getFetchWithTimeout = memoize((timeout: number) => {
     const timer = setTimeout(() => abortController.abort(), timeout);
 
     try {
-      const response = await windowFetch;
-
       clearTimeout(timer);
 
       return response;
@@ -29,6 +28,7 @@ export const getFetchWithTimeout = memoize((timeout: number) => {
       throw error;
     }
   };
+
   const _nodeFetch = async (url: string, opts: any) => {
     const abortController = new AbortController();
 
@@ -53,6 +53,8 @@ export const getFetchWithTimeout = memoize((timeout: number) => {
       throw error;
     }
   };
+
   if (typeof window !== 'undefined') return _fetch;
-  else return _nodeFetch;
+
+  return _nodeFetch;
 });
