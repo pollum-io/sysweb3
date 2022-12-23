@@ -12,6 +12,8 @@ export const SYS_EVM_NETWORK = {
   explorer: 'https://explorer.syscoin.org/',
 };
 export const FAKE_SEED_PHRASE = process.env.SEED_PEACE_GLOBE;
+export const SECOND_FAKE_SEED_PHRASE =
+  'gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge';
 export const INVALID_SEED_PHRASE =
   'Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor';
 export const FAKE_ADDRESS = '0x4d4DB937177Ceb77aF4541b4EC9Ae8b0EA5d1a64';

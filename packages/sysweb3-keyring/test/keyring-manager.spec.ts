@@ -9,6 +9,7 @@ import {
   SYS_EVM_NETWORK,
   FAKE_ADDRESS,
   TX,
+  SECOND_FAKE_SEED_PHRASE,
 } from './constants';
 import { INetwork } from '@pollum-io/sysweb3-utils';
 describe('', () => {
@@ -67,17 +68,6 @@ describe('', () => {
 
     const wallet = keyringManager.getState();
     expect(wallet.activeAccount.id).toBe(1);
-  });
-
-  it('should derivate a new account with specific address', async () => {
-    const account2 = await keyringManager.addNewAccount();
-    expect(account2.address).toBe('0xd5e66a5d61690dd4d6675d1e9eb480ddd640fe06');
-
-    const account3 = await keyringManager.addNewAccount();
-    expect(account3.address).toBe('0x6a702c81d969627021c118b72f67d8bd70534c77');
-
-    const account4 = await keyringManager.addNewAccount();
-    expect(account4.address).toBe('0x04e8e913e05ffe66ebd8d9bfb2c1c9c5293ceb2d');
   });
 
   //* setActiveAccount
@@ -366,5 +356,25 @@ describe('', () => {
 
     const wallet = keyringManager.getState();
     expect(wallet).toEqual(initialWalletState);
+  });
+});
+
+describe('Account derivation with another seed in keyring', () => {
+  const keyringManager = KeyringManager();
+
+  jest.setTimeout(50000); // 50s
+
+  it('should derivate a new account with specific address', async () => {
+    keyringManager.validateSeed(SECOND_FAKE_SEED_PHRASE);
+    keyringManager.setWalletPassword(FAKE_PASSWORD);
+
+    const account2 = await keyringManager.addNewAccount();
+    expect(account2.address).toBe('0x2cfec7d3f6c02b180619c169c5cb8123c8653d74');
+
+    const account3 = await keyringManager.addNewAccount();
+    expect(account3.address).toBe('0x871157acb257c4269b1d2312c55e1adfb352c2cb');
+
+    const account4 = await keyringManager.addNewAccount();
+    expect(account4.address).toBe('0x0c947b39688c239e1c7fd124cf35b7ad304532c5');
   });
 });
