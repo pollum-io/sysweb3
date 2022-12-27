@@ -14,13 +14,17 @@ export const setEncryptedVault = (decryptedVault: any) => {
 };
 
 export const getDecryptedVault = () => {
-  const vault = storage.get('vault');
+  try {
+    const vault = storage.get('vault');
 
-  const { hash } = storage.get('vault-keys');
+    const { hash } = storage.get('vault-keys');
 
-  const decryptedVault = CryptoJS.AES.decrypt(vault, hash).toString(
-    CryptoJS.enc.Utf8
-  );
+    const decryptedVault = CryptoJS.AES.decrypt(vault, hash).toString(
+      CryptoJS.enc.Utf8
+    );
 
-  return JSON.parse(decryptedVault);
+    return JSON.parse(decryptedVault);
+  } catch (error) {
+    throw new Error('No vault found.');
+  }
 };

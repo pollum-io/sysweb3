@@ -6,7 +6,7 @@ export * from './fee';
 export * from './transactions';
 export * from './trezor';
 export * from './signer';
-export * from './accounts';
+export * from './storage';
 export * from './coins';
 export * from './networks';
 export * from './spsbt';
