@@ -653,8 +653,6 @@ export const KeyringManager = (): IKeyringManager => {
 
     setEncryptedVault({ ...getDecryptedVault(), wallet, lastLogin: 0 });
 
-    await getLatestUpdateForAccount();
-
     addAccountToSigner(wallet.activeAccount.id);
 
     return wallet.activeAccount;
