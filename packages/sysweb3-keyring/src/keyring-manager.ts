@@ -543,7 +543,6 @@ export const KeyringManager = (): IKeyringManager => {
     ).toString();
 
     setEncryptedVault({
-      ...getDecryptedVault(),
       wallet,
       network: wallet.activeNetwork,
       mnemonic: encryptedMnemonic,
@@ -729,47 +728,6 @@ export const KeyringManager = (): IKeyringManager => {
     };
   };
 
-  // const { wallet: _wallet } = getDecryptedVault();
-  // const networksByChain = _wallet.networks[chain];
-  // wallet = {
-  //   ..._wallet,
-  //   networks: {
-  //     ..._wallet.networks,
-  //     [chain]: {
-  //       ...networksByChain,
-  //       [network.chainId]: network,
-  //     },
-  //   },
-  //   activeNetwork: network,
-  // };
-
-  // (0, sysweb3_utils_1.setEncryptedVault)({ ...getDecryptedVault(), wallet });
-  // try {
-  //   await _setSignerByChain(network, chain);
-  //   if (chain === 'syscoin') {
-  //     const { rpc, isTestnet } = await _setSignerByChain(network, chain);
-  //     (0, sysweb3_utils_1.setEncryptedVault)({ ...getDecryptedVault(), isTestnet, rpc });
-  //   }
-
-  //   const account = await _getAccountForNetwork({
-  //     isSyscoinChain: chain === 'syscoin',
-  //   });
-
-  //   wallet = {
-  //     ...wallet,
-  //     accounts: {
-  //       ...wallet.accounts,
-  //       [account.id]: account,
-  //     },
-  //     activeAccount: account,
-  //   };
-  //   (0, sysweb3_utils_1.setEncryptedVault)({ ...getDecryptedVault(), wallet });
-  //   return account;
-  // }
-  // catch (error) {
-  //   throw new Error(error);
-  // }
-  /** networks */
   const setSignerNetwork = async (
     network: INetwork,
     chain: string
@@ -777,6 +735,8 @@ export const KeyringManager = (): IKeyringManager => {
     const { wallet: _wallet } = getDecryptedVault();
 
     const networksByChain = _wallet.networks[chain];
+
+    console.log('account created, setting network');
 
     wallet = {
       ..._wallet,
@@ -792,30 +752,34 @@ export const KeyringManager = (): IKeyringManager => {
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
 
-    await _setSignerByChain(network, chain);
+    try {
+      await _setSignerByChain(network, chain);
 
-    if (chain === 'syscoin') {
-      const { rpc, isTestnet } = await _setSignerByChain(network, chain);
+      if (chain === 'syscoin') {
+        const { rpc, isTestnet } = await _setSignerByChain(network, chain);
 
-      setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
+        setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
+      }
+
+      const account = await _getAccountForNetwork({
+        isSyscoinChain: chain === 'syscoin',
+      });
+
+      wallet = {
+        ...wallet,
+        accounts: {
+          ...wallet.accounts,
+          [account.id]: account,
+        },
+        activeAccount: account,
+      };
+
+      setEncryptedVault({ ...getDecryptedVault(), wallet });
+
+      return account;
+    } catch (error) {
+      throw new Error(error);
     }
-
-    const account = await _getAccountForNetwork({
-      isSyscoinChain: chain === 'syscoin',
-    });
-
-    wallet = {
-      ...wallet,
-      accounts: {
-        ...wallet.accounts,
-        [account.id]: account,
-      },
-      activeAccount: account,
-    };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-    return account;
   };
 
   const addAccountToSigner = (accountId: number) => {

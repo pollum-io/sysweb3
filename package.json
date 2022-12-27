@@ -24,7 +24,7 @@
     "release": "node ./scripts/package/copy && npm run release:npm",
     "release:npm": "npm publish ./dist -access public",
     "release:preflight": "npm pack ./dist --dry-run",
-    "test": "jest",
+    "test": "jest --forceExit",
     "type-check": "tsc --pretty --noEmit"
   },
   "lint-staged": {

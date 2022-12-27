@@ -29,6 +29,7 @@ export const isValidChainIdForEthNetworks = (chainId: number | string) =>
 export const validateEthRpc = async (
   url: string
 ): Promise<{
+  chainId: number;
   valid: boolean;
   hexChainId: string;
   details: Chain | undefined;
@@ -55,6 +56,7 @@ export const validateEthRpc = async (
     }
 
     return {
+      chainId: numberChainId,
       details,
       chain: details && details.chain ? details.chain : 'unknown',
       hexChainId,

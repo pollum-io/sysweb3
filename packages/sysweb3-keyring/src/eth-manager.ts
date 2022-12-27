@@ -42,7 +42,6 @@ export interface IWeb3Accounts {
     address: string,
     network: INetwork
   ) => Promise<IEthereumNftDetails[]>;
-  importAccount: (mnemonic: string) => ethers.Wallet;
   getUserTransactions: (
     address: string,
     network: INetwork
@@ -92,6 +91,7 @@ export const Web3Accounts = (): IWeb3Accounts => {
     }
   };
 
+  // todo: review
   const getNftsByAddress = async (
     address: string,
     isSupported: boolean,
@@ -236,18 +236,6 @@ export const Web3Accounts = (): IWeb3Accounts => {
     return tokensTransfers;
   };
 
-  const importAccount = (mnemonic: string) => {
-    if (ethers.utils.isHexString(mnemonic)) {
-      return new ethers.Wallet(mnemonic);
-    }
-
-    const { privateKey } = ethers.Wallet.fromMnemonic(mnemonic);
-
-    const account = new ethers.Wallet(privateKey);
-
-    return account;
-  };
-
   const getPendingTransactions = (
     chainId: number,
     address: string
@@ -361,7 +349,6 @@ export const Web3Accounts = (): IWeb3Accounts => {
     getErc20TokensByAddress,
     getNftsByAddress,
     getAssetsByAddress,
-    importAccount,
     getUserTransactions,
   };
 };
