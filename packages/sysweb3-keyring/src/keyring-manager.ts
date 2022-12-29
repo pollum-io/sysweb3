@@ -224,12 +224,9 @@ export const KeyringManager = (): IKeyringManager => {
     id: number,
     label?: string
   ) => {
-    const { network } = getDecryptedVault();
-
+    // todo: get user and assets history
     const balance = await web3Wallet.getBalance(address);
 
-    const transactions = await web3Wallet.getUserTransactions(address, network);
-    // const assets = await web3Wallet.getAssetsByAddress(address, network);
     const assets: IEthereumNftDetails[] = [];
     return {
       assets,
@@ -240,7 +237,7 @@ export const KeyringManager = (): IKeyringManager => {
         syscoin: 0,
         ethereum: balance,
       },
-      transactions,
+      transactions: [],
     };
   };
 
@@ -733,8 +730,6 @@ export const KeyringManager = (): IKeyringManager => {
 
     const networksByChain = _wallet.networks[chain];
 
-    console.log('account created, setting network');
-
     wallet = {
       ..._wallet,
       networks: {
@@ -754,13 +749,9 @@ export const KeyringManager = (): IKeyringManager => {
     });
 
     try {
-      await _setSignerByChain(network, chain);
+      const { rpc, isTestnet } = await _setSignerByChain(network, chain);
 
-      if (chain === 'syscoin') {
-        const { rpc, isTestnet } = await _setSignerByChain(network, chain);
-
-        setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
-      }
+      setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
 
       const account = await _getAccountForNetwork({
         isSyscoinChain: chain === 'syscoin',

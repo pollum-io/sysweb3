@@ -79,7 +79,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       };
       return recoverTypedMessage(msgParams, version);
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
@@ -110,7 +110,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       const resp = concatSig(toBuffer(sig.v), sig.r, sig.s);
       return resp;
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
@@ -142,7 +142,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       const serialized = concatSig(toBuffer(sig.v), sig.r, sig.s);
       return serialized;
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
@@ -150,7 +150,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     try {
       return toAscii(hexMsg);
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
@@ -162,7 +162,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       };
       return recoverPersonalSignature(msgParams);
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
@@ -178,7 +178,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     try {
       return getEncryptionPublicKey(stripHexPrefix(decryptedPrivateKey));
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
@@ -209,7 +209,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       const sig = decrypt(cleanData, stripHexPrefix(decryptedPrivateKey));
       return sig;
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
@@ -234,7 +234,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
       return data;
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
@@ -260,7 +260,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
       return { maxFeePerGas, maxPriorityFeePerGas };
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
@@ -281,10 +281,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
       return await getFormattedTransactionResponse(web3Provider, transaction);
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
-  // tip numerador eip 1559
+
   const sendTransaction = async ({
     sender,
     receivingAddress,
@@ -323,7 +323,6 @@ export const EthereumTransactions = (): IEthereumTransactions => {
           })
         : null;
 
-    // gas price, gas limit e maxPriorityFeePerGas (tip)
     const { maxFeePerGas, maxPriorityFeePerGas } =
       await getFeeDataWithDynamicMaxPriorityFeePerGas();
 
@@ -346,14 +345,14 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
       return await getFormattedTransactionResponse(web3Provider, transaction);
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
   const getRecommendedNonce = async (address: string) => {
     try {
       return await web3Provider.getTransactionCount(address, 'pending');
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
@@ -384,7 +383,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
       return Number(ethers.utils.formatUnits(estimated, 'gwei'));
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
@@ -392,7 +391,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     try {
       return web3Provider.estimateGas(tx);
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
@@ -409,7 +408,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
       return gasPriceBN.toString();
     } catch (error) {
-      throw error;
+      throw new Error(error);
     }
   };
 
