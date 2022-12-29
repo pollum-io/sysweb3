@@ -144,7 +144,6 @@ export const getSysRpc = async (data: any) => {
 
     const formattedNetwork = {
       url: data.url,
-      apiUrl: data.url,
       explorer: data.url,
       currency: nativeCurrency.symbol,
       label: coin,

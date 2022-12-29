@@ -46,7 +46,6 @@ export const VALID_ETH_RPC_RESPONSE = {
 export const FORMATTED_BEDROCK_TESTNET = {
   url: 'https://bedrock.rollux.com:9545/',
   chainId: 57000,
-  apiUrl: undefined,
   label: 'Rollux Bedrock Testnet',
   symbol: 'bSYS',
 };
@@ -54,7 +53,6 @@ export const FORMATTED_BEDROCK_TESTNET = {
 export const FORMATTED_GOERLI = {
   url: 'https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
   chainId: 5,
-  apiURL: 'https://goerli.etherscan.io/',
   label: 'GOERLI',
   default: true,
   currency: 'GOR',
@@ -64,7 +62,6 @@ export const FORMATTED_GOERLI = {
 export const FORMATTED_OPTIMISM = {
   url: 'https://mainnet.optimism.io',
   chainId: 10,
-  apiUrl: 'https://optimistic.etherscan.io/',
   label: 'OPTIMISM',
   default: false,
   currency: 'OP',

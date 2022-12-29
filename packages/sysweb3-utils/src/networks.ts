@@ -3,8 +3,6 @@ export type INetwork = {
   url: string;
   default?: boolean;
   label: string;
-  key?: string;
-  apiUrl?: string;
   currency?: string;
   explorer?: string;
 };

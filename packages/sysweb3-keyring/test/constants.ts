@@ -8,7 +8,6 @@ export const SYS_EVM_NETWORK = {
   default: true,
   label: 'Syscoin Mainnet',
   url: 'https://rpc.syscoin.org',
-  apiUrl: 'https://explorer.syscoin.org/api',
   explorer: 'https://explorer.syscoin.org/',
 };
 

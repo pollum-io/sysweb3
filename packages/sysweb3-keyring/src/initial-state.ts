@@ -15,6 +15,7 @@ export const initialActiveAccountState: IKeyringAccountState = {
   assets: [],
 };
 
+// todo: remove explorer from state
 export const initialNetworksState = {
   syscoin: {
     57: {
@@ -23,7 +24,6 @@ export const initialNetworksState = {
       url: 'https://blockbook.elint.services/',
       default: true,
       currency: 'sys',
-      apiUrl: '',
       explorer: 'https://blockbook.elint.services/',
     },
     5700: {
@@ -32,7 +32,6 @@ export const initialNetworksState = {
       url: 'https://blockbook-dev.elint.services/',
       default: true,
       currency: 'tsys',
-      apiUrl: '',
       explorer: '',
     },
   },
@@ -43,7 +42,6 @@ export const initialNetworksState = {
       default: true,
       label: 'Polygon Mainnet',
       url: 'https://polygon-rpc.com',
-      apiUrl: 'https://api.polygonscan.com/api',
       explorer: 'https://polygonscan.com/',
     },
     80001: {
@@ -52,7 +50,6 @@ export const initialNetworksState = {
       default: true,
       label: 'Polygon Mumbai Testnet',
       url: 'https://rpc-mumbai.maticvigil.com',
-      apiUrl: 'https://api-testnet.polygonscan.com/api',
       explorer: 'https://mumbai.polygonscan.com/',
     },
     57: {
@@ -61,7 +58,6 @@ export const initialNetworksState = {
       default: true,
       label: 'Syscoin Mainnet',
       url: 'https://rpc.syscoin.org',
-      apiUrl: 'https://explorer.syscoin.org/api',
       explorer: 'https://explorer.syscoin.org/',
     },
     5700: {
@@ -70,7 +66,6 @@ export const initialNetworksState = {
       default: true,
       label: 'Syscoin Tanenbaum',
       url: 'https://rpc.tanenbaum.io',
-      apiUrl: 'https://tanenbaum.io/api',
       explorer: 'https://tanenbaum.io/',
     },
   },
