@@ -199,14 +199,16 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const _createMainWallet = async (): Promise<IKeyringAccountState> => {
-    const { _hd } = getSigners();
+    const signers = getSigners();
 
-    hd = _hd;
+    if (!signers || !signers._hd) throw new Error('Could not get HD Signer.');
+
+    hd = signers._hd;
 
     const xprv = getEncryptedXprv();
     const createdAccount = await _getLatestUpdateForSysAccount();
     const account = _getInitialAccountData({
-      signer: _hd,
+      signer: signers._hd,
       createdAccount,
       xprv,
     });
@@ -219,13 +221,14 @@ export const KeyringManager = (): IKeyringManager => {
   const _getEncryptedPrivateKeyFromHd = () =>
     hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
 
-  const _getBasicWeb3AccountInfo = async (
-    address: string,
-    id: number,
-    label?: string
-  ) => {
+  const _getBasicWeb3AccountInfo = async (address: string, id: number) => {
+    const { network, wallet } = getDecryptedVault();
+
     // todo: get user and assets history
     const balance = await web3Wallet.getBalance(address);
+    const transactions = await web3Wallet.getUserTransactions(address, network);
+
+    const { label } = wallet.accounts[id];
 
     const assets: IEthereumNftDetails[] = [];
     return {
@@ -237,7 +240,7 @@ export const KeyringManager = (): IKeyringManager => {
         syscoin: 0,
         ethereum: balance,
       },
-      transactions: [],
+      transactions,
     };
   };
 
@@ -255,6 +258,7 @@ export const KeyringManager = (): IKeyringManager => {
     const xprv = newWallet.getPrivateKeyString();
     const xpub = newWallet.getPublicKeyString();
     const { hash } = storage.get('vault-keys');
+
     const basicAccountInfo = await _getBasicWeb3AccountInfo(address, id);
 
     const createdAccount = {
@@ -274,32 +278,25 @@ export const KeyringManager = (): IKeyringManager => {
       const id = Number(index);
       const createdAccount = await _setDerivedWeb3Accounts(id);
 
+      const vault = getDecryptedVault();
+
+      const accounts = {
+        ...vault.wallet.accounts,
+        [id]: createdAccount,
+      };
+
       wallet = {
-        ...getDecryptedVault().wallet,
-        accounts: {
-          ...getDecryptedVault().wallet.accounts,
-          [id]: createdAccount,
-        },
-        activeAccount: createdAccount,
+        ...vault.wallet,
+        accounts,
+        activeAccount: accounts[_wallet.activeAccount.id],
       };
 
       setEncryptedVault({ ...getDecryptedVault(), wallet });
+
+      return createdAccount;
     }
 
-    const { wallet: _updatedWallet } = getDecryptedVault();
-
-    const { accounts, activeAccount } = _updatedWallet;
-
-    if (accounts[activeAccount.id] !== activeAccount) {
-      wallet = {
-        ..._updatedWallet,
-        activeAccount: accounts[activeAccount.id],
-      };
-
-      setEncryptedVault({ ...getDecryptedVault(), wallet });
-    }
-
-    return getDecryptedVault().wallet.activeAccount;
+    return wallet.activeAccount;
   };
 
   const _getInitialAccountData = ({
@@ -363,12 +360,25 @@ export const KeyringManager = (): IKeyringManager => {
     });
 
     const {
-      wallet: { activeAccount },
+      wallet: { activeAccount, accounts: _accounts },
     } = vault;
 
     if (hd && activeAccount.id > -1) hd.setAccountIndex(activeAccount.id);
 
-    return account;
+    const accounts = {
+      ..._accounts,
+      [account.id]: account,
+    };
+
+    wallet = {
+      ...vault.wallet,
+      accounts,
+      activeAccount: accounts[activeAccount.id],
+    };
+
+    setEncryptedVault({ ...getDecryptedVault(), wallet });
+
+    return wallet.activeAccount;
   };
 
   const _getFormattedBackendAccount = async ({
@@ -478,16 +488,20 @@ export const KeyringManager = (): IKeyringManager => {
     address: string;
     label: string;
   }> => {
-    const { wallet: _wallet, network, isTestnet } = getDecryptedVault();
+    const vault = getDecryptedVault();
+
+    if (!vault) throw new Error('Vault not found.');
+
+    const { wallet: _wallet, network, isTestnet } = vault;
 
     if (
       !hd.mnemonic ||
       hd.Signer.isTestnet !== isTestnet ||
       hd.blockbookURL !== network.url
     ) {
-      const { _hd } = getSigners();
+      const signers = getSigners();
 
-      hd = _hd;
+      hd = signers._hd;
     }
 
     const walletAccountsArray = Object.values(_wallet.accounts);
@@ -665,26 +679,9 @@ export const KeyringManager = (): IKeyringManager => {
 
   /** get updates */
   const getLatestUpdateForAccount = async () => {
-    const vault = getDecryptedVault();
+    const { wallet: updatedWallet } = getDecryptedVault();
 
-    wallet = vault.wallet;
-
-    setEncryptedVault({ ...vault, wallet });
-
-    const isSyscoinChain =
-      Boolean(wallet.networks.syscoin[wallet.activeNetwork.chainId]) &&
-      wallet.activeNetwork.url.includes('blockbook');
-
-    const latestUpdate = isSyscoinChain
-      ? await _getLatestUpdateForSysAccount()
-      : await _getLatestUpdateForWeb3Accounts();
-
-    const { wallet: _updatedWallet } = getDecryptedVault();
-
-    return {
-      accountLatestUpdate: latestUpdate,
-      walleAccountstLatestUpdate: _updatedWallet.accounts,
-    };
+    return updatedWallet;
   };
 
   const _setSignerByChain = async (
@@ -695,6 +692,7 @@ export const KeyringManager = (): IKeyringManager => {
       ...getDecryptedVault(),
       network,
     });
+
     if (chain === 'syscoin') {
       const response = await validateSysRpc(network.url);
 
@@ -707,6 +705,7 @@ export const KeyringManager = (): IKeyringManager => {
         isTestnet: response.chain === 'test',
       };
     }
+
     const newNetwork =
       getDecryptedVault().wallet.networks.ethereum[network.chainId];
 
@@ -745,7 +744,6 @@ export const KeyringManager = (): IKeyringManager => {
     setEncryptedVault({
       ...getDecryptedVault(),
       wallet,
-      isTestnet: chain !== 'syscoin' && false,
     });
 
     try {
@@ -753,22 +751,9 @@ export const KeyringManager = (): IKeyringManager => {
 
       setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
 
-      const account = await _getAccountForNetwork({
+      return await _getAccountForNetwork({
         isSyscoinChain: chain === 'syscoin',
       });
-
-      wallet = {
-        ...wallet,
-        accounts: {
-          ...wallet.accounts,
-          [account.id]: account,
-        },
-        activeAccount: account,
-      };
-
-      setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-      return account;
     } catch (error) {
       throw new Error(error);
     }
@@ -861,11 +846,7 @@ export const KeyringManager = (): IKeyringManager => {
     const xprv = newWallet.getPrivateKeyString();
     const xpub = newWallet.getPublicKeyString();
 
-    const basicAccountInfo = await _getBasicWeb3AccountInfo(
-      address,
-      length,
-      label
-    );
+    const basicAccountInfo = await _getBasicWeb3AccountInfo(address, length);
 
     const { hash } = storage.get('vault-keys');
 
