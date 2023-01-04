@@ -12,7 +12,10 @@ export const initialActiveAccountState: IKeyringAccountState = {
   xprv: '',
   xpub: '',
   transactions: [],
-  assets: [],
+  assets: {
+    syscoin: [],
+    ethereum: [],
+  },
 };
 
 // todo: remove explorer from state

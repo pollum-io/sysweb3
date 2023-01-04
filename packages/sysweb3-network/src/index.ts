@@ -3,3 +3,4 @@ export * from './fetch-with-timeout';
 export * from './rpc';
 export * from './rpc-request';
 export * from './networks';
+export * from './coins';

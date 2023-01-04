@@ -228,11 +228,15 @@ export const KeyringManager = (): IKeyringManager => {
     const balance = await web3Wallet.getBalance(address);
     const transactions = await web3Wallet.getUserTransactions(address, network);
 
-    const { label } = wallet.accounts[id];
+    const { label, assets: _assets } = wallet.accounts[id];
 
     const assets: IEthereumNftDetails[] = [];
+
     return {
-      assets,
+      assets: {
+        ..._assets,
+        ethereum: assets,
+      },
       id,
       isTrezorWallet: false,
       label: label ? label : `Account ${id + 1}`,
@@ -427,7 +431,10 @@ export const KeyringManager = (): IKeyringManager => {
 
     return {
       transactions: transactions ? transactions.slice(0, 20) : [],
-      assets: filteredAssets,
+      assets: {
+        ...getDecryptedVault().wallet.activeAccount.assets,
+        syscoin: filteredAssets,
+      },
       xpub: address,
       balances: {
         syscoin: balance / 1e8,
