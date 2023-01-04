@@ -12,6 +12,8 @@ export const SYS_EVM_NETWORK = {
 };
 
 export const FAKE_SEED_PHRASE = process.env.SEED_PEACE_GLOBE;
+export const SECOND_FAKE_SEED_PHRASE =
+  'gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge';
 export const INVALID_SEED_PHRASE =
   'Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor';
 export const ADDRESS = '0xa3d42513a1affe8d0862cf51df6145523837393a';

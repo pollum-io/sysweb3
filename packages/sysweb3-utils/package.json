@@ -1,6 +1,10 @@
 {
   "name": "@pollum-io/sysweb3-utils",
+<<<<<<< HEAD
   "version": "1.1.216",
+=======
+  "version": "1.1.214",
+>>>>>>> main
   "description": "A helper for multi-chain accounts.",
   "main": "cjs/index.js",
   "types": "types/index.d.ts",
@@ -24,9 +28,14 @@
   },
   "dependencies": {
     "@ethersproject/contracts": "^5.6.2",
+<<<<<<< HEAD
     "@pollum-io/sysweb3-core": "^1.0.20",
     "@pollum-io/sysweb3-keyring": "^1.0.424",
     "@pollum-io/sysweb3-network": "^1.0.75",
+=======
+    "@pollum-io/sysweb3-core": "^1.0.19",
+    "@pollum-io/sysweb3-network": "^1.0.72",
+>>>>>>> main
     "axios": "^0.26.1",
     "bech32": "^2.0.0",
     "bip32": "^3.0.1",

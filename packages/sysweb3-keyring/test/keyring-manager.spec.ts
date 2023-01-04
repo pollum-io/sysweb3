@@ -85,7 +85,9 @@ describe('keyring manager tests', () => {
 
     expect(privateKey).toBeDefined();
     expect(privateKey.length).toBeGreaterThan(50);
+  });
 
+  it('should throw an error if given an invalid id', () => {
     expect(() => {
       keyringManager.getPrivateKeyByAccountId(3);
     }).toThrow('Account not found');
@@ -381,3 +383,36 @@ describe('keyring manager tests', () => {
   //   expect(wallet).toEqual(initialWalletState);
   // });
 });
+
+// describe('Account derivation with another seed in keyring', () => {
+//   const keyringManager = KeyringManager();
+
+//   jest.setTimeout(50000); // 50s
+
+//   it('should derivate a new account with specific address', async () => {
+//     const { window } = global;
+
+//     if (window !== undefined) {
+//       keyringManager.validateSeed(SECOND_FAKE_SEED_PHRASE);
+//       keyringManager.setWalletPassword(FAKE_PASSWORD);
+
+//       const mainnet = initialWalletState.networks.ethereum[57];
+//       await keyringManager.setSignerNetwork(mainnet, 'ethereum');
+
+//       const account2 = await keyringManager.addNewAccount();
+//       expect(account2.address).toBe(
+//         '0x2cfec7d3f6c02b180619c169c5cb8123c8653d74'
+//       );
+
+//       const account3 = await keyringManager.addNewAccount();
+//       expect(account3.address).toBe(
+//         '0x871157acb257c4269b1d2312c55e1adfb352c2cb'
+//       );
+
+//       const account4 = await keyringManager.addNewAccount();
+//       expect(account4.address).toBe(
+//         '0x0c947b39688c239e1c7fd124cf35b7ad304532c5'
+//       );
+//     }
+//   });
+// });
