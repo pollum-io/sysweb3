@@ -5,5 +5,8 @@
   "repository": "git@github.com:amandagonsalves/sysweb3.git",
   "author": "Amanda Gonsalves <amandagonsalvesags@gmail.com>",
   "license": "MIT",
-  "private": false
+  "private": false,
+  "publishConfig": {
+    "@amandagonsalves:registry": "https://npm.pkg.github.com"
+  }
 }
