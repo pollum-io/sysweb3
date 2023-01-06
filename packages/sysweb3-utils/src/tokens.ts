@@ -5,6 +5,8 @@ import sys from 'syscoinjs-lib';
 
 import { createContractUsingAbi } from '.';
 import abi20 from './abi/erc20.json';
+import ABI721 from './abi/erc721.json';
+// import ABI1155 from './abi/erc1155.json'
 import tokens from './tokens.json';
 
 import type {
@@ -128,6 +130,7 @@ type NftContract = InstanceType<typeof Contract> & {
   ownerOf: ContractFunction<string>;
   tokenURI: ContractFunction<string>;
   uri: ContractFunction<string>;
+  balanceOf: ContractFunction<number>;
 };
 
 type TokenContract = InstanceType<typeof Contract> & {
@@ -152,6 +155,42 @@ export const url = async (
   });
 
   return normalizeTokenUrl(uri);
+};
+
+export const fetchBalanceOfERC721Contract = async (
+  contractAddress: string,
+  address: string,
+  config: EthersFetcherConfigEthersLoaded
+): Promise<number | undefined> => {
+  const contract = new config.ethers.Contract(
+    contractAddress,
+    ABI721,
+    config.provider
+  ) as NftContract;
+
+  const fetchBalanceOfValue = await contract.balanceOf(address);
+
+  console.log('balance', fetchBalanceOfValue);
+
+  return fetchBalanceOfValue;
+};
+
+export const getERC721StandardBalance = async (
+  contractAddress: string,
+  address: string,
+  provider: JsonRpcProvider
+) => {
+  try {
+    const config = { provider, ethers: ethersModule };
+    const loaded = await loadEthers(config);
+
+    return await fetchBalanceOfERC721Contract(contractAddress, address, loaded);
+  } catch (error) {
+    return error;
+    // throw new Error(
+    //   `Verify current network or the contract address. Set the same network of token contract. Error: ${error}`
+    // );
+  }
 };
 
 export const fetchStandardNftContractData = async (
