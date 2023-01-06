@@ -166,7 +166,6 @@ describe('keyring manager tests', () => {
 
   //* setSignerNetwork utxo syscoin mainnet
   it('should set utxo mainnet as the active network', async () => {
-    console.log('before all utxo', getDecryptedVault());
     const { network: networkBefore } = getDecryptedVault();
 
     console.log({
