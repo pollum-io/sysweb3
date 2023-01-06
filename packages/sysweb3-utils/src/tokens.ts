@@ -170,8 +170,6 @@ export const fetchBalanceOfERC721Contract = async (
 
   const fetchBalanceOfValue = await contract.balanceOf(address);
 
-  console.log('balance', fetchBalanceOfValue);
-
   return fetchBalanceOfValue;
 };
 
@@ -186,10 +184,9 @@ export const getERC721StandardBalance = async (
 
     return await fetchBalanceOfERC721Contract(contractAddress, address, loaded);
   } catch (error) {
-    return error;
-    // throw new Error(
-    //   `Verify current network or the contract address. Set the same network of token contract. Error: ${error}`
-    // );
+    throw new Error(
+      `Verify current network or the contract address. Set the same network of token contract. Error: ${error}`
+    );
   }
 };
 
