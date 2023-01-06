@@ -1,9 +1,11 @@
 import { ethers } from 'ethers';
+import { registeredCoinTypes as slip44, RegisteredCoinType } from 'slip44';
 
 import { coins } from './coins';
 
 export const toHexFromNumber = (decimal: number) =>
   ethers.utils.hexlify(decimal);
+
 export const toDecimalFromHex = (hexString: string) => parseInt(hexString, 16);
 
 export const getPubType = (
@@ -36,17 +38,24 @@ export const getPubType = (
   };
 };
 
-export const getFormattedBitcoinLikeNetwork = (
-  slip44: number,
-  coinName: string
-) => {
-  try {
-    const coin = coins.find(
-      (supported: any) => supported.coinName === coinName
-    );
+export const slip44TestnetCoinType = 2147483649;
 
-    if (!(coin && coin.slip44 === slip44))
-      throw new Error(`Coin info not found`);
+export const getUtxoNetworkConfig = (coinType: number) => {
+  try {
+    const coin = slip44.find(([_coinType]: RegisteredCoinType) => {
+      return _coinType === coinType;
+    });
+
+    const specificNetworkInfo = coins.find(
+      (info: any) => info.slip44 === coinType
+    ) as any;
+
+    if (!coin || !specificNetworkInfo)
+      throw new Error(
+        'Could not get UTXO config for this network. Coin type is not registered in BIP44. See https://github.com/satoshilabs/slips/blob/master/slip-0044.md for available networks.'
+      );
+
+    const isTestnet = coin[1] === slip44TestnetCoinType;
 
     const {
       signedMessageHeader,
@@ -56,9 +65,7 @@ export const getFormattedBitcoinLikeNetwork = (
       addressType,
       addressTypeP2sh,
       wif,
-    } = coin;
-
-    const isTestnet = coin.name.toLowerCase().includes('test');
+    } = specificNetworkInfo;
 
     const hexPubKeyHash = ethers.utils.hexlify(addressType);
     const hexScriptHash = ethers.utils.hexlify(addressTypeP2sh);
@@ -80,14 +87,17 @@ export const getFormattedBitcoinLikeNetwork = (
       testnet: baseNetwork,
     };
 
-    const useMainnet = networks.mainnet && !isTestnet;
+    const pubTypes = getPubType(baseNetwork) || null;
 
-    const networkChain = useMainnet ? networks.mainnet : networks.testnet;
-
-    return {
+    const config = {
+      isTestnet,
       networks,
-      types: getPubType(networkChain) || null,
+      slip44: coinType,
+      pubTypes,
+      baseNetwork,
     };
+
+    return config;
   } catch (error) {
     throw new Error(error);
   }

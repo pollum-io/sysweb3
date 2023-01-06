@@ -228,7 +228,10 @@ export const KeyringManager = (): IKeyringManager => {
     const balance = await web3Wallet.getBalance(address);
     const transactions = await web3Wallet.getUserTransactions(address, network);
 
-    const { label, assets: _assets } = wallet.accounts[id];
+    const account = wallet.accounts[id];
+
+    const label = account ? account.label : `Account ${id + 1}`;
+    const _assets = account ? account.assets : [];
 
     const assets: IEthereumNftDetails[] = [];
 
@@ -239,7 +242,7 @@ export const KeyringManager = (): IKeyringManager => {
       },
       id,
       isTrezorWallet: false,
-      label: label ? label : `Account ${id + 1}`,
+      label,
       balances: {
         syscoin: 0,
         ethereum: balance,
@@ -444,24 +447,26 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const _getBasicSysAccountInfo = async (xpub: string, id: number) => {
-    const { network } = getDecryptedVault();
+    const { network, wallet } = getDecryptedVault();
 
     const formattedBackendAccount = await _getFormattedBackendAccount({
       url: network.url,
       xpub,
     });
 
+    const account = wallet.accounts[id];
+
+    const label = account ? account.label : `Account ${id + 1}`;
+
     return {
       id,
       isTrezorWallet: false,
-      label: `Account ${Number(id) + 1}`,
+      label,
       ...formattedBackendAccount,
     };
   };
 
   const _setDerivedSysAccounts = async (id: number) => {
-    if (hd && id > -1) hd.setAccountIndex(id);
-
     const xpub = hd.getAccountXpub();
     const xprv = getEncryptedXprv();
     const address = await hd.getNewReceivingAddress(true);
@@ -493,7 +498,6 @@ export const KeyringManager = (): IKeyringManager => {
     transactions: any;
     assets: any;
     address: string;
-    label: string;
   }> => {
     const vault = getDecryptedVault();
 
@@ -520,12 +524,9 @@ export const KeyringManager = (): IKeyringManager => {
         if (!hd.Signer.accounts[Number(id)]) {
           addAccountToSigner(Number(id));
         }
-      }
-    }
 
-    for (const account of Object.values(_wallet.accounts)) {
-      // @ts-ignore
-      await _setDerivedSysAccounts(account.id);
+        await _setDerivedSysAccounts(Number(id));
+      }
     }
 
     if (hd && _wallet.activeAccount.id > -1)
@@ -537,9 +538,8 @@ export const KeyringManager = (): IKeyringManager => {
       xpub,
     });
     const address = await hd.getNewReceivingAddress(true);
-    const label = _wallet.activeAccount.label;
+
     return {
-      label,
       address,
       ...formattedBackendAccount,
     };
@@ -698,6 +698,7 @@ export const KeyringManager = (): IKeyringManager => {
       network,
     });
 
+    // todo: update sysweb3 network & utils before update this block
     if (chain === 'syscoin') {
       const response = await validateSysRpc(network.url);
 

@@ -1,21 +1,17 @@
-import { getFormattedBitcoinLikeNetwork, getPubType } from '../src/networks';
 import {
   VALID_BIP44_DATA_RESPONSE,
   VALID_BITCOIN_LIKE_NETWORK,
-} from './constants';
+  VALID_UTXO_CONFIG_DATA,
+} from '../src/constants';
+import { getUtxoNetworkConfig, getPubType } from '../src/networks';
 
 describe('networks tests', () => {
-  it('should return formatted bitcoin like network for a given coin', () => {
-    const {
-      nativeCurrency: { name },
-      chainId,
-    } = VALID_BIP44_DATA_RESPONSE;
+  it('should return utxo network config for a given coin', () => {
+    const { chainId } = VALID_BIP44_DATA_RESPONSE;
 
-    const response = getFormattedBitcoinLikeNetwork(chainId, name);
+    const response = getUtxoNetworkConfig(chainId);
 
-    expect(response.networks).toStrictEqual(
-      VALID_BITCOIN_LIKE_NETWORK.networks
-    );
+    expect(response).toStrictEqual(VALID_UTXO_CONFIG_DATA);
   });
 
   it('should return pub types for a given coin', () => {

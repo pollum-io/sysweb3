@@ -8,11 +8,8 @@ export const PASSWORD = 'a2s@AwWkjs452!';
 export const UNENCRYPTED_VAULT = {
   wallet: initialWalletState,
   network: initialWalletState.activeNetwork,
-  mnemonic: CryptoJS.AES.encrypt(SEED, PASSWORD).toString(),
   lastLogin: 0,
-  isTestnet: false,
-  rpc: {
-    formattedNetwork: initialWalletState.activeNetwork,
-    formattedBitcoinLikeNetwork: null,
-  },
+  signers: { _hd: null, _main: null },
 };
+
+export const ENCRYPTED_SEED = CryptoJS.AES.encrypt(SEED, PASSWORD).toString();

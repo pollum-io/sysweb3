@@ -1,16 +1,31 @@
 import CryptoJS from 'crypto-js';
 
 import { sysweb3Di } from '@pollum-io/sysweb3-core';
+import { initialWalletState } from '@pollum-io/sysweb3-keyring';
+
+const initialStorageState = {
+  wallet: initialWalletState,
+  network: initialWalletState.activeNetwork,
+  signers: { _hd: null, _main: null },
+  mnemonic: '',
+  lastLogin: 0,
+};
 
 const storage = sysweb3Di.getStateStorageDb();
 
-export const setEncryptedVault = (decryptedVault: any) => {
-  const encryptedVault = CryptoJS.AES.encrypt(
-    JSON.stringify(decryptedVault),
-    storage.get('vault-keys').hash
-  );
+export const setEncryptedVault = (unencrypted: any) => {
+  const unencryptedVault = storage.get('vault')
+    ? getDecryptedVault()
+    : initialStorageState;
 
-  storage.set('vault', encryptedVault.toString());
+  const vault = { ...unencryptedVault, ...unencrypted };
+
+  const encryptedVault = CryptoJS.AES.encrypt(
+    JSON.stringify(vault),
+    storage.get('vault-keys').hash
+  ).toString();
+
+  storage.set('vault', encryptedVault);
 };
 
 export const getDecryptedVault = () => {

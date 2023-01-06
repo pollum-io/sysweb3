@@ -3,7 +3,7 @@ import bip44Constants from 'bip44-constants';
 import { Chain, chains } from 'eth-chains';
 import { ethers } from 'ethers';
 
-import { getFormattedBitcoinLikeNetwork, toDecimalFromHex } from './networks';
+import { toDecimalFromHex } from './networks';
 import { jsonRpcRequest } from './rpc-request';
 
 const hexRegEx = /^0x[0-9a-f]+$/iu;
@@ -127,36 +127,5 @@ export const getBip44Chain = (coin: string, isTestnet?: boolean) => {
     coinType: coinTypeInDecimal,
     chainId,
   };
-};
-
-// change setsignerbychain keyring manager
-export const getSysRpc = async (data: any) => {
-  try {
-    const { valid, coin, chain } = await validateSysRpc(data.url);
-    const { nativeCurrency, chainId } = getBip44Chain(coin, chain === 'test');
-
-    if (!valid) throw new Error('Invalid Trezor Blockbook Explorer URL');
-
-    const formattedBitcoinLikeNetwork = getFormattedBitcoinLikeNetwork(
-      chainId,
-      coin
-    );
-
-    const formattedNetwork = {
-      url: data.url,
-      explorer: data.url,
-      currency: nativeCurrency.symbol,
-      label: coin,
-      default: false,
-      chainId,
-    };
-
-    return {
-      formattedNetwork,
-      formattedBitcoinLikeNetwork,
-    };
-  } catch (error) {
-    throw new Error(error);
-  }
 };
 /** end */

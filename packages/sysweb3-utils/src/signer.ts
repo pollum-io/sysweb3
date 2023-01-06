@@ -5,80 +5,48 @@ import sys from 'syscoinjs-lib';
 
 import { getDecryptedVault, INetwork } from '.';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { BitcoinNetwork, IPubTypes } from '@pollum-io/sysweb3-network';
-
-export const getSyscoinSigners = ({
-  mnemonic,
-  isTestnet,
-  url,
-  rpc,
-}: ISyscoinSignerParams): { hd: SyscoinHDSigner; main: any } => {
-  let main: any;
-  let hd: SyscoinHDSigner;
-
-  let config: BitcoinNetwork | null = null;
-  let slip44: number | null = null;
-  let pubTypes: IPubTypes | null = null;
-
-  let networks: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork } | null =
-    null;
-
-  const hasRpcConfig = rpc && rpc.formattedBitcoinLikeNetwork;
-
-  if (hasRpcConfig) {
-    const { formattedNetwork, formattedBitcoinLikeNetwork } = rpc;
-
-    const { networks: _bitcoinLikeNetworks, types } =
-      formattedBitcoinLikeNetwork;
-
-    config = isTestnet
-      ? _bitcoinLikeNetworks.testnet
-      : _bitcoinLikeNetworks.mainnet;
-
-    networks = _bitcoinLikeNetworks;
-    slip44 = formattedNetwork.chainId;
-    pubTypes = types.zPubType;
-  }
-
-  // @ts-ignore
-  if (!hd) {
-    hd = new sys.utils.HDSigner(
-      mnemonic,
-      null,
-      isTestnet,
-      networks,
-      slip44,
-      pubTypes
-    );
-  }
-
-  if (!main) {
-    main = new sys.SyscoinJSLib(hd, url, config);
-  }
-
-  return {
-    hd,
-    main,
-  };
-};
+import {
+  BitcoinNetwork,
+  IPubTypes,
+  getUtxoNetworkConfig, // update package
+} from '@pollum-io/sysweb3-network';
 
 export const getSigners = () => {
+  let _main: any;
+  let _hd: SyscoinHDSigner;
   const storage = sysweb3.sysweb3Di.getStateStorageDb();
 
   const { hash } = storage.get('vault-keys');
 
-  const { network, isTestnet, mnemonic, rpc } = getDecryptedVault();
+  const { network, mnemonic } = getDecryptedVault();
 
   const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString(
     CryptoJS.enc.Utf8
   );
 
-  const { hd: _hd, main: _main } = getSyscoinSigners({
-    mnemonic: decryptedMnemonic,
+  const {
+    baseNetwork,
+    networks,
     isTestnet,
-    url: network.url,
-    rpc,
-  });
+    slip44,
+    pubTypes: { zPubType },
+  } = getUtxoNetworkConfig(network.chainId);
+
+  // @ts-ignore
+  if (!_hd) {
+    _hd = new sys.utils.HDSigner(
+      decryptedMnemonic,
+      null,
+      isTestnet,
+      networks,
+      slip44,
+      zPubType
+    );
+  }
+
+  if (!_main) {
+    _main = new sys.SyscoinJSLib(_hd, network.url, baseNetwork);
+  }
 
   return {
     _hd,
@@ -200,3 +168,64 @@ export type SyscoinMainSigner = {
   Signer: SyscoinHDSigner;
   network: BitcoinNetwork;
 };
+
+// import { BIP32Interface } from 'bip32';
+// import { Psbt } from 'bitcoinjs-lib';
+// import CryptoJS from 'crypto-js';
+// import sys from 'syscoinjs-lib';
+
+// import { getDecryptedVault, INetwork, setEncryptedVault } from '.';
+// import {
+//   getUtxoNetworkConfig,
+//   IPubTypes,
+//   BitcoinNetwork,
+// } from '../../sysweb3-network/src/index';
+// import * as sysweb3 from '@pollum-io/sysweb3-core';
+
+// export class GetSigners {
+//   storage: any;
+//   hd: SyscoinHDSigner;
+//   main: SyscoinMainSigner;
+
+//   constructor() {
+//     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
+//     this.hd = {} as SyscoinHDSigner;
+//     this.main = {} as SyscoinMainSigner;
+//   }
+
+//   init() {
+//     const { hash } = this.storage.get('vault-keys');
+
+//     const { network, mnemonic } = getDecryptedVault();
+
+//     const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString(
+//       CryptoJS.enc.Utf8
+//     );
+
+//     const {
+//       baseNetwork,
+//       networks,
+//       isTestnet,
+//       slip44,
+//       pubTypes: { zPubType },
+//     } = getUtxoNetworkConfig(network.chainId);
+
+//     this.hd = new sys.utils.HDSigner(
+//       decryptedMnemonic,
+//       null,
+//       isTestnet,
+//       networks,
+//       slip44,
+//       zPubType
+//     );
+
+//     this.main = new sys.SyscoinJSLib(this.hd, network.url, baseNetwork);
+//   }
+
+//   getSigners() {
+//     return {
+//       hd: this.hd,
+//       main: this.main,
+//     };
+//   }
+// }
