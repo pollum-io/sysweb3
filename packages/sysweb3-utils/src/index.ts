@@ -12,3 +12,6 @@ export * from './networks';
 export * from './spsbt';
 export * from './address';
 export * from './constants';
+export * from './getContractInfo';
+export * from './getContract';
+export * from './contractErrors';
