@@ -43,7 +43,7 @@ export const contractChecker = async (
     let contract: Contract | null;
 
     try {
-      const contractData = await getContract(contractAddress, network.label);
+      const contractData = await getContract(contractAddress, network.url);
 
       contract = contractData.contract as Contract | null;
     } catch (_error) {
