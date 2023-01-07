@@ -1,5 +1,6 @@
-import { getErc21Abi, getErc55Abi } from 'contracts';
 import Web3 from 'web3';
+
+import { getErc21Abi, getErc55Abi } from './contracts';
 
 export const getContract = async (
   contractAddress: string,

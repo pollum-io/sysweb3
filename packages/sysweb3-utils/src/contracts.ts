@@ -1,10 +1,12 @@
 import { ethers, Contract, ContractInterface } from 'ethers';
-import { getContract, getContractInfo, CONTRACT_ERRORS } from 'index';
 import { INetwork } from 'networks';
 
 import abi55 from './abi/erc1155.json';
 import abi20 from './abi/erc20.json';
 import abi21 from './abi/erc721.json';
+import { CONTRACT_ERRORS } from './contractErrors';
+import { getContract } from './getContract';
+import { getContractInfo } from './getContractInfo';
 import { setActiveNetwork } from '@pollum-io/sysweb3-network';
 
 export const createContractUsingAbi = (
