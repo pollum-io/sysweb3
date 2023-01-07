@@ -1,10 +1,10 @@
 import { ethers, Contract, ContractInterface } from 'ethers';
-import { getContract } from 'index';
 import { INetwork } from 'networks';
 
 import abi55 from './abi/erc1155.json';
 import abi20 from './abi/erc20.json';
 import abi21 from './abi/erc721.json';
+import { getContract } from './getContract';
 
 export const createContractUsingAbi = (
   AbiContract: ContractInterface,
