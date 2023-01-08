@@ -18,19 +18,6 @@ export const getContract = async (
     getErc55Abi(),
   ];
 
-  // const abisInfos = [
-  //   { abi: abi20, interfaceId: '0x36372b07', type: 'ERC-20' },
-  //   { abi: abi721, interfaceId: '0x80ac58cd', type: 'ERC-721' },
-  //   { abi: abi721, interfaceId: '0xc87b56dd', type: 'ERC-721' },
-  //   { abi: abi721, interfaceId: '0x79f154c4', type: 'ERC-721' },
-  //   { abi: abi721, interfaceId: '0x42966c68', type: 'ERC-721' },
-  //   { abi: abi721, interfaceId: '0x01ffc9a7', type: 'ERC-721' },
-  //   { abi: abi1155, interfaceId: '0xd9b67a26', type: 'ERC-1155' },
-  //   { abi: abi1155, interfaceId: '0x63759d50', type: 'ERC-1155' },
-  //   { abi: abi1155, interfaceId: '0x9e094e9e', type: 'ERC-1155' },
-  //   { abi: abi1155, interfaceId: '0xf2d03e40', type: 'ERC-1155' },
-  // ];
-
   const abisInfos = [
     { abi: abi20, interfaceId: ['0x36372b07'], type: 'ERC-20' },
     {
@@ -58,11 +45,6 @@ export const getContract = async (
         abiInfo.abi,
         contractAddress
       ) as any; // Type any because Contract type doesnt have supportsInterface function inside the type
-
-      // const support = await
-      // _contract
-      //   .supportsInterface(abiInfo.interfaceId)
-      //   .send();
 
       const support = await Promise.all(
         abiInfo.interfaceId.map(async (id: string) => {

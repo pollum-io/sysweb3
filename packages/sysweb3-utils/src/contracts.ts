@@ -19,12 +19,15 @@ export const isContractAddress = async (
   address: string,
   networkUrl: string
 ) => {
-  if (address) {
+  if (!address) return false;
+  try {
     const provider = new HttpProvider(networkUrl);
     const code = await provider.getCode(address);
+
     return code !== '0x';
+  } catch (error) {
+    if (String(error).includes('bad address checksum')) return false;
   }
-  return false;
 };
 
 export const contractChecker = async (
