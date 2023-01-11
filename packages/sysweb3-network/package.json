@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-network",
-  "version": "1.0.84",
+  "version": "1.0.85",
   "description": "A network management tool for multi-chain accounts.",
   "main": "cjs/index.js",
   "types": "types/index.d.ts",
