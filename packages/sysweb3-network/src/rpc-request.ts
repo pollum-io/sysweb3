@@ -41,7 +41,7 @@ export const jsonRpcRequest = async (
       // eslint-disable-next-line prettier/prettier
       (httpResponse.status === 200 ? httpResponse.json() : httpResponse)
     )
-    .catch((error) => {
+    .catch((error: any) => {
       throw new Error(error);
     });
 
