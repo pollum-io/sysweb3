@@ -1,10 +1,9 @@
 import { ethers, Contract, ContractInterface } from 'ethers';
-import { INetwork } from 'networks';
 
 import abi55 from './abi/erc1155.json';
 import abi20 from './abi/erc20.json';
 import abi21 from './abi/erc721.json';
-import { getContract } from './getContract';
+import { getContractType, ISupportsInterfaceProps } from './getContract';
 
 export const createContractUsingAbi = (
   AbiContract: ContractInterface,
@@ -24,7 +23,7 @@ export const isContractAddress = async (
     const provider = new HttpProvider(networkUrl);
     const code = await provider.getCode(address);
 
-    return code !== '0x';
+    return Boolean(code !== '0x');
   } catch (error) {
     if (String(error).includes('bad address checksum')) return false;
   }
@@ -32,22 +31,25 @@ export const isContractAddress = async (
 
 export const contractChecker = async (
   contractAddress: string,
-  network: INetwork
+  networkUrl: string
 ) => {
-  const validateContractAddress = isContractAddress(
-    contractAddress,
-    network.url
-  );
-
-  if (!validateContractAddress)
-    throw new Error(`Invalid contract address: ${contractAddress}`);
-
   try {
-    const contractData = await getContract(contractAddress, network.url);
+    const validateContractAddress = await isContractAddress(
+      contractAddress,
+      networkUrl
+    );
+
+    if (!validateContractAddress)
+      throw new Error(`Invalid contract address: ${contractAddress}`);
+
+    const contractData = (await getContractType(
+      contractAddress,
+      networkUrl
+    )) as ISupportsInterfaceProps;
 
     return contractData;
-  } catch (_error) {
-    throw new Error(_error);
+  } catch (error) {
+    return error;
   }
 };
 
