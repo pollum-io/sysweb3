@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 
 import { getFormattedBitcoinLikeNetwork, toDecimalFromHex } from './networks';
 import { jsonRpcRequest } from './rpc-request';
+import { INetwork } from '@pollum-io/sysweb3-utils';
 
 const hexRegEx = /^0x[0-9a-f]+$/iu;
 
@@ -35,34 +36,65 @@ export const validateEthRpc = async (
   chain: string;
 }> => {
   try {
-    const chainId = await jsonRpcRequest(url, 'eth_chainId');
+    const hexChainIdForUrl = await jsonRpcRequest(url, 'eth_chainId');
 
-    if (!chainId) {
+    if (!hexChainIdForUrl) {
       throw new Error('Invalid RPC URL. Could not get chain ID for network.');
     }
 
-    const numberChainId = parseInt(chainId, 16);
+    const numberChainId = parseInt(hexChainIdForUrl, 16);
 
     if (!isValidChainIdForEthNetworks(Number(numberChainId)))
       throw new Error('Invalid chain ID for ethereum networks.');
-
-    const { valid, hexChainId } = validateChainId(numberChainId);
-
+    const { valid, hexChainId } = validateChainId(hexChainIdForUrl);
     const details = chains.getById(numberChainId);
 
     if (!valid) {
       throw new Error('RPC has an invalid chain ID');
     }
-
+    let chain = 'unknown';
+    if (details) {
+      chain = details.network ? details.network : chain;
+    }
     return {
       details,
-      chain: details && details.chain ? details.chain : 'unknown',
+      chain,
       hexChainId,
       valid,
     };
   } catch (error) {
     throw new Error(error);
   }
+};
+
+export const getEthRpc = async (
+  data: any
+): Promise<{
+  formattedNetwork: INetwork;
+}> => {
+  const { valid, hexChainId, details } = await validateEthRpc(data.url);
+
+  if (!valid) throw new Error('Invalid RPC.');
+
+  const chainIdNumber = toDecimalFromHex(hexChainId);
+  let explorer = '';
+  if (details) {
+    explorer = details.explorers ? details.explorers[0].url : explorer;
+  }
+  if (!details && !data.symbol) throw new Error('Must define a symbol');
+  const formattedNetwork = {
+    url: data.url,
+    default: false,
+    label: data.label || String(details ? details.name : ''),
+    apiUrl: data.apiUrl,
+    explorer: data.explorer ? data.explorer : String(explorer),
+    currency: details ? details.nativeCurrency.symbol : data.symbol,
+    chainId: chainIdNumber,
+  };
+
+  return {
+    formattedNetwork,
+  };
 };
 /** end */
 
