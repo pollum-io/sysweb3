@@ -32,7 +32,7 @@ export const isContractAddress = async (
 export const contractChecker = async (
   contractAddress: string,
   networkUrl: string
-) => {
+): Promise<ISupportsInterfaceProps | ErrorConstructor> => {
   try {
     const validateContractAddress = await isContractAddress(
       contractAddress,
