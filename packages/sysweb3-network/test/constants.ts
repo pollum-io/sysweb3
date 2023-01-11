@@ -40,6 +40,7 @@ export const VALID_ETH_RPC_RESPONSE = {
   chain: 'ETH',
   hexChainId: '0x01',
   valid: true,
+  chainId: 1,
   details: CHAINS_DETAILS,
 };
 
