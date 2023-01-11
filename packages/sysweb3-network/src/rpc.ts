@@ -30,35 +30,30 @@ export const isValidChainIdForEthNetworks = (chainId: number | string) =>
 export const validateEthRpc = async (
   url: string
 ): Promise<{
+  chainId: number;
   valid: boolean;
   hexChainId: string;
   details: Chain | undefined;
   chain: string;
 }> => {
   try {
-    const hexChainIdForUrl = await jsonRpcRequest(url, 'eth_chainId');
-
-    if (!hexChainIdForUrl) {
+    const chainId = await jsonRpcRequest(url, 'eth_chainId');
+    if (!chainId) {
       throw new Error('Invalid RPC URL. Could not get chain ID for network.');
     }
-
-    const numberChainId = parseInt(hexChainIdForUrl, 16);
-
+    const numberChainId = parseInt(chainId, 16);
     if (!isValidChainIdForEthNetworks(Number(numberChainId)))
       throw new Error('Invalid chain ID for ethereum networks.');
-    const { valid, hexChainId } = validateChainId(hexChainIdForUrl);
+    const { valid, hexChainId } = validateChainId(numberChainId);
     const details = chains.getById(numberChainId);
-
     if (!valid) {
       throw new Error('RPC has an invalid chain ID');
     }
-    let chain = 'unknown';
-    if (details) {
-      chain = details.network ? details.network : chain;
-    }
+
     return {
+      chainId: numberChainId,
       details,
-      chain,
+      chain: details && details.chain ? details.chain : 'unknown',
       hexChainId,
       valid,
     };
