@@ -8,11 +8,12 @@ export const getFormattedTransactionResponse = async (
   transaction: TransactionResponse
 ) => {
   const tx = await provider.getTransaction(transaction.hash);
-
-  const { timestamp } = await provider.getBlock(Number(tx.blockNumber));
-
-  return {
-    ...tx,
-    timestamp,
-  };
+  if (tx) {
+    const { timestamp } = await provider.getBlock(Number(tx.blockNumber));
+    return {
+      ...tx,
+      timestamp,
+    };
+  }
+  return tx as TransactionResponse;
 };

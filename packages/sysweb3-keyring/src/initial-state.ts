@@ -37,6 +37,15 @@ export const initialNetworksState = {
     },
   },
   ethereum: {
+    1: {
+      chainId: 1,
+      url: 'https://rpc.ankr.com/eth',
+      label: 'Ethereum Mainnet',
+      default: true,
+      currency: 'eth',
+      explorer: 'https://etherscan.io/',
+      apiUrl: 'https://api.etherscan.io/api',
+    },
     137: {
       chainId: 137,
       currency: 'matic',
