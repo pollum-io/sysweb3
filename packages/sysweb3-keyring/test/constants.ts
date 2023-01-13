@@ -11,6 +11,24 @@ export const SYS_EVM_NETWORK = {
   apiUrl: 'https://explorer.syscoin.org/api',
   explorer: 'https://explorer.syscoin.org/',
 };
+export const SYS_TANENBAUM_UTXO_NETWORK = {
+  chainId: 5700,
+  currency: 'tsys',
+  default: true,
+  label: 'Syscoin Tanenbaum',
+  url: 'https://rpc.tanenbaum.io',
+  apiUrl: 'https://tanenbaum.io/api',
+  explorer: 'https://tanenbaum.io/',
+};
+export const CREATE_TOKEN_PARAMS = {
+  precision: 8,
+  symbol: 'tokentest',
+  maxsupply: 16,
+  description: '',
+  receiver: 'tsys1q9rypmfsa4mcvknhf5galpmv2smts7h0ra6dqyz',
+  initialSupply: 15,
+  capabilityflags: 127,
+};
 export const FAKE_SEED_PHRASE = process.env.SEED_PEACE_GLOBE;
 export const SECOND_FAKE_SEED_PHRASE =
   'gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge';
