@@ -13,21 +13,22 @@ export const SYS_EVM_NETWORK = {
 };
 export const SYS_TANENBAUM_UTXO_NETWORK = {
   chainId: 5700,
-  currency: 'tsys',
+  label: 'Syscoin Testnet',
+  url: 'https://blockbook-dev.elint.services/',
   default: true,
-  label: 'Syscoin Tanenbaum',
-  url: 'https://rpc.tanenbaum.io',
-  apiUrl: 'https://tanenbaum.io/api',
-  explorer: 'https://tanenbaum.io/',
+  currency: 'tsys',
+  apiUrl: '',
+  explorer: '',
 };
 export const CREATE_TOKEN_PARAMS = {
   precision: 8,
-  symbol: 'tokentest',
-  maxsupply: 16,
-  description: '',
-  receiver: 'tsys1q9rypmfsa4mcvknhf5galpmv2smts7h0ra6dqyz',
+  symbol: 'testTok',
+  maxsupply: 18,
+  description: 'desc',
   initialSupply: 15,
   capabilityflags: 127,
+  eventName: 'txCreateToken',
+  fee: 0.00001,
 };
 export const FAKE_SEED_PHRASE = process.env.SEED_PEACE_GLOBE;
 export const SECOND_FAKE_SEED_PHRASE =
