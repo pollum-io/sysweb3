@@ -2,6 +2,7 @@ import { KeyringManager } from '../src/keyring-manager';
 import { SyscoinTransactions } from '../src/transactions/syscoin';
 import {
   CREATE_TOKEN_PARAMS,
+  DATA,
   FAKE_PASSWORD,
   FAKE_SEED_PHRASE,
   SYS_TANENBAUM_UTXO_NETWORK,
@@ -9,7 +10,16 @@ import {
 
 describe('testing functions for sys txs', () => {
   const keyringManager = KeyringManager();
-  const { confirmTokenCreation } = SyscoinTransactions();
+  const {
+    confirmTokenCreation,
+    getRecommendedFee,
+    confirmMintNFT,
+    confirmTokenMint,
+    // confirmNftCreation,
+    // confirmUpdateToken,
+    // sendTransaction,
+    // signTransaction,
+  } = SyscoinTransactions();
 
   //--------------------------------------------------------Tests for initialize wallet state----------------------------------------------------
 
@@ -90,5 +100,24 @@ describe('testing functions for sys txs', () => {
     });
 
     expect(typeof txid).toBe('string');
+  });
+
+  it('should confirm mint token', async () => {
+    const { txid } = await confirmTokenMint(DATA['mintToken']);
+
+    expect(typeof txid).toBe('string');
+  });
+
+  it('should confirm mint NFT', async () => {
+    const { txid } = await confirmMintNFT(DATA['mintNft']);
+
+    expect(typeof txid).toBe('string');
+  });
+
+  it('should get recommended fee', async () => {
+    const { explorer } = SYS_TANENBAUM_UTXO_NETWORK;
+    const fee = await getRecommendedFee(explorer);
+
+    expect(typeof fee).toBe('number');
   });
 });
