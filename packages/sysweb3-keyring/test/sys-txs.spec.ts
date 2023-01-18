@@ -15,10 +15,10 @@ describe('testing functions for sys txs', () => {
     getRecommendedFee,
     confirmMintNFT,
     confirmTokenMint,
-    // confirmNftCreation,
-    // confirmUpdateToken,
-    // sendTransaction,
-    // signTransaction,
+    confirmNftCreation,
+    confirmUpdateToken,
+    sendTransaction,
+    signTransaction,
   } = SyscoinTransactions();
 
   //--------------------------------------------------------Tests for initialize wallet state----------------------------------------------------
@@ -86,7 +86,7 @@ describe('testing functions for sys txs', () => {
   });
 
   //--------------------------------------------------------SyscoinTransactions Tests----------------------------------------------------
-  jest.setTimeout(70000);
+  jest.setTimeout(80000);
   it('should create SPT tx', async () => {
     // Initializing wallet and setting seed, password and vault.
     const { address } = await keyringManager.setSignerNetwork(
@@ -98,6 +98,50 @@ describe('testing functions for sys txs', () => {
       ...CREATE_TOKEN_PARAMS,
       receiver: address,
     });
+
+    expect(typeof txid).toBe('string');
+  });
+
+  it('should create NFT token', async () => {
+    const { address } = await keyringManager.setSignerNetwork(
+      SYS_TANENBAUM_UTXO_NETWORK,
+      'syscoin'
+    );
+
+    const tx = { ...DATA['createNft'], issuer: address };
+
+    const { success } = confirmNftCreation(tx);
+
+    expect(success).toBeTruthy();
+  });
+
+  it('should send native token', async () => {
+    const { address } = await keyringManager.setSignerNetwork(
+      SYS_TANENBAUM_UTXO_NETWORK,
+      'syscoin'
+    );
+    const tx = { ...DATA['send'], receivingAddress: address, sender: address };
+    const { txid } = await sendTransaction(tx);
+
+    expect(typeof txid).toBe('string');
+  });
+
+  it('should sign tx', async () => {
+    await keyringManager.setSignerNetwork(
+      SYS_TANENBAUM_UTXO_NETWORK,
+      'syscoin'
+    );
+    const res = await signTransaction(DATA['sign'], true, false);
+
+    expect(res).toBeDefined();
+  });
+
+  it('should confirm update token', async () => {
+    await keyringManager.setSignerNetwork(
+      SYS_TANENBAUM_UTXO_NETWORK,
+      'syscoin'
+    );
+    const { txid } = await confirmUpdateToken(DATA['updateToken']);
 
     expect(typeof txid).toBe('string');
   });

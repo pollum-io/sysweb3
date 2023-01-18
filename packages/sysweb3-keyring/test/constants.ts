@@ -21,14 +21,21 @@ export const SYS_TANENBAUM_UTXO_NETWORK = {
   explorer: '',
 };
 
+export const SYS_MAINNET_UTXO_NETWORK = {
+  chainId: 57,
+  label: 'Syscoin Mainnet',
+  url: 'https://blockbook.elint.services/',
+  default: true,
+  currency: 'sys',
+};
+
 export const DATA: { [type: string]: any } = {
   send: {
-    sender: '',
-    amount: 0.00001,
-    receivingAddress: 'sys1qukdepxwlct2ekce4sak6z4ez93xq7huvve3feg',
+    amount: 1,
+    fee: 0.00001,
+    token: null,
     isToken: false,
     rbf: true,
-    token: '', // token guid
   },
   createToken: {
     maxsupply: 1,
@@ -38,8 +45,12 @@ export const DATA: { [type: string]: any } = {
     initialSupply: 0, // optional
     description: 'pali demo dapp token create test 1', // optional
   },
+  sign: {
+    psbt: 'cHNidP8BANmCAAAAAXV1yEYFkSVeffIhpGoiJeEYWdwHtfutBmNrQq9Y3+yXAgAAAAD/////A6AJAQAAAAAAFgAUZMBLT7xge2bLcHuAmhtOdCUnv4kA4fUFAAAAAF9qTFwCg7Wg6XcBAAAAhsNAAQIJAAjBCGNHRnNhVEU9CTt7ImRlc2MiOiJjR0ZzYVNCa1pXMXZJR1JoY0hBZ2RHOXJaVzRnWTNKbFlYUmxJSFJsYzNRZ01RPT0ifQB/APS5PDADAAAAFgAUtji2FZyTh0hQCpxBnA47GNrn9fQAAAAAAAEBH/R8NzYDAAAAFgAUTTxsbg+2G8pcJY7dAQcZx1QtYHEBCGsCRzBEAiB8cJut6NP2IOGiFgAD2/0YM2otMAgvYlY51VyEoYWl0gIgYHXg85w1sJsHXuklbBYFarSVeYAuxoCIeU39HkLiO+IBIQKDuln5k6NYVB+eI+UIS6GMvaICoPDxp892khDysiiybgdhZGRyZXNzLHRzeXMxcWY1N3hjbXMwa2NkdTVocDkzbXdzenBjZWNhMno2Y3IzcjNjamNzBHBhdGgSbS84NCcvMScvMCcvMS8xNjU0AAAAAA==',
+    assets: '[]',
+  },
   updateToken: {
-    assetGuid: '2028120594',
+    assetGuid: '3672999112',
     assetWhiteList: '', // optional
     capabilityflags: '127',
     contract: '', // optional
@@ -51,10 +62,14 @@ export const DATA: { [type: string]: any } = {
     fee: 0.00001,
   },
   createNft: {
-    description: 'pali demo dapp nft creation test 1',
-    precision: 8,
-    receivingAddress: '',
-    symbol: 'nft1',
+    symbol: 'nft',
+    issuer: 'tsys1qmwaxw8mg5jky38ef96esy2aq2dqm8qz8yd93yz',
+    precision: 1,
+    description:
+      'https://ipfs.io/ipfs/bafkreicex4ik5ik7xymhd3aaqyr5pm4drdifjqjg646guhevykcfzr4ega',
+    capabilityflags: 127,
+    eventName: 'txCreateNFT',
+    fee: 0.00001,
   },
   mintNft: {
     amount: 1,

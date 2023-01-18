@@ -89,7 +89,7 @@ export interface IEthereumTransactions {
 
 export interface ISyscoinTransactions {
   confirmMintNFT: (transaction: ITokenMint) => Promise<ITxid>;
-  confirmNftCreation: (tx: any) => void;
+  confirmNftCreation: (tx: any) => { success: boolean };
   confirmTokenMint: (transaction: ITokenMint) => Promise<ITxid>;
   confirmTokenCreation: (transaction: any) => Promise<{
     transactionData: any;
