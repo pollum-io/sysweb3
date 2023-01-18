@@ -548,17 +548,21 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
   };
 
   const confirmNftCreation = (tx: any) => {
-    // create token
-    _nftCreationStep1(tx).then((createRes) => {
-      const {
-        parent: { guid },
-      } = createRes;
-      // mint token
-      _nftCreationStep2(tx, guid).then(() => {
-        // update token
-        _nftCreationStep3(tx, guid);
+    if (tx) {
+      // create token
+      _nftCreationStep1(tx).then((createRes) => {
+        const {
+          parent: { guid },
+        } = createRes;
+        // mint token
+        _nftCreationStep2(tx, guid).then(() => {
+          // update token
+          _nftCreationStep3(tx, guid);
+        });
       });
-    });
+      return { success: true };
+    }
+    return { success: false };
   };
 
   const _sendSignedPsbt = async ({
