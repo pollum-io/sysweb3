@@ -412,10 +412,8 @@ export const KeyringManager = (): IKeyringManager => {
     xpub: string;
   }) => {
     const options = 'tokens=nonzero&details=txs';
-
     const { address, balance, transactions, tokensAsset } =
-      await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
-
+      await sys.utils.fetchBackendAccount(url, xpub, options, true);
     const latestAssets = tokensAsset ? tokensAsset.slice(0, 30) : [];
 
     const filteredAssets: any = [];
@@ -432,8 +430,12 @@ export const KeyringManager = (): IKeyringManager => {
         let image = '';
 
         if (description.startsWith('https://ipfs.io/ipfs/')) {
-          const { data } = await axios.get(description);
-          image = data.image ? data.image : '';
+          try {
+            const { data } = await axios.get(description);
+            image = data.image ? data.image : '';
+          } catch (e) {
+            // console.error('could not fetch ipfs image', e);
+          }
         }
         const asset = {
           ...token,
@@ -447,7 +449,6 @@ export const KeyringManager = (): IKeyringManager => {
         if (!filteredAssets.includes(asset)) filteredAssets.push(asset);
       })
     );
-
     return {
       transactions: transactions ? transactions.slice(0, 20) : [],
       assets: filteredAssets,
