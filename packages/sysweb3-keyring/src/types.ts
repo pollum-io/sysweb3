@@ -97,6 +97,7 @@ export interface ISyscoinTransactions {
     confirmations: number;
     guid: string;
   }>;
+  transferAssetOwnership: (transaction: any) => Promise<ITxid>;
   confirmUpdateToken: (transaction: ITokenUpdate) => Promise<ITxid>;
   getRecommendedFee: (explorerUrl: string) => Promise<number>;
   sendTransaction: (transaction: ITokenSend) => Promise<ITxid>;

@@ -138,6 +138,47 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     });
   };
 
+  const transferAssetOwnership = async (transaction: any): Promise<ITxid> => {
+    const { _hd, _main } = getSigners();
+    const { fee, assetGuid, newOwner } = transaction;
+
+    const feeRate = new sys.utils.BN(fee * 1e8);
+    const txOpts = { rbf: true };
+    const assetOpts = {};
+
+    const assetMap = new Map([
+      [
+        assetGuid,
+        {
+          changeAddress: await _hd.getNewChangeAddress(true),
+          outputs: [
+            {
+              value: new sys.utils.BN(0),
+              address: newOwner,
+            },
+          ],
+        },
+      ],
+    ]);
+
+    const pendingTx = await _main.assetUpdate(
+      assetGuid,
+      assetOpts,
+      txOpts,
+      assetMap,
+      null,
+      feeRate
+    );
+
+    if (!pendingTx) {
+      console.error('Could not create transaction, not enough funds?');
+    }
+
+    const txid = pendingTx.extractTransaction().getId();
+
+    return { txid };
+  };
+
   // todo: create temp tx type new token
   const _getTokenUpdateOptions = (temporaryTransaction: any) => {
     const { _main } = getSigners();
@@ -848,6 +889,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     confirmTokenCreation,
     confirmUpdateToken,
     getRecommendedFee,
+    transferAssetOwnership,
     sendTransaction,
     signTransaction,
   };
