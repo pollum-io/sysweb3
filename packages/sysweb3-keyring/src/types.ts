@@ -11,7 +11,6 @@ import {
 import {
   INetwork,
   INetworkType,
-  INewNFT,
   ITokenMint,
   ITokenSend,
   ITokenUpdate,
