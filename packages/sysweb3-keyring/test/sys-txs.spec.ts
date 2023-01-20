@@ -98,6 +98,8 @@ describe('testing functions for sys txs', () => {
       receiver: address,
     });
 
+    // This test only run individually.
+
     expect(typeof txid).toBe('string');
   }, 90000);
 
@@ -122,6 +124,8 @@ describe('testing functions for sys txs', () => {
     const tx = { ...DATA['send'], receivingAddress: address, sender: address };
     const { txid } = await sendTransaction(tx);
 
+    // This test only run individually.
+
     expect(txid).toBeDefined();
   }, 120000);
 
@@ -142,6 +146,8 @@ describe('testing functions for sys txs', () => {
     );
     const tx = { ...DATA['updateToken'], receiver: address };
     const { txid } = await confirmUpdateToken(tx);
+
+    // If the asset isn't minted, the test will fail.
 
     expect(txid).toBeDefined();
   }, 90000);
@@ -175,6 +181,8 @@ describe('testing functions for sys txs', () => {
     );
 
     const randomAssetguid = notMintedTokens[randomIndex].assetGuid;
+
+    // If all assetGuids in wallet be used as param, the test will fail.
 
     const tx = {
       ...DATA['mintToken'],
@@ -213,6 +221,8 @@ describe('testing functions for sys txs', () => {
     const randomAssetguid = allMintedTokens[randomIndex].token;
 
     const tx = { ...DATA['transferOwnership'], assetGuid: randomAssetguid };
+
+    // If the asset has already been transferred, the test will fail.
 
     const { txid } = await transferAssetOwnership(tx);
 

@@ -57,7 +57,7 @@ export const DATA: { [type: string]: any } = {
     assets: '[]',
   },
   updateToken: {
-    assetGuid: '1866384788',
+    assetGuid: '1687030527',
     description: 'test pali 1',
     capabilityflags: 127,
     eventName: 'txUpdateToken',
@@ -83,10 +83,10 @@ export const DATA: { [type: string]: any } = {
 
 export const CREATE_TOKEN_PARAMS = {
   precision: 8,
-  symbol: 'paliToken',
-  maxsupply: 1800000,
-  description: 'desc',
-  initialSupply: 150,
+  symbol: 'palitok',
+  maxsupply: 150000,
+  description: 'cececece',
+  initialSupply: 145,
   capabilityflags: 127,
   eventName: 'txCreateToken',
   fee: 0.00001,
