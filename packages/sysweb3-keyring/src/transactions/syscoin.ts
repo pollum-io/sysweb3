@@ -328,7 +328,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     const pendingTransaction = await _main.assetNew(
       tokenOptions,
       txOptions,
-      receiver,
+      await _hd.getNewChangeAddress(true),
       receiver,
       new sys.utils.BN(fee * 1e8)
     );
