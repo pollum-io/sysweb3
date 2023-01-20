@@ -420,8 +420,13 @@ export const KeyringManager = (): IKeyringManager => {
 
     await Promise.all(
       latestAssets.map(async (token: any) => {
-        const details = await getAsset(url, token.assetGuid);
-
+        let details;
+        //TODO: add a timeout for getAsset and axios.get calls
+        try {
+          details = await getAsset(url, token.assetGuid);
+        } catch (e) {
+          // console.error('could not fetch assetData', e);
+        }
         const description =
           details && details.pubData && details.pubData.desc
             ? atob(details.pubData.desc)
@@ -703,10 +708,22 @@ export const KeyringManager = (): IKeyringManager => {
     wallet = vault.wallet;
 
     setEncryptedVault({ ...vault, wallet });
+    //TODO: Transform this into a function to be reused
+    let checkExplorer = false;
+    try {
+      //Only trezor blockbooks are accepted as endpoint for UTXO chains for now
+      const rpcoutput = await (
+        await fetch(wallet.activeNetwork.url + 'api/v2')
+      ).json();
+      checkExplorer = rpcoutput.blockbook.coin ? true : false;
+    } catch (e) {
+      //Its not a blockbook, so it might be a ethereum RPC
+      checkExplorer = false;
+    }
 
     const isSyscoinChain =
       Boolean(wallet.networks.syscoin[wallet.activeNetwork.chainId]) &&
-      wallet.activeNetwork.url.includes('blockbook');
+      checkExplorer;
 
     const latestUpdate = isSyscoinChain
       ? await _getLatestUpdateForSysAccount()
@@ -824,10 +841,21 @@ export const KeyringManager = (): IKeyringManager => {
 
   const addNewAccount = async (label?: string) => {
     const { network, mnemonic } = getDecryptedVault();
+    //TODO: Transform this into a function to be reused
+    let checkExplorer = false;
+    try {
+      //Only trezor blockbooks are accepted as endpoint for UTXO chains for now
+      const rpcoutput = await (
+        await fetch(wallet.activeNetwork.url + 'api/v2')
+      ).json();
+      checkExplorer = rpcoutput.blockbook.coin ? true : false;
+    } catch (e) {
+      //Its not a blockbook, so it might be a ethereum RPC
+      checkExplorer = false;
+    }
 
     const isSyscoinChain =
-      Boolean(wallet.networks.syscoin[network.chainId]) &&
-      network.url.includes('blockbook');
+      Boolean(wallet.networks.syscoin[network.chainId]) && checkExplorer;
 
     if (isSyscoinChain) {
       if (!hd.mnemonic) {
