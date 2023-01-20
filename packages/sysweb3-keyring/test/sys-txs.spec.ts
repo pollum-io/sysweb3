@@ -139,6 +139,16 @@ describe('testing functions for sys txs', () => {
     expect(res).toBeDefined();
   }, 90000);
 
+  it('should generate signPSBT tx', async () => {
+    await keyringManager.setSignerNetwork(
+      SYS_TANENBAUM_UTXO_NETWORK,
+      'syscoin'
+    );
+    const res = await signTransaction(DATA['signAndSend'], false);
+
+    expect(res).toBeDefined();
+  }, 180000);
+
   it('should confirm update token', async () => {
     const { address } = await keyringManager.setSignerNetwork(
       SYS_TANENBAUM_UTXO_NETWORK,
