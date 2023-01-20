@@ -29,6 +29,9 @@ export const SYS_MAINNET_UTXO_NETWORK = {
   currency: 'sys',
 };
 
+export const SYS_TESTNET_UTXO_ADDRESS =
+  'tsys1q4v8sagt0znwaxdscrzhvu8t33n7vj8j45czpv4';
+
 export const DATA: { [type: string]: any } = {
   send: {
     amount: 1,
@@ -36,6 +39,10 @@ export const DATA: { [type: string]: any } = {
     token: null,
     isToken: false,
     rbf: true,
+  },
+  transferOwnership: {
+    newOwner: SYS_TESTNET_UTXO_ADDRESS,
+    fee: 0.00001,
   },
   createToken: {
     maxsupply: 1,
@@ -50,15 +57,16 @@ export const DATA: { [type: string]: any } = {
     assets: '[]',
   },
   updateToken: {
-    assetGuid: '3672999112',
-    assetWhiteList: '', // optional
-    capabilityflags: '127',
-    contract: '', // optional
-    description: 'pali demo dapp token update test 1', // optional
+    assetGuid: '1866384788',
+    description: 'test pali 1',
+    capabilityflags: 127,
+    eventName: 'txUpdateToken',
+    fee: 0.00001,
   },
   mintToken: {
     amount: 1,
-    assetGuid: '2028120594',
+    assetGuid: '2766796510', // BEFORE EACH TEST, THIS ASSET GUID NEED TO BE CHANGED FOR ANOTHER ASSETGUID AVAILABLE IN PEACE_GLOBE WALLET.
+    capabilityflags: 127,
     fee: 0.00001,
   },
   createNft: {
@@ -71,19 +79,14 @@ export const DATA: { [type: string]: any } = {
     eventName: 'txCreateNFT',
     fee: 0.00001,
   },
-  mintNft: {
-    amount: 1,
-    assetGuid: '897866765',
-    fee: 0.00001,
-  },
 };
 
 export const CREATE_TOKEN_PARAMS = {
   precision: 8,
-  symbol: 'testTok',
-  maxsupply: 18,
+  symbol: 'paliToken',
+  maxsupply: 1800000,
   description: 'desc',
-  initialSupply: 15,
+  initialSupply: 150,
   capabilityflags: 127,
   eventName: 'txCreateToken',
   fee: 0.00001,

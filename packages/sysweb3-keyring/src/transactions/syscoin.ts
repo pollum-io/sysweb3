@@ -6,7 +6,6 @@ import { ISyscoinTransactions } from '../types';
 import {
   INewNFT,
   isBase64,
-  ITokenMint,
   ITokenSend,
   ITokenUpdate,
   ITxid,
@@ -329,7 +328,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     const pendingTransaction = await _main.assetNew(
       tokenOptions,
       txOptions,
-      await _hd.getNewChangeAddress(true),
+      receiver,
       receiver,
       new sys.utils.BN(fee * 1e8)
     );
@@ -361,12 +360,10 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     };
   };
 
-  const confirmTokenMint = async (
-    temporaryTransaction: ITokenMint
-  ): Promise<ITxid> => {
-    const { _hd, _main } = getSigners();
+  const confirmTokenMint = async (temporaryTransaction: any): Promise<any> => {
+    const { _main } = getSigners();
 
-    const { fee, assetGuid, amount } = temporaryTransaction;
+    const { fee, assetGuid, amount, receivingAddress } = temporaryTransaction;
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
@@ -377,32 +374,35 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
         'Bad Request: Could not create transaction. Token not found.'
       );
 
-    const receivingAddress = await _hd.getNewReceivingAddress(true);
     const txOptions = { rbf: true };
 
     const tokenMap = getTokenMap({
       guid: assetGuid,
-      changeAddress: await _hd.getNewChangeAddress(true),
+      changeAddress: '',
       amount: new sys.utils.BN(amount * 10 ** token.decimals),
       receivingAddress,
     });
 
-    const pendingTransaction = await _main.assetSend(
-      txOptions,
-      tokenMap,
-      await _hd.getNewChangeAddress(true),
-      feeRate
-    );
-
-    if (!pendingTransaction) {
-      throw new Error(
-        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+    try {
+      const pendingTransaction = await _main.assetSend(
+        txOptions,
+        tokenMap,
+        null,
+        feeRate
       );
+
+      if (!pendingTransaction) {
+        throw new Error(
+          'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+        );
+      }
+
+      const txid = pendingTransaction.extractTransaction().getId();
+
+      return { txid };
+    } catch (error) {
+      throw new Error('Bad Request: Could not create transaction.');
     }
-
-    const txid = pendingTransaction.extractTransaction().getId();
-
-    return { txid };
   };
 
   const _createParentToken = async ({
@@ -668,9 +668,9 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
   ): Promise<ITxid> => {
     const { _hd, _main } = getSigners();
 
-    const { fee, assetGuid, assetWhiteList } = temporaryTransaction;
+    const { fee, assetGuid } = temporaryTransaction;
 
-    const txOptions = { rbf: true, assetWhiteList };
+    const txOptions = { rbf: true };
 
     try {
       const tokenMap = getTokenMap({
@@ -833,57 +833,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     return await _confirmNativeTokenSend(temporaryTransaction);
   };
 
-  const confirmMintNFT = async (
-    temporaryTransaction: ITokenMint
-  ): Promise<ITxid> => {
-    const { _hd, _main } = getSigners();
-
-    const { fee, amount, assetGuid }: any = temporaryTransaction;
-
-    const token = await getAsset(_main.blockbookURL, assetGuid);
-
-    if (!token) {
-      throw new Error(
-        'Bad Request: Could not create transaction. NFT not found.'
-      );
-    }
-
-    const feeRate = new sys.utils.BN(fee * 1e8);
-    const txOptions = { rbf: true };
-
-    const tokenMap = getTokenMap({
-      guid: assetGuid,
-      changeAddress: await _hd.getNewChangeAddress(true),
-      amount: new sys.utils.BN(amount * 10 ** token.decimals),
-      receivingAddress: await _hd.getNewReceivingAddress(true),
-    });
-
-    try {
-      const pendingTransaction = await _main.assetSend(
-        txOptions,
-        tokenMap,
-        await _hd.getNewChangeAddress(true),
-        feeRate
-      );
-
-      if (!pendingTransaction) {
-        throw new Error(
-          'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-        );
-      }
-
-      const txid = pendingTransaction.extractTransaction().getId();
-
-      return { txid };
-    } catch (error) {
-      throw new Error(
-        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-      );
-    }
-  };
-
   return {
-    confirmMintNFT,
     confirmNftCreation,
     confirmTokenMint,
     confirmTokenCreation,

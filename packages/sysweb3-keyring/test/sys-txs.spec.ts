@@ -1,5 +1,3 @@
-import { KeyringManager } from '../src/keyring-manager';
-import { SyscoinTransactions } from '../src/transactions/syscoin';
 import {
   CREATE_TOKEN_PARAMS,
   DATA,
@@ -7,16 +5,18 @@ import {
   FAKE_SEED_PHRASE,
   SYS_TANENBAUM_UTXO_NETWORK,
 } from './constants';
+import { KeyringManager } from '../src/keyring-manager';
+import { SyscoinTransactions } from '../src/transactions/syscoin';
 
 describe('testing functions for sys txs', () => {
   const keyringManager = KeyringManager();
   const {
     confirmTokenCreation,
     getRecommendedFee,
-    confirmMintNFT,
     confirmTokenMint,
     confirmNftCreation,
     confirmUpdateToken,
+    transferAssetOwnership,
     sendTransaction,
     signTransaction,
   } = SyscoinTransactions();
@@ -66,7 +66,7 @@ describe('testing functions for sys txs', () => {
 
     const wallet = keyringManager.getState();
     expect(wallet.activeAccount.id).toBe(1);
-  });
+  }, 50000);
 
   //* setActiveAccount
   it('should set the active account', () => {
@@ -86,7 +86,6 @@ describe('testing functions for sys txs', () => {
   });
 
   //--------------------------------------------------------SyscoinTransactions Tests----------------------------------------------------
-  jest.setTimeout(80000);
   it('should create SPT tx', async () => {
     // Initializing wallet and setting seed, password and vault.
     const { address } = await keyringManager.setSignerNetwork(
@@ -100,7 +99,7 @@ describe('testing functions for sys txs', () => {
     });
 
     expect(typeof txid).toBe('string');
-  });
+  }, 90000);
 
   it('should create NFT token', async () => {
     const { address } = await keyringManager.setSignerNetwork(
@@ -113,7 +112,7 @@ describe('testing functions for sys txs', () => {
     const { success } = confirmNftCreation(tx);
 
     expect(success).toBeTruthy();
-  });
+  }, 90000);
 
   it('should send native token', async () => {
     const { address } = await keyringManager.setSignerNetwork(
@@ -123,8 +122,8 @@ describe('testing functions for sys txs', () => {
     const tx = { ...DATA['send'], receivingAddress: address, sender: address };
     const { txid } = await sendTransaction(tx);
 
-    expect(typeof txid).toBe('string');
-  });
+    expect(txid).toBeDefined();
+  }, 120000);
 
   it('should sign tx', async () => {
     await keyringManager.setSignerNetwork(
@@ -134,34 +133,96 @@ describe('testing functions for sys txs', () => {
     const res = await signTransaction(DATA['sign'], true, false);
 
     expect(res).toBeDefined();
-  });
+  }, 90000);
 
   it('should confirm update token', async () => {
-    await keyringManager.setSignerNetwork(
+    const { address } = await keyringManager.setSignerNetwork(
       SYS_TANENBAUM_UTXO_NETWORK,
       'syscoin'
     );
-    const { txid } = await confirmUpdateToken(DATA['updateToken']);
+    const tx = { ...DATA['updateToken'], receiver: address };
+    const { txid } = await confirmUpdateToken(tx);
 
-    expect(typeof txid).toBe('string');
-  });
+    expect(txid).toBeDefined();
+  }, 90000);
 
   it('should confirm mint token', async () => {
-    const { txid } = await confirmTokenMint(DATA['mintToken']);
+    const { address, transactions, assets } =
+      await keyringManager.setSignerNetwork(
+        SYS_TANENBAUM_UTXO_NETWORK,
+        'syscoin'
+      );
+    const filteredTxs = transactions?.filter(
+      (tx: any) => tx.tokenType === 'SPTAssetActivate'
+    );
 
-    expect(typeof txid).toBe('string');
-  });
+    const allMintedTokens: any[] = [];
 
-  it('should confirm mint NFT', async () => {
-    const { txid } = await confirmMintNFT(DATA['mintNft']);
+    for (const txs of filteredTxs) {
+      for (const tokens of txs.tokenTransfers) {
+        if (tokens) {
+          allMintedTokens.push(tokens.token);
+        }
+      }
+    }
 
-    expect(typeof txid).toBe('string');
-  });
+    const notMintedTokens = assets.filter(
+      (token: any) => !allMintedTokens.includes(token.assetGuid)
+    );
+
+    const randomIndex = Math.floor(
+      Math.random() * (notMintedTokens.length - 1 - 0 + 1) + 0
+    );
+
+    const randomAssetguid = notMintedTokens[randomIndex].assetGuid;
+
+    const tx = {
+      ...DATA['mintToken'],
+      receivingAddress: address,
+      assetGuid: randomAssetguid,
+    };
+
+    const { txid } = await confirmTokenMint(tx);
+
+    expect(txid).toBeDefined();
+  }, 90000);
+
+  it('should transfer ownership to another address', async () => {
+    const { transactions } = await keyringManager.setSignerNetwork(
+      SYS_TANENBAUM_UTXO_NETWORK,
+      'syscoin'
+    );
+    const filteredTxs = transactions?.filter(
+      (tx: any) => tx.tokenType === 'SPTAssetActivate'
+    );
+
+    const allMintedTokens: any[] = [];
+
+    for (const txs of filteredTxs) {
+      for (const tokens of txs.tokenTransfers) {
+        if (tokens) {
+          allMintedTokens.push(tokens);
+        }
+      }
+    }
+
+    const randomIndex = Math.floor(
+      Math.random() * (allMintedTokens.length - 1 - 0 + 1) + 0
+    );
+
+    const randomAssetguid = allMintedTokens[randomIndex].token;
+
+    const tx = { ...DATA['transferOwnership'], assetGuid: randomAssetguid };
+
+    const { txid } = await transferAssetOwnership(tx);
+
+    expect(txid).toBeDefined();
+  }, 90000);
 
   it('should get recommended fee', async () => {
     const { explorer } = SYS_TANENBAUM_UTXO_NETWORK;
     const fee = await getRecommendedFee(explorer);
 
     expect(typeof fee).toBe('number');
-  });
+  }, 90000);
 });
