@@ -129,7 +129,7 @@ describe('testing functions for sys txs', () => {
     expect(txid).toBeDefined();
   }, 120000);
 
-  it('should sign tx', async () => {
+  it('should sign and send tx', async () => {
     await keyringManager.setSignerNetwork(
       SYS_TANENBAUM_UTXO_NETWORK,
       'syscoin'
