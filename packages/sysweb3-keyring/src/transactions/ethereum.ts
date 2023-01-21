@@ -28,7 +28,8 @@ import { Deferrable } from 'ethers/lib/utils';
 import { getFormattedTransactionResponse } from '../format';
 import {
   IEthereumTransactions,
-  ISendSignedErc20Transaction,
+  IResponseFromSendErcSignedTransaction,
+  ISendSignedErcTransactionProps,
   ISendTransaction,
   SimpleTransactionRequest,
 } from '../types';
@@ -38,6 +39,7 @@ import {
   createContractUsingAbi,
   getDecryptedVault,
   getErc20Abi,
+  getErc21Abi,
 } from '@pollum-io/sysweb3-utils';
 
 export const EthereumTransactions = (): IEthereumTransactions => {
@@ -324,7 +326,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     receiver,
     tokenAddress,
     tokenAmount,
-  }: ISendSignedErc20Transaction): Promise<any> => {
+  }: ISendSignedErcTransactionProps): Promise<IResponseFromSendErcSignedTransaction> => {
     const provider = new ethers.providers.JsonRpcProvider(networkUrl);
 
     const { decryptedPrivateKey } = getDecryptedPrivateKey();
@@ -341,12 +343,51 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       );
 
       const calculatedTokenAmount = ethers.BigNumber.from(
-        ethers.utils.parseEther(tokenAmount)
+        ethers.utils.parseEther(tokenAmount as string)
       );
 
       const transferMethod = await _contract.transfer(
         receiver,
         calculatedTokenAmount,
+        {
+          nonce: await provider.getTransactionCount(
+            walletSigned.address,
+            'pending'
+          ),
+        }
+      );
+
+      return transferMethod;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const sendSignedErc721Transaction = async ({
+    networkUrl,
+    receiver,
+    tokenAddress,
+    tokenId,
+  }: ISendSignedErcTransactionProps): Promise<IResponseFromSendErcSignedTransaction> => {
+    const provider = new ethers.providers.JsonRpcProvider(networkUrl);
+
+    const { decryptedPrivateKey } = getDecryptedPrivateKey();
+
+    const currentWallet = new ethers.Wallet(decryptedPrivateKey);
+
+    const walletSigned = currentWallet.connect(provider);
+
+    try {
+      const _contract = new ethers.Contract(
+        tokenAddress,
+        getErc21Abi(),
+        walletSigned
+      );
+
+      const transferMethod = await _contract.transferFrom(
+        walletSigned.address,
+        receiver,
+        tokenId as number,
         {
           nonce: await provider.getTransactionCount(
             walletSigned.address,
@@ -456,5 +497,6 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     getFeeDataWithDynamicMaxPriorityFeePerGas,
     toBigNumber,
     sendSignedErc20Transaction,
+    sendSignedErc721Transaction,
   };
 };
