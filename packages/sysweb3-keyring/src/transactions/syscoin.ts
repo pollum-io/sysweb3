@@ -6,7 +6,6 @@ import { ISyscoinTransactions } from '../types';
 import {
   INewNFT,
   isBase64,
-  ITokenMint,
   ITokenSend,
   ITokenUpdate,
   ITxid,
@@ -136,6 +135,47 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
         }
       }, 16000);
     });
+  };
+
+  const transferAssetOwnership = async (transaction: any): Promise<ITxid> => {
+    const { _hd, _main } = getSigners();
+    const { fee, assetGuid, newOwner } = transaction;
+
+    const feeRate = new sys.utils.BN(fee * 1e8);
+    const txOpts = { rbf: true };
+    const assetOpts = {};
+
+    const assetMap = new Map([
+      [
+        assetGuid,
+        {
+          changeAddress: await _hd.getNewChangeAddress(true),
+          outputs: [
+            {
+              value: new sys.utils.BN(0),
+              address: newOwner,
+            },
+          ],
+        },
+      ],
+    ]);
+
+    const pendingTx = await _main.assetUpdate(
+      assetGuid,
+      assetOpts,
+      txOpts,
+      assetMap,
+      null,
+      feeRate
+    );
+
+    if (!pendingTx) {
+      console.error('Could not create transaction, not enough funds?');
+    }
+
+    const txid = pendingTx.extractTransaction().getId();
+
+    return { txid };
   };
 
   // todo: create temp tx type new token
@@ -320,12 +360,10 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     };
   };
 
-  const confirmTokenMint = async (
-    temporaryTransaction: ITokenMint
-  ): Promise<ITxid> => {
-    const { _hd, _main } = getSigners();
+  const confirmTokenMint = async (temporaryTransaction: any): Promise<any> => {
+    const { _main } = getSigners();
 
-    const { fee, assetGuid, amount } = temporaryTransaction;
+    const { fee, assetGuid, amount, receivingAddress } = temporaryTransaction;
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
@@ -336,32 +374,35 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
         'Bad Request: Could not create transaction. Token not found.'
       );
 
-    const receivingAddress = await _hd.getNewReceivingAddress(true);
     const txOptions = { rbf: true };
 
     const tokenMap = getTokenMap({
       guid: assetGuid,
-      changeAddress: await _hd.getNewChangeAddress(true),
+      changeAddress: '',
       amount: new sys.utils.BN(amount * 10 ** token.decimals),
       receivingAddress,
     });
 
-    const pendingTransaction = await _main.assetSend(
-      txOptions,
-      tokenMap,
-      await _hd.getNewChangeAddress(true),
-      feeRate
-    );
-
-    if (!pendingTransaction) {
-      throw new Error(
-        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+    try {
+      const pendingTransaction = await _main.assetSend(
+        txOptions,
+        tokenMap,
+        null,
+        feeRate
       );
+
+      if (!pendingTransaction) {
+        throw new Error(
+          'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
+        );
+      }
+
+      const txid = pendingTransaction.extractTransaction().getId();
+
+      return { txid };
+    } catch (error) {
+      throw new Error('Bad Request: Could not create transaction.');
     }
-
-    const txid = pendingTransaction.extractTransaction().getId();
-
-    return { txid };
   };
 
   const _createParentToken = async ({
@@ -547,11 +588,23 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     });
   };
 
-  const confirmNftCreation = () => ({
-    create: _nftCreationStep1,
-    mint: _nftCreationStep2,
-    update: _nftCreationStep3,
-  });
+  const confirmNftCreation = (tx: any) => {
+    if (tx) {
+      // create token
+      _nftCreationStep1(tx).then((createRes) => {
+        const {
+          parent: { guid },
+        } = createRes;
+        // mint token
+        _nftCreationStep2(tx, guid).then(() => {
+          // update token
+          _nftCreationStep3(tx, guid);
+        });
+      });
+      return { success: true };
+    }
+    return { success: false };
+  };
 
   const _sendSignedPsbt = async ({
     psbt,
@@ -572,9 +625,8 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     assets: string;
     signer: any;
   }): Promise<JSON> => {
-    return sys.utils.exportPsbtToJson(
-      await signer.signAndSend(psbt, assets, signer)
-    );
+    console.log('assets: ', assets);
+    return sys.utils.exportPsbtToJson(await signer.sign(psbt));
   };
 
   const signTransaction = async (
@@ -780,62 +832,13 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     return await _confirmNativeTokenSend(temporaryTransaction);
   };
 
-  const confirmMintNFT = async (
-    temporaryTransaction: ITokenMint
-  ): Promise<ITxid> => {
-    const { _hd, _main } = getSigners();
-
-    const { fee, amount, assetGuid }: any = temporaryTransaction;
-
-    const token = await getAsset(_main.blockbookURL, assetGuid);
-
-    if (!token) {
-      throw new Error(
-        'Bad Request: Could not create transaction. NFT not found.'
-      );
-    }
-
-    const feeRate = new sys.utils.BN(fee * 1e8);
-    const txOptions = { rbf: true };
-
-    const tokenMap = getTokenMap({
-      guid: assetGuid,
-      changeAddress: await _hd.getNewChangeAddress(true),
-      amount: new sys.utils.BN(amount * 10 ** token.decimals),
-      receivingAddress: await _hd.getNewReceivingAddress(true),
-    });
-
-    try {
-      const pendingTransaction = await _main.assetSend(
-        txOptions,
-        tokenMap,
-        await _hd.getNewChangeAddress(true),
-        feeRate
-      );
-
-      if (!pendingTransaction) {
-        throw new Error(
-          'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-        );
-      }
-
-      const txid = pendingTransaction.extractTransaction().getId();
-
-      return { txid };
-    } catch (error) {
-      throw new Error(
-        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-      );
-    }
-  };
-
   return {
-    confirmMintNFT,
     confirmNftCreation,
     confirmTokenMint,
     confirmTokenCreation,
     confirmUpdateToken,
     getRecommendedFee,
+    transferAssetOwnership,
     sendTransaction,
     signTransaction,
   };
