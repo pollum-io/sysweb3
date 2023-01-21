@@ -11,7 +11,6 @@ import {
 import {
   INetwork,
   INetworkType,
-  INewNFT,
   ITokenMint,
   ITokenSend,
   ITokenUpdate,
@@ -88,8 +87,7 @@ export interface IEthereumTransactions {
 }
 
 export interface ISyscoinTransactions {
-  confirmMintNFT: (transaction: ITokenMint) => Promise<ITxid>;
-  confirmNftCreation: (tx: any) => void;
+  confirmNftCreation: (tx: any) => { success: boolean };
   confirmTokenMint: (transaction: ITokenMint) => Promise<ITxid>;
   confirmTokenCreation: (transaction: any) => Promise<{
     transactionData: any;
@@ -97,6 +95,7 @@ export interface ISyscoinTransactions {
     confirmations: number;
     guid: string;
   }>;
+  transferAssetOwnership: (transaction: any) => Promise<ITxid>;
   confirmUpdateToken: (transaction: ITokenUpdate) => Promise<ITxid>;
   getRecommendedFee: (explorerUrl: string) => Promise<number>;
   sendTransaction: (transaction: ITokenSend) => Promise<ITxid>;

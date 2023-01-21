@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-keyring",
-  "version": "1.0.432",
+  "version": "1.0.433",
   "description": "",
   "main": "cjs/index.js",
   "types": "types/index.d.ts",
@@ -20,7 +20,8 @@
     "release:npm": "npm publish ./dist --access=public",
     "release:preflight": "npm pack ./dist --dry-run",
     "publish": "npm run prebuild && npm run build && npm run rollup && npm run prerelease && npm run copy && npm run release:npm",
-    "type-check": "tsc --pretty --noEmit"
+    "type-check": "tsc --pretty --noEmit",
+    "localTest": "npm run prebuild && npm run build && npm run rollup && npm run build && npm run copy"
   },
   "dependencies": {
     "@metamask/obs-store": "^7.0.0",
