@@ -421,9 +421,22 @@ export const KeyringManager = (): IKeyringManager => {
     await Promise.all(
       latestAssets.map(async (token: any) => {
         let details;
+        const uncreatedTokens = [];
+        for (const txs of transactions
+          .slice(0, 20)
+          .filter((item: any) => item.confirmations === 0)) {
+          for (const tokens of txs.tokenTransfers) {
+            if (tokens) {
+              uncreatedTokens.push(tokens.token);
+            }
+          }
+        }
+
         //TODO: add a timeout for getAsset and axios.get calls
         try {
-          details = await getAsset(url, token.assetGuid);
+          if (!uncreatedTokens.includes(token.assetGuid)) {
+            details = await getAsset(url, token.assetGuid);
+          }
         } catch (e) {
           // console.error('could not fetch assetData', e);
         }
