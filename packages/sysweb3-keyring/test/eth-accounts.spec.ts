@@ -1,7 +1,15 @@
 // import Web3 from 'web3';
 
+import { KeyringManager } from '../../sysweb3-keyring/src/keyring-manager';
 import { Web3Accounts } from '../src/eth-manager';
-import { FAKE_ADDRESS, FAKE_PRIV_KEY, FAKE_SEED_PHRASE } from './constants';
+import { initialWalletState } from '../src/initial-state';
+import { EthereumTransactions } from '../src/transactions/ethereum';
+import {
+  FAKE_ADDRESS,
+  FAKE_PASSWORD,
+  FAKE_PRIV_KEY,
+  FAKE_SEED_PHRASE,
+} from './constants';
 // import {
 //   web3Provider,
 //   setActiveNetwork,
