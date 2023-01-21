@@ -24,16 +24,3 @@ export const getDecryptedVault = () => {
 
   return JSON.parse(decryptedVault);
 };
-
-// export const getDecryptedPrivateKey = () => {
-//   const { wallet: _wallet } = getDecryptedVault();
-//   const { hash } = storage.get('vault-keys');
-
-//   const accountXprv = _wallet.activeAccount.xprv;
-
-//   const decryptedPrivateKey = CryptoJS.AES.decrypt(accountXprv, hash).toString(
-//     CryptoJS.enc.Utf8
-//   );
-
-//   return decryptedPrivateKey;
-// };
