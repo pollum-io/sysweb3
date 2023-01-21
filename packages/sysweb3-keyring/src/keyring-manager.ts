@@ -422,9 +422,11 @@ export const KeyringManager = (): IKeyringManager => {
       latestAssets.map(async (token: any) => {
         let details;
         const uncreatedTokens = [];
-        for (const txs of transactions
+        const unconfirmedTxs = transactions
           .slice(0, 20)
-          .filter((item: any) => item.confirmations === 0)) {
+          .filter((item: any) => item.confirmations === 0);
+
+        for (const txs of unconfirmedTxs) {
           for (const tokens of txs.tokenTransfers) {
             if (tokens) {
               uncreatedTokens.push(tokens.token);
