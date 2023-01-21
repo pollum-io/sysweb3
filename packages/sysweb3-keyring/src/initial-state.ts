@@ -29,7 +29,7 @@ export const initialNetworksState = {
     5700: {
       chainId: 5700,
       label: 'Syscoin Testnet',
-      url: 'https://blockbook-dev.elint.services/',
+      url: 'https://sys-test.tk/',
       default: true,
       currency: 'tsys',
       apiUrl: '',

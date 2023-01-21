@@ -625,7 +625,8 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     assets: string;
     signer: any;
   }): Promise<JSON> => {
-    return sys.utils.exportPsbtToJson(await signer.signAndSend(psbt, assets));
+    console.log('assets: ', assets);
+    return sys.utils.exportPsbtToJson(await signer.sign(psbt));
   };
 
   const signTransaction = async (
@@ -633,7 +634,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     isSendOnly: boolean
   ): Promise<any> => {
     // get trezor signer as well
-    const { _hd, _main } = getSigners();
+    const { _hd } = getSigners();
 
     if (!isBase64(data.psbt) || typeof data.assets !== 'string') {
       throw new Error(
@@ -654,7 +655,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
       return await _signAndSendPsbt({
         psbt: response.psbt,
         assets: response.assets,
-        signer: _main,
+        signer: _hd,
       });
     } catch (error) {
       throw new Error('Bad Request: Could not create transaction.');

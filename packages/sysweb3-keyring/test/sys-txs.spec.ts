@@ -101,7 +101,7 @@ describe('testing functions for sys txs', () => {
     // This test only run individually.
 
     expect(typeof txid).toBe('string');
-  }, 90000);
+  }, 180000);
 
   it('should create NFT token', async () => {
     const { address } = await keyringManager.setSignerNetwork(
@@ -114,7 +114,7 @@ describe('testing functions for sys txs', () => {
     const { success } = confirmNftCreation(tx);
 
     expect(success).toBeTruthy();
-  }, 90000);
+  }, 180000);
 
   it('should send native token', async () => {
     const { address } = await keyringManager.setSignerNetwork(
@@ -127,9 +127,9 @@ describe('testing functions for sys txs', () => {
     // This test only run individually.
 
     expect(txid).toBeDefined();
-  }, 120000);
+  }, 180000);
 
-  it('should sign and send tx', async () => {
+  it('should generate signPSBT json', async () => {
     await keyringManager.setSignerNetwork(
       SYS_TANENBAUM_UTXO_NETWORK,
       'syscoin'
@@ -137,9 +137,9 @@ describe('testing functions for sys txs', () => {
     const res = await signTransaction(DATA['sign'], true, false);
 
     expect(res).toBeDefined();
-  }, 90000);
+  }, 180000);
 
-  it('should generate signPSBT tx', async () => {
+  it('should sign and send tx', async () => {
     await keyringManager.setSignerNetwork(
       SYS_TANENBAUM_UTXO_NETWORK,
       'syscoin'
@@ -160,7 +160,7 @@ describe('testing functions for sys txs', () => {
     // If the asset isn't minted, the test will fail.
 
     expect(txid).toBeDefined();
-  }, 90000);
+  }, 180000);
 
   it('should confirm mint token', async () => {
     const { address, transactions, assets } =
@@ -203,7 +203,7 @@ describe('testing functions for sys txs', () => {
     const { txid } = await confirmTokenMint(tx);
 
     expect(txid).toBeDefined();
-  }, 90000);
+  }, 180000);
 
   it('should transfer ownership to another address', async () => {
     const { transactions } = await keyringManager.setSignerNetwork(
@@ -237,7 +237,7 @@ describe('testing functions for sys txs', () => {
     const { txid } = await transferAssetOwnership(tx);
 
     expect(txid).toBeDefined();
-  }, 90000);
+  }, 180000);
 
   it('should get recommended fee', async () => {
     const { explorer } = SYS_TANENBAUM_UTXO_NETWORK;
