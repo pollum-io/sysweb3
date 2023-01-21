@@ -20,7 +20,8 @@
     "release:npm": "npm publish ./dist --access=public",
     "release:preflight": "npm pack ./dist --dry-run",
     "publish": "npm run prebuild && npm run build && npm run rollup && npm run prerelease && npm run copy && npm run release:npm",
-    "type-check": "tsc --pretty --noEmit"
+    "type-check": "tsc --pretty --noEmit",
+    "test": "jest"
   },
   "dependencies": {
     "@metamask/obs-store": "^7.0.0",

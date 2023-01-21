@@ -85,6 +85,12 @@ export interface IEthereumTransactions {
   getGasOracle: () => Promise<any>;
   getEncryptedPubKey: () => string;
   toBigNumber: (aBigNumberish: string | number) => ethers.BigNumber;
+  sendSignedErc20Transaction: ({
+    networkUrl,
+    receiver,
+    tokenAddress,
+    tokenAmount,
+  }: ISendSignedErc20Transaction) => Promise<any>;
 }
 
 export interface ISyscoinTransactions {
@@ -222,4 +228,11 @@ export interface ILatestUpdateForSysAccount {
     ethereum: number;
   };
   receivingAddress: any;
+}
+
+export interface ISendSignedErc20Transaction {
+  networkUrl: string;
+  receiver: string;
+  tokenAddress: string;
+  tokenAmount: string;
 }
