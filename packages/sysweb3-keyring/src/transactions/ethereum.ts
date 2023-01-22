@@ -326,6 +326,9 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     receiver,
     tokenAddress,
     tokenAmount,
+    maxPriorityFeePerGas,
+    maxFeePerGas,
+    gasLimit,
   }: ISendSignedErcTransactionProps): Promise<IResponseFromSendErcSignedTransaction> => {
     const provider = new ethers.providers.JsonRpcProvider(networkUrl);
 
@@ -354,6 +357,9 @@ export const EthereumTransactions = (): IEthereumTransactions => {
             walletSigned.address,
             'pending'
           ),
+          maxPriorityFeePerGas,
+          maxFeePerGas,
+          gasLimit,
         }
       );
 
@@ -368,6 +374,9 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     receiver,
     tokenAddress,
     tokenId,
+    maxPriorityFeePerGas,
+    maxFeePerGas,
+    gasLimit,
   }: ISendSignedErcTransactionProps): Promise<IResponseFromSendErcSignedTransaction> => {
     const provider = new ethers.providers.JsonRpcProvider(networkUrl);
 
@@ -393,6 +402,9 @@ export const EthereumTransactions = (): IEthereumTransactions => {
             walletSigned.address,
             'pending'
           ),
+          maxPriorityFeePerGas,
+          maxFeePerGas,
+          gasLimit,
         }
       );
 
