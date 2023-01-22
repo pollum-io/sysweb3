@@ -1,6 +1,6 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { TypedData, TypedMessage } from 'eth-sig-util';
-import { ethers, BigNumber } from 'ethers';
+import { ethers, BigNumber, BigNumberish } from 'ethers';
 import {
   EncryptedKeystoreV3Json,
   Sign,
@@ -234,6 +234,9 @@ export interface ISendSignedErcTransactionProps {
   networkUrl: string;
   receiver: string;
   tokenAddress: string;
+  maxPriorityFeePerGas: BigNumberish;
+  maxFeePerGas: BigNumberish;
+  gasLimit: BigNumberish;
   tokenAmount?: string;
   tokenId?: number;
 }
