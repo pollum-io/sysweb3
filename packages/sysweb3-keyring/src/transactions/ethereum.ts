@@ -56,7 +56,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
     const decryptedPrivateKey = CryptoJS.AES.decrypt(
       accountXprv,
-      storageValue?.hash
+      storageValue ? storageValue.hash : ''
     ).toString(CryptoJS.enc.Utf8);
 
     return {
