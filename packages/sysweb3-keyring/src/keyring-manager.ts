@@ -124,6 +124,11 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const getAccountXpub = (): string => hd.getAccountXpub();
+  const getChangeAddress = (accountId: number): string => {
+    const { _hd } = getSigners();
+    _hd.setAccountIndex(accountId);
+    return _hd.getNewChangeAddress(true);
+  };
 
   const getAccountById = (id: number): IKeyringAccountState => {
     const account = Object.values(wallet.accounts).find(
@@ -421,9 +426,24 @@ export const KeyringManager = (): IKeyringManager => {
     await Promise.all(
       latestAssets.map(async (token: any) => {
         let details;
+        const uncreatedTokens = [];
+        const unconfirmedTxs = transactions
+          .slice(0, 20)
+          .filter((item: any) => item.confirmations === 0);
+
+        for (const txs of unconfirmedTxs) {
+          for (const tokens of txs.tokenTransfers) {
+            if (tokens) {
+              uncreatedTokens.push(tokens.token);
+            }
+          }
+        }
+
         //TODO: add a timeout for getAsset and axios.get calls
         try {
-          details = await getAsset(url, token.assetGuid);
+          if (!uncreatedTokens.includes(token.assetGuid)) {
+            details = await getAsset(url, token.assetGuid);
+          }
         } catch (e) {
           // console.error('could not fetch assetData', e);
         }
@@ -976,6 +996,7 @@ export const KeyringManager = (): IKeyringManager => {
     getAccounts,
     getAccountById,
     getAccountXpub,
+    getChangeAddress,
     getDecryptedMnemonic,
     getDecryptedPrivateKey,
     getEncryptedMnemonic,

@@ -128,6 +128,7 @@ export interface IKeyringManager {
   getAccounts: () => IKeyringAccountState[];
   getAccountById: (id: number) => IKeyringAccountState;
   getAccountXpub: () => string;
+  getChangeAddress: (accountId: number) => string;
   getDecryptedMnemonic: () => string;
   getDecryptedPrivateKey: (key: string) => string;
   getEncryptedMnemonic: () => string;
