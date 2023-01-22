@@ -1,7 +1,9 @@
 import { ethers, Contract, ContractInterface } from 'ethers';
 
+import abi55 from './abi/erc1155.json';
 import abi20 from './abi/erc20.json';
 import abi21 from './abi/erc721.json';
+import { getContractType, ISupportsInterfaceProps } from './getContract';
 
 export const createContractUsingAbi = (
   AbiContract: ContractInterface,
@@ -10,20 +12,49 @@ export const createContractUsingAbi = (
   return new ethers.Contract(String(address), AbiContract);
 };
 
-const InfuraProvider = ethers.providers.InfuraProvider;
+const HttpProvider = ethers.providers.JsonRpcProvider;
 
-export const isContractAddress = async (address: string, chainId = 1) => {
-  if (address) {
-    const provider = new InfuraProvider(
-      chainId,
-      'c42232a29f9d4bd89d53313eb16ec241'
-    );
+export const isContractAddress = async (
+  address: string,
+  networkUrl: string
+) => {
+  if (!address) return false;
+  try {
+    const provider = new HttpProvider(networkUrl);
     const code = await provider.getCode(address);
-    return code !== '0x';
+
+    return Boolean(code !== '0x');
+  } catch (error) {
+    if (String(error).includes('bad address checksum')) return false;
   }
-  return false;
+};
+
+export const contractChecker = async (
+  contractAddress: string,
+  networkUrl: string
+): Promise<ISupportsInterfaceProps | ErrorConstructor> => {
+  try {
+    const validateContractAddress = await isContractAddress(
+      contractAddress,
+      networkUrl
+    );
+
+    if (!validateContractAddress)
+      throw new Error(`Invalid contract address: ${contractAddress}`);
+
+    const contractData = (await getContractType(
+      contractAddress,
+      networkUrl
+    )) as ISupportsInterfaceProps;
+
+    return contractData;
+  } catch (error) {
+    return error;
+  }
 };
 
 export const getErc20Abi = () => abi20;
 
 export const getErc21Abi = () => abi21;
+
+export const getErc55Abi = () => abi55;

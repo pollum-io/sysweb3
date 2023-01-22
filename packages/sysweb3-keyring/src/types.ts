@@ -1,6 +1,6 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { TypedData, TypedMessage } from 'eth-sig-util';
-import { ethers } from 'ethers';
+import { ethers, BigNumber } from 'ethers';
 import {
   EncryptedKeystoreV3Json,
   Sign,
@@ -84,6 +84,19 @@ export interface IEthereumTransactions {
   getGasOracle: () => Promise<any>;
   getEncryptedPubKey: () => string;
   toBigNumber: (aBigNumberish: string | number) => ethers.BigNumber;
+  sendSignedErc20Transaction: ({
+    networkUrl,
+    receiver,
+    tokenAddress,
+    tokenAmount,
+  }: ISendSignedErcTransactionProps) => Promise<IResponseFromSendErcSignedTransaction>;
+
+  sendSignedErc721Transaction: ({
+    networkUrl,
+    receiver,
+    tokenAddress,
+    tokenId,
+  }: ISendSignedErcTransactionProps) => Promise<IResponseFromSendErcSignedTransaction>;
 }
 
 export interface ISyscoinTransactions {
@@ -216,4 +229,33 @@ export interface ILatestUpdateForSysAccount {
     ethereum: number;
   };
   receivingAddress: any;
+}
+
+export interface ISendSignedErcTransactionProps {
+  networkUrl: string;
+  receiver: string;
+  tokenAddress: string;
+  tokenAmount?: string;
+  tokenId?: number;
+}
+
+export interface IResponseFromSendErcSignedTransaction {
+  type: number;
+  chainId: number;
+  nonce: number;
+  maxPriorityFeePerGas: BigNumber;
+  maxFeePerGas: BigNumber;
+  gasPrice: BigNumber | null;
+  gasLimit: BigNumber;
+  to: string;
+  value: BigNumber;
+  data: string;
+  accessList: any[];
+  hash: string;
+  v: number | null;
+  r: string;
+  s: string;
+  from: string;
+  confirmations: number | null;
+  wait: any;
 }
