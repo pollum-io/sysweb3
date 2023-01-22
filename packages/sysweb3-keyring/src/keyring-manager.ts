@@ -124,6 +124,11 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const getAccountXpub = (): string => hd.getAccountXpub();
+  const getChangeAddress = (accountId: number): string => {
+    const { _hd } = getSigners();
+    _hd.setAccountIndex(accountId);
+    return _hd.getNewChangeAddress(true);
+  };
 
   const getAccountById = (id: number): IKeyringAccountState => {
     const account = Object.values(wallet.accounts).find(
@@ -991,6 +996,7 @@ export const KeyringManager = (): IKeyringManager => {
     getAccounts,
     getAccountById,
     getAccountXpub,
+    getChangeAddress,
     getDecryptedMnemonic,
     getDecryptedPrivateKey,
     getEncryptedMnemonic,
