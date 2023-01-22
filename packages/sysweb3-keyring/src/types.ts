@@ -235,9 +235,9 @@ export interface ISendSignedErcTransactionProps {
   networkUrl: string;
   receiver: string;
   tokenAddress: string;
-  maxPriorityFeePerGas: BigNumberish;
-  maxFeePerGas: BigNumberish;
-  gasLimit: BigNumberish;
+  maxPriorityFeePerGas?: BigNumberish;
+  maxFeePerGas?: BigNumberish;
+  gasLimit?: BigNumberish;
   tokenAmount?: string;
   tokenId?: number;
 }
