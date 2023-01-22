@@ -102,14 +102,16 @@ export const validateSysRpc = async (
   chain: string;
 }> => {
   try {
-    const response = await axios.get(`${url}/api/v2`);
+    const response = await axios.get(
+      `${url.endsWith('/') ? url.slice(0, -1) : url}/api/v2`
+    );
 
     const {
       blockbook: { coin },
       backend: { chain },
     } = response.data;
 
-    const valid = Boolean(response && coin);
+    const valid = Boolean(response && coin && response.status === 200);
 
     return {
       valid,
