@@ -43,7 +43,7 @@
         }
       }
     ],
-    "no-useless-catch": "warn",
+    "no-useless-catch": "off",
     "prettier/prettier": "warn",
     "no-confusing-arrow": "warn",
     "no-multiple-empty-lines": "warn",
