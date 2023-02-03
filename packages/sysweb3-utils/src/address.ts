@@ -1,7 +1,7 @@
 import { bech32 } from 'bech32';
 import { ethers } from 'ethers';
 
-import { INetwork } from '.';
+import { INetwork, isContractAddress } from '.';
 
 export const isValidEthereumAddress = (address: string) => {
   return ethers.utils.isAddress(address);
@@ -34,3 +34,36 @@ export const isValidSYSAddress = (
 
   return false;
 };
+
+export const validateEOAAddress = async (
+  address: string,
+  networkUrl: string
+): Promise<IValidateEOAAddressResponse> => {
+  const validateContract = await isContractAddress(address, networkUrl);
+
+  if (validateContract) {
+    return {
+      contract: true,
+      wallet: false,
+    };
+  } else {
+    const validateEthAddress = isValidEthereumAddress(address);
+
+    if (validateEthAddress) {
+      return {
+        contract: false,
+        wallet: true,
+      };
+    }
+
+    return {
+      contract: undefined,
+      wallet: undefined,
+    };
+  }
+};
+
+interface IValidateEOAAddressResponse {
+  contract: boolean | undefined;
+  wallet: boolean | undefined;
+}
