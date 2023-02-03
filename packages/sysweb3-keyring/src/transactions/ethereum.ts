@@ -45,9 +45,6 @@ import {
 export const EthereumTransactions = (): IEthereumTransactions => {
   const storage = sysweb3Di.getStateStorageDb();
 
-  const getTransactionCount = async (address: string) =>
-    await web3Provider.getTransactionCount(address);
-
   const getDecryptedPrivateKey = () => {
     const { wallet: _wallet } = getDecryptedVault();
     const storageValue = storage.get('vault-keys');
@@ -483,7 +480,6 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   return {
-    getTransactionCount,
     ethSign,
     signPersonalMessage,
     parsePersonalMessage,

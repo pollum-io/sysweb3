@@ -53,7 +53,6 @@ export type SimpleTransactionRequest = {
 export declare type Version = 'V1' | 'V2' | 'V3' | 'V4';
 
 export interface IEthereumTransactions {
-  getTransactionCount: (address: string) => Promise<number>;
   signTypedData: (addr: string, typedData: any, version: Version) => string;
   ethSign: (params: string[]) => string;
   signPersonalMessage: (params: string[]) => string;
