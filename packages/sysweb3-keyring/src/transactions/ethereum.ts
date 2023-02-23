@@ -302,8 +302,11 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
     const parsedAmount = ethers.utils.parseEther(String(amount));
 
-    const { wallet: _wallet } = getDecryptedVault();
+    const { wallet: _wallet, network: _activeNetwork } = getDecryptedVault();
     const { hash } = storage.get('vault-keys');
+
+    // same as sendFormattedTransaction function
+    setActiveNetwork(_activeNetwork);
 
     const accountXprv = _wallet.activeAccount.xprv;
 
