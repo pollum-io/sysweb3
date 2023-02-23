@@ -32,7 +32,7 @@ import {
   SimpleTransactionRequest,
 } from '../types';
 import { sysweb3Di } from '@pollum-io/sysweb3-core';
-import { web3Provider } from '@pollum-io/sysweb3-network';
+import { setActiveNetwork, web3Provider } from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
   getDecryptedVault,
@@ -265,8 +265,13 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
-    const { wallet: _wallet } = getDecryptedVault();
+    const { wallet: _wallet, network: _activeNetwork } = getDecryptedVault();
     const { hash } = storage.get('vault-keys');
+
+    // Set the active network based on the vault state to prevent the web3Provider from
+    // sysweb3-network to don't be the default (syscoin mainnet) and don't send the transaction for the
+    // wrong network later than user unlocks the wallet
+    setActiveNetwork(_activeNetwork);
 
     const accountXprv = _wallet.activeAccount.xprv;
 
