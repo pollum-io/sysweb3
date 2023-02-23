@@ -42,8 +42,13 @@ import {
 export const EthereumTransactions = (): IEthereumTransactions => {
   const storage = sysweb3Di.getStateStorageDb();
 
-  const getTransactionCount = async (address: string) =>
-    await web3Provider.getTransactionCount(address);
+  const getTransactionCount = async (address: string) => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
+    return await web3Provider.getTransactionCount(address);
+  };
 
   const signTypedData = (
     addr: string,
@@ -239,6 +244,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getFeeDataWithDynamicMaxPriorityFeePerGas = async () => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
     let maxFeePerGas = toBigNumber(0);
     let maxPriorityFeePerGas = toBigNumber(0);
 
@@ -358,6 +367,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
   const getRecommendedNonce = async (address: string) => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
     try {
       return await web3Provider.getTransactionCount(address, 'pending');
     } catch (error) {
@@ -385,6 +398,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getGasLimit = async (toAddress: string) => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
     try {
       const estimated = await web3Provider.estimateGas({
         to: toAddress,
@@ -397,6 +414,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getTxGasLimit = async (tx: SimpleTransactionRequest) => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
     try {
       return web3Provider.estimateGas(tx);
     } catch (error) {
@@ -405,6 +426,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getRecommendedGasPrice = async (formatted?: boolean) => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
     try {
       const gasPriceBN = await web3Provider.getGasPrice();
 
