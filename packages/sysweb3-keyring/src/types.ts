@@ -172,7 +172,7 @@ export interface IWalletState {
   accounts: {
     [id: number]: IKeyringAccountState;
   };
-  activeAccount: IKeyringAccountState;
+  activeAccount: number;
   networks: {
     [INetworkType.Ethereum]: {
       [chainId: number | string]: INetwork;

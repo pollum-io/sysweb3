@@ -89,7 +89,7 @@ export const initialWalletState: IWalletState = {
   accounts: {
     [initialActiveAccountState.id]: initialActiveAccountState,
   },
-  activeAccount: initialActiveAccountState,
+  activeAccount: 0,
   networks: initialNetworksState,
   activeNetwork: {
     chainId: 57,

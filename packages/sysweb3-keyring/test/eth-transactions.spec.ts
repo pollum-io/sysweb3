@@ -1,7 +1,7 @@
-import { FAKE_PASSWORD, FAKE_SEED_PHRASE } from './constants';
 import { KeyringManager } from '../../sysweb3-keyring/src/keyring-manager';
 import { initialWalletState } from '../src/initial-state';
 import { EthereumTransactions } from '../src/transactions/ethereum';
+import { FAKE_PASSWORD, FAKE_SEED_PHRASE } from './constants';
 
 describe('Ethereum Transaction ERC20 at Syscoin NEVM', () => {
   const { sendSignedErc20Transaction } = EthereumTransactions();
@@ -52,7 +52,8 @@ describe('Ethereum Transaction ERC20 at Syscoin NEVM', () => {
     expect(account2.label).toBe('Account 2');
 
     const wallet = keyringManager.getState();
-    expect(wallet.activeAccount.id).toBe(1);
+    const { activeAccount } = wallet;
+    expect(wallet.accounts[activeAccount].id).toBe(1);
   }, 50000);
 
   //* setActiveAccount
@@ -60,7 +61,8 @@ describe('Ethereum Transaction ERC20 at Syscoin NEVM', () => {
     keyringManager.setActiveAccount(0);
 
     const wallet = keyringManager.getState();
-    expect(wallet.activeAccount.id).toBe(0);
+    const { activeAccount } = wallet;
+    expect(wallet.accounts[activeAccount].id).toBe(0);
   });
 
   //* getSeed
@@ -161,7 +163,8 @@ describe('Ethereum Transaction ERC721 at Mumbai', () => {
     expect(account2.label).toBe('Account 2');
 
     const wallet = keyringManager.getState();
-    expect(wallet.activeAccount.id).toBe(1);
+    const { activeAccount } = wallet;
+    expect(wallet.accounts[activeAccount].id).toBe(1);
   }, 50000);
 
   //* setActiveAccount
@@ -169,7 +172,8 @@ describe('Ethereum Transaction ERC721 at Mumbai', () => {
     keyringManager.setActiveAccount(0);
 
     const wallet = keyringManager.getState();
-    expect(wallet.activeAccount.id).toBe(0);
+    const { activeAccount } = wallet;
+    expect(wallet.accounts[activeAccount].id).toBe(0);
   });
 
   //* getSeed
