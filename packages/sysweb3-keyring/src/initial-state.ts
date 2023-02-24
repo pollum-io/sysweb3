@@ -60,7 +60,7 @@ export const initialNetworksState = {
       currency: 'matic',
       default: true,
       label: 'Polygon Mumbai Testnet',
-      url: 'https://rpc-mumbai.maticvigil.com',
+      url: 'https://rpc.ankr.com/polygon_mumbai',
       apiUrl: 'https://api-testnet.polygonscan.com/api',
       explorer: 'https://mumbai.polygonscan.com/',
     },

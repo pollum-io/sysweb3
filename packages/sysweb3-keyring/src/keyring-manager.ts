@@ -124,6 +124,11 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const getAccountXpub = (): string => hd.getAccountXpub();
+  const getChangeAddress = (accountId: number): string => {
+    const { _hd } = getSigners();
+    _hd.setAccountIndex(accountId);
+    return _hd.getNewChangeAddress(true);
+  };
 
   const getAccountById = (id: number): IKeyringAccountState => {
     const account = Object.values(wallet.accounts).find(
@@ -412,18 +417,36 @@ export const KeyringManager = (): IKeyringManager => {
     xpub: string;
   }) => {
     const options = 'tokens=nonzero&details=txs';
-
     const { address, balance, transactions, tokensAsset } =
-      await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
-
+      await sys.utils.fetchBackendAccount(url, xpub, options, true);
     const latestAssets = tokensAsset ? tokensAsset.slice(0, 30) : [];
 
     const filteredAssets: any = [];
 
     await Promise.all(
       latestAssets.map(async (token: any) => {
-        const details = await getAsset(url, token.assetGuid);
+        let details;
+        const uncreatedTokens = [];
+        const unconfirmedTxs = transactions
+          .slice(0, 20)
+          .filter((item: any) => item.confirmations === 0);
 
+        for (const txs of unconfirmedTxs) {
+          for (const tokens of txs.tokenTransfers) {
+            if (tokens) {
+              uncreatedTokens.push(tokens.token);
+            }
+          }
+        }
+
+        //TODO: add a timeout for getAsset and axios.get calls
+        try {
+          if (!uncreatedTokens.includes(token.assetGuid)) {
+            details = await getAsset(url, token.assetGuid);
+          }
+        } catch (e) {
+          // console.error('could not fetch assetData', e);
+        }
         const description =
           details && details.pubData && details.pubData.desc
             ? atob(details.pubData.desc)
@@ -432,8 +455,12 @@ export const KeyringManager = (): IKeyringManager => {
         let image = '';
 
         if (description.startsWith('https://ipfs.io/ipfs/')) {
-          const { data } = await axios.get(description);
-          image = data.image ? data.image : '';
+          try {
+            const { data } = await axios.get(description);
+            image = data.image ? data.image : '';
+          } catch (e) {
+            // console.error('could not fetch ipfs image', e);
+          }
         }
         const asset = {
           ...token,
@@ -447,7 +474,6 @@ export const KeyringManager = (): IKeyringManager => {
         if (!filteredAssets.includes(asset)) filteredAssets.push(asset);
       })
     );
-
     return {
       transactions: transactions ? transactions.slice(0, 20) : [],
       assets: filteredAssets,
@@ -702,10 +728,22 @@ export const KeyringManager = (): IKeyringManager => {
     wallet = vault.wallet;
 
     setEncryptedVault({ ...vault, wallet });
+    //TODO: Transform this into a function to be reused
+    let checkExplorer = false;
+    try {
+      //Only trezor blockbooks are accepted as endpoint for UTXO chains for now
+      const rpcoutput = await (
+        await fetch(wallet.activeNetwork.url + 'api/v2')
+      ).json();
+      checkExplorer = rpcoutput.blockbook.coin ? true : false;
+    } catch (e) {
+      //Its not a blockbook, so it might be a ethereum RPC
+      checkExplorer = false;
+    }
 
     const isSyscoinChain =
       Boolean(wallet.networks.syscoin[wallet.activeNetwork.chainId]) &&
-      wallet.activeNetwork.url.includes('blockbook');
+      checkExplorer;
 
     const latestUpdate = isSyscoinChain
       ? await _getLatestUpdateForSysAccount()
@@ -823,10 +861,21 @@ export const KeyringManager = (): IKeyringManager => {
 
   const addNewAccount = async (label?: string) => {
     const { network, mnemonic } = getDecryptedVault();
+    //TODO: Transform this into a function to be reused
+    let checkExplorer = false;
+    try {
+      //Only trezor blockbooks are accepted as endpoint for UTXO chains for now
+      const rpcoutput = await (
+        await fetch(wallet.activeNetwork.url + 'api/v2')
+      ).json();
+      checkExplorer = rpcoutput.blockbook.coin ? true : false;
+    } catch (e) {
+      //Its not a blockbook, so it might be a ethereum RPC
+      checkExplorer = false;
+    }
 
     const isSyscoinChain =
-      Boolean(wallet.networks.syscoin[network.chainId]) &&
-      network.url.includes('blockbook');
+      Boolean(wallet.networks.syscoin[network.chainId]) && checkExplorer;
 
     if (isSyscoinChain) {
       if (!hd.mnemonic) {
@@ -947,6 +996,7 @@ export const KeyringManager = (): IKeyringManager => {
     getAccounts,
     getAccountById,
     getAccountXpub,
+    getChangeAddress,
     getDecryptedMnemonic,
     getDecryptedPrivateKey,
     getEncryptedMnemonic,

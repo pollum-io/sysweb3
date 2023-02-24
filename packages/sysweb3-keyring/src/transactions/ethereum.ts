@@ -28,6 +28,8 @@ import { Deferrable } from 'ethers/lib/utils';
 import { getFormattedTransactionResponse } from '../format';
 import {
   IEthereumTransactions,
+  IResponseFromSendErcSignedTransaction,
+  ISendSignedErcTransactionProps,
   ISendTransaction,
   SimpleTransactionRequest,
 } from '../types';
@@ -37,17 +39,27 @@ import {
   createContractUsingAbi,
   getDecryptedVault,
   getErc20Abi,
+  getErc21Abi,
 } from '@pollum-io/sysweb3-utils';
 
 export const EthereumTransactions = (): IEthereumTransactions => {
   const storage = sysweb3Di.getStateStorageDb();
 
-  const getTransactionCount = async (address: string) => {
-    const { network: _activeNetwork } = getDecryptedVault();
+  const getDecryptedPrivateKey = () => {
+    const { wallet: _wallet } = getDecryptedVault();
+    const storageValue = storage.get('vault-keys');
 
-    setActiveNetwork(_activeNetwork);
+    const accountXprv = _wallet.activeAccount.xprv;
 
-    return await web3Provider.getTransactionCount(address);
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      accountXprv,
+      storageValue ? storageValue.hash : ''
+    ).toString(CryptoJS.enc.Utf8);
+
+    return {
+      address: _wallet.activeAccount.address,
+      decryptedPrivateKey,
+    };
   };
 
   const signTypedData = (
@@ -55,19 +67,13 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     typedData: TypedData | TypedMessage<any>,
     version: Version
   ) => {
-    const { wallet } = getDecryptedVault();
-    const { hash } = storage.get('vault-keys');
+    const { address, decryptedPrivateKey } = getDecryptedPrivateKey();
 
-    const accountXprv = wallet.activeAccount.xprv;
-    const address = wallet.activeAccount.address;
     if (addr.toLowerCase() !== address.toLowerCase())
       throw {
         message: 'Decrypting for wrong address, change activeAccount maybe',
       };
-    const decryptedPrivateKey = CryptoJS.AES.decrypt(
-      accountXprv,
-      hash
-    ).toString(CryptoJS.enc.Utf8);
+
     const privKey = Buffer.from(stripHexPrefix(decryptedPrivateKey), 'hex');
     return signTypedMessage(privKey, { data: typedData }, version);
   };
@@ -89,15 +95,8 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const ethSign = (params: string[]) => {
-    const { wallet } = getDecryptedVault();
-    const { hash } = storage.get('vault-keys');
+    const { address, decryptedPrivateKey } = getDecryptedPrivateKey();
 
-    const accountXprv = wallet.activeAccount.xprv;
-    const address = wallet.activeAccount.address;
-    const decryptedPrivateKey = CryptoJS.AES.decrypt(
-      accountXprv,
-      hash
-    ).toString(CryptoJS.enc.Utf8);
     let msg = '';
     //Comparisions do not need to care for checksum address
     if (params[0].toLowerCase() === address.toLowerCase()) {
@@ -120,15 +119,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const signPersonalMessage = (params: string[]) => {
-    const { wallet } = getDecryptedVault();
-    const { hash } = storage.get('vault-keys');
-
-    const accountXprv = wallet.activeAccount.xprv;
-    const address = wallet.activeAccount.address;
-    const decryptedPrivateKey = CryptoJS.AES.decrypt(
-      accountXprv,
-      hash
-    ).toString(CryptoJS.enc.Utf8);
+    const { address, decryptedPrivateKey } = getDecryptedPrivateKey();
     let msg = '';
 
     if (params[0].toLowerCase() === address.toLowerCase()) {
@@ -172,13 +163,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getEncryptedPubKey = () => {
-    const { wallet } = getDecryptedVault();
-    const { hash } = storage.get('vault-keys');
-    const accountXprv = wallet.activeAccount.xprv;
-    const decryptedPrivateKey = CryptoJS.AES.decrypt(
-      accountXprv,
-      hash
-    ).toString(CryptoJS.enc.Utf8);
+    const { decryptedPrivateKey } = getDecryptedPrivateKey();
 
     try {
       return getEncryptionPublicKey(stripHexPrefix(decryptedPrivateKey));
@@ -189,11 +174,8 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
   // eth_decryptMessage
   const decryptMessage = (msgParams: string[]) => {
-    const { wallet } = getDecryptedVault();
-    const { hash } = storage.get('vault-keys');
+    const { address, decryptedPrivateKey } = getDecryptedPrivateKey();
 
-    const accountXprv = wallet.activeAccount.xprv;
-    const address = wallet.activeAccount.address;
     let encryptedData = '';
     if (msgParams[0].toLowerCase() === address.toLowerCase()) {
       encryptedData = msgParams[1];
@@ -203,10 +185,6 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       throw { msg: 'Decrypting for wrong receiver' };
     }
     encryptedData = stripHexPrefix(encryptedData);
-    const decryptedPrivateKey = CryptoJS.AES.decrypt(
-      accountXprv,
-      hash
-    ).toString(CryptoJS.enc.Utf8);
 
     try {
       const buff = Buffer.from(encryptedData, 'hex');
@@ -274,20 +252,14 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
+    const { decryptedPrivateKey } = getDecryptedPrivateKey();
     const { wallet: _wallet, network: _activeNetwork } = getDecryptedVault();
-    const { hash } = storage.get('vault-keys');
 
     // Set the active network based on the vault state to prevent the web3Provider from
     // sysweb3-network to don't be the default (syscoin mainnet) and don't send the transaction for the
     // wrong network later than user unlocks the wallet
     setActiveNetwork(_activeNetwork);
 
-    const accountXprv = _wallet.activeAccount.xprv;
-
-    const decryptedPrivateKey = CryptoJS.AES.decrypt(
-      accountXprv,
-      hash
-    ).toString(CryptoJS.enc.Utf8);
     const tx: Deferrable<ethers.providers.TransactionRequest> = params;
     const wallet = new ethers.Wallet(decryptedPrivateKey, web3Provider);
     try {
@@ -311,18 +283,11 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
     const parsedAmount = ethers.utils.parseEther(String(amount));
 
+    const { decryptedPrivateKey } = getDecryptedPrivateKey();
     const { wallet: _wallet, network: _activeNetwork } = getDecryptedVault();
-    const { hash } = storage.get('vault-keys');
 
     // same as sendFormattedTransaction function
     setActiveNetwork(_activeNetwork);
-
-    const accountXprv = _wallet.activeAccount.xprv;
-
-    const decryptedPrivateKey = CryptoJS.AES.decrypt(
-      accountXprv,
-      hash
-    ).toString(CryptoJS.enc.Utf8);
 
     const wallet = new ethers.Wallet(decryptedPrivateKey, web3Provider);
 
@@ -366,6 +331,94 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       throw error;
     }
   };
+
+  const sendSignedErc20Transaction = async ({
+    networkUrl,
+    receiver,
+    tokenAddress,
+    tokenAmount,
+    maxPriorityFeePerGas,
+    maxFeePerGas,
+    gasLimit,
+  }: ISendSignedErcTransactionProps): Promise<IResponseFromSendErcSignedTransaction> => {
+    const provider = new ethers.providers.JsonRpcProvider(networkUrl);
+
+    const { decryptedPrivateKey } = getDecryptedPrivateKey();
+
+    const currentWallet = new ethers.Wallet(decryptedPrivateKey);
+
+    const walletSigned = currentWallet.connect(provider);
+
+    try {
+      const _contract = new ethers.Contract(
+        tokenAddress,
+        getErc20Abi(),
+        walletSigned
+      );
+
+      const calculatedTokenAmount = ethers.BigNumber.from(
+        ethers.utils.parseEther(tokenAmount as string)
+      );
+
+      const transferMethod = await _contract.transfer(
+        receiver,
+        calculatedTokenAmount,
+        {
+          nonce: await provider.getTransactionCount(
+            walletSigned.address,
+            'pending'
+          ),
+          maxPriorityFeePerGas,
+          maxFeePerGas,
+          gasLimit,
+        }
+      );
+
+      return transferMethod;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const sendSignedErc721Transaction = async ({
+    networkUrl,
+    receiver,
+    tokenAddress,
+    tokenId,
+  }: ISendSignedErcTransactionProps): Promise<IResponseFromSendErcSignedTransaction> => {
+    const provider = new ethers.providers.JsonRpcProvider(networkUrl);
+
+    const { decryptedPrivateKey } = getDecryptedPrivateKey();
+
+    const currentWallet = new ethers.Wallet(decryptedPrivateKey);
+
+    const walletSigned = currentWallet.connect(provider);
+
+    try {
+      const _contract = new ethers.Contract(
+        tokenAddress,
+        getErc21Abi(),
+        walletSigned
+      );
+
+      const transferMethod = await _contract.transferFrom(
+        walletSigned.address,
+        receiver,
+        tokenId as number,
+        {
+          nonce: await provider.getTransactionCount(
+            walletSigned.address,
+            'pending'
+          ),
+        }
+      );
+
+      return transferMethod;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const getRecommendedNonce = async (address: string) => {
     const { network: _activeNetwork } = getDecryptedVault();
 
@@ -457,7 +510,6 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   return {
-    getTransactionCount,
     ethSign,
     signPersonalMessage,
     parsePersonalMessage,
@@ -476,5 +528,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     getGasOracle,
     getFeeDataWithDynamicMaxPriorityFeePerGas,
     toBigNumber,
+    sendSignedErc20Transaction,
+    sendSignedErc721Transaction,
   };
 };
