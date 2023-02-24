@@ -223,12 +223,12 @@ export const Web3Accounts = (): IWeb3Accounts => {
     return tokensTransfers;
   };
 
-  const importAccount = (mnemonic: string) => {
-    if (ethers.utils.isHexString(mnemonic)) {
-      return new ethers.Wallet(mnemonic);
+  const importAccount = (mnemonicOrPrivKey: string) => {
+    if (ethers.utils.isHexString(mnemonicOrPrivKey)) {
+      return new ethers.Wallet(mnemonicOrPrivKey);
     }
 
-    const { privateKey } = ethers.Wallet.fromMnemonic(mnemonic);
+    const { privateKey } = ethers.Wallet.fromMnemonic(mnemonicOrPrivKey);
 
     const account = new ethers.Wallet(privateKey);
 

@@ -8,7 +8,7 @@ import { hdkey } from 'ethereumjs-wallet';
 import sys from 'syscoinjs-lib';
 
 import { Web3Accounts } from './eth-manager';
-import { initialWalletState } from './initial-state';
+import { initialActiveAccountState, initialWalletState } from './initial-state';
 import { initialize } from './trezor';
 import {
   IKeyringAccountState,
@@ -138,6 +138,66 @@ export const KeyringManager = (): IKeyringManager => {
     if (!account) throw new Error('Account not found');
 
     return account;
+  };
+
+  const handleImportAccountByPrivateKey = async (
+    privKey: string,
+    label?: string
+  ) => {
+    const { accounts } = getDecryptedVault();
+
+    const importedAccountValue = await _getPrivateKeyAccountInfos(
+      privKey,
+      label
+    );
+
+    const newWalletValue = {
+      ...getDecryptedVault().wallet,
+      accounts: {
+        ...accounts,
+        [importedAccountValue.id]: importedAccountValue,
+      },
+    };
+
+    setEncryptedVault({ ...getDecryptedVault(), newWalletValue });
+
+    return importedAccountValue;
+  };
+
+  const _getPrivateKeyAccountInfos = async (
+    privKey: string,
+    label?: string
+  ) => {
+    const { activeNetwork, accounts } = getDecryptedVault();
+
+    const { hash } = storage.get('vault-keys');
+
+    const importedAccountValue = web3Wallet.importAccount(`0x${privKey}`);
+
+    const { address, publicKey, privateKey } = importedAccountValue;
+
+    const newAccountValues = {
+      ...initialActiveAccountState,
+      address,
+      label: label ? label : `Account ${Object.values(accounts).length + 1}`,
+      id: Object.values(accounts).length,
+      balances: {
+        syscoin: 0,
+        ethereum: await web3Wallet.getBalance(address),
+      },
+      xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
+      xpub: publicKey,
+      transactions: await web3Wallet.getUserTransactions(
+        address,
+        activeNetwork
+      ),
+      assets: {
+        syscoin: [],
+        ethereum: await web3Wallet.getAssetsByAddress(address, activeNetwork),
+      },
+    } as IKeyringAccountState;
+
+    return newAccountValues;
   };
 
   const _clearWallet = () => {
@@ -323,18 +383,16 @@ export const KeyringManager = (): IKeyringManager => {
 
     const { wallet: _updatedWallet } = getDecryptedVault();
 
-    const { accounts, activeAccount } = _updatedWallet;
+    const { activeAccount } = _updatedWallet;
 
-    if (accounts[activeAccount.id] !== activeAccount) {
-      wallet = {
-        ..._updatedWallet,
-        activeAccount: accounts[activeAccount.id],
-      };
+    wallet = {
+      ..._updatedWallet,
+      activeAccount: activeAccount,
+    };
 
-      setEncryptedVault({ ...getDecryptedVault(), wallet });
-    }
+    setEncryptedVault({ ...getDecryptedVault(), wallet });
 
-    return getDecryptedVault().wallet.activeAccount;
+    return getDecryptedVault().wallet.accounts[activeAccount];
   };
 
   const _getInitialAccountData = ({
@@ -1006,6 +1064,7 @@ export const KeyringManager = (): IKeyringManager => {
     getPrivateKeyByAccountId,
     getSeed,
     getState,
+    handleImportAccountByPrivateKey,
     isUnlocked,
     login,
     logout,

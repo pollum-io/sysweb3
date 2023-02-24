@@ -137,6 +137,10 @@ export interface IKeyringManager {
   getPrivateKeyByAccountId: (id: number) => string;
   getSeed: (password: string) => string;
   getState: () => IWalletState;
+  handleImportAccountByPrivateKey: (
+    privKey: string,
+    label?: string
+  ) => Promise<IKeyringAccountState>;
   isUnlocked: () => boolean;
   login: (password: string) => Promise<IKeyringAccountState>;
   logout: () => void;
