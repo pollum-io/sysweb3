@@ -315,7 +315,6 @@ export const Web3Accounts = (): IWeb3Accounts => {
 
     const pendingTransactions = getPendingTransactions(chainId, address);
 
-    console.log('pendingTransactions', pendingTransactions);
     if (_default) {
       if (etherscanSupportedNetworks.includes(networkByLabel)) {
         const etherscanProvider = new ethers.providers.EtherscanProvider(
@@ -336,11 +335,6 @@ export const Web3Accounts = (): IWeb3Accounts => {
           )
         );
 
-        console.log('[...pendingTransactions, ...history] 1', [
-          ...pendingTransactions,
-          ...history,
-        ]);
-
         return [...pendingTransactions, ...history] || [...pendingTransactions];
       }
 
@@ -350,8 +344,6 @@ export const Web3Accounts = (): IWeb3Accounts => {
         data: { result },
       } = await axios.get(`${apiUrl}${query}`);
 
-      console.log('transaction result 2', result);
-
       if (typeof result !== 'string') {
         const txs = await Promise.all(
           result.map(
@@ -360,13 +352,9 @@ export const Web3Accounts = (): IWeb3Accounts => {
           )
         );
 
-        console.log('transaction result 3', [...pendingTransactions, ...txs]);
-
         return [...pendingTransactions, ...txs];
       }
     }
-
-    console.log('transaction result 4', [...pendingTransactions]);
 
     return [...pendingTransactions];
   };

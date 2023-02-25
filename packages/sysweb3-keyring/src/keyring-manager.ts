@@ -153,15 +153,16 @@ export const KeyringManager = (): IKeyringManager => {
       label
     );
 
-    const newWalletValue = {
+    wallet = {
       ...getDecryptedVault().wallet,
+      activeAccount: importedAccountValue.id,
       accounts: {
         ...accounts,
         [importedAccountValue.id]: importedAccountValue,
       },
     };
 
-    setEncryptedVault({ ...getDecryptedVault(), newWalletValue });
+    setEncryptedVault({ ...getDecryptedVault(), wallet });
 
     return importedAccountValue;
   };
@@ -180,16 +181,10 @@ export const KeyringManager = (): IKeyringManager => {
 
     const { address, publicKey, privateKey } = importedAccountValue;
 
-    const [ethereumBalance, userTransactions, userEthereumAssets] =
-      await Promise.all([
-        web3Wallet.getBalance(address),
-        web3Wallet.getUserTransactions(address, activeNetwork),
-        web3Wallet.getAssetsByAddress(address, activeNetwork),
-      ]);
-
-    console.log('ethereumBalance', ethereumBalance);
-    console.log('userTransactions', userTransactions);
-    console.log('userEthereumAssets', userEthereumAssets);
+    const [ethereumBalance, userTransactions] = await Promise.all([
+      web3Wallet.getBalance(address),
+      web3Wallet.getUserTransactions(address, activeNetwork),
+    ]);
 
     const newAccountValues = {
       ...initialActiveAccountState,
@@ -202,10 +197,10 @@ export const KeyringManager = (): IKeyringManager => {
       },
       xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
       xpub: publicKey,
-      transactions: userTransactions,
+      transactions: userTransactions.filter(Boolean),
       assets: {
         syscoin: [],
-        ethereum: userEthereumAssets,
+        ethereum: [],
       },
     } as IKeyringAccountState;
 

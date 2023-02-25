@@ -249,6 +249,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
+    const { network } = getDecryptedVault();
     const { decryptedPrivateKey } = getDecryptedPrivateKey();
 
     const tx: Deferrable<ethers.providers.TransactionRequest> = params;
@@ -256,7 +257,11 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     try {
       const transaction = await wallet.sendTransaction(tx);
 
-      return await getFormattedTransactionResponse(web3Provider, transaction);
+      return await getFormattedTransactionResponse(
+        web3Provider,
+        transaction,
+        network
+      );
     } catch (error) {
       throw error;
     }
@@ -275,6 +280,8 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     const parsedAmount = ethers.utils.parseEther(String(amount));
 
     const { decryptedPrivateKey } = getDecryptedPrivateKey();
+
+    const { network } = getDecryptedVault();
 
     const wallet = new ethers.Wallet(decryptedPrivateKey, web3Provider);
 
@@ -313,7 +320,11 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     try {
       const transaction = await wallet.sendTransaction(tx);
 
-      return await getFormattedTransactionResponse(web3Provider, transaction);
+      return await getFormattedTransactionResponse(
+        web3Provider,
+        transaction,
+        network
+      );
     } catch (error) {
       throw error;
     }
