@@ -386,7 +386,7 @@ export const KeyringManager = (): IKeyringManager => {
 
     for (const index in Object.values(_wallet.accounts)) {
       const id = Number(index);
-      if (_wallet.accounts[id].isImported === true) {
+      if (_wallet.accounts[id].isImported) {
         wallet = {
           ...getDecryptedVault().wallet,
           accounts: {
@@ -396,10 +396,12 @@ export const KeyringManager = (): IKeyringManager => {
         };
 
         setEncryptedVault({ ...getDecryptedVault(), wallet });
-        return;
       }
-      const label = _wallet.accounts[id].label;
-      await _setDerivedWeb3Accounts(id, label);
+
+      if (!_wallet.accounts[id].isImported) {
+        const label = _wallet.accounts[id].label;
+        await _setDerivedWeb3Accounts(id, label);
+      }
     }
 
     const { wallet: _updatedWallet } = getDecryptedVault();
