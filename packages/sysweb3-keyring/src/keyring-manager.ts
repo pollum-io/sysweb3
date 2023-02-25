@@ -202,6 +202,7 @@ export const KeyringManager = (): IKeyringManager => {
         syscoin: [],
         ethereum: [],
       },
+      isImported: true,
     } as IKeyringAccountState;
 
     return newAccountValues;
@@ -312,6 +313,7 @@ export const KeyringManager = (): IKeyringManager => {
         ethereum: balance,
       },
       transactions,
+      isImported: false,
     };
   };
 
@@ -384,6 +386,18 @@ export const KeyringManager = (): IKeyringManager => {
 
     for (const index in Object.values(_wallet.accounts)) {
       const id = Number(index);
+      if (_wallet.accounts[id].isImported === true) {
+        wallet = {
+          ...getDecryptedVault().wallet,
+          accounts: {
+            ...getDecryptedVault().wallet.accounts,
+            [id]: _wallet.accounts[id],
+          },
+        };
+
+        setEncryptedVault({ ...getDecryptedVault(), wallet });
+        return;
+      }
       const label = _wallet.accounts[id].label;
       await _setDerivedWeb3Accounts(id, label);
     }
@@ -425,6 +439,7 @@ export const KeyringManager = (): IKeyringManager => {
       isTrezorWallet: false,
       transactions,
       assets,
+      isImported: false,
     };
 
     return account;

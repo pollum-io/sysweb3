@@ -13,6 +13,7 @@ export const initialActiveAccountState: IKeyringAccountState = {
   xpub: '',
   transactions: [],
   assets: [],
+  isImported: false,
 };
 
 export const initialNetworksState = {

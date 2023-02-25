@@ -208,6 +208,7 @@ export interface IKeyringAccountState {
   xpub: string;
   transactions: any;
   assets: any;
+  isImported: boolean;
 }
 
 export interface ISyscoinBackendAccount {
