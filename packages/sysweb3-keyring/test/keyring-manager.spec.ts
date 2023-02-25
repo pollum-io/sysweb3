@@ -183,7 +183,7 @@ describe('', () => {
 
   //* setSignerNetwork
   it('should set the network', async () => {
-    const testnet = initialWalletState.networks.ethereum[5700];
+    const testnet = initialWalletState.networks.ethereum[80001];
     await keyringManager.setSignerNetwork(testnet, 'ethereum');
 
     const network = keyringManager.getNetwork();
@@ -276,7 +276,7 @@ describe('', () => {
   });
 
   it('should set the network', async () => {
-    const mainnet = initialWalletState.networks.ethereum[57];
+    const mainnet = initialWalletState.networks.ethereum[137];
     await keyringManager.setSignerNetwork(mainnet, 'ethereum');
 
     const network = keyringManager.getNetwork();

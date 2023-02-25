@@ -42,6 +42,7 @@ export const KeyringManager = (): IKeyringManager => {
   let hd: SyscoinHDSigner = new sys.utils.HDSigner('');
   let memMnemonic = '';
   let memPassword = '';
+  let actualPassword = '';
 
   const getSalt = () => crypto.randomBytes(16).toString('hex');
 
@@ -78,6 +79,7 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const isUnlocked = () => !!memPassword;
+  const unlockedByPassword = () => !!actualPassword;
 
   const logout = () => {
     hd = new sys.utils.HDSigner('');
@@ -88,9 +90,10 @@ export const KeyringManager = (): IKeyringManager => {
 
   const checkPassword = (pwd: string) => {
     const { hash, salt } = storage.get('vault-keys');
-
     const hashPassword = encryptSHA512(pwd, salt);
-
+    if (hashPassword.hash === hash) {
+      actualPassword = pwd;
+    }
     return hashPassword.hash === hash;
   };
 
@@ -646,9 +649,7 @@ export const KeyringManager = (): IKeyringManager => {
 
   const login = async (password: string): Promise<IKeyringAccountState> => {
     if (!checkPassword(password)) throw new Error('Invalid password');
-
     wallet = await _unlockWallet(password);
-
     _updateUnlocked();
 
     setEncryptedVault({ ...getDecryptedVault(), wallet, lastLogin: 0 });
@@ -957,6 +958,7 @@ export const KeyringManager = (): IKeyringManager => {
     getSeed,
     getState,
     isUnlocked,
+    unlockedByPassword,
     login,
     logout,
     removeAccount,
