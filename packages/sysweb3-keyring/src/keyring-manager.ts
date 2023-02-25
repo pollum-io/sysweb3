@@ -647,8 +647,10 @@ export const KeyringManager = (): IKeyringManager => {
     }
 
     for (const account of Object.values(_wallet.accounts)) {
-      // @ts-ignore
-      await _setDerivedSysAccounts(account.id);
+      const currAccount = account as IKeyringAccountState;
+
+      //Prevent to don't derive Imported Account using Priv Keys and keep the original state values for it
+      if (!currAccount.isImported) await _setDerivedSysAccounts(currAccount.id);
     }
 
     if (hd && activeAccount > -1) hd.setAccountIndex(activeAccount);
