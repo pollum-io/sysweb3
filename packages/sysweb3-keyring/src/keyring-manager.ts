@@ -564,6 +564,7 @@ export const KeyringManager = (): IKeyringManager => {
         syscoin: balance / 1e8,
         ethereum: 0,
       },
+      isImported: false,
     };
   };
 
