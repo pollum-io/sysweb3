@@ -2,6 +2,15 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 export const FAKE_PASSWORD = 'Asdqwe123!';
 export const FAKE_INVALID_PASSWORD = '12345';
+export const POLYGON_MUMBAI_NETWORK = {
+  chainId: 80001,
+  currency: 'MATIC',
+  default: true,
+  label: 'Polygon Mumbai',
+  url: 'https://rpc.ankr.com/polygon_mumbai',
+  apiUrl: 'https://api-testnet.polygonscan.com/api',
+  explorer: 'https://mumbai.polygonscan.com/',
+};
 export const SYS_EVM_NETWORK = {
   chainId: 57,
   currency: 'sys',
@@ -95,7 +104,11 @@ export const CREATE_TOKEN_PARAMS = {
   eventName: 'txCreateToken',
   fee: 0.00001,
 };
+export const FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS =
+  process.env.PRIVATE_KEY_ACCOUNT_ADDRESS;
+export const FAKE_PRIVATE_KEY = process.env.PRIVATE_KEY_ACCOUNT;
 export const FAKE_SEED_PHRASE = process.env.SEED_PEACE_GLOBE;
+export const FAKE_SEED_ACCOUNT_ADDRESS = process.env.SEED_ACCOUNT_ADDRESS;
 export const SECOND_FAKE_SEED_PHRASE =
   'gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge';
 export const INVALID_SEED_PHRASE =
