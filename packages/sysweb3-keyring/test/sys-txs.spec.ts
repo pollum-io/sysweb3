@@ -1,3 +1,5 @@
+import { KeyringManager } from '../src/keyring-manager';
+import { SyscoinTransactions } from '../src/transactions/syscoin';
 import {
   CREATE_TOKEN_PARAMS,
   DATA,
@@ -5,8 +7,6 @@ import {
   FAKE_SEED_PHRASE,
   SYS_TANENBAUM_UTXO_NETWORK,
 } from './constants';
-import { KeyringManager } from '../src/keyring-manager';
-import { SyscoinTransactions } from '../src/transactions/syscoin';
 
 describe('testing functions for sys txs', () => {
   const keyringManager = KeyringManager();
