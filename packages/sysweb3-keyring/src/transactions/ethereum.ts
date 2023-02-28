@@ -34,7 +34,7 @@ import {
   SimpleTransactionRequest,
 } from '../types';
 import { sysweb3Di } from '@pollum-io/sysweb3-core';
-import { web3Provider } from '@pollum-io/sysweb3-network';
+import { setActiveNetwork, web3Provider } from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
   getDecryptedVault,
@@ -223,6 +223,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getFeeDataWithDynamicMaxPriorityFeePerGas = async () => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
     let maxFeePerGas = toBigNumber(0);
     let maxPriorityFeePerGas = toBigNumber(0);
 
@@ -251,6 +255,12 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   const sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
     const { network } = getDecryptedVault();
     const { decryptedPrivateKey } = getDecryptedPrivateKey();
+    const { wallet: _wallet, network: _activeNetwork } = getDecryptedVault();
+
+    // Set the active network based on the vault state to prevent the web3Provider from
+    // sysweb3-network to don't be the default (syscoin mainnet) and don't send the transaction for the
+    // wrong network later than user unlocks the wallet
+    setActiveNetwork(_activeNetwork);
 
     const tx: Deferrable<ethers.providers.TransactionRequest> = params;
     const wallet = new ethers.Wallet(decryptedPrivateKey, web3Provider);
@@ -280,6 +290,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     const parsedAmount = ethers.utils.parseEther(String(amount));
 
     const { decryptedPrivateKey } = getDecryptedPrivateKey();
+    const { wallet: _wallet, network: _activeNetwork } = getDecryptedVault();
+
+    // same as sendFormattedTransaction function
+    setActiveNetwork(_activeNetwork);
 
     const { network } = getDecryptedVault();
 
@@ -418,6 +432,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getRecommendedNonce = async (address: string) => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
     try {
       return await web3Provider.getTransactionCount(address, 'pending');
     } catch (error) {
@@ -445,6 +463,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getGasLimit = async (toAddress: string) => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
     try {
       const estimated = await web3Provider.estimateGas({
         to: toAddress,
@@ -457,6 +479,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getTxGasLimit = async (tx: SimpleTransactionRequest) => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
     try {
       return web3Provider.estimateGas(tx);
     } catch (error) {
@@ -465,6 +491,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const getRecommendedGasPrice = async (formatted?: boolean) => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
     try {
       const gasPriceBN = await web3Provider.getGasPrice();
 
