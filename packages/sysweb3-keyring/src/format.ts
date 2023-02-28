@@ -23,6 +23,22 @@ const validateCurrentProvider = async (
   return provider;
 };
 
+export const getTransactionTimestamp = async (
+  provider:
+    | ethers.providers.EtherscanProvider
+    | ethers.providers.JsonRpcProvider,
+  transaction: TransactionResponse
+) => {
+  const { timestamp } = await provider.getBlock(
+    Number(transaction.blockNumber)
+  );
+
+  return {
+    ...transaction,
+    timestamp,
+  } as TransactionResponse;
+};
+
 export const getFormattedTransactionResponse = async (
   provider:
     | ethers.providers.EtherscanProvider
@@ -33,14 +49,9 @@ export const getFormattedTransactionResponse = async (
   const currentProviderToUse = await validateCurrentProvider(provider, network);
 
   const tx = await currentProviderToUse.getTransaction(transaction.hash);
-  if (tx) {
-    const { timestamp } = await currentProviderToUse.getBlock(
-      Number(tx.blockNumber)
-    );
-    return {
-      ...tx,
-      timestamp,
-    };
+
+  if (!tx) {
+    return await getTransactionTimestamp(currentProviderToUse, transaction);
   }
-  return tx as TransactionResponse;
+  return await getTransactionTimestamp(currentProviderToUse, tx);
 };

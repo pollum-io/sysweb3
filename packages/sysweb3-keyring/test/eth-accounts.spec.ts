@@ -1,28 +1,8 @@
-// import Web3 from 'web3';
-
-import { KeyringManager } from '../../sysweb3-keyring/src/keyring-manager';
 import { Web3Accounts } from '../src/eth-manager';
-import { initialWalletState } from '../src/initial-state';
-import { EthereumTransactions } from '../src/transactions/ethereum';
-import {
-  FAKE_ADDRESS,
-  FAKE_PASSWORD,
-  FAKE_PRIV_KEY,
-  PEACE_SEED_PHRASE,
-} from './constants';
-// import {
-//   web3Provider,
-//   setActiveNetwork,
-// } from '@pollum-io/sysweb3-network';
+import { FAKE_ADDRESS, FAKE_PRIV_KEY, PEACE_SEED_PHRASE } from './constants';
 
 describe('Web3Accounts', () => {
-  const {
-    getBalance,
-    // createAccount,
-    importAccount,
-    // getNftsByAddress,
-    // getTokens,
-  } = Web3Accounts();
+  const { getBalance, importAccount } = Web3Accounts();
 
   it('should import an account using a private key', async () => {
     const importedAccount = importAccount(FAKE_PRIV_KEY);
