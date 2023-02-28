@@ -107,7 +107,8 @@ export const CREATE_TOKEN_PARAMS = {
 export const FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS =
   process.env.PRIVATE_KEY_ACCOUNT_ADDRESS;
 export const FAKE_PRIVATE_KEY = process.env.PRIVATE_KEY_ACCOUNT;
-export const FAKE_SEED_PHRASE = process.env.SEED_PEACE_GLOBE;
+export const PEACE_SEED_PHRASE = process.env.SEED_PEACE_GLOBE;
+export const HEALTH_SEED_PHRASE = process.env.SEED_SWALLOW_HEALTH;
 export const FAKE_SEED_ACCOUNT_ADDRESS = process.env.SEED_ACCOUNT_ADDRESS;
 export const SECOND_FAKE_SEED_PHRASE =
   'gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge';

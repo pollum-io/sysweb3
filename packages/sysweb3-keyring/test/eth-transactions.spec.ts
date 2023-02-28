@@ -1,7 +1,7 @@
 import { KeyringManager } from '../../sysweb3-keyring/src/keyring-manager';
 import { initialWalletState } from '../src/initial-state';
 import { EthereumTransactions } from '../src/transactions/ethereum';
-import { FAKE_PASSWORD, FAKE_SEED_PHRASE } from './constants';
+import { FAKE_PASSWORD, PEACE_SEED_PHRASE } from './constants';
 
 describe('Ethereum Transaction ERC20 at Syscoin NEVM', () => {
   const { sendSignedErc20Transaction } = EthereumTransactions();
@@ -13,7 +13,7 @@ describe('Ethereum Transaction ERC20 at Syscoin NEVM', () => {
   //* validateSeed
   it('should validate a seed / add mnemonic', () => {
     const wrong = keyringManager.validateSeed('invalid seed');
-    const right = keyringManager.validateSeed(String(FAKE_SEED_PHRASE));
+    const right = keyringManager.validateSeed(String(PEACE_SEED_PHRASE));
 
     expect(wrong).toBe(false);
     expect(right).toBe(true);
@@ -39,7 +39,7 @@ describe('Ethereum Transaction ERC20 at Syscoin NEVM', () => {
   });
 
   it('should overwrite current seed', () => {
-    keyringManager.validateSeed(String(FAKE_SEED_PHRASE));
+    keyringManager.validateSeed(String(PEACE_SEED_PHRASE));
     const seed = keyringManager.getDecryptedMnemonic() as string;
     // expect to have 12 words
     expect(seed).toBeDefined();
@@ -68,7 +68,7 @@ describe('Ethereum Transaction ERC20 at Syscoin NEVM', () => {
   //* getSeed
   it('should get the seed', async () => {
     const seed = keyringManager.getSeed(FAKE_PASSWORD);
-    expect(seed).toBe(FAKE_SEED_PHRASE);
+    expect(seed).toBe(PEACE_SEED_PHRASE);
     expect(() => {
       keyringManager.getSeed('wrongp@ss123');
     }).toThrow('Invalid password.');
@@ -124,7 +124,7 @@ describe('Ethereum Transaction ERC721 at Mumbai', () => {
   //* validateSeed
   it('should validate a seed / add mnemonic', () => {
     const wrong = keyringManager.validateSeed('invalid seed');
-    const right = keyringManager.validateSeed(String(FAKE_SEED_PHRASE));
+    const right = keyringManager.validateSeed(String(PEACE_SEED_PHRASE));
 
     expect(wrong).toBe(false);
     expect(right).toBe(true);
@@ -150,7 +150,7 @@ describe('Ethereum Transaction ERC721 at Mumbai', () => {
   });
 
   it('should overwrite current seed', () => {
-    keyringManager.validateSeed(String(FAKE_SEED_PHRASE));
+    keyringManager.validateSeed(String(PEACE_SEED_PHRASE));
     const seed = keyringManager.getDecryptedMnemonic() as string;
     // expect to have 12 words
     expect(seed).toBeDefined();
@@ -179,7 +179,7 @@ describe('Ethereum Transaction ERC721 at Mumbai', () => {
   //* getSeed
   it('should get the seed', async () => {
     const seed = keyringManager.getSeed(FAKE_PASSWORD);
-    expect(seed).toBe(FAKE_SEED_PHRASE);
+    expect(seed).toBe(PEACE_SEED_PHRASE);
     expect(() => {
       keyringManager.getSeed('wrongp@ss123');
     }).toThrow('Invalid password.');
