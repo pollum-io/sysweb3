@@ -4,11 +4,12 @@ import {
   FAKE_PASSWORD,
   FAKE_PRIVATE_KEY,
   FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS,
-  FAKE_SEED_ACCOUNT_ADDRESS,
+  SEED_ACCOUNT_ADDRESS_AT_EVM,
   HEALTH_SEED_PHRASE,
   POLYGON_MUMBAI_NETWORK,
   SYS_MAINNET_UTXO_NETWORK,
   TX,
+  SEED_ACCOUNT_ADDRESS_AT_UTX0,
 } from './constants';
 import { INetwork } from '@pollum-io/sysweb3-utils';
 
@@ -39,7 +40,7 @@ describe('', () => {
   });
 
   it('should import a account by private key and validate it', async () => {
-    keyringManager.setSignerNetwork(
+    await keyringManager.setSignerNetwork(
       POLYGON_MUMBAI_NETWORK as INetwork,
       'ethereum'
     );
@@ -62,6 +63,17 @@ describe('', () => {
   });
 
   it('Should change between networks, run getLatestUpadateForAccount and keep / validate both accounts values correctly', async () => {
+    // ===================================== START FIRST TESTS AT EVM NETWORK ===================================== //
+    await keyringManager.setSignerNetwork(
+      POLYGON_MUMBAI_NETWORK as INetwork,
+      'ethereum'
+    );
+
+    const network = keyringManager.getNetwork();
+
+    //VALIDATE CURRENT NETWORK
+    expect(network).toEqual(POLYGON_MUMBAI_NETWORK);
+
     const firstUpdateAtEvmNetwork =
       await keyringManager.getLatestUpdateForAccount();
 
@@ -71,17 +83,25 @@ describe('', () => {
     expect(firstUpdateAtEvmNetwork.accountLatestUpdate.address).toEqual(
       FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS
     );
+
     expect(firstUpdateAtEvmNetwork.accountLatestUpdate.id).toEqual(1);
+
     expect(
       Object.keys(firstUpdateAtEvmNetwork.walleAccountstLatestUpdate).length
     ).toEqual(2);
+
     //VALIDATIONS FOR CURRENT STATE AFTER IMPORT NEW ACCOUNT AND RUN getLatestUpdateForAccount
     expect(firstStateAtEvm.accounts[0].address).toEqual(
-      FAKE_SEED_ACCOUNT_ADDRESS
+      SEED_ACCOUNT_ADDRESS_AT_EVM
     );
 
-    //CHANGE TO SYS UTX0 NETWORK TO TEST AGAIN
-    keyringManager.setSignerNetwork(
+    // ===================================== CHANGE ACCOUNT AND NETWORK TO SYS UTX0 NETWORK AND TEST AGAIN ===================================== //
+
+    //SET DEFAULT ACCOUNT BY DEFAULT BEFORE UPDATE AT SYS UTX0 SEEING THAT IMPORTED ACCOUNT BY PRIV KEY
+    //WILL ONLY EXISTS IN EVM NETWORKS AT NOW
+    keyringManager.setActiveAccount(0);
+
+    await keyringManager.setSignerNetwork(
       SYS_MAINNET_UTXO_NETWORK as INetwork,
       'syscoin'
     );
@@ -99,16 +119,51 @@ describe('', () => {
 
     //RUN SAME VALIDATIONS AS ABOVE TO SEE IF SOMETHING CHANGED
     expect(updateAfterChangeNetwork.accountLatestUpdate.address).toEqual(
-      FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS
+      SEED_ACCOUNT_ADDRESS_AT_UTX0
     );
-    expect(updateAfterChangeNetwork.accountLatestUpdate.id).toEqual(1);
+
+    expect(updateAfterChangeNetwork.accountLatestUpdate.isImported).toBe(false);
+
     expect(
       Object.keys(updateAfterChangeNetwork.walleAccountstLatestUpdate).length
     ).toEqual(2);
-    //VALIDATIONS FOR CURRENT STATE AFTER IMPORT NEW ACCOUNT AND RUN getLatestUpdateForAccount
+
     expect(stateLaterNetworkChanged.accounts[0].address).toEqual(
-      FAKE_SEED_ACCOUNT_ADDRESS
+      SEED_ACCOUNT_ADDRESS_AT_UTX0
     );
+
+    expect(stateLaterNetworkChanged.accounts[1].address).toEqual(
+      FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS
+    );
+
+    // ===================================== CHANGE AGAIN THE ACCOUNT / NETWORK TO EVM AND DO THE SAME AS FIRST TEST ===================================== //
+    keyringManager.setActiveAccount(1);
+
+    await keyringManager.setSignerNetwork(
+      POLYGON_MUMBAI_NETWORK as INetwork,
+      'ethereum'
+    );
+
+    const lastChangeOfNetwork = keyringManager.getNetwork();
+
+    //VALIDATE CURRENT NETWORK AFTER CHANGE
+    expect(lastChangeOfNetwork).toEqual(POLYGON_MUMBAI_NETWORK);
+
+    const lastUpdate = await keyringManager.getLatestUpdateForAccount();
+
+    const lastState = keyringManager.getState();
+
+    expect(lastUpdate.accountLatestUpdate.address).toEqual(
+      FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS
+    );
+
+    expect(lastUpdate.accountLatestUpdate.id).toEqual(1);
+
+    expect(Object.keys(lastUpdate.walleAccountstLatestUpdate).length).toEqual(
+      2
+    );
+
+    expect(lastState.accounts[0].address).toEqual(SEED_ACCOUNT_ADDRESS_AT_EVM);
   });
 
   // it('Should send and validate txSend for new account', async () => {

@@ -109,7 +109,10 @@ export const FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS =
 export const FAKE_PRIVATE_KEY = process.env.PRIVATE_KEY_ACCOUNT;
 export const PEACE_SEED_PHRASE = process.env.SEED_PEACE_GLOBE;
 export const HEALTH_SEED_PHRASE = process.env.SEED_SWALLOW_HEALTH;
-export const FAKE_SEED_ACCOUNT_ADDRESS = process.env.SEED_ACCOUNT_ADDRESS;
+export const SEED_ACCOUNT_ADDRESS_AT_EVM =
+  process.env.SEED_ACCOUNT_ADDRESS_AT_EVM;
+export const SEED_ACCOUNT_ADDRESS_AT_UTX0 =
+  process.env.SEED_ACCOUNT_ADDRESS_AT_UTX0;
 export const SECOND_FAKE_SEED_PHRASE =
   'gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge gauge';
 export const INVALID_SEED_PHRASE =
