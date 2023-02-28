@@ -4,7 +4,7 @@ import {
   CREATE_TOKEN_PARAMS,
   DATA,
   FAKE_PASSWORD,
-  FAKE_SEED_PHRASE,
+  PEACE_SEED_PHRASE,
   SYS_TANENBAUM_UTXO_NETWORK,
 } from './constants';
 
@@ -26,7 +26,7 @@ describe('testing functions for sys txs', () => {
   //* validateSeed
   it('should validate a seed / add mnemonic', () => {
     const wrong = keyringManager.validateSeed('invalid seed');
-    const right = keyringManager.validateSeed(String(FAKE_SEED_PHRASE));
+    const right = keyringManager.validateSeed(String(PEACE_SEED_PHRASE));
 
     expect(wrong).toBe(false);
     expect(right).toBe(true);
@@ -52,7 +52,7 @@ describe('testing functions for sys txs', () => {
   });
 
   it('should overwrite current seed', () => {
-    keyringManager.validateSeed(String(FAKE_SEED_PHRASE));
+    keyringManager.validateSeed(String(PEACE_SEED_PHRASE));
     const seed = keyringManager.getDecryptedMnemonic() as string;
     // expect to have 12 words
     expect(seed).toBeDefined();
@@ -81,7 +81,7 @@ describe('testing functions for sys txs', () => {
   //* getSeed
   it('should get the seed', async () => {
     const seed = keyringManager.getSeed(FAKE_PASSWORD);
-    expect(seed).toBe(FAKE_SEED_PHRASE);
+    expect(seed).toBe(PEACE_SEED_PHRASE);
     expect(() => {
       keyringManager.getSeed('wrongp@ss123');
     }).toThrow('Invalid password.');

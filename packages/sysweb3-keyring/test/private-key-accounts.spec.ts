@@ -5,7 +5,7 @@ import {
   FAKE_PRIVATE_KEY,
   FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS,
   FAKE_SEED_ACCOUNT_ADDRESS,
-  FAKE_SEED_PHRASE,
+  HEALTH_SEED_PHRASE,
   POLYGON_MUMBAI_NETWORK,
   TX,
 } from './constants';
@@ -20,7 +20,7 @@ describe('', () => {
   //* validateSeed
   it('should validate a seed / add mnemonic', () => {
     const wrong = keyringManager.validateSeed('invalid seed');
-    const right = keyringManager.validateSeed(FAKE_SEED_PHRASE as string);
+    const right = keyringManager.validateSeed(HEALTH_SEED_PHRASE as string);
 
     expect(wrong).toBe(false);
     expect(right).toBe(true);
