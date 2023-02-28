@@ -166,31 +166,31 @@ describe('', () => {
     expect(lastState.accounts[0].address).toEqual(SEED_ACCOUNT_ADDRESS_AT_EVM);
   });
 
-  // it('Should send and validate txSend for new account', async () => {
-  //   const tx = TX;
-  //   const { maxFeePerGas, maxPriorityFeePerGas } =
-  //     await ethereumTransactions.getFeeDataWithDynamicMaxPriorityFeePerGas();
-  //   tx.maxFeePerGas = maxFeePerGas;
-  //   tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
-  //   const curState = keyringManager.getState();
+  it('Should send and validate txSend for new account', async () => {
+    keyringManager.setActiveAccount(1);
 
-  //   const { activeAccount } = curState;
-  //   tx.to = curState.accounts[0].address;
-  //   tx.from = curState.accounts[activeAccount].address; // SHOULD BE IMPORTED ACCOUNT BY PRIVATE KEY ADDRESS
-  //   tx.nonce = await ethereumTransactions.getRecommendedNonce(
-  //     curState.accounts[activeAccount].address
-  //   );
-  //   tx.chainId = curState.activeNetwork.chainId;
-  //   tx.gasLimit = await ethereumTransactions.getTxGasLimit(tx);
-  //   const resp = await ethereumTransactions.sendFormattedTransaction(tx);
-  //   console.log('CURRENT STATE', curState);
+    await keyringManager.setSignerNetwork(
+      POLYGON_MUMBAI_NETWORK as INetwork,
+      'ethereum'
+    );
 
-  //   console.log('TX AT ALL', {
-  //     ...tx.to,
-  //     ...tx.from,
-  //     ...resp,
-  //   });
+    const tx = TX;
+    const { maxFeePerGas, maxPriorityFeePerGas } =
+      await ethereumTransactions.getFeeDataWithDynamicMaxPriorityFeePerGas();
+    tx.maxFeePerGas = maxFeePerGas;
+    tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
+    const curState = keyringManager.getState();
 
-  //   expect(resp.hash).toBeDefined();
-  // });
+    const { activeAccount } = curState;
+    tx.to = curState.accounts[0].address;
+    tx.from = curState.accounts[activeAccount].address; // SHOULD BE IMPORTED ACCOUNT BY PRIVATE KEY ADDRESS
+    tx.nonce = await ethereumTransactions.getRecommendedNonce(
+      curState.accounts[activeAccount].address
+    );
+    tx.chainId = curState.activeNetwork.chainId;
+    tx.gasLimit = await ethereumTransactions.getTxGasLimit(tx);
+    const resp = await ethereumTransactions.sendFormattedTransaction(tx);
+
+    expect(resp.hash).toBeDefined();
+  });
 });
