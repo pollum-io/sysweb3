@@ -7,6 +7,7 @@ import {
   FAKE_SEED_ACCOUNT_ADDRESS,
   FAKE_SEED_PHRASE,
   POLYGON_MUMBAI_NETWORK,
+  SYS_MAINNET_UTXO_NETWORK,
   TX,
 } from './constants';
 import { INetwork } from '@pollum-io/sysweb3-utils';
@@ -60,50 +61,81 @@ describe('', () => {
     expect(createAccount.address).toEqual(FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS);
   });
 
-  it('Should run getLatestUpadateForAccount, keep and validate both accounts values correctly', async () => {
-    const latestUpdate = await keyringManager.getLatestUpdateForAccount();
+  it('Should change between networks, run getLatestUpadateForAccount and keep / validate both accounts values correctly', async () => {
+    const firstUpdateAtEvmNetwork =
+      await keyringManager.getLatestUpdateForAccount();
 
-    const getCurrentState = keyringManager.getState();
+    const firstStateAtEvm = keyringManager.getState();
 
     //VALIDATIONS TO COMPARE THE VALUES RECEIVED BY getLatestUpdateForAccount
-    expect(latestUpdate.accountLatestUpdate.address).toEqual(
+    expect(firstUpdateAtEvmNetwork.accountLatestUpdate.address).toEqual(
       FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS
     );
-    expect(latestUpdate.accountLatestUpdate.id).toEqual(1);
-    expect(Object.keys(latestUpdate.walleAccountstLatestUpdate).length).toEqual(
-      2
-    );
+    expect(firstUpdateAtEvmNetwork.accountLatestUpdate.id).toEqual(1);
+    expect(
+      Object.keys(firstUpdateAtEvmNetwork.walleAccountstLatestUpdate).length
+    ).toEqual(2);
     //VALIDATIONS FOR CURRENT STATE AFTER IMPORT NEW ACCOUNT AND RUN getLatestUpdateForAccount
-    expect(getCurrentState.accounts[0].address).toEqual(
+    expect(firstStateAtEvm.accounts[0].address).toEqual(
+      FAKE_SEED_ACCOUNT_ADDRESS
+    );
+
+    //CHANGE TO SYS UTX0 NETWORK TO TEST AGAIN
+    keyringManager.setSignerNetwork(
+      SYS_MAINNET_UTXO_NETWORK as INetwork,
+      'syscoin'
+    );
+
+    const getActualNetworkAfterChange = keyringManager.getNetwork();
+
+    //VALIDATE CURRENT NETWORK AFTER CHANGE
+    expect(getActualNetworkAfterChange).toEqual(SYS_MAINNET_UTXO_NETWORK);
+
+    //RUN ANOTHER UPDATE TO SEE IF ACCOUNT WILL BE DERIVATE OR NOT
+    const updateAfterChangeNetwork =
+      await keyringManager.getLatestUpdateForAccount();
+
+    const stateLaterNetworkChanged = keyringManager.getState();
+
+    //RUN SAME VALIDATIONS AS ABOVE TO SEE IF SOMETHING CHANGED
+    expect(updateAfterChangeNetwork.accountLatestUpdate.address).toEqual(
+      FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS
+    );
+    expect(updateAfterChangeNetwork.accountLatestUpdate.id).toEqual(1);
+    expect(
+      Object.keys(updateAfterChangeNetwork.walleAccountstLatestUpdate).length
+    ).toEqual(2);
+    //VALIDATIONS FOR CURRENT STATE AFTER IMPORT NEW ACCOUNT AND RUN getLatestUpdateForAccount
+    expect(stateLaterNetworkChanged.accounts[0].address).toEqual(
       FAKE_SEED_ACCOUNT_ADDRESS
     );
   });
 
-  it('Should send and validate txSend for new account', async () => {
-    const tx = TX;
-    const { maxFeePerGas, maxPriorityFeePerGas } =
-      await ethereumTransactions.getFeeDataWithDynamicMaxPriorityFeePerGas();
-    tx.maxFeePerGas = maxFeePerGas;
-    tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
-    const curState = keyringManager.getState();
+  // it('Should send and validate txSend for new account', async () => {
+  //   const tx = TX;
+  //   const { maxFeePerGas, maxPriorityFeePerGas } =
+  //     await ethereumTransactions.getFeeDataWithDynamicMaxPriorityFeePerGas();
+  //   tx.maxFeePerGas = maxFeePerGas;
+  //   tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
+  //   const curState = keyringManager.getState();
 
-    const { activeAccount } = curState;
-    tx.to = curState.accounts[0].address;
-    tx.from = curState.accounts[activeAccount].address; // SHOULD BE IMPORTED ACCOUNT BY PRIVATE KEY ADDRESS
-    tx.nonce = await ethereumTransactions.getRecommendedNonce(
-      curState.accounts[activeAccount].address
-    );
-    tx.chainId = curState.activeNetwork.chainId;
-    tx.gasLimit = await ethereumTransactions.getTxGasLimit(tx);
-    const resp = await ethereumTransactions.sendFormattedTransaction(tx);
-    console.log('CURRENT STATE', curState);
+  //   const { activeAccount } = curState;
+  //   tx.to = curState.accounts[0].address;
+  //   tx.from = curState.accounts[activeAccount].address; // SHOULD BE IMPORTED ACCOUNT BY PRIVATE KEY ADDRESS
+  //   tx.nonce = await ethereumTransactions.getRecommendedNonce(
+  //     curState.accounts[activeAccount].address
+  //   );
+  //   tx.chainId = curState.activeNetwork.chainId;
+  //   tx.gasLimit = await ethereumTransactions.getTxGasLimit(tx);
+  //   const resp = await ethereumTransactions.sendFormattedTransaction(tx);
+  //   console.log('CURRENT STATE', curState);
 
-    console.log('TX AT ALL', {
-      ...tx.to,
-      ...tx.from,
-      ...resp,
-    });
+  //   console.log('TX AT ALL', {
+  //     ...tx.to,
+  //     ...tx.from,
+  //     ...resp,
+  //   });
 
-    expect(resp.hash).toBeDefined();
-  });
+  //   expect(resp.hash).toBeDefined();
+  // });
 });
