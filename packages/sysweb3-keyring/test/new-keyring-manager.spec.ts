@@ -37,14 +37,14 @@ describe('', () => {
     expect(account).toBeDefined();
   });
 
-  //   // * addNewAccount
-  //   it('should add a new account', async () => {
-  //     const account2 = await keyringManager.addNewAccount(undefined);
-  //     expect(account2.label).toBe('Account 2');
+  // * addNewAccount
+  it('should add a new account', async () => {
+    const account2 = await keyringManager.addNewAccount(undefined);
+    expect(account2.label).toBe('Account 2');
 
-  //     const wallet = keyringManager.getState();
-  //     expect(wallet.activeAccount.id).toBe(1);
-  //   });
+    const wallet = keyringManager.getState();
+    expect(wallet.activeAccount.id).toBe(1);
+  });
 
   //   //* setActiveAccount
   //   it('should set the active account', () => {
