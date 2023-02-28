@@ -298,9 +298,11 @@ export const KeyringManager = (): IKeyringManager => {
   ) => {
     const { network } = getDecryptedVault();
 
-    const balance = await web3Wallet.getBalance(address);
+    const [balance, transactions] = await Promise.all([
+      await web3Wallet.getBalance(address),
+      await web3Wallet.getUserTransactions(address, network),
+    ]);
 
-    const transactions = await web3Wallet.getUserTransactions(address, network);
     // const assets = await web3Wallet.getAssetsByAddress(address, network);
     const assets: IEthereumNftDetails[] = [];
     return {
@@ -382,16 +384,33 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const _getLatestUpdateForWeb3Accounts = async () => {
-    const { wallet: _wallet } = getDecryptedVault();
+    const { wallet: _wallet, network } = getDecryptedVault();
 
     for (const index in Object.values(_wallet.accounts)) {
       const id = Number(index);
       if (_wallet.accounts[id].isImported) {
+        const [balance, transactions] = await Promise.all([
+          await web3Wallet.getBalance(_wallet.accounts[id].address),
+          await web3Wallet.getUserTransactions(
+            _wallet.accounts[id].address,
+            network
+          ),
+        ]);
+
+        const updatedAccount = {
+          ..._wallet.accounts[id],
+          balances: {
+            syscoin: 0,
+            ethereum: balance,
+          },
+          transactions,
+        };
+
         wallet = {
           ...getDecryptedVault().wallet,
           accounts: {
             ...getDecryptedVault().wallet.accounts,
-            [id]: _wallet.accounts[id],
+            [id]: updatedAccount,
           },
         };
 
