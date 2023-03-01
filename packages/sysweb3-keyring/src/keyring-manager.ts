@@ -177,7 +177,11 @@ export const KeyringManager = (): IKeyringManager => {
 
     const { hash } = storage.get('vault-keys');
 
-    const importedAccountValue = web3Wallet.importAccount(`0x${privKey}`);
+    //Validate if the private key value that we receive already starts with 0x or not
+    const validatedPrivateKey =
+      privKey.slice(0, 2) === '0x' ? privKey : `0x${privKey}`;
+
+    const importedAccountValue = web3Wallet.importAccount(validatedPrivateKey);
 
     const { address, publicKey, privateKey } = importedAccountValue;
 
