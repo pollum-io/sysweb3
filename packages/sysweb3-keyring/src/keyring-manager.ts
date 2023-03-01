@@ -185,6 +185,16 @@ export const KeyringManager = (): IKeyringManager => {
 
     const { address, publicKey, privateKey } = importedAccountValue;
 
+    //Validate if account already exists
+    const accountAlreadyExists = Object.values(
+      accounts as IKeyringAccountState[]
+    ).some((account) => account.address === address);
+
+    if (accountAlreadyExists)
+      throw new Error(
+        'Account already exists, try again with another Private Key.'
+      );
+
     const [ethereumBalance, userTransactions] = await Promise.all([
       web3Wallet.getBalance(address),
       web3Wallet.getUserTransactions(address, activeNetwork),
@@ -210,6 +220,27 @@ export const KeyringManager = (): IKeyringManager => {
     } as IKeyringAccountState;
 
     return newAccountValues;
+  };
+
+  const _getLatestUpdateForPrivateKeyAccount = async (
+    account: IKeyringAccountState,
+    network: INetwork
+  ) => {
+    const [balance, transactions] = await Promise.all([
+      await web3Wallet.getBalance(account.address),
+      await web3Wallet.getUserTransactions(account.address, network),
+    ]);
+
+    const updatedAccount = {
+      ...account,
+      balances: {
+        syscoin: 0,
+        ethereum: balance,
+      },
+      transactions,
+    } as IKeyringAccountState;
+
+    return updatedAccount;
   };
 
   const _clearWallet = () => {
@@ -393,22 +424,10 @@ export const KeyringManager = (): IKeyringManager => {
     for (const index in Object.values(_wallet.accounts)) {
       const id = Number(index);
       if (_wallet.accounts[id].isImported) {
-        const [balance, transactions] = await Promise.all([
-          await web3Wallet.getBalance(_wallet.accounts[id].address),
-          await web3Wallet.getUserTransactions(
-            _wallet.accounts[id].address,
-            network
-          ),
-        ]);
-
-        const updatedAccount = {
-          ..._wallet.accounts[id],
-          balances: {
-            syscoin: 0,
-            ethereum: balance,
-          },
-          transactions,
-        };
+        const updatedAccount = await _getLatestUpdateForPrivateKeyAccount(
+          _wallet.accounts[id],
+          network
+        );
 
         wallet = {
           ...getDecryptedVault().wallet,
