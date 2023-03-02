@@ -100,7 +100,7 @@ export class NewKeyringManager {
     const isSyscoinChain = this.isSyscoinChain(network);
 
     if (isSyscoinChain) {
-      return this.addNewAccountToSyscoinChain(label, network);
+      return this.addNewAccountToSyscoinChain(network, label);
     }
 
     if (!mnemonic) {
@@ -382,10 +382,12 @@ export class NewKeyringManager {
       await this.setDerivedSysAccounts(account.id);
     }
 
-    if (this.hd && decryptedWallet.activeAccount.id > -1)
+    if (this.hd && decryptedWallet.activeAccount.id > -1) {
       this.hd.setAccountIndex(decryptedWallet.activeAccount.id);
+    }
 
     const xpub = this.getAccountXpub();
+
     const formattedBackendAccount = await this.getFormattedBackendAccount({
       url: network.url,
       xpub,
@@ -543,7 +545,6 @@ export class NewKeyringManager {
   private async addNewAccountToSyscoinChain(network: any, label?: string) {
     if (!this.hd.mnemonic) {
       const { _hd } = getSigners();
-
       this.hd = _hd;
     }
 
