@@ -46,70 +46,70 @@ describe('', () => {
     expect(wallet.activeAccount.id).toBe(1);
   });
 
-  //   //* setActiveAccount
-  //   it('should set the active account', () => {
-  //     keyringManager.setActiveAccount(0);
+  //* setActiveAccount
+  it('should set the active account', () => {
+    keyringManager.setActiveAccount(0);
 
-  //     const wallet = keyringManager.getState();
-  //     expect(wallet.activeAccount.id).toBe(0);
-  //   });
+    const wallet = keyringManager.getState();
+    expect(wallet.activeAccount.id).toBe(0);
+  });
 
-  //   //* getAccountById
-  //   it('should get an account by id', () => {
-  //     const id = 1;
-  //     const account1 = keyringManager.getAccountById(id);
+  //* getAccountById
+  it('should get an account by id', () => {
+    const id = 1;
+    const account1 = keyringManager.getAccountById(id);
 
-  //     expect(account1).toBeDefined();
-  //     expect(account1.id).toBe(id);
-  //   });
+    expect(account1).toBeDefined();
+    expect(account1.id).toBe(id);
+  });
 
   //   //* getPrivateKeyByAccountId
-  //   it('should get an account private key by id', () => {
-  //     const id = 1;
-  //     const privateKey = keyringManager.getPrivateKeyByAccountId(id);
+  it('should get an account private key by id', () => {
+    const id = 1;
+    const privateKey = keyringManager.getPrivateKeyByAccountId(id);
 
-  //     expect(privateKey).toBeDefined();
-  //     expect(privateKey.length).toBeGreaterThan(50);
-  //   });
+    expect(privateKey).toBeDefined();
+    expect(privateKey.length).toBeGreaterThan(50);
+  });
 
-  //   it('should be undefined when pass invalid account id', () => {
-  //     const invalidId = 3;
-  //     const wallet = keyringManager.getState();
-  //     const invalidAccount = wallet.accounts[invalidId];
-  //     expect(invalidAccount).toBeUndefined();
-  //   });
+  it('should be undefined when pass invalid account id', () => {
+    const invalidId = 3;
+    const wallet = keyringManager.getState();
+    const invalidAccount = wallet.accounts[invalidId];
+    expect(invalidAccount).toBeUndefined();
+  });
 
   //   //* getEncryptedXprv
-  //   it('should get the encrypted private key', async () => {
-  //     const xprv = keyringManager.getEncryptedXprv();
+  it('should get the encrypted private key', async () => {
+    const xprv = keyringManager.getEncryptedXprv();
 
-  //     expect(xprv).toBeDefined();
-  //     expect(xprv.substring(1, 4)).not.toEqual('prv');
-  //   });
+    expect(xprv).toBeDefined();
+    expect(xprv.substring(1, 4)).not.toEqual('prv');
+  });
 
   //   //* getAccountXpub
-  //   it('should get the public key', async () => {
-  //     const xpub = keyringManager.getAccountXpub();
+  it('should get the public key', async () => {
+    const xpub = keyringManager.getAccountXpub();
 
-  //     expect(xpub).toBeDefined();
-  //     expect(xpub.substring(1, 4)).toEqual('pub');
-  //   });
+    expect(xpub).toBeDefined();
+    expect(xpub.substring(1, 4)).toEqual('pub');
+  });
 
   //   //* getSeed
-  //   it('should get the seed', async () => {
-  //     const seed = keyringManager.getSeed(FAKE_PASSWORD);
-  //     expect(seed).toBe(FAKE_SEED_PHRASE);
-  //     expect(() => {
-  //       keyringManager.getSeed('wrongp@ss123');
-  //     }).toThrow('Invalid password.');
-  //   });
+  it('should get the seed', async () => {
+    const seed = keyringManager.getSeed(FAKE_PASSWORD);
+    expect(seed).toBe(FAKE_SEED_PHRASE);
+    expect(() => {
+      keyringManager.getSeed('wrongp@ss123');
+    }).toThrow('Invalid password.');
+  });
 
   //   //* getLatestUpdateForAccount
-  //   it('should get an updated account', async () => {
-  //     const account = await keyringManager.getLatestUpdateForAccount();
+  it('should get an updated account', async () => {
+    const account = await keyringManager.getLatestUpdateForAccount();
 
-  //     expect(account).toBeDefined();
-  //   });
+    expect(account).toBeDefined();
+  });
 
   //   // -----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------
 

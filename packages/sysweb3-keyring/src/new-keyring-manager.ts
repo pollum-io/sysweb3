@@ -26,6 +26,8 @@ import {
   SyscoinHDSigner,
 } from '@pollum-io/sysweb3-utils';
 
+const ACCOUNT_ZERO = 0;
+
 export interface ISysAccount {
   xprv?: string;
   xpub: string;
@@ -79,6 +81,10 @@ export class NewKeyringManager {
     this.ethereumTransaction = EthereumTransactions();
     this.syscoinTransaction = SyscoinTransactions();
   }
+
+  /**
+   * PUBLIC METHODS
+   */
 
   public addNewAccount = async (label?: string) => {
     const { network, mnemonic } = getDecryptedVault();
@@ -152,6 +158,94 @@ export class NewKeyringManager {
     return vault;
   };
 
+  public setActiveAccount = async (accountId: number) => {
+    const { wallet: _wallet } = getDecryptedVault();
+
+    this.wallet = {
+      ..._wallet,
+      activeAccount: accountId,
+    };
+
+    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
+  };
+
+  public getAccountById = (id: number): IKeyringAccountState => {
+    const accounts = Object.values(this.wallet.accounts);
+
+    const account = accounts.find((account) => account.id === id);
+
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    return account;
+  };
+
+  public getPrivateKeyByAccountId = (id: number): string => {
+    const account = Object.values(this.wallet.accounts).find(
+      (account) => account.id === id
+    );
+
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    return account.xprv;
+  };
+
+  public getEncryptedXprv = () =>
+    CryptoJS.AES.encrypt(
+      this.getEncryptedPrivateKeyFromHd(),
+      this.hash
+    ).toString();
+
+  public getSeed = (pwd: string) => {
+    if (!this.checkPassword(pwd)) {
+      throw new Error('Invalid password.');
+    }
+
+    return this.getDecryptedMnemonic();
+  };
+
+  public getLatestUpdateForAccount = async () => {
+    const vault = getDecryptedVault();
+
+    this.wallet = vault.wallet;
+
+    setEncryptedVault({ ...vault, wallet: this.wallet });
+
+    const isSyscoinChain =
+      Boolean(
+        this.wallet.networks.syscoin[this.wallet.activeNetwork.chainId]
+      ) && this.wallet.activeNetwork.url.includes('blockbook');
+
+    const latestUpdate = isSyscoinChain
+      ? await this.getLatestUpdateForSysAccount()
+      : await this.getLatestUpdateForWeb3Accounts();
+
+    const { wallet: _updatedWallet } = getDecryptedVault();
+
+    return {
+      accountLatestUpdate: latestUpdate,
+      walleAccountstLatestUpdate: _updatedWallet.accounts,
+    };
+  };
+
+  public getAccountXpub = (): string => this.hd.getAccountXpub();
+  public isSeedValid = (seedPhrase: string) => validateMnemonic(seedPhrase);
+  public createSeed = () => this.setSeed(generateMnemonic());
+  public getState = () => this.wallet;
+
+  /**
+   * PRIVATE METHODS
+   */
+
+  /**
+   *
+   * @param password
+   * @param salt
+   * @returns hash: string
+   */
   private encryptSHA512 = (password: string, salt: string) => {
     this.hash = crypto
       .createHmac('sha512', salt)
@@ -185,16 +279,6 @@ export class NewKeyringManager {
 
     return account;
   };
-
-  public isSeedValid = (seedPhrase: string) => validateMnemonic(seedPhrase);
-  public createSeed = () => this.setSeed(generateMnemonic());
-  public getState = () => this.wallet;
-
-  private getEncryptedXprv = () =>
-    CryptoJS.AES.encrypt(
-      this.getEncryptedPrivateKeyFromHd(),
-      this.hash
-    ).toString();
 
   private getEncryptedPrivateKeyFromHd = () =>
     this.hd.Signer.accounts[this.hd.Signer.accountIndex].getAccountPrivateKey();
@@ -515,10 +599,102 @@ export class NewKeyringManager {
     return CryptoJS.AES.decrypt(mnemonic, hash).toString(CryptoJS.enc.Utf8);
   };
 
+  private getLatestUpdateForWeb3Accounts = async () => {
+    const { wallet: _wallet } = getDecryptedVault();
+
+    for (const index in Object.values(_wallet.accounts)) {
+      const id = Number(index);
+      const label = _wallet.accounts[id].label;
+      await this.setDerivedWeb3Accounts(id, label);
+    }
+
+    const { wallet: _updatedWallet } = getDecryptedVault();
+
+    const { accounts, activeAccount } = _updatedWallet;
+
+    if (accounts[activeAccount.id] !== activeAccount) {
+      this.wallet = {
+        ..._updatedWallet,
+        activeAccount: accounts[activeAccount.id],
+      };
+
+      setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
+    }
+
+    return getDecryptedVault().wallet.activeAccount;
+  };
+
+  private setDerivedWeb3Accounts = async (id: number, label: string) => {
+    const seed = await mnemonicToSeed(this.getDecryptedMnemonic());
+    const privateRoot = hdkey.fromMasterSeed(seed);
+    const derivedCurrentAccount = privateRoot.derivePath(
+      `m/44'/60'/0'/0/${String(id)}`
+    );
+    const newWallet = derivedCurrentAccount.getWallet();
+    const address = newWallet.getAddressString();
+    const xprv = newWallet.getPrivateKeyString();
+    const xpub = newWallet.getPublicKeyString();
+
+    const { hash } = this.storage.get('vault-keys');
+
+    const basicAccountInfo = await this.getBasicWeb3AccountInfo(
+      address,
+      id,
+      label
+    );
+    const createdAccount = {
+      address,
+      xpub,
+      xprv: CryptoJS.AES.encrypt(xprv, hash).toString(),
+      ...basicAccountInfo,
+    };
+
+    this.wallet = {
+      ...getDecryptedVault().wallet,
+      accounts: {
+        ...getDecryptedVault().wallet.accounts,
+        [id]: createdAccount,
+      },
+    };
+
+    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
+
+    if (id === ACCOUNT_ZERO) {
+      const { address, privateKey, publicKey } = this.web3Wallet.importAccount(
+        this.getDecryptedMnemonic()
+      );
+
+      const basicAccountInfo = await this.getBasicWeb3AccountInfo(
+        address,
+        ACCOUNT_ZERO,
+        label
+      );
+      const account = {
+        xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
+        xpub: publicKey,
+        address,
+        ...basicAccountInfo,
+      };
+
+      this.wallet = {
+        ...getDecryptedVault().wallet,
+        accounts: {
+          ...getDecryptedVault().wallet.accounts,
+          [ACCOUNT_ZERO]: account,
+        },
+      };
+
+      setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
+
+      return account;
+    }
+
+    return createdAccount;
+  };
+
   private isSyscoinChain = (network: any) =>
     Boolean(this.wallet.networks.syscoin[network.chainId]) &&
     network.url.includes('blockbook');
 
   private generateSalt = () => crypto.randomBytes(16).toString('hex');
-  private getAccountXpub = (): string => this.hd.getAccountXpub();
 }
