@@ -13,6 +13,7 @@ export const initialActiveAccountState: IKeyringAccountState = {
   xpub: '',
   transactions: [],
   assets: [],
+  isImported: false,
 };
 
 export const initialNetworksState = {
@@ -89,7 +90,7 @@ export const initialWalletState: IWalletState = {
   accounts: {
     [initialActiveAccountState.id]: initialActiveAccountState,
   },
-  activeAccount: initialActiveAccountState,
+  activeAccount: 0,
   networks: initialNetworksState,
   activeNetwork: {
     chainId: 57,

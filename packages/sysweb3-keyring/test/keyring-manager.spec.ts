@@ -5,7 +5,7 @@ import { KeyringManager } from '../src/keyring-manager';
 import { EthereumTransactions } from '../src/transactions/ethereum';
 import {
   FAKE_PASSWORD,
-  FAKE_SEED_PHRASE,
+  PEACE_SEED_PHRASE,
   SYS_EVM_NETWORK,
   FAKE_ADDRESS,
   TX,
@@ -21,7 +21,7 @@ describe('', () => {
   //* validateSeed
   it('should validate a seed / add mnemonic', () => {
     const wrong = keyringManager.validateSeed('invalid seed');
-    const right = keyringManager.validateSeed(String(FAKE_SEED_PHRASE));
+    const right = keyringManager.validateSeed(String(PEACE_SEED_PHRASE));
 
     expect(wrong).toBe(false);
     expect(right).toBe(true);
@@ -47,7 +47,7 @@ describe('', () => {
   });
 
   it('should overwrite current seed', () => {
-    keyringManager.validateSeed(String(FAKE_SEED_PHRASE));
+    keyringManager.validateSeed(String(PEACE_SEED_PHRASE));
     const seed = keyringManager.getDecryptedMnemonic() as string;
     // expect to have 12 words
     expect(seed).toBeDefined();
@@ -67,7 +67,8 @@ describe('', () => {
     expect(account2.label).toBe('Account 2');
 
     const wallet = keyringManager.getState();
-    expect(wallet.activeAccount.id).toBe(1);
+    const { activeAccount } = wallet;
+    expect(wallet.accounts[activeAccount].id).toBe(1);
   });
 
   //* setActiveAccount
@@ -75,7 +76,8 @@ describe('', () => {
     keyringManager.setActiveAccount(0);
 
     const wallet = keyringManager.getState();
-    expect(wallet.activeAccount.id).toBe(0);
+    const { activeAccount } = wallet;
+    expect(wallet.accounts[activeAccount].id).toBe(0);
   });
 
   //* getAccountById
@@ -122,7 +124,7 @@ describe('', () => {
   //* getSeed
   it('should get the seed', async () => {
     const seed = keyringManager.getSeed(FAKE_PASSWORD);
-    expect(seed).toBe(FAKE_SEED_PHRASE);
+    expect(seed).toBe(PEACE_SEED_PHRASE);
     expect(() => {
       keyringManager.getSeed('wrongp@ss123');
     }).toThrow('Invalid password.');
@@ -196,9 +198,10 @@ describe('', () => {
     tx.maxFeePerGas = maxFeePerGas;
     tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
     const curState = await keyringManager.getState();
-    tx.from = curState.activeAccount.address;
+    const { activeAccount } = curState;
+    tx.from = curState.accounts[activeAccount].address;
     tx.nonce = await ethereumTransactions.getRecommendedNonce(
-      curState.activeAccount.address
+      curState.accounts[activeAccount].address
     );
     tx.chainId = curState.activeNetwork.chainId;
     tx.gasLimit = await ethereumTransactions.getTxGasLimit(tx);

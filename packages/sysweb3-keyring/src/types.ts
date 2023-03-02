@@ -137,6 +137,10 @@ export interface IKeyringManager {
   getPrivateKeyByAccountId: (id: number) => string;
   getSeed: (password: string) => string;
   getState: () => IWalletState;
+  handleImportAccountByPrivateKey: (
+    privKey: string,
+    label?: string
+  ) => Promise<IKeyringAccountState>;
   isUnlocked: () => boolean;
   login: (password: string) => Promise<IKeyringAccountState>;
   logout: () => void;
@@ -168,7 +172,7 @@ export interface IWalletState {
   accounts: {
     [id: number]: IKeyringAccountState;
   };
-  activeAccount: IKeyringAccountState;
+  activeAccount: number;
   networks: {
     [INetworkType.Ethereum]: {
       [chainId: number | string]: INetwork;
@@ -204,6 +208,7 @@ export interface IKeyringAccountState {
   xpub: string;
   transactions: any;
   assets: any;
+  isImported: boolean;
 }
 
 export interface ISyscoinBackendAccount {

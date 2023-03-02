@@ -48,8 +48,9 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   const getDecryptedPrivateKey = () => {
     const { wallet: _wallet } = getDecryptedVault();
     const storageValue = storage.get('vault-keys');
+    const { activeAccount } = _wallet;
 
-    const accountXprv = _wallet.activeAccount.xprv;
+    const accountXprv = _wallet.accounts[activeAccount].xprv;
 
     const decryptedPrivateKey = CryptoJS.AES.decrypt(
       accountXprv,
@@ -57,7 +58,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     ).toString(CryptoJS.enc.Utf8);
 
     return {
-      address: _wallet.activeAccount.address,
+      address: _wallet.accounts[activeAccount].address,
       decryptedPrivateKey,
     };
   };
@@ -252,6 +253,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   const sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
+    const { network } = getDecryptedVault();
     const { decryptedPrivateKey } = getDecryptedPrivateKey();
     const { wallet: _wallet, network: _activeNetwork } = getDecryptedVault();
 
@@ -265,7 +267,11 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     try {
       const transaction = await wallet.sendTransaction(tx);
 
-      return await getFormattedTransactionResponse(web3Provider, transaction);
+      return await getFormattedTransactionResponse(
+        web3Provider,
+        transaction,
+        network
+      );
     } catch (error) {
       throw error;
     }
@@ -288,6 +294,8 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
     // same as sendFormattedTransaction function
     setActiveNetwork(_activeNetwork);
+
+    const { network } = getDecryptedVault();
 
     const wallet = new ethers.Wallet(decryptedPrivateKey, web3Provider);
 
@@ -326,7 +334,11 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     try {
       const transaction = await wallet.sendTransaction(tx);
 
-      return await getFormattedTransactionResponse(web3Provider, transaction);
+      return await getFormattedTransactionResponse(
+        web3Provider,
+        transaction,
+        network
+      );
     } catch (error) {
       throw error;
     }
