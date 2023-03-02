@@ -169,9 +169,10 @@ export class NewKeyringManager {
   public setActiveAccount = async (accountId: number) => {
     const { wallet: _wallet } = getDecryptedVault();
 
+    //todo adjust activeAccount to be just the id
     this.wallet = {
       ..._wallet,
-      activeAccount: accountId,
+      activeAccount: _wallet.accounts[accountId],
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });

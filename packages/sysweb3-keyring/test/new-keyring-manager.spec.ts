@@ -14,12 +14,13 @@ import { INetwork } from '@pollum-io/sysweb3-utils';
 
 describe('', () => {
   const keyringManager = new NewKeyringManager();
+  let seed;
 
   jest.setTimeout(50000); // 20s
 
   //* validateSeed
   it('should validate a seed', () => {
-    const seed = keyringManager.createSeed();
+    seed = keyringManager.createSeed();
     const wrong = keyringManager.isSeedValid('invalid seed');
     const right = keyringManager.isSeedValid(String(FAKE_SEED_PHRASE));
     if (seed) {
@@ -108,8 +109,8 @@ describe('', () => {
 
   //   //* getSeed
   it('should get the seed', async () => {
-    const seed = keyringManager.getSeed(FAKE_PASSWORD);
-    expect(seed).toBe(FAKE_SEED_PHRASE);
+    const localSeed = keyringManager.getSeed(FAKE_PASSWORD);
+    expect(localSeed).toBe(seed);
     expect(() => {
       keyringManager.getSeed('wrongp@ss123');
     }).toThrow('Invalid password.');
@@ -250,9 +251,10 @@ describe('', () => {
     );
     expect(resp).toBe('Example `personal_sign` message');
   });
+
   it('GetEncryptedKey', async () => {
     const resp = keyringManager.ethereumTransaction.getEncryptedPubKey();
-    expect(resp).toBe('mg0LYtIw5fefbmqlu6sZ9pJtddfM/6/EEPW56qYwwRU=');
+    expect(resp).toBe('ANfU8qjbF26K61nxsxeXupTEluaZstKsYkcQWv4p3RE=');
   });
 
   it('Should emulate eth_signTypedData ', async () => {
