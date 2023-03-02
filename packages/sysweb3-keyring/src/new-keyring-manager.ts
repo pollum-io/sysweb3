@@ -18,15 +18,23 @@ import { initialWalletState } from './initial-state';
 import { EthereumTransactions, SyscoinTransactions } from './transactions';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
+  getSysRpc,
+  jsonRpcRequest,
+  setActiveNetwork,
+  validateSysRpc,
+} from '@pollum-io/sysweb3-network';
+import {
   getAsset,
   getDecryptedVault,
   getSigners,
   IEthereumNftDetails,
+  INetwork,
   setEncryptedVault,
   SyscoinHDSigner,
 } from '@pollum-io/sysweb3-utils';
 
 const ACCOUNT_ZERO = 0;
+const SYSCOIN_CHAIN = 'syscoin';
 
 export interface ISysAccount {
   xprv?: string;
@@ -231,10 +239,70 @@ export class NewKeyringManager {
     };
   };
 
+  // todo: ask why do we need to return account on setting signer network
+  public setSignerNetwork = async (
+    network: INetwork,
+    chain: string
+  ): Promise<IKeyringAccountState> => {
+    const { wallet: _wallet } = getDecryptedVault();
+
+    const networksByChain = _wallet.networks[chain];
+
+    this.wallet = {
+      ..._wallet,
+      networks: {
+        ..._wallet.networks,
+        [chain]: {
+          ...networksByChain,
+          [network.chainId]: network,
+        },
+      },
+      activeNetwork: network,
+    };
+
+    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
+
+    //todo: ask why do we need to call setSignerByChain twice?
+    await this.setSignerByChain(network, chain);
+
+    if (chain === 'syscoin') {
+      const { rpc, isTestnet } = await this.setSignerByChain(network, chain);
+
+      setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
+    }
+
+    const account = await this.getAccountForNetwork({
+      isSyscoinChain: chain === 'syscoin',
+    });
+
+    this.wallet = {
+      ...this.wallet,
+      accounts: {
+        ...this.wallet.accounts,
+        [account.id]: account,
+      },
+      activeAccount: account,
+    };
+
+    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
+
+    return account;
+  };
+
+  public forgetMainWallet = (pwd: string) => {
+    if (!this.checkPassword(pwd)) {
+      throw new Error('Invalid password');
+    }
+
+    this.clearTemporaryLocalKeys();
+  };
+
   public getAccountXpub = (): string => this.hd.getAccountXpub();
   public isSeedValid = (seedPhrase: string) => validateMnemonic(seedPhrase);
   public createSeed = () => this.setSeed(generateMnemonic());
+  //todo: get state returns wallet, maybe we can improve this naming
   public getState = () => this.wallet;
+  public getNetwork = () => this.wallet.activeNetwork;
 
   /**
    * PRIVATE METHODS
@@ -690,6 +758,109 @@ export class NewKeyringManager {
     }
 
     return createdAccount;
+  };
+
+  private setSignerByChain = async (
+    network: INetwork,
+    chain: string
+  ): Promise<{ rpc: any; isTestnet: boolean }> => {
+    setEncryptedVault({
+      ...getDecryptedVault(),
+      network,
+    });
+    if (chain === SYSCOIN_CHAIN) {
+      const response = await validateSysRpc(network.url);
+
+      if (!response.valid) throw new Error('Invalid network');
+
+      const rpc = network.default ? null : await getSysRpc(network);
+
+      return {
+        rpc,
+        isTestnet: response.chain === 'test',
+      };
+    }
+    const newNetwork =
+      getDecryptedVault().wallet.networks.ethereum[network.chainId];
+
+    if (!newNetwork) throw new Error('Network not found');
+
+    await jsonRpcRequest(network.url, 'eth_chainId');
+
+    setActiveNetwork(newNetwork);
+    setEncryptedVault({
+      ...getDecryptedVault(),
+      isTestnet: false,
+    });
+    return {
+      rpc: null,
+      isTestnet: false,
+    };
+  };
+
+  private getAccountForNetwork = async ({
+    isSyscoinChain,
+  }: {
+    isSyscoinChain: boolean;
+  }) => {
+    const { network, wallet: _wallet } = getDecryptedVault();
+
+    this.wallet = {
+      ..._wallet,
+      activeNetwork: network,
+    };
+
+    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
+
+    if (isSyscoinChain) {
+      const vault = getDecryptedVault();
+
+      setEncryptedVault({ ...vault, network });
+
+      const { _hd } = getSigners();
+
+      this.hd = _hd;
+
+      const xprv = this.getEncryptedXprv();
+      const updatedAccountInfo = await this.getLatestUpdateForSysAccount();
+      const account = this.getInitialAccountData({
+        label: updatedAccountInfo.label,
+        signer: this.hd,
+        sysAccount: updatedAccountInfo,
+        xprv,
+      });
+
+      const {
+        wallet: { activeAccount },
+      } = vault;
+
+      if (this.hd && activeAccount.id > -1)
+        this.hd.setAccountIndex(activeAccount.id);
+
+      return account;
+    }
+
+    //todo: a fn that return another one sounds a little bit weird to me
+    return await this.getLatestUpdateForWeb3Accounts();
+  };
+
+  private clearTemporaryLocalKeys = () => {
+    this.wallet = initialWalletState;
+
+    setEncryptedVault({
+      mnemonic: '',
+      wallet: this.wallet,
+      network: this.wallet.activeNetwork,
+    });
+
+    this.logout();
+  };
+
+  private logout = () => {
+    this.hd = new sys.utils.HDSigner('');
+
+    this.memPassword = '';
+    this.memMnemonic = '';
   };
 
   private isSyscoinChain = (network: any) =>
