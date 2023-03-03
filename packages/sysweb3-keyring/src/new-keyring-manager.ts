@@ -36,6 +36,7 @@ import {
 const ACCOUNT_ZERO = 0;
 const SYSCOIN_CHAIN = 'syscoin';
 
+//TODO: adjust _wallet
 export interface ISysAccount {
   xprv?: string;
   xpub: string;
@@ -266,14 +267,14 @@ export class NewKeyringManager {
     //todo: ask why do we need to call setSignerByChain twice?
     await this.setSignerByChain(network, chain);
 
-    if (chain === 'syscoin') {
+    if (chain === SYSCOIN_CHAIN) {
       const { rpc, isTestnet } = await this.setSignerByChain(network, chain);
 
       setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
     }
 
     const account = await this.getAccountForNetwork({
-      isSyscoinChain: chain === 'syscoin',
+      isSyscoinChain: chain === SYSCOIN_CHAIN,
     });
 
     this.wallet = {
