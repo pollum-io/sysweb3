@@ -1,26 +1,8 @@
-// import Web3 from 'web3';
-
 import { Web3Accounts } from '../src/eth-manager';
-import { FAKE_ADDRESS, FAKE_PRIV_KEY, FAKE_SEED_PHRASE } from './constants';
-// import {
-//   web3Provider,
-//   setActiveNetwork,
-// } from '@pollum-io/sysweb3-network';
+import { FAKE_ADDRESS, FAKE_PRIV_KEY, PEACE_SEED_PHRASE } from './constants';
 
 describe('Web3Accounts', () => {
-  const {
-    getBalance,
-    // createAccount,
-    importAccount,
-    // getNftsByAddress,
-    // getTokens,
-  } = Web3Accounts();
-
-  //* getBalance
-  it('should get an account balance', async () => {
-    const balance = await getBalance(FAKE_ADDRESS);
-    expect(typeof balance).toBe('number');
-  });
+  const { getBalance, importAccount } = Web3Accounts();
 
   it('should import an account using a private key', async () => {
     const importedAccount = importAccount(FAKE_PRIV_KEY);
@@ -31,10 +13,16 @@ describe('Web3Accounts', () => {
 
   //* importAccount
   it('should import an account using a seed phrase (mnemonic)', async () => {
-    const importedAccount = importAccount(FAKE_SEED_PHRASE as string);
+    const importedAccount = importAccount(PEACE_SEED_PHRASE as string);
 
     expect(importedAccount).toBeTruthy();
     expect(importedAccount.address).toBeTruthy();
+  });
+
+  //* getBalance
+  it('should get an account balance', async () => {
+    const balance = await getBalance(FAKE_ADDRESS);
+    expect(typeof balance).toBe('number');
   });
 
   // //* getNftsByAddress

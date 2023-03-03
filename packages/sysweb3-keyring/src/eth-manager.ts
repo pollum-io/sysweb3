@@ -14,6 +14,7 @@ import {
   IEthereumNftDetails,
   IEtherscanNFT,
   INetwork,
+  getDecryptedVault,
 } from '@pollum-io/sysweb3-utils';
 
 export interface IWeb3Accounts {
@@ -48,6 +49,9 @@ export const Web3Accounts = (): IWeb3Accounts => {
   const createAccount = (privateKey: string) => new ethers.Wallet(privateKey);
 
   const getBalance = async (address: string) => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
     try {
       const balance = await web3Provider.getBalance(address);
       const formattedBalance = ethers.utils.formatEther(balance);
@@ -84,6 +88,10 @@ export const Web3Accounts = (): IWeb3Accounts => {
     isSupported: boolean,
     apiUrl: string
   ) => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
     const etherscanQuery = `?module=account&action=tokennfttx&address=${address}&page=1&offset=100&&startblock=0&endblock=99999999&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`;
 
     const apiUrlQuery = `?module=account&action=tokentx&address=${address}`;
@@ -129,6 +137,10 @@ export const Web3Accounts = (): IWeb3Accounts => {
     isSupported: boolean,
     apiUrl: string
   ) => {
+    const { network: _activeNetwork } = getDecryptedVault();
+
+    setActiveNetwork(_activeNetwork);
+
     const etherscanQuery = `?module=account&action=tokentx&address=${address}&page=1&offset=100&&startblock=0&endblock=99999999&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`;
 
     const apiUrlQuery = `?module=account&action=tokenlist&address=${address}`;
@@ -223,12 +235,12 @@ export const Web3Accounts = (): IWeb3Accounts => {
     return tokensTransfers;
   };
 
-  const importAccount = (mnemonic: string) => {
-    if (ethers.utils.isHexString(mnemonic)) {
-      return new ethers.Wallet(mnemonic);
+  const importAccount = (mnemonicOrPrivKey: string) => {
+    if (ethers.utils.isHexString(mnemonicOrPrivKey)) {
+      return new ethers.Wallet(mnemonicOrPrivKey);
     }
 
-    const { privateKey } = ethers.Wallet.fromMnemonic(mnemonic);
+    const { privateKey } = ethers.Wallet.fromMnemonic(mnemonicOrPrivKey);
 
     const account = new ethers.Wallet(privateKey);
 
@@ -315,7 +327,11 @@ export const Web3Accounts = (): IWeb3Accounts => {
         const history = await Promise.all(
           txHistory.map(
             async (tx) =>
-              await getFormattedTransactionResponse(etherscanProvider, tx)
+              await getFormattedTransactionResponse(
+                etherscanProvider,
+                tx,
+                network
+              )
           )
         );
 
@@ -332,7 +348,7 @@ export const Web3Accounts = (): IWeb3Accounts => {
         const txs = await Promise.all(
           result.map(
             async (tx: TransactionResponse) =>
-              await getFormattedTransactionResponse(web3Provider, tx)
+              await getFormattedTransactionResponse(web3Provider, tx, network)
           )
         );
 

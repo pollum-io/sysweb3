@@ -1,6 +1,6 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { TypedData, TypedMessage } from 'eth-sig-util';
-import { ethers } from 'ethers';
+import { ethers, BigNumber, BigNumberish } from 'ethers';
 import {
   EncryptedKeystoreV3Json,
   Sign,
@@ -11,7 +11,6 @@ import {
 import {
   INetwork,
   INetworkType,
-  INewNFT,
   ITokenMint,
   ITokenSend,
   ITokenUpdate,
@@ -54,7 +53,6 @@ export type SimpleTransactionRequest = {
 export declare type Version = 'V1' | 'V2' | 'V3' | 'V4';
 
 export interface IEthereumTransactions {
-  getTransactionCount: (address: string) => Promise<number>;
   signTypedData: (addr: string, typedData: any, version: Version) => string;
   ethSign: (params: string[]) => string;
   signPersonalMessage: (params: string[]) => string;
@@ -85,17 +83,23 @@ export interface IEthereumTransactions {
   getGasOracle: () => Promise<any>;
   getEncryptedPubKey: () => string;
   toBigNumber: (aBigNumberish: string | number) => ethers.BigNumber;
+  sendSignedErc20Transaction: ({
+    networkUrl,
+    receiver,
+    tokenAddress,
+    tokenAmount,
+  }: ISendSignedErcTransactionProps) => Promise<IResponseFromSendErcSignedTransaction>;
+
+  sendSignedErc721Transaction: ({
+    networkUrl,
+    receiver,
+    tokenAddress,
+    tokenId,
+  }: ISendSignedErcTransactionProps) => Promise<IResponseFromSendErcSignedTransaction>;
 }
 
 export interface ISyscoinTransactions {
-  confirmMintNFT: (transaction: ITokenMint) => Promise<ITxid>;
-  confirmNftCreation: () => {
-    create: (
-      tx: INewNFT
-    ) => Promise<{ parent: { guid: string; txid: string } }>;
-    mint: (tx: INewNFT, guid: string) => Promise<ITxid>;
-    update: (tx: INewNFT, guid: string) => Promise<ITxid>;
-  };
+  confirmNftCreation: (tx: any) => { success: boolean };
   confirmTokenMint: (transaction: ITokenMint) => Promise<ITxid>;
   confirmTokenCreation: (transaction: any) => Promise<{
     transactionData: any;
@@ -103,6 +107,7 @@ export interface ISyscoinTransactions {
     confirmations: number;
     guid: string;
   }>;
+  transferAssetOwnership: (transaction: any) => Promise<ITxid>;
   confirmUpdateToken: (transaction: ITokenUpdate) => Promise<ITxid>;
   getRecommendedFee: (explorerUrl: string) => Promise<number>;
   sendTransaction: (transaction: ITokenSend) => Promise<ITxid>;
@@ -122,6 +127,7 @@ export interface IKeyringManager {
   getAccounts: () => IKeyringAccountState[];
   getAccountById: (id: number) => IKeyringAccountState;
   getAccountXpub: () => string;
+  getChangeAddress: (accountId: number) => string;
   getDecryptedMnemonic: () => string;
   getDecryptedPrivateKey: (key: string) => string;
   getEncryptedMnemonic: () => string;
@@ -131,6 +137,10 @@ export interface IKeyringManager {
   getPrivateKeyByAccountId: (id: number) => string;
   getSeed: (password: string) => string;
   getState: () => IWalletState;
+  handleImportAccountByPrivateKey: (
+    privKey: string,
+    label?: string
+  ) => Promise<IKeyringAccountState>;
   isUnlocked: () => boolean;
   unlockedByPassword: () => boolean;
   login: (password: string) => Promise<IKeyringAccountState>;
@@ -163,7 +173,7 @@ export interface IWalletState {
   accounts: {
     [id: number]: IKeyringAccountState;
   };
-  activeAccount: IKeyringAccountState;
+  activeAccount: number;
   networks: {
     [INetworkType.Ethereum]: {
       [chainId: number | string]: INetwork;
@@ -199,6 +209,7 @@ export interface IKeyringAccountState {
   xpub: string;
   transactions: any;
   assets: any;
+  isImported: boolean;
 }
 
 export interface ISyscoinBackendAccount {
@@ -223,4 +234,36 @@ export interface ILatestUpdateForSysAccount {
     ethereum: number;
   };
   receivingAddress: any;
+}
+
+export interface ISendSignedErcTransactionProps {
+  networkUrl: string;
+  receiver: string;
+  tokenAddress: string;
+  maxPriorityFeePerGas?: BigNumberish;
+  maxFeePerGas?: BigNumberish;
+  gasLimit?: BigNumberish;
+  tokenAmount?: string;
+  tokenId?: number;
+}
+
+export interface IResponseFromSendErcSignedTransaction {
+  type: number;
+  chainId: number;
+  nonce: number;
+  maxPriorityFeePerGas: BigNumber;
+  maxFeePerGas: BigNumber;
+  gasPrice: BigNumber | null;
+  gasLimit: BigNumber;
+  to: string;
+  value: BigNumber;
+  data: string;
+  accessList: any[];
+  hash: string;
+  v: number | null;
+  r: string;
+  s: string;
+  from: string;
+  confirmations: number | null;
+  wait: any;
 }

@@ -8,7 +8,7 @@ import { hdkey } from 'ethereumjs-wallet';
 import sys from 'syscoinjs-lib';
 
 import { Web3Accounts } from './eth-manager';
-import { initialWalletState } from './initial-state';
+import { initialActiveAccountState, initialWalletState } from './initial-state';
 import { initialize } from './trezor';
 import {
   IKeyringAccountState,
@@ -127,6 +127,11 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const getAccountXpub = (): string => hd.getAccountXpub();
+  const getChangeAddress = (accountId: number): string => {
+    const { _hd } = getSigners();
+    _hd.setAccountIndex(accountId);
+    return _hd.getNewChangeAddress(true);
+  };
 
   const getAccountById = (id: number): IKeyringAccountState => {
     const account = Object.values(wallet.accounts).find(
@@ -136,6 +141,109 @@ export const KeyringManager = (): IKeyringManager => {
     if (!account) throw new Error('Account not found');
 
     return account;
+  };
+
+  const handleImportAccountByPrivateKey = async (
+    privKey: string,
+    label?: string
+  ) => {
+    const {
+      wallet: { accounts },
+    } = getDecryptedVault();
+
+    const importedAccountValue = await _getPrivateKeyAccountInfos(
+      privKey,
+      label
+    );
+
+    wallet = {
+      ...getDecryptedVault().wallet,
+      activeAccount: importedAccountValue.id,
+      accounts: {
+        ...accounts,
+        [importedAccountValue.id]: importedAccountValue,
+      },
+    };
+
+    setEncryptedVault({ ...getDecryptedVault(), wallet });
+
+    return importedAccountValue;
+  };
+
+  const _getPrivateKeyAccountInfos = async (
+    privKey: string,
+    label?: string
+  ) => {
+    const {
+      wallet: { accounts, activeNetwork },
+    } = getDecryptedVault();
+
+    const { hash } = storage.get('vault-keys');
+
+    //Validate if the private key value that we receive already starts with 0x or not
+    const validatedPrivateKey =
+      privKey.slice(0, 2) === '0x' ? privKey : `0x${privKey}`;
+
+    const importedAccountValue = web3Wallet.importAccount(validatedPrivateKey);
+
+    const { address, publicKey, privateKey } = importedAccountValue;
+
+    //Validate if account already exists
+    const accountAlreadyExists = Object.values(
+      accounts as IKeyringAccountState[]
+    ).some((account) => account.address === address);
+
+    if (accountAlreadyExists)
+      throw new Error(
+        'Account already exists, try again with another Private Key.'
+      );
+
+    const [ethereumBalance, userTransactions] = await Promise.all([
+      web3Wallet.getBalance(address),
+      web3Wallet.getUserTransactions(address, activeNetwork),
+    ]);
+
+    const newAccountValues = {
+      ...initialActiveAccountState,
+      address,
+      label: label ? label : `Account ${Object.values(accounts).length + 1}`,
+      id: Object.values(accounts).length,
+      balances: {
+        syscoin: 0,
+        ethereum: ethereumBalance,
+      },
+      xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
+      xpub: publicKey,
+      transactions: userTransactions.filter(Boolean),
+      assets: {
+        syscoin: [],
+        ethereum: [],
+      },
+      isImported: true,
+    } as IKeyringAccountState;
+
+    return newAccountValues;
+  };
+
+  const _getLatestUpdateForPrivateKeyAccount = async (
+    account: IKeyringAccountState,
+    network: INetwork
+  ) => {
+    const [balance, transactions] = await Promise.all([
+      await web3Wallet.getBalance(account.address),
+      await web3Wallet.getUserTransactions(account.address, network),
+    ]);
+
+    const updatedAccount = {
+      ...account,
+      balances: {
+        syscoin: 0,
+        ethereum: balance,
+      },
+      transactions,
+    } as IKeyringAccountState;
+
+    return updatedAccount;
   };
 
   const _clearWallet = () => {
@@ -228,9 +336,11 @@ export const KeyringManager = (): IKeyringManager => {
   ) => {
     const { network } = getDecryptedVault();
 
-    const balance = await web3Wallet.getBalance(address);
+    const [balance, transactions] = await Promise.all([
+      await web3Wallet.getBalance(address),
+      await web3Wallet.getUserTransactions(address, network),
+    ]);
 
-    const transactions = await web3Wallet.getUserTransactions(address, network);
     // const assets = await web3Wallet.getAssetsByAddress(address, network);
     const assets: IEthereumNftDetails[] = [];
     return {
@@ -243,6 +353,7 @@ export const KeyringManager = (): IKeyringManager => {
         ethereum: balance,
       },
       transactions,
+      isImported: false,
     };
   };
 
@@ -311,28 +422,45 @@ export const KeyringManager = (): IKeyringManager => {
   };
 
   const _getLatestUpdateForWeb3Accounts = async () => {
-    const { wallet: _wallet } = getDecryptedVault();
+    const { wallet: _wallet, network } = getDecryptedVault();
 
     for (const index in Object.values(_wallet.accounts)) {
       const id = Number(index);
-      const label = _wallet.accounts[id].label;
-      await _setDerivedWeb3Accounts(id, label);
+      if (_wallet.accounts[id].isImported) {
+        const updatedAccount = await _getLatestUpdateForPrivateKeyAccount(
+          _wallet.accounts[id],
+          network
+        );
+
+        wallet = {
+          ...getDecryptedVault().wallet,
+          accounts: {
+            ...getDecryptedVault().wallet.accounts,
+            [id]: updatedAccount,
+          },
+        };
+
+        setEncryptedVault({ ...getDecryptedVault(), wallet });
+      }
+
+      if (!_wallet.accounts[id].isImported) {
+        const label = _wallet.accounts[id].label;
+        await _setDerivedWeb3Accounts(id, label);
+      }
     }
 
     const { wallet: _updatedWallet } = getDecryptedVault();
 
-    const { accounts, activeAccount } = _updatedWallet;
+    const { activeAccount } = _updatedWallet;
 
-    if (accounts[activeAccount.id] !== activeAccount) {
-      wallet = {
-        ..._updatedWallet,
-        activeAccount: accounts[activeAccount.id],
-      };
+    wallet = {
+      ..._updatedWallet,
+      activeAccount,
+    };
 
-      setEncryptedVault({ ...getDecryptedVault(), wallet });
-    }
+    setEncryptedVault({ ...getDecryptedVault(), wallet });
 
-    return getDecryptedVault().wallet.activeAccount;
+    return getDecryptedVault().wallet.accounts[activeAccount];
   };
 
   const _getInitialAccountData = ({
@@ -358,6 +486,7 @@ export const KeyringManager = (): IKeyringManager => {
       isTrezorWallet: false,
       transactions,
       assets,
+      isImported: false,
     };
 
     return account;
@@ -399,7 +528,7 @@ export const KeyringManager = (): IKeyringManager => {
         wallet: { activeAccount },
       } = vault;
 
-      if (hd && activeAccount.id > -1) hd.setAccountIndex(activeAccount.id);
+      if (hd && activeAccount > -1) hd.setAccountIndex(activeAccount);
 
       return account;
     }
@@ -415,18 +544,36 @@ export const KeyringManager = (): IKeyringManager => {
     xpub: string;
   }) => {
     const options = 'tokens=nonzero&details=txs';
-
     const { address, balance, transactions, tokensAsset } =
-      await sys.utils.fetchBackendAccount(url, xpub, options, xpub);
-
+      await sys.utils.fetchBackendAccount(url, xpub, options, true);
     const latestAssets = tokensAsset ? tokensAsset.slice(0, 30) : [];
 
     const filteredAssets: any = [];
 
     await Promise.all(
       latestAssets.map(async (token: any) => {
-        const details = await getAsset(url, token.assetGuid);
+        let details;
+        const uncreatedTokens = [];
+        const unconfirmedTxs = transactions
+          .slice(0, 20)
+          .filter((item: any) => item.confirmations === 0);
 
+        for (const txs of unconfirmedTxs) {
+          for (const tokens of txs.tokenTransfers) {
+            if (tokens) {
+              uncreatedTokens.push(tokens.token);
+            }
+          }
+        }
+
+        //TODO: add a timeout for getAsset and axios.get calls
+        try {
+          if (!uncreatedTokens.includes(token.assetGuid)) {
+            details = await getAsset(url, token.assetGuid);
+          }
+        } catch (e) {
+          // console.error('could not fetch assetData', e);
+        }
         const description =
           details && details.pubData && details.pubData.desc
             ? atob(details.pubData.desc)
@@ -435,8 +582,12 @@ export const KeyringManager = (): IKeyringManager => {
         let image = '';
 
         if (description.startsWith('https://ipfs.io/ipfs/')) {
-          const { data } = await axios.get(description);
-          image = data.image ? data.image : '';
+          try {
+            const { data } = await axios.get(description);
+            image = data.image ? data.image : '';
+          } catch (e) {
+            // console.error('could not fetch ipfs image', e);
+          }
         }
         const asset = {
           ...token,
@@ -450,7 +601,6 @@ export const KeyringManager = (): IKeyringManager => {
         if (!filteredAssets.includes(asset)) filteredAssets.push(asset);
       })
     );
-
     return {
       transactions: transactions ? transactions.slice(0, 20) : [],
       assets: filteredAssets,
@@ -459,6 +609,7 @@ export const KeyringManager = (): IKeyringManager => {
         syscoin: balance / 1e8,
         ethereum: 0,
       },
+      isImported: false,
     };
   };
 
@@ -516,6 +667,8 @@ export const KeyringManager = (): IKeyringManager => {
   }> => {
     const { wallet: _wallet, network, isTestnet } = getDecryptedVault();
 
+    const { activeAccount } = _wallet;
+
     if (
       !hd.mnemonic ||
       hd.Signer.isTestnet !== isTestnet ||
@@ -539,12 +692,13 @@ export const KeyringManager = (): IKeyringManager => {
     }
 
     for (const account of Object.values(_wallet.accounts)) {
-      // @ts-ignore
-      await _setDerivedSysAccounts(account.id);
+      const currAccount = account as IKeyringAccountState;
+
+      //Prevent to don't derive Imported Account using Priv Keys and keep the original state values for it
+      if (!currAccount.isImported) await _setDerivedSysAccounts(currAccount.id);
     }
 
-    if (hd && _wallet.activeAccount.id > -1)
-      hd.setAccountIndex(_wallet.activeAccount.id);
+    if (hd && activeAccount > -1) hd.setAccountIndex(activeAccount);
 
     const xpub = getAccountXpub();
     const formattedBackendAccount = await _getFormattedBackendAccount({
@@ -552,7 +706,7 @@ export const KeyringManager = (): IKeyringManager => {
       xpub,
     });
     const address = await hd.getNewReceivingAddress(true);
-    const label = _wallet.activeAccount.label;
+    const label = _wallet.accounts[activeAccount].label;
     return {
       label,
       address,
@@ -590,7 +744,7 @@ export const KeyringManager = (): IKeyringManager => {
         ...wallet.accounts,
         [vault.id]: vault,
       },
-      activeAccount: vault,
+      activeAccount: vault.id,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet, lastLogin: 0 });
@@ -639,7 +793,7 @@ export const KeyringManager = (): IKeyringManager => {
         ..._wallet.accounts,
         [account.id]: account,
       },
-      activeAccount: account,
+      activeAccount: account.id,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
@@ -650,13 +804,15 @@ export const KeyringManager = (): IKeyringManager => {
   const login = async (password: string): Promise<IKeyringAccountState> => {
     if (!checkPassword(password)) throw new Error('Invalid password');
     wallet = await _unlockWallet(password);
+    const { activeAccount } = wallet;
+
     _updateUnlocked();
 
     setEncryptedVault({ ...getDecryptedVault(), wallet, lastLogin: 0 });
 
-    addAccountToSigner(wallet.activeAccount.id);
+    addAccountToSigner(wallet.accounts[activeAccount].id);
 
-    return wallet.activeAccount;
+    return wallet.accounts[activeAccount];
   };
 
   const removeAccount = (accountId: number) => {
@@ -690,8 +846,9 @@ export const KeyringManager = (): IKeyringManager => {
 
     const { wallet: _wallet } = getDecryptedVault();
     const { hash } = storage.get('vault-keys');
+    const { activeAccount } = _wallet;
 
-    const accountXprv = _wallet.activeAccount.xprv;
+    const accountXprv = _wallet.accounts[activeAccount].xprv;
 
     return CryptoJS.AES.decrypt(accountXprv, hash).toString(CryptoJS.enc.Utf8);
   };
@@ -703,10 +860,22 @@ export const KeyringManager = (): IKeyringManager => {
     wallet = vault.wallet;
 
     setEncryptedVault({ ...vault, wallet });
+    //TODO: Transform this into a function to be reused
+    let checkExplorer = false;
+    try {
+      //Only trezor blockbooks are accepted as endpoint for UTXO chains for now
+      const rpcoutput = await (
+        await fetch(wallet.activeNetwork.url + 'api/v2')
+      ).json();
+      checkExplorer = rpcoutput.blockbook.coin ? true : false;
+    } catch (e) {
+      //Its not a blockbook, so it might be a ethereum RPC
+      checkExplorer = false;
+    }
 
     const isSyscoinChain =
       Boolean(wallet.networks.syscoin[wallet.activeNetwork.chainId]) &&
-      wallet.activeNetwork.url.includes('blockbook');
+      checkExplorer;
 
     const latestUpdate = isSyscoinChain
       ? await _getLatestUpdateForSysAccount()
@@ -799,7 +968,7 @@ export const KeyringManager = (): IKeyringManager => {
         ...wallet.accounts,
         [account.id]: account,
       },
-      activeAccount: account,
+      activeAccount: account.id,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
@@ -824,10 +993,21 @@ export const KeyringManager = (): IKeyringManager => {
 
   const addNewAccount = async (label?: string) => {
     const { network, mnemonic } = getDecryptedVault();
+    //TODO: Transform this into a function to be reused
+    let checkExplorer = false;
+    try {
+      //Only trezor blockbooks are accepted as endpoint for UTXO chains for now
+      const rpcoutput = await (
+        await fetch(wallet.activeNetwork.url + 'api/v2')
+      ).json();
+      checkExplorer = rpcoutput.blockbook.coin ? true : false;
+    } catch (e) {
+      //Its not a blockbook, so it might be a ethereum RPC
+      checkExplorer = false;
+    }
 
     const isSyscoinChain =
-      Boolean(wallet.networks.syscoin[network.chainId]) &&
-      network.url.includes('blockbook');
+      Boolean(wallet.networks.syscoin[network.chainId]) && checkExplorer;
 
     if (isSyscoinChain) {
       if (!hd.mnemonic) {
@@ -867,7 +1047,7 @@ export const KeyringManager = (): IKeyringManager => {
           ..._wallet.accounts,
           [id]: account,
         },
-        activeAccount: account,
+        activeAccount: account.id,
       };
 
       setEncryptedVault({ ...getDecryptedVault(), wallet });
@@ -915,7 +1095,7 @@ export const KeyringManager = (): IKeyringManager => {
         ..._wallet.accounts,
         [createdAccount.id]: createdAccount,
       },
-      activeAccount: createdAccount,
+      activeAccount: createdAccount.id,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
@@ -933,7 +1113,7 @@ export const KeyringManager = (): IKeyringManager => {
 
     wallet = {
       ..._wallet,
-      activeAccount: _wallet.accounts[accountId],
+      activeAccount: _wallet.accounts[accountId].id,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
@@ -948,6 +1128,7 @@ export const KeyringManager = (): IKeyringManager => {
     getAccounts,
     getAccountById,
     getAccountXpub,
+    getChangeAddress,
     getDecryptedMnemonic,
     getDecryptedPrivateKey,
     getEncryptedMnemonic,
@@ -957,6 +1138,7 @@ export const KeyringManager = (): IKeyringManager => {
     getPrivateKeyByAccountId,
     getSeed,
     getState,
+    handleImportAccountByPrivateKey,
     isUnlocked,
     unlockedByPassword,
     login,
