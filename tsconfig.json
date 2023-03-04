@@ -6,7 +6,7 @@
     "declarationDir": "dist/types",
     "composite": false,
     "resolveJsonModule": true,
-    "noImplicitReturns": false
+    "noImplicitReturns": false,
   },
   "include": ["src"]
 }
