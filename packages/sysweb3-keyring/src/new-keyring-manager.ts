@@ -4,6 +4,7 @@ import { fromZPrv } from 'bip84';
 import crypto from 'crypto';
 import CryptoJS from 'crypto-js';
 import { hdkey } from 'ethereumjs-wallet';
+import { ethers } from 'ethers';
 import sys from 'syscoinjs-lib';
 import {
   IEthereumTransactions,
@@ -20,7 +21,6 @@ import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
   getSysRpc,
   jsonRpcRequest,
-  setActiveNetwork,
   validateSysRpc,
 } from '@pollum-io/sysweb3-network';
 import {
@@ -33,9 +33,14 @@ import {
   SyscoinHDSigner,
 } from '@pollum-io/sysweb3-utils';
 
+//todo: remove vault and add info in the constructor as OPTS
+
 const ACCOUNT_ZERO = 0;
 const SYSCOIN_CHAIN = 'syscoin';
 
+export interface IKeyringManagerOpts {
+  activeNetwork: INetwork;
+}
 //TODO: adjust _wallet
 export interface ISysAccount {
   xprv?: string;
@@ -57,10 +62,12 @@ export class NewKeyringManager {
   private xprv: string;
   private xpub: string;
   private address: string;
+  private activeNetwork: INetwork;
 
   web3Wallet: any; //todo type
   storage: any; //todo type
   wallet: IWalletState;
+  web3Provider: any; //todo type
 
   //local variables
   hd: SyscoinHDSigner;
@@ -72,11 +79,12 @@ export class NewKeyringManager {
   ethereumTransaction: IEthereumTransactions;
   syscoinTransaction: ISyscoinTransactions;
 
-  constructor() {
-    this.web3Wallet = Web3Accounts();
+  constructor(opts: IKeyringManagerOpts) {
     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
     this.wallet = initialWalletState;
     this.hd = new sys.utils.HDSigner('');
+
+    this.activeNetwork = opts.activeNetwork ?? initialWalletState.activeAccount;
 
     this.hash = '';
     this.salt = this.generateSalt();
@@ -87,8 +95,14 @@ export class NewKeyringManager {
     this.xpub = '';
     this.address = '';
 
-    this.ethereumTransaction = EthereumTransactions();
     this.syscoinTransaction = SyscoinTransactions();
+
+    //todo this will be replaced just with web3Wallet class
+    this.ethereumTransaction = EthereumTransactions();
+    this.web3Wallet = Web3Accounts();
+    this.web3Provider = new ethers.providers.JsonRpcProvider(
+      this.activeNetwork.url
+    );
   }
 
   /**
@@ -153,7 +167,7 @@ export class NewKeyringManager {
         ...this.wallet.accounts,
         [vault.id]: vault,
       },
-      activeAccount: vault,
+      activeAccount: vault.id,
     };
 
     setEncryptedVault({
@@ -347,7 +361,7 @@ export class NewKeyringManager {
 
     this.hd.setAccountIndex(account.id);
 
-    return account;
+    return account; //todo adjust types at _getInitialAccountData
   };
 
   private getEncryptedPrivateKeyFromHd = () =>
@@ -426,6 +440,7 @@ export class NewKeyringManager {
       isTrezorWallet: false,
       transactions,
       assets,
+      isImported: false,
     };
   };
 
@@ -767,11 +782,16 @@ export class NewKeyringManager {
     network: INetwork,
     chain: string
   ): Promise<{ rpc: any; isTestnet: boolean }> => {
+    //todo set encrypted vault maybe it is unnecessary
     setEncryptedVault({
       ...getDecryptedVault(),
       network,
     });
-    if (chain === SYSCOIN_CHAIN) {
+
+    const isSyscoinChain = this.isSyscoinChain(chain);
+
+    //todo: turn code inside this if into another function
+    if (isSyscoinChain) {
       const response = await validateSysRpc(network.url);
 
       if (!response.valid) throw new Error('Invalid network');
@@ -790,7 +810,8 @@ export class NewKeyringManager {
 
     await jsonRpcRequest(network.url, 'eth_chainId');
 
-    setActiveNetwork(newNetwork);
+    this.activeNetwork = newNetwork; //todo check this method
+
     setEncryptedVault({
       ...getDecryptedVault(),
       isTestnet: false,

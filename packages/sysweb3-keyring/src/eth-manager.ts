@@ -17,6 +17,10 @@ import {
   getDecryptedVault,
 } from '@pollum-io/sysweb3-utils';
 
+//todo: remove this
+//todo: few fn goes to keyring manager
+//todo: few fn goes to eth transactions
+
 export interface IWeb3Accounts {
   createAccount: (privateKey: string) => ethers.Wallet;
   getBalance: (address: string) => Promise<number>;

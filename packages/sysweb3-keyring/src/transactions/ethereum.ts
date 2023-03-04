@@ -34,12 +34,12 @@ import {
   SimpleTransactionRequest,
 } from '../types';
 import { sysweb3Di } from '@pollum-io/sysweb3-core';
-import { setActiveNetwork, web3Provider } from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
   getDecryptedVault,
   getErc20Abi,
   getErc21Abi,
+  INetwork,
 } from '@pollum-io/sysweb3-utils';
 
 export const EthereumTransactions = (): IEthereumTransactions => {
@@ -431,7 +431,12 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const getRecommendedNonce = async (address: string) => {
+  //todo: need to receive activeNetwork and web3Provider<MAYBE>?
+  const getRecommendedNonce = async (
+    address: string,
+    activeNetwork: INetwork,
+    web3Provider: any
+  ) => {
     const { network: _activeNetwork } = getDecryptedVault();
 
     setActiveNetwork(_activeNetwork);

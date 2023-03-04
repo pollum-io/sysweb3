@@ -5,7 +5,7 @@ import { NewKeyringManager } from '../src/new-keyring-manager';
 import {
   SYS_EVM_NETWORK,
   FAKE_PASSWORD,
-  FAKE_SEED_PHRASE,
+  PEACE_SEED_PHRASE,
   FAKE_ADDRESS,
   TX,
   SECOND_FAKE_SEED_PHRASE,
@@ -22,7 +22,7 @@ describe('', () => {
   it('should validate a seed', () => {
     seed = keyringManager.createSeed();
     const wrong = keyringManager.isSeedValid('invalid seed');
-    const right = keyringManager.isSeedValid(String(FAKE_SEED_PHRASE));
+    const right = keyringManager.isSeedValid(String(PEACE_SEED_PHRASE));
     if (seed) {
       expect(keyringManager.isSeedValid(seed)).toBe(true);
     }
@@ -129,23 +129,28 @@ describe('', () => {
     const { window } = global;
 
     if (window === undefined) {
+      console.log('1', keyringManager.ethereumTransaction);
       const nonce =
         await keyringManager.ethereumTransaction.getRecommendedNonce(
           FAKE_ADDRESS
         );
 
+      console.log(nonce);
       expect(typeof nonce).toBe('number');
       return;
     }
+    console.log('2');
     const account = await keyringManager.setSignerNetwork(
       SYS_EVM_NETWORK as INetwork,
       'ethereum'
     );
-
+    console.log(account);
     const address = account.address;
     const nonce = await keyringManager.ethereumTransaction.getRecommendedNonce(
       address
     );
+
+    console.log(nonce);
 
     expect(typeof nonce).toBe('number');
   });

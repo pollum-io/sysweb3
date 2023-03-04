@@ -39,6 +39,7 @@ export const txUtils = () => {
 
   const getFeeRate = (fee: number): bigint => new sys.utils.BN(fee * 1e8);
 
+  //todo: move this function inside eth manager (web3Wallet)
   const getGasUsedInTransaction = async (transactionHash: string) => {
     try {
       const { gasUsed, effectiveGasPrice } =
