@@ -6,29 +6,27 @@ import {
   SYS_EVM_NETWORK,
   FAKE_PASSWORD,
   PEACE_SEED_PHRASE,
-  FAKE_ADDRESS,
   TX,
   SECOND_FAKE_SEED_PHRASE,
 } from './constants';
 import { INetwork } from '@pollum-io/sysweb3-utils';
 
 describe('', () => {
-  const keyringManager = new NewKeyringManager();
-  let seed;
+  const keyringManager = new NewKeyringManager({});
 
   jest.setTimeout(50000); // 20s
 
   //* validateSeed
   it('should validate a seed', () => {
-    seed = keyringManager.createSeed();
+    const seed = keyringManager.createNewSeed();
     const wrong = keyringManager.isSeedValid('invalid seed');
-    const right = keyringManager.isSeedValid(String(PEACE_SEED_PHRASE));
     if (seed) {
       expect(keyringManager.isSeedValid(seed)).toBe(true);
     }
-
     expect(wrong).toBe(false);
-    expect(right).toBe(true);
+    expect(keyringManager.isSeedValid(String(PEACE_SEED_PHRASE))).toBe(true);
+    const newSeed = keyringManager.setSeed(String(PEACE_SEED_PHRASE));
+    expect(newSeed).toBe(String(PEACE_SEED_PHRASE));
   });
 
   //* setWalletPassword / checkPassword
@@ -55,7 +53,7 @@ describe('', () => {
     expect(account2.label).toBe('Account 2');
 
     const wallet = keyringManager.getState();
-    expect(wallet.activeAccount.id).toBe(1);
+    expect(wallet.activeAccount).toBe(1);
   });
 
   //* setActiveAccount
@@ -63,7 +61,7 @@ describe('', () => {
     keyringManager.setActiveAccount(0);
 
     const wallet = keyringManager.getState();
-    expect(wallet.activeAccount.id).toBe(0);
+    expect(wallet.activeAccount).toBe(0);
   });
 
   //* getAccountById
@@ -110,7 +108,7 @@ describe('', () => {
   //   //* getSeed
   it('should get the seed', async () => {
     const localSeed = keyringManager.getSeed(FAKE_PASSWORD);
-    expect(localSeed).toBe(seed);
+    expect(localSeed).toBe(PEACE_SEED_PHRASE);
     expect(() => {
       keyringManager.getSeed('wrongp@ss123');
     }).toThrow('Invalid password.');
@@ -129,25 +127,30 @@ describe('', () => {
     const { window } = global;
 
     if (window === undefined) {
-      console.log('1', keyringManager.ethereumTransaction);
+      const account = await keyringManager.setSignerNetwork(
+        SYS_EVM_NETWORK as INetwork,
+        'ethereum'
+      );
+
+      const address = account.address;
+
       const nonce =
         await keyringManager.ethereumTransaction.getRecommendedNonce(
-          FAKE_ADDRESS
+          address,
+          keyringManager.web3Provider
         );
 
-      console.log(nonce);
       expect(typeof nonce).toBe('number');
       return;
     }
-    console.log('2');
     const account = await keyringManager.setSignerNetwork(
       SYS_EVM_NETWORK as INetwork,
       'ethereum'
     );
-    console.log(account);
     const address = account.address;
     const nonce = await keyringManager.ethereumTransaction.getRecommendedNonce(
-      address
+      address,
+      keyringManager.web3Provider
     );
 
     console.log(nonce);
@@ -165,7 +168,9 @@ describe('', () => {
 
   it('should validate getFeeDataWithDynamicMaxPriorityFeePerGas method', async () => {
     const feeDataWithDynamicMaxPriorityFeePerGas =
-      await keyringManager.ethereumTransaction.getFeeDataWithDynamicMaxPriorityFeePerGas();
+      await keyringManager.ethereumTransaction.getFeeDataWithDynamicMaxPriorityFeePerGas(
+        keyringManager.web3Provider
+      );
 
     expect(feeDataWithDynamicMaxPriorityFeePerGas).toBeDefined();
   });
@@ -175,7 +180,10 @@ describe('', () => {
 
     tx.value = keyringManager.ethereumTransaction.toBigNumber(tx.value);
 
-    const gasLimit = await keyringManager.ethereumTransaction.getTxGasLimit(tx);
+    const gasLimit = await keyringManager.ethereumTransaction.getTxGasLimit(
+      tx,
+      keyringManager.web3Provider
+    );
 
     expect(gasLimit instanceof ethers.BigNumber).toBeTruthy();
   });
@@ -192,7 +200,9 @@ describe('', () => {
   it('Should validate txSend', async () => {
     const tx = TX;
     const { maxFeePerGas, maxPriorityFeePerGas } =
-      await keyringManager.ethereumTransaction.getFeeDataWithDynamicMaxPriorityFeePerGas();
+      await keyringManager.ethereumTransaction.getFeeDataWithDynamicMaxPriorityFeePerGas(
+        keyringManager.web3Provider
+      );
 
     tx.maxFeePerGas = maxFeePerGas;
     tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
@@ -201,13 +211,20 @@ describe('', () => {
 
     tx.from = curState.activeAccount.address;
     tx.nonce = await keyringManager.ethereumTransaction.getRecommendedNonce(
-      curState.activeAccount.address
+      curState.activeAccount.address,
+      keyringManager.web3Provider
     );
     tx.chainId = curState.activeNetwork.chainId;
-    tx.gasLimit = await keyringManager.ethereumTransaction.getTxGasLimit(tx);
+    tx.gasLimit = await keyringManager.ethereumTransaction.getTxGasLimit(
+      tx,
+      keyringManager.web3Provider
+    );
 
     const resp =
-      await keyringManager.ethereumTransaction.sendFormattedTransaction(tx);
+      await keyringManager.ethereumTransaction.sendFormattedTransaction(
+        tx,
+        keyringManager.web3Provider
+      );
 
     expect(resp.hash).toBeDefined();
   });
@@ -221,8 +238,8 @@ describe('', () => {
       '0x9f2f4ce0b6dedd5f66aa83caae39b90aaf29ebc18c588610d27301dbd3b2aa2935ba8758757c531e851c92c2f103375906139c77d3fc3f3d3fba81a0063f01631c'
     );
   });
-
   it('Should emulate personal_sign ', async () => {
+    //0x7442E0987B1149744ff34e32EECa60641c74c513 0xc42698996ec68ca8d7eaeecd31af768ce231904ea21fc2a1d4468577abf980b3
     const resp = keyringManager.ethereumTransaction.signPersonalMessage([
       '0x6a92eF94F6Db88098625a30396e0fde7255E97d5',
       '0x4578616d706c652060706572736f6e616c5f7369676e60206d657373616765',
@@ -370,7 +387,7 @@ describe('', () => {
 });
 
 describe('Account derivation with another seed in keyring', () => {
-  const keyringManager = new NewKeyringManager();
+  const keyringManager = new NewKeyringManager({});
   jest.setTimeout(50000); // 50s
 
   it('should derivate a new account with specific address', async () => {
