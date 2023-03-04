@@ -271,7 +271,7 @@ export class NewKeyringManager {
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
-
+    this.web3Provider = new ethers.providers.JsonRpcProvider(network.url); //TODO change web3Provider only after execution
     //todo: ask why do we need to call setSignerByChain twice?
     await this.setSignerByChain(network, chain);
 
@@ -280,7 +280,6 @@ export class NewKeyringManager {
 
       setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
     }
-
     const account = await this.getAccountForNetwork({
       isSyscoinChain: chain === SYSCOIN_CHAIN,
     });
@@ -295,8 +294,6 @@ export class NewKeyringManager {
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
-    this.web3Provider = new ethers.providers.JsonRpcProvider(network.url);
-    console.log('Change web3Provider', this.web3Provider);
     return account;
   };
 
@@ -866,14 +863,8 @@ export class NewKeyringManager {
     }
     const newNetwork =
       getDecryptedVault().wallet.networks.ethereum[network.chainId];
-    console.log('newNetwork', newNetwork);
-    console.log(
-      'check initial networks',
-      getDecryptedVault().wallet.networks.ethereum
-    );
     if (!newNetwork) throw new Error('Network not found');
     await jsonRpcRequest(network.url, 'eth_chainId');
-
     this.activeNetwork = newNetwork; //todo check this method
 
     setEncryptedVault({

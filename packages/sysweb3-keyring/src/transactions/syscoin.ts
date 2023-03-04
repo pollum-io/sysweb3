@@ -625,7 +625,6 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     assets: string;
     signer: any;
   }): Promise<JSON> => {
-    console.log('assets: ', assets);
     return sys.utils.exportPsbtToJson(await signer.sign(psbt));
   };
 

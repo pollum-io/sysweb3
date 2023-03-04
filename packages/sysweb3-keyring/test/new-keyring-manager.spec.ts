@@ -153,52 +153,51 @@ describe('', () => {
       keyringManager.web3Provider
     );
 
-    console.log(nonce);
-
     expect(typeof nonce).toBe('number');
   });
 
-  // it('validate toBigNumber method', async () => {
-  //   const number = 1;
+  it('validate toBigNumber method', async () => {
+    const number = 1;
 
-  //   const toBigNumber = keyringManager.ethereumTransaction.toBigNumber(number);
+    const toBigNumber = keyringManager.ethereumTransaction.toBigNumber(number);
 
-  //   expect(toBigNumber._isBigNumber).toBe(true);
-  // });
+    expect(toBigNumber._isBigNumber).toBe(true);
+  });
 
-  // it('should validate getFeeDataWithDynamicMaxPriorityFeePerGas method', async () => {
-  //   const feeDataWithDynamicMaxPriorityFeePerGas =
-  //     await keyringManager.ethereumTransaction.getFeeDataWithDynamicMaxPriorityFeePerGas(
-  //       keyringManager.web3Provider
-  //     );
+  it('should validate getFeeDataWithDynamicMaxPriorityFeePerGas method', async () => {
+    const feeDataWithDynamicMaxPriorityFeePerGas =
+      await keyringManager.ethereumTransaction.getFeeDataWithDynamicMaxPriorityFeePerGas(
+        keyringManager.web3Provider
+      );
 
-  //   expect(feeDataWithDynamicMaxPriorityFeePerGas).toBeDefined();
-  // });
+    expect(feeDataWithDynamicMaxPriorityFeePerGas).toBeDefined();
+  });
 
-  // it('should validate getTxGasLimit method', async () => {
-  //   const tx = TX;
+  it('should validate getTxGasLimit method', async () => {
+    const tx = TX;
 
-  //   tx.value = keyringManager.ethereumTransaction.toBigNumber(tx.value);
+    tx.value = keyringManager.ethereumTransaction.toBigNumber(tx.value);
 
-  //   const gasLimit = await keyringManager.ethereumTransaction.getTxGasLimit(
-  //     tx,
-  //     keyringManager.web3Provider
-  //   );
+    const gasLimit = await keyringManager.ethereumTransaction.getTxGasLimit(
+      tx,
+      keyringManager.web3Provider
+    );
 
-  //   expect(gasLimit instanceof ethers.BigNumber).toBeTruthy();
-  // });
+    expect(gasLimit instanceof ethers.BigNumber).toBeTruthy();
+  });
 
-  // //   //* setSignerNetwork
-  // it('should set the network', async () => {
-  //   const testnet = initialWalletState.networks.ethereum[80001];
-  //   await keyringManager.setSignerNetwork(testnet, 'ethereum');
+  //   //* setSignerNetwork
+  it('should set the network', async () => {
+    const testnet = initialWalletState.networks.ethereum[80001];
+    await keyringManager.setSignerNetwork(testnet, 'ethereum');
 
-  //   const network = keyringManager.getNetwork();
-  //   expect(network).toEqual(testnet);
-  // });
+    const network = keyringManager.getNetwork();
+    expect(network).toEqual(testnet);
+  });
 
   // it('Should validate txSend', async () => {
   //   const tx = TX;
+  //   console.log('Web3Provider',keyringManager.web3Provider );
   //   const { maxFeePerGas, maxPriorityFeePerGas } =
   //     await keyringManager.ethereumTransaction.getFeeDataWithDynamicMaxPriorityFeePerGas(
   //       keyringManager.web3Provider
@@ -275,8 +274,9 @@ describe('', () => {
   // });
 
   // it('GetEncryptedKey', async () => {
+  //   console.log(keyringManager.wallet);
   //   const resp = keyringManager.ethereumTransaction.getEncryptedPubKey();
-  //   expect(resp).toBe('ANfU8qjbF26K61nxsxeXupTEluaZstKsYkcQWv4p3RE=');
+  //   expect(resp).toBe('mg0LYtIw5fefbmqlu6sZ9pJtddfM/6/EEPW56qYwwRU=');
   // });
 
   // it('Should emulate eth_signTypedData ', async () => {
@@ -302,7 +302,7 @@ describe('', () => {
   //   );
   // });
 
-  // it('should set the network', async () => {
+  // it('should set the network the second', async () => {
   //   const mainnet = initialWalletState.networks.ethereum[137];
   //   await keyringManager.setSignerNetwork(mainnet, 'ethereum');
 

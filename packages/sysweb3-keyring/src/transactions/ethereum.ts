@@ -60,8 +60,6 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       hash
     ).toString(CryptoJS.enc.Utf8);
 
-    console.log(wallet.accounts);
-
     return {
       address: wallet.accounts[activeAccount].address,
       decryptedPrivateKey,
@@ -424,7 +422,6 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
   //todo: need to receive activeNetwork and web3Provider<MAYBE>?
   const getRecommendedNonce = async (address: string, web3Provider: any) => {
-    console.log('getRecommendedNonce', web3Provider);
     try {
       return await web3Provider.getTransactionCount(address, 'pending');
     } catch (error) {
@@ -674,9 +671,9 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
     const pendingTransactions: TransactionResponse[] = [];
 
+    //TODO: the issue with the test is here
     wssProvider.on('pending', async (txhash) => {
       const tx = await wssProvider.getTransaction(txhash);
-
       const { from, to, hash, blockNumber } = tx;
 
       if (tx && (from === address || to === address)) {
