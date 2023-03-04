@@ -1,6 +1,7 @@
 import sys from 'syscoinjs-lib';
 
-import { getSigners, ITokenMap, ITxid } from '@pollum-io/sysweb3-utils';
+import { getSigners } from '../signers';
+import { ITokenMap, ITxid } from '@pollum-io/sysweb3-utils';
 
 export const TrezorTransactions = () => {
   const confirmTokenMint = async ({

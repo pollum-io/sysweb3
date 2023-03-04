@@ -168,7 +168,7 @@ export const getSysRpc = async (data: any) => {
       chainId,
       coin
     );
-
+    //TODO: pass user label as coin and coin on another parameter (Issue: All testnet token will be with testnet as label)
     const formattedNetwork = {
       url: data.url,
       apiUrl: data.url,
@@ -178,11 +178,16 @@ export const getSysRpc = async (data: any) => {
       default: false,
       chainId,
     };
-
+    // const rpc = {
+    //   formattedNetwork,
+    //   formattedBitcoinLikeNetwork,
+    // };
     return {
       formattedNetwork,
       formattedBitcoinLikeNetwork,
     };
+
+    // return { rpc, coin, chain };
   } catch (error) {
     throw new Error(error);
   }

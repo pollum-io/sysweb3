@@ -9,6 +9,8 @@ import sys from 'syscoinjs-lib';
 
 import { Web3Accounts } from './eth-manager';
 import { initialActiveAccountState, initialWalletState } from './initial-state';
+import { getSigners, SyscoinHDSigner } from './signers';
+import { getDecryptedVault, setEncryptedVault } from './storage';
 import { initialize } from './trezor';
 import {
   IKeyringAccountState,
@@ -25,10 +27,6 @@ import {
 } from '@pollum-io/sysweb3-network';
 import {
   INetwork,
-  getSigners,
-  SyscoinHDSigner,
-  setEncryptedVault,
-  getDecryptedVault,
   getAsset,
   IEthereumNftDetails,
 } from '@pollum-io/sysweb3-utils';
@@ -45,6 +43,8 @@ export const KeyringManager = (): IKeyringManager => {
   let actualPassword = '';
 
   const getSalt = () => crypto.randomBytes(16).toString('hex');
+
+  const setStorage = (client: any) => storage.setClient(client);
 
   const encryptSHA512 = (password: string, salt: string) => {
     const hash = crypto.createHmac('sha512', salt);
@@ -1147,6 +1147,7 @@ export const KeyringManager = (): IKeyringManager => {
     removeNetwork,
     addAccountToSigner,
     setActiveAccount,
+    setStorage,
     setSignerNetwork,
     setWalletPassword,
     trezor: {

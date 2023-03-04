@@ -16,6 +16,8 @@ import {
 
 import { Web3Accounts } from './eth-manager';
 import { initialWalletState } from './initial-state';
+import { getSigners, SyscoinHDSigner } from './signers';
+import { getDecryptedVault, setEncryptedVault } from './storage';
 import { EthereumTransactions, SyscoinTransactions } from './transactions';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
@@ -25,12 +27,8 @@ import {
 } from '@pollum-io/sysweb3-network';
 import {
   getAsset,
-  getDecryptedVault,
-  getSigners,
   IEthereumNftDetails,
   INetwork,
-  setEncryptedVault,
-  SyscoinHDSigner,
 } from '@pollum-io/sysweb3-utils';
 
 //todo: remove vault and add info in the constructor as OPTS
@@ -776,6 +774,34 @@ export class NewKeyringManager {
     }
 
     return createdAccount;
+  };
+
+  // private setSignerUTXO = async (
+  //   network: INetwork
+  // ): Promise<{ rpc: any; isTestnet: boolean }> => {
+  //   const { rpc, chain } = await getSysRpc(network);
+
+  //   return {
+  //     rpc,
+  //     isTestnet: chain === 'test',
+  //   };
+  // };
+
+  private setSignerEVM = async (network: INetwork): Promise<boolean> => {
+    const newNetwork =
+      getDecryptedVault().wallet.networks.ethereum[network.chainId];
+
+    if (!newNetwork) throw new Error('Network not found');
+
+    await jsonRpcRequest(network.url, 'eth_chainId');
+
+    this.activeNetwork = newNetwork; //todo check this method
+
+    setEncryptedVault({
+      ...getDecryptedVault(),
+      isTestnet: false,
+    });
+    return true;
   };
 
   private setSignerByChain = async (

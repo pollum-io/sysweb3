@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import _ from 'lodash';
 
 import { getFormattedTransactionResponse } from './format';
+import { getDecryptedVault } from './storage';
 import { setActiveNetwork, web3Provider } from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
@@ -14,7 +15,6 @@ import {
   IEthereumNftDetails,
   IEtherscanNFT,
   INetwork,
-  getDecryptedVault,
 } from '@pollum-io/sysweb3-utils';
 
 //todo: remove this

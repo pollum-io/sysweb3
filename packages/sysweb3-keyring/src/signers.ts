@@ -3,10 +3,12 @@ import { Psbt } from 'bitcoinjs-lib';
 import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 
-import { getDecryptedVault, INetwork } from '.';
+import { getDecryptedVault } from './storage';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import { BitcoinNetwork, IPubTypes } from '@pollum-io/sysweb3-network';
+import { INetwork } from '@pollum-io/sysweb3-utils';
 
+//TODO: pass this to keyring on syscoin part
 export const getSyscoinSigners = ({
   mnemonic,
   isTestnet,

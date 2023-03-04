@@ -2,6 +2,8 @@ import coinSelectSyscoin from 'coinselectsyscoin';
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
 
+import { getSigners } from '../signers';
+import { getDecryptedVault } from '../storage';
 import { ISyscoinTransactions } from '../types';
 import {
   INewNFT,
@@ -10,10 +12,8 @@ import {
   ITokenUpdate,
   ITxid,
   txUtils,
-  getSigners,
   getAsset,
   countDecimals,
-  getDecryptedVault,
 } from '@pollum-io/sysweb3-utils';
 
 type EstimateFeeParams = {

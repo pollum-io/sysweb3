@@ -24,11 +24,11 @@
     "release:npm": "npm publish ./dist --access=public",
     "release:preflight": "npm pack ./dist --dry-run",
     "publish": "npm run prebuild && npm run build && npm run rollup && npm run prerelease && npm run copy && npm run release:npm --bundleConfigAsCjs",
-    "type-check": "tsc --pretty --noEmit"
+    "type-check": "tsc --pretty --noEmit",
+    "localTest": "npm run prebuild && npm run build && npm run rollup && npm run build && npm run copy"
   },
   "dependencies": {
-    "@pollum-io/sysweb3-core": "^1.0.19",
-    "@pollum-io/sysweb3-utils": "^1.1.214",
+    "@pollum-io/sysweb3-utils": "^1.0.19",
     "axios": "^0.26.1",
     "bip44-constants": "^114.0.0",
     "bs58check": "^2.1.2",

@@ -7,6 +7,7 @@ export const isValidEthereumAddress = (address: string) => {
   return ethers.utils.isAddress(address);
 };
 
+//TODO: this function needs to be refactorated to validate if its a valid bip84 address of any utxo chain
 export const isValidSYSAddress = (
   address: string,
   network: INetwork,

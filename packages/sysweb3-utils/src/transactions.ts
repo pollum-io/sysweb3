@@ -1,7 +1,7 @@
 import sys from 'syscoinjs-lib';
 
 import { ITokenMap, ISyscoinToken, INetworkType } from '.';
-import { web3Provider } from '@pollum-io/sysweb3-network';
+// import { web3Provider } from '@pollum-io/sysweb3-network';
 
 export const txUtils = () => {
   const getRawTransaction = (explorerUrl: string, txid: string) =>
@@ -40,34 +40,34 @@ export const txUtils = () => {
   const getFeeRate = (fee: number): bigint => new sys.utils.BN(fee * 1e8);
 
   //todo: move this function inside eth manager (web3Wallet)
-  const getGasUsedInTransaction = async (transactionHash: string) => {
-    try {
-      const { gasUsed, effectiveGasPrice } =
-        await web3Provider.getTransactionReceipt(transactionHash);
+  // const getGasUsedInTransaction = async (transactionHash: string) => {
+  //   try {
+  //     const { gasUsed, effectiveGasPrice } =
+  //       await web3Provider.getTransactionReceipt(transactionHash);
 
-      if (!gasUsed || !effectiveGasPrice) {
-        throw new Error(
-          'Can not find this transaction at the current network, please verify it and try again.'
-        );
-      }
+  //     if (!gasUsed || !effectiveGasPrice) {
+  //       throw new Error(
+  //         'Can not find this transaction at the current network, please verify it and try again.'
+  //       );
+  //     }
 
-      return {
-        gasUsed: Number(gasUsed),
-        effectiveGasPrice: Number(effectiveGasPrice),
-      };
-    } catch (error) {
-      throw new Error(
-        `Incorrect transaction hash, please try again with a correct one!`
-      );
-    }
-  };
+  //     return {
+  //       gasUsed: Number(gasUsed),
+  //       effectiveGasPrice: Number(effectiveGasPrice),
+  //     };
+  //   } catch (error) {
+  //     throw new Error(
+  //       `Incorrect transaction hash, please try again with a correct one!`
+  //     );
+  //   }
+  // };
 
   return {
     getPsbtFromJson,
     getRawTransaction,
     getTokenMap,
     getFeeRate,
-    getGasUsedInTransaction,
+    // getGasUsedInTransaction,
   };
 };
 

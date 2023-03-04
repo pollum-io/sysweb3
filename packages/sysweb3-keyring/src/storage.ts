@@ -4,6 +4,7 @@ import { sysweb3Di } from '@pollum-io/sysweb3-core';
 
 const storage = sysweb3Di.getStateStorageDb();
 
+//TODO: completely remove set and get vault from utils
 export const setEncryptedVault = (decryptedVault: any) => {
   const encryptedVault = CryptoJS.AES.encrypt(
     JSON.stringify(decryptedVault),

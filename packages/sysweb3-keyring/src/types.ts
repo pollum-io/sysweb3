@@ -149,6 +149,7 @@ export interface IKeyringManager {
   removeNetwork: (chain: string, chainId: number) => void;
   addAccountToSigner: (accountId: number) => void;
   setActiveAccount: (accountId: number) => void;
+  setStorage: (client: any) => void;
   setSignerNetwork: (
     network: INetwork,
     chain: string
