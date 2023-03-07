@@ -596,7 +596,7 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
     network: INetwork
   ): Promise<TransactionResponse[]> => {
     if (!this.checkActiveNetwork(network.url)) {
-      this.setActiveNetwork(network);
+      this.setWeb3Provider(network);
     }
 
     const { chainId, default: _default, label, apiUrl } = network;
@@ -703,7 +703,7 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
 
     return pendingTransactions;
   };
-  public setActiveNetwork(network: INetwork) {
+  public setWeb3Provider(network: INetwork) {
     this.activeNetwork = network;
     this.web3Provider = new ethers.providers.JsonRpcProvider(network.url);
   }

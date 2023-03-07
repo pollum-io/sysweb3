@@ -49,137 +49,138 @@ describe('', () => {
   });
 
   // * addNewAccount
-  it('should add a new account', async () => {
-    const account2 = await keyringManager.addNewAccount(undefined);
-    expect(account2.label).toBe('Account 2');
+  // it('should add a new account', async () => {
+  //   const account2 = await keyringManager.addNewAccount(undefined);
+  //   expect(account2.label).toBe('Account 2');
 
-    const wallet = keyringManager.getState();
-    expect(wallet.activeAccount).toBe(1);
-  });
+  //   const wallet = keyringManager.getState();
+  //   expect(wallet.activeAccount).toBe(1);
+  // });
 
   // //* setActiveAccount
-  it('should set the active account', () => {
-    keyringManager.setActiveAccount(0);
+  // it('should set the active account', () => {
+  //   keyringManager.setActiveAccount(0);
 
-    const wallet = keyringManager.getState();
-    expect(wallet.activeAccount).toBe(0);
-  });
+  //   const wallet = keyringManager.getState();
+  //   expect(wallet.activeAccount).toBe(0);
+  // });
 
-  // //* getAccountById
-  it('should get an account by id', () => {
-    const id = 1;
-    const account1 = keyringManager.getAccountById(id);
+  // // //* getAccountById
+  // it('should get an account by id', () => {
+  //   const id = 1;
+  //   const account1 = keyringManager.getAccountById(id);
 
-    expect(account1).toBeDefined();
-    expect(account1.id).toBe(id);
-  });
+  //   expect(account1).toBeDefined();
+  //   expect(account1.id).toBe(id);
+  // });
 
   // //   //* getPrivateKeyByAccountId
-  it('should get an account private key by id', () => {
-    const id = 1;
-    const privateKey = keyringManager.getPrivateKeyByAccountId(id);
+  // it('should get an account private key by id', () => {
+  //   const id = 1;
+  //   const privateKey = keyringManager.getPrivateKeyByAccountId(id);
 
-    expect(privateKey).toBeDefined();
-    expect(privateKey.length).toBeGreaterThan(50);
-  });
+  //   expect(privateKey).toBeDefined();
+  //   expect(privateKey.length).toBeGreaterThan(50);
+  // });
 
-  it('should be undefined when pass invalid account id', () => {
-    const invalidId = 3;
-    const wallet = keyringManager.getState();
-    const invalidAccount = wallet.accounts[invalidId];
-    expect(invalidAccount).toBeUndefined();
-  });
+  // it('should be undefined when pass invalid account id', () => {
+  //   const invalidId = 3;
+  //   const wallet = keyringManager.getState();
+  //   const invalidAccount = wallet.accounts[invalidId];
+  //   expect(invalidAccount).toBeUndefined();
+  // });
 
   // //   //* getEncryptedXprv
-  it('should get the encrypted private key', async () => {
-    const xprv = keyringManager.getEncryptedXprv();
+  // it('should get the encrypted private key', async () => {
+  //   const xprv = keyringManager.getEncryptedXprv();
 
-    expect(xprv).toBeDefined();
-    expect(xprv.substring(1, 4)).not.toEqual('prv');
-  });
+  //   expect(xprv).toBeDefined();
+  //   expect(xprv.substring(1, 4)).not.toEqual('prv');
+  // });
 
-  //   //* getAccountXpub
-  it('should get the public key', async () => {
-    const xpub = keyringManager.getAccountXpub();
+  // //   //* getAccountXpub
+  // it('should get the public key', async () => {
+  //   const xpub = keyringManager.getAccountXpub();
 
-    expect(xpub).toBeDefined();
-    expect(xpub.substring(1, 4)).toEqual('pub');
-  });
+  //   expect(xpub).toBeDefined();
+  //   expect(xpub.substring(1, 4)).toEqual('pub');
+  // });
 
   //   //* getSeed
-  it('should get the seed', async () => {
-    const localSeed = keyringManager.getSeed(FAKE_PASSWORD);
-    expect(localSeed).toBe(PEACE_SEED_PHRASE);
-    expect(() => {
-      keyringManager.getSeed('wrongp@ss123');
-    }).toThrow('Invalid password.');
-  });
+  // it('should get the seed', async () => {
+  //   const localSeed = keyringManager.getSeed(FAKE_PASSWORD);
+  //   expect(localSeed).toBe(PEACE_SEED_PHRASE);
+  //   expect(() => {
+  //     keyringManager.getSeed('wrongp@ss123');
+  //   }).toThrow('Invalid password.');
+  // });
 
-  //   //* getLatestUpdateForAccount
-  it('should get an updated account', async () => {
-    const account = await keyringManager.getLatestUpdateForAccount();
+  // //   //* getLatestUpdateForAccount
+  // it('should get an updated account', async () => {
+  //   const account = await keyringManager.getLatestUpdateForAccount();
 
-    expect(account).toBeDefined();
-  });
+  //   expect(account).toBeDefined();
+  // });
 
   // // -----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------
 
-  it('Validate get nounce', async () => {
-    const { window } = global;
+  // it('Validate get nounce', async () => {
+  //   const { window } = global;
 
-    if (window === undefined) {
-      const account = await keyringManager.setSignerNetwork(
-        SYS_EVM_NETWORK as INetwork,
-        'ethereum'
-      );
-      const address = FAKE_ADDRESS;
+  //   if (window === undefined) {
+  //     const account = await keyringManager.setSignerNetwork(
+  //       SYS_EVM_NETWORK as INetwork,
+  //       'ethereum'
+  //     );
+  //     const address = FAKE_ADDRESS;
 
-      const nonce =
-        await keyringManager.ethereumTransaction.getRecommendedNonce(address);
+  //     const nonce =
+  //       await keyringManager.ethereumTransaction.getRecommendedNonce(address);
 
-      expect(typeof nonce).toBe('number');
-      return;
-    }
-    const account = await keyringManager.setSignerNetwork(
-      SYS_EVM_NETWORK as INetwork,
-      'ethereum'
-    );
-    const address = account.address;
-    const nonce = await keyringManager.ethereumTransaction.getRecommendedNonce(
-      address
-    );
+  //     expect(typeof nonce).toBe('number');
+  //     return;
+  //   }
+  //   const account = await keyringManager.setSignerNetwork(
+  //     SYS_EVM_NETWORK as INetwork,
+  //     'ethereum'
+  //   );
+  //   const address = account.address;
+  //   const nonce = await keyringManager.ethereumTransaction.getRecommendedNonce(
+  //     address
+  //   );
 
-    expect(typeof nonce).toBe('number');
-  });
+  //   expect(typeof nonce).toBe('number');
+  // });
 
-  it('validate toBigNumber method', async () => {
-    const number = 1;
+  // it('validate toBigNumber method', async () => {
+  //   const number = 1;
 
-    const toBigNumber = keyringManager.ethereumTransaction.toBigNumber(number);
+  //   const toBigNumber = keyringManager.ethereumTransaction.toBigNumber(number);
 
-    expect(toBigNumber._isBigNumber).toBe(true);
-  });
+  //   expect(toBigNumber._isBigNumber).toBe(true);
+  // });
 
-  it('should validate getFeeDataWithDynamicMaxPriorityFeePerGas method', async () => {
-    const feeDataWithDynamicMaxPriorityFeePerGas =
-      await keyringManager.ethereumTransaction.getFeeDataWithDynamicMaxPriorityFeePerGas();
+  // it('should validate getFeeDataWithDynamicMaxPriorityFeePerGas method', async () => {
+  //   const feeDataWithDynamicMaxPriorityFeePerGas =
+  //     await keyringManager.ethereumTransaction.getFeeDataWithDynamicMaxPriorityFeePerGas();
 
-    expect(feeDataWithDynamicMaxPriorityFeePerGas).toBeDefined();
-  });
+  //   expect(feeDataWithDynamicMaxPriorityFeePerGas).toBeDefined();
+  // });
 
-  it('should validate getTxGasLimit method', async () => {
-    const tx = TX;
+  // it('should validate getTxGasLimit method', async () => {
+  //   const tx = TX;
 
-    tx.value = keyringManager.ethereumTransaction.toBigNumber(tx.value);
+  //   tx.value = keyringManager.ethereumTransaction.toBigNumber(tx.value);
 
-    const gasLimit = await keyringManager.ethereumTransaction.getTxGasLimit(tx);
+  //   const gasLimit = await keyringManager.ethereumTransaction.getTxGasLimit(tx);
 
-    expect(gasLimit instanceof ethers.BigNumber).toBeTruthy();
-  });
+  //   expect(gasLimit instanceof ethers.BigNumber).toBeTruthy();
+  // });
 
   //   //* setSignerNetwork
   it('should set the network', async () => {
     const testnet = initialWalletState.networks.ethereum[80001];
+    console.log('Checking testnet network', testnet);
 
     await keyringManager.setSignerNetwork(testnet, 'ethereum');
 

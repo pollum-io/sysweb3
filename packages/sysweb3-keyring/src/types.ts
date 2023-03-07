@@ -117,7 +117,7 @@ export interface IEthereumTransactions {
 }
 
 export interface NewIEthereumTransactions extends IEthereumTransactions {
-  setActiveNetwork: (network: INetwork) => void;
+  setWeb3Provider: (network: INetwork) => void;
 }
 
 export interface ISyscoinTransactions {

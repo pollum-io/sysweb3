@@ -7,11 +7,11 @@ import { hdkey } from 'ethereumjs-wallet';
 import { ethers } from 'ethers';
 import sys from 'syscoinjs-lib';
 import {
-  IEthereumTransactions,
   IKeyringAccountState,
   IKeyringBalances,
   ISyscoinTransactions,
   IWalletState,
+  NewIEthereumTransactions,
 } from 'types';
 
 import { initialWalletState } from './initial-state';
@@ -28,6 +28,7 @@ import {
   getAsset,
   IEthereumNftDetails,
   INetwork,
+  INetworkType,
 } from '@pollum-io/sysweb3-utils';
 
 //todo: remove vault and add info in the constructor as OPTS
@@ -59,7 +60,6 @@ export class NewKeyringManager {
   private xprv: string;
   private xpub: string;
   private address: string;
-  activeNetwork: INetwork;
 
   private storage: any; //todo type
   private wallet: IWalletState;
@@ -71,15 +71,13 @@ export class NewKeyringManager {
   actualPassword: string;
 
   //transactions objects
-  public ethereumTransaction: IEthereumTransactions;
+  public ethereumTransaction: NewIEthereumTransactions;
   syscoinTransaction: ISyscoinTransactions;
 
   constructor() {
     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
     this.wallet = initialWalletState;
     this.hd = new sys.utils.HDSigner('');
-
-    this.activeNetwork = initialWalletState.activeNetwork;
 
     this.hash = '';
     this.salt = this.generateSalt();
@@ -93,12 +91,6 @@ export class NewKeyringManager {
     this.syscoinTransaction = SyscoinTransactions();
 
     this.ethereumTransaction = new NewEthereumTransactions();
-    //todo: web3Provider moved inside new-ethereum tx
-    // //TODO: if its being initialized on a UTXO evm initialize web3Provider as null;
-    // //When setting a EVM network create web3Provider and set it
-    // this.web3Provider = new ethers.providers.JsonRpcProvider(
-    //   this.activeNetwork.url
-    // );
   }
 
   /**
@@ -253,44 +245,75 @@ export class NewKeyringManager {
     network: INetwork,
     chain: string
   ): Promise<IKeyringAccountState> => {
-    const { wallet: _wallet } = getDecryptedVault();
+    if (INetworkType.Ethereum !== chain && INetworkType.Syscoin !== chain) {
+      // TODO: change to better implementation
+      throw new Error('Unsupported chain');
+    }
+    const networkChain =
+      INetworkType.Ethereum === chain
+        ? INetworkType.Ethereum
+        : INetworkType.Syscoin; //TODO: change to better implementation
+    // const { wallet: _wallet } = getDecryptedVault();
 
-    const networksByChain = _wallet.networks[chain];
+    const MemnetworksByChain = this.wallet.networks[networkChain];
+    console.log('Checking wallet on memory', this.wallet);
+    console.log('Checking network being added', network);
+    console.log(
+      'Checking network from this.wallet.networks',
+      MemnetworksByChain
+    );
+    this.wallet.networks[networkChain][network.chainId] = network;
+    //TODO: this is changing the network definition on memory we probably should have another function for this
 
-    this.wallet = {
-      ..._wallet,
-      networks: {
-        ..._wallet.networks,
-        [chain]: {
-          ...networksByChain,
-          [network.chainId]: network,
-        },
-      },
-      activeNetwork: network,
-    };
+    this.wallet.activeNetwork = network; //TODO: we need to change the activeNetwork on memory only after the network transaction being sucessfull
+    console.log('this.wallet after', this.wallet);
+    // this.wallet = {
+    //   ..._wallet,
+    //   networks: {
+    //     ..._wallet.networks,
+    //     [chain]: {
+    //       ...networksByChain,
+    //       [network.chainId]: network,
+    //     },
+    //   },
+    //   activeNetwork: network,
+    // };
 
-    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
+    // setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
 
-    //todo adjust this in a better way
+    //TODO: adjust this in a better way
     if (chain === 'ethereum') {
-      this.ethereumTransaction.setActiveNetwork(network); //todo maybe setWeb3ProviderNetwork is a better naming
+      this.ethereumTransaction.setWeb3Provider(network);
     }
 
-    //todo: ask why do we need to call setSignerByChain twice?
+    //TODO: ask why do we need to call setSignerByChain twice?
 
-    await this.setSignerByChain(network, chain);
-
-    if (chain === SYSCOIN_CHAIN) {
-      const { rpc, isTestnet } = await this.setSignerByChain(network, chain);
-
-      setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
+    let rpc, isTestnet;
+    if (chain === INetworkType.Syscoin) {
+      const { rpc: _rpc, isTestnet: _isTestnet } = await this.setSignerUTXO(
+        network
+      );
+      rpc = _rpc;
+      isTestnet = _isTestnet;
+      console.log('SYSCOIN_CHAIN: Check decryptedVault', getDecryptedVault());
+      console.log('SYSCOIN_CHAIN: Check rpc', rpc);
+      console.log('SYSCOIN_CHAIN: Check isTestnet', isTestnet);
+    } else if (chain === INetworkType.Ethereum) {
+      console.log('Ethereum_CHAIN: Fetching EVM network', network);
+      const response = await this.setSignerEVM(network); //TODO: remove the response return from this function is just for validation
+      console.log('Ethereum_CHAIN: And its done', response);
     }
+    // if (chain === INetworkType.Syscoin) {
+    //   const { rpc, isTestnet } = await this.setSignerByChain(network, chain);
 
+    //   setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
+    // }
+    console.log('Calling getAccountForNetwork');
     const account = await this.getAccountForNetwork({
-      isSyscoinChain: chain === SYSCOIN_CHAIN,
+      isSyscoinChain: chain === INetworkType.Syscoin,
     });
 
-    //todo: ask why do we need to set this.wallet twice?
+    //TODO: ask why do we need to set this.wallet twice?
     this.wallet = {
       ...this.wallet,
       accounts: {
@@ -816,32 +839,35 @@ export class NewKeyringManager {
     return createdAccount;
   };
 
-  // private setSignerUTXO = async (
-  //   network: INetwork
-  // ): Promise<{ rpc: any; isTestnet: boolean }> => {
-  //   const { rpc, chain } = await getSysRpc(network);
+  private setSignerUTXO = async (
+    network: INetwork
+  ): Promise<{ rpc: any; isTestnet: boolean }> => {
+    const { rpc, chain } = await getSysRpc(network);
 
-  //   return {
-  //     rpc,
-  //     isTestnet: chain === 'test',
-  //   };
-  // };
+    return {
+      rpc,
+      isTestnet: chain === 'test',
+    };
+  };
 
   private setSignerEVM = async (network: INetwork): Promise<boolean> => {
-    const newNetwork =
-      getDecryptedVault().wallet.networks.ethereum[network.chainId];
-
-    if (!newNetwork) throw new Error('Network not found');
-
-    await jsonRpcRequest(network.url, 'eth_chainId');
-
-    this.activeNetwork = newNetwork; //todo check this method
-
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      isTestnet: false,
-    });
-    return true;
+    // await jsonRpcRequest(network.url, 'eth_chainId');
+    const web3Provider = new ethers.providers.JsonRpcProvider(network.url);
+    const { chainId } = await web3Provider.getNetwork();
+    console.log(
+      'Check if there is match between network provided with rpc url',
+      chainId,
+      network
+    );
+    if (network.chainId === chainId) {
+      console.log('true');
+      return true;
+    }
+    return false;
+    // setEncryptedVault({
+    //   ...getDecryptedVault(),
+    //   isTestnet: false,
+    // });
   };
 
   private setSignerByChain = async (
@@ -849,10 +875,10 @@ export class NewKeyringManager {
     chain: string
   ): Promise<{ rpc: any; isTestnet: boolean }> => {
     //todo set encrypted vault maybe it is unnecessary
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      network,
-    });
+    // setEncryptedVault({
+    //   ...getDecryptedVault(),
+    //   network,
+    // });
 
     const isSyscoinChain = this.isSyscoinChain(chain);
 
@@ -875,8 +901,6 @@ export class NewKeyringManager {
     if (!newNetwork) throw new Error('Network not found');
 
     await jsonRpcRequest(network.url, 'eth_chainId');
-
-    this.activeNetwork = newNetwork;
 
     setEncryptedVault({
       ...getDecryptedVault(),
