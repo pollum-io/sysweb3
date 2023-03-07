@@ -13,7 +13,7 @@ import {
 import { INetwork } from '@pollum-io/sysweb3-utils';
 
 describe('', () => {
-  const keyringManager = new NewKeyringManager({});
+  const keyringManager = new NewKeyringManager();
 
   jest.setTimeout(50000); // 20s
 
@@ -135,11 +135,8 @@ describe('', () => {
       const address = FAKE_ADDRESS;
 
       const nonce =
-        await keyringManager.ethereumTransaction.getRecommendedNonce(
-          address,
-          keyringManager.web3Provider
-        );
-      console.log('nonce', nonce);
+        await keyringManager.ethereumTransaction.getRecommendedNonce(address);
+
       expect(typeof nonce).toBe('number');
       return;
     }
@@ -149,8 +146,7 @@ describe('', () => {
     );
     const address = account.address;
     const nonce = await keyringManager.ethereumTransaction.getRecommendedNonce(
-      address,
-      keyringManager.web3Provider
+      address
     );
 
     expect(typeof nonce).toBe('number');
@@ -166,9 +162,7 @@ describe('', () => {
 
   it('should validate getFeeDataWithDynamicMaxPriorityFeePerGas method', async () => {
     const feeDataWithDynamicMaxPriorityFeePerGas =
-      await keyringManager.ethereumTransaction.getFeeDataWithDynamicMaxPriorityFeePerGas(
-        keyringManager.web3Provider
-      );
+      await keyringManager.ethereumTransaction.getFeeDataWithDynamicMaxPriorityFeePerGas();
 
     expect(feeDataWithDynamicMaxPriorityFeePerGas).toBeDefined();
   });
@@ -178,10 +172,7 @@ describe('', () => {
 
     tx.value = keyringManager.ethereumTransaction.toBigNumber(tx.value);
 
-    const gasLimit = await keyringManager.ethereumTransaction.getTxGasLimit(
-      tx,
-      keyringManager.web3Provider
-    );
+    const gasLimit = await keyringManager.ethereumTransaction.getTxGasLimit(tx);
 
     expect(gasLimit instanceof ethers.BigNumber).toBeTruthy();
   });
@@ -189,9 +180,11 @@ describe('', () => {
   //   //* setSignerNetwork
   it('should set the network', async () => {
     const testnet = initialWalletState.networks.ethereum[80001];
+
     await keyringManager.setSignerNetwork(testnet, 'ethereum');
 
     const network = keyringManager.getNetwork();
+
     expect(network).toEqual(testnet);
   });
 

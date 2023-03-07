@@ -17,7 +17,7 @@ import {
 import { initialWalletState } from './initial-state';
 import { getSigners, SyscoinHDSigner } from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
-import { EthereumTransactions, SyscoinTransactions } from './transactions';
+import { NewEthereumTransactions, SyscoinTransactions } from './transactions';
 import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
   getSysRpc,
@@ -59,29 +59,27 @@ export class NewKeyringManager {
   private xprv: string;
   private xpub: string;
   private address: string;
-  private activeNetwork: INetwork;
+  activeNetwork: INetwork;
 
-  storage: any; //todo type
-  wallet: IWalletState;
-  web3Provider: any; //todo type
+  private storage: any; //todo type
+  private wallet: IWalletState;
 
   //local variables
-  hd: SyscoinHDSigner;
-  memMnemonic: string;
+  private hd: SyscoinHDSigner;
+  private memMnemonic: string;
   memPassword: string;
   actualPassword: string;
 
   //transactions objects
-  ethereumTransaction: IEthereumTransactions;
+  public ethereumTransaction: IEthereumTransactions;
   syscoinTransaction: ISyscoinTransactions;
 
-  constructor(opts: IKeyringManagerOpts) {
+  constructor() {
     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
     this.wallet = initialWalletState;
     this.hd = new sys.utils.HDSigner('');
 
-    this.activeNetwork =
-      opts?.activeNetwork ?? initialWalletState.activeNetwork;
+    this.activeNetwork = initialWalletState.activeNetwork;
 
     this.hash = '';
     this.salt = this.generateSalt();
@@ -94,12 +92,13 @@ export class NewKeyringManager {
 
     this.syscoinTransaction = SyscoinTransactions();
 
-    this.ethereumTransaction = EthereumTransactions();
-    //TODO: if its being initialized on a UTXO evm initialize web3Provider as null;
-    //When setting a EVM network create web3Provider and set it
-    this.web3Provider = new ethers.providers.JsonRpcProvider(
-      this.activeNetwork.url
-    );
+    this.ethereumTransaction = new NewEthereumTransactions();
+    //todo: web3Provider moved inside new-ethereum tx
+    // //TODO: if its being initialized on a UTXO evm initialize web3Provider as null;
+    // //When setting a EVM network create web3Provider and set it
+    // this.web3Provider = new ethers.providers.JsonRpcProvider(
+    //   this.activeNetwork.url
+    // );
   }
 
   /**
@@ -271,8 +270,14 @@ export class NewKeyringManager {
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
-    this.web3Provider = new ethers.providers.JsonRpcProvider(network.url); //TODO change web3Provider only after execution
+
+    //todo adjust this in a better way
+    if (chain === 'ethereum') {
+      this.ethereumTransaction.setActiveNetwork(network); //todo maybe setWeb3ProviderNetwork is a better naming
+    }
+
     //todo: ask why do we need to call setSignerByChain twice?
+
     await this.setSignerByChain(network, chain);
 
     if (chain === SYSCOIN_CHAIN) {
@@ -280,10 +285,12 @@ export class NewKeyringManager {
 
       setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
     }
+
     const account = await this.getAccountForNetwork({
       isSyscoinChain: chain === SYSCOIN_CHAIN,
     });
 
+    //todo: ask why do we need to set this.wallet twice?
     this.wallet = {
       ...this.wallet,
       accounts: {
@@ -293,6 +300,7 @@ export class NewKeyringManager {
       activeAccount: account.id,
     };
 
+    //todo: ask why do we need to set encrypted vault 3 times?
     setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
     return account;
   };
@@ -663,16 +671,13 @@ export class NewKeyringManager {
   ) => {
     const { network } = getDecryptedVault();
 
-    const balance = await this.ethereumTransaction.getBalance(
-      address,
-      this.web3Provider
-    );
-
     const transactions = await this.ethereumTransaction.getUserTransactions(
       address,
-      network,
-      this.web3Provider
+      network
     );
+
+    const balance = await this.ethereumTransaction.getBalance(address);
+
     // const assets = await web3Wallet.getAssetsByAddress(address, network);
     const assets: IEthereumNftDetails[] = [];
 
@@ -720,6 +725,7 @@ export class NewKeyringManager {
 
       if (!_wallet.accounts[id].isImported) {
         const label = _wallet.accounts[id].label;
+
         await this.setDerivedWeb3Accounts(id, label);
       }
     }
@@ -758,6 +764,7 @@ export class NewKeyringManager {
       id,
       label
     );
+
     const createdAccount = {
       address,
       xpub,
@@ -785,6 +792,7 @@ export class NewKeyringManager {
         ACCOUNT_ZERO,
         label
       );
+
       const account = {
         xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
         xpub: publicKey,
@@ -861,11 +869,14 @@ export class NewKeyringManager {
         isTestnet: response.chain === 'test',
       };
     }
+
     const newNetwork =
       getDecryptedVault().wallet.networks.ethereum[network.chainId];
     if (!newNetwork) throw new Error('Network not found');
+
     await jsonRpcRequest(network.url, 'eth_chainId');
-    this.activeNetwork = newNetwork; //todo check this method
+
+    this.activeNetwork = newNetwork;
 
     setEncryptedVault({
       ...getDecryptedVault(),
@@ -947,17 +958,13 @@ export class NewKeyringManager {
     account: IKeyringAccountState,
     network: INetwork
   ) => {
-    const [balance, transactions] = await Promise.all([
-      await this.ethereumTransaction.getBalance(
-        account.address,
-        this.web3Provider
-      ),
-
+    const [transactions, balance] = await Promise.all([
       await this.ethereumTransaction.getUserTransactions(
         account.address,
-        network,
-        this.web3Provider
+        network
       ),
+
+      await this.ethereumTransaction.getBalance(account.address),
     ]);
 
     const updatedAccount = {

@@ -64,32 +64,19 @@ export interface IEthereumTransactions {
     signature: string,
     version: Version
   ) => string;
-  sendTransaction: (
-    data: ISendTransaction,
-    web3Provider: any
-  ) => Promise<TransactionResponse>;
+  sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
   sendFormattedTransaction: (
-    data: SimpleTransactionRequest,
-    web3Provider: any
+    data: SimpleTransactionRequest
   ) => Promise<TransactionResponse>;
   getRecommendedNonce: (
     address: string,
-    activeNetwork: INetwork,
-    web3Provider: any
+    activeNetwork: INetwork
   ) => Promise<number>;
-  getFeeByType: (web3Provider: any, type: string) => Promise<string>;
-  getFeeDataWithDynamicMaxPriorityFeePerGas: (
-    web3Provider: any
-  ) => Promise<any>;
-  getGasLimit: (toAddress: string, web3Provider: any) => Promise<number>;
-  getTxGasLimit: (
-    tx: SimpleTransactionRequest,
-    web3Provider: any
-  ) => Promise<ethers.BigNumber>;
-  getRecommendedGasPrice: (
-    web3Provider: any,
-    formatted?: boolean
-  ) => Promise<
+  getFeeByType: (type: string) => Promise<string>;
+  getFeeDataWithDynamicMaxPriorityFeePerGas: () => Promise<any>;
+  getGasLimit: (toAddress: string) => Promise<number>;
+  getTxGasLimit: (tx: SimpleTransactionRequest) => Promise<ethers.BigNumber>;
+  getRecommendedGasPrice: (formatted?: boolean) => Promise<
     | string
     | {
         gwei: string;
@@ -113,7 +100,7 @@ export interface IEthereumTransactions {
     tokenId,
   }: ISendSignedErcTransactionProps) => Promise<IResponseFromSendErcSignedTransaction>;
 
-  getBalance: (address: string, web3Provider: any) => Promise<number>;
+  getBalance: (address: string) => Promise<number>;
   getErc20TokenBalance: (
     tokenAddress: string,
     walletAddress: string
@@ -121,14 +108,13 @@ export interface IEthereumTransactions {
   getErc20TokensByAddress: (
     address: string,
     isSupported: boolean,
-    apiUrl: string,
-    web3Provider: any
+    apiUrl: string
   ) => Promise<any[]>;
   getUserTransactions: (
     address: string,
-    network: INetwork,
-    web3Provider: any
+    network: INetwork
   ) => Promise<TransactionResponse[]>;
+  setActiveNetwork: (network: INetwork) => void;
 }
 
 export interface ISyscoinTransactions {
