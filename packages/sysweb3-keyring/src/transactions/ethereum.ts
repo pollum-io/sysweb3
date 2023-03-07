@@ -44,6 +44,7 @@ import {
   getTokenStandardMetadata,
   INetwork,
 } from '@pollum-io/sysweb3-utils';
+import { web3Provider } from '@pollum-io/sysweb3-network';
 
 export const EthereumTransactions = (): IEthereumTransactions => {
   const storage = sysweb3Di.getStateStorageDb();
@@ -225,9 +226,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const getFeeDataWithDynamicMaxPriorityFeePerGas = async (
-    web3Provider: any
-  ) => {
+  const getFeeDataWithDynamicMaxPriorityFeePerGas = async () => {
     let maxFeePerGas = toBigNumber(0);
     let maxPriorityFeePerGas = toBigNumber(0);
 
@@ -251,10 +250,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const sendFormattedTransaction = async (
-    params: SimpleTransactionRequest,
-    web3Provider: any
-  ) => {
+  const sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
     const { network } = getDecryptedVault();
     const { decryptedPrivateKey } = getDecryptedPrivateKey();
 
@@ -273,10 +269,13 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
   // tip numerador eip 1559
-  const sendTransaction = async (
-    { sender, receivingAddress, amount, gasLimit, token }: ISendTransaction,
-    web3Provider: any
-  ): Promise<TransactionResponse> => {
+  const sendTransaction = async ({
+    sender,
+    receivingAddress,
+    amount,
+    gasLimit,
+    token,
+  }: ISendTransaction): Promise<TransactionResponse> => {
     const tokenDecimals = token && token.decimals ? token.decimals : 18;
     const decimals = toBigNumber(tokenDecimals);
 
@@ -304,7 +303,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
     // gas price, gas limit e maxPriorityFeePerGas (tip)
     const { maxFeePerGas, maxPriorityFeePerGas } =
-      await getFeeDataWithDynamicMaxPriorityFeePerGas(web3Provider);
+      await getFeeDataWithDynamicMaxPriorityFeePerGas();
 
     const tx: Deferrable<ethers.providers.TransactionRequest> = {
       to: receivingAddress,
@@ -421,7 +420,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   //todo: need to receive activeNetwork and web3Provider<MAYBE>?
-  const getRecommendedNonce = async (address: string, web3Provider: any) => {
+  const getRecommendedNonce = async (address: string) => {
     try {
       return await web3Provider.getTransactionCount(address, 'pending');
     } catch (error) {
@@ -429,11 +428,8 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const getFeeByType = async (type: string, web3Provider: any) => {
-    const gasPrice = (await getRecommendedGasPrice(
-      web3Provider,
-      false
-    )) as string;
+  const getFeeByType = async (type: string) => {
+    const gasPrice = (await getRecommendedGasPrice(false)) as string;
 
     const low = toBigNumber(gasPrice)
       .mul(ethers.BigNumber.from('8'))
@@ -451,7 +447,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     return gasPrice;
   };
 
-  const getGasLimit = async (toAddress: string, web3Provider: any) => {
+  const getGasLimit = async (toAddress: string) => {
     try {
       const estimated = await web3Provider.estimateGas({
         to: toAddress,
@@ -463,10 +459,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const getTxGasLimit = async (
-    tx: SimpleTransactionRequest,
-    web3Provider: any
-  ) => {
+  const getTxGasLimit = async (tx: SimpleTransactionRequest) => {
     try {
       return web3Provider.estimateGas(tx);
     } catch (error) {
@@ -474,10 +467,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const getRecommendedGasPrice = async (
-    web3Provider: any,
-    formatted?: boolean
-  ) => {
+  const getRecommendedGasPrice = async (formatted?: boolean) => {
     try {
       const gasPriceBN = await web3Provider.getGasPrice();
 
@@ -504,7 +494,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     return result;
   };
 
-  const getBalance = async (address: string, web3Provider: any) => {
+  const getBalance = async (address: string) => {
     try {
       const balance = await web3Provider.getBalance(address);
       const formattedBalance = ethers.utils.formatEther(balance);
@@ -540,8 +530,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   const getErc20TokensByAddress = async (
     address: string,
     isSupported: boolean,
-    apiUrl: string,
-    web3Provider: any
+    apiUrl: string
   ) => {
     const etherscanQuery = `?module=account&action=tokentx&address=${address}&page=1&offset=100&&startblock=0&endblock=99999999&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`;
 
@@ -586,8 +575,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
   const getUserTransactions = async (
     address: string,
-    network: INetwork,
-    web3Provider: any
+    network: INetwork
   ): Promise<TransactionResponse[]> => {
     const etherscanSupportedNetworks = [
       'homestead',

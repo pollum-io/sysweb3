@@ -31,10 +31,10 @@ import { getFormattedTransactionResponse } from '../format';
 import { initialWalletState } from '../initial-state';
 import { getDecryptedVault } from '../storage';
 import {
-  IEthereumTransactions,
   IResponseFromSendErcSignedTransaction,
   ISendSignedErcTransactionProps,
   ISendTransaction,
+  NewIEthereumTransactions,
   SimpleTransactionRequest,
 } from '../types';
 import { sysweb3Di } from '@pollum-io/sysweb3-core';
@@ -54,7 +54,7 @@ const ETHER_SCAN_SUPPORTED_NETWORKS = [
   'kovan',
 ];
 
-export class NewEthereumTransactions implements IEthereumTransactions {
+export class NewEthereumTransactions implements NewIEthereumTransactions {
   web3Provider: any;
   activeNetwork: INetwork;
 

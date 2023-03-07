@@ -114,6 +114,9 @@ export interface IEthereumTransactions {
     address: string,
     network: INetwork
   ) => Promise<TransactionResponse[]>;
+}
+
+export interface NewIEthereumTransactions extends IEthereumTransactions {
   setActiveNetwork: (network: INetwork) => void;
 }
 
