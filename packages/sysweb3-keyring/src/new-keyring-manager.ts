@@ -230,7 +230,7 @@ export class NewKeyringManager {
 
     const latestUpdate = isSyscoinChain
       ? await this.getLatestUpdateForSysAccount()
-      : await this.getLatestUpdateForWeb3Accounts();
+      : await this.getLatestUpdateForWeb3Accounts(vault.activeNetwork);
 
     const { wallet: _updatedWallet } = getDecryptedVault();
 
@@ -244,7 +244,7 @@ export class NewKeyringManager {
   public setSignerNetwork = async (
     network: INetwork,
     chain: string
-  ): Promise<IKeyringAccountState> => {
+  ): Promise<IKeyringAccountState | undefined> => {
     if (INetworkType.Ethereum !== chain && INetworkType.Syscoin !== chain) {
       // TODO: change to better implementation
       throw new Error('Unsupported chain');
@@ -255,40 +255,12 @@ export class NewKeyringManager {
         : INetworkType.Syscoin; //TODO: change to better implementation
     // const { wallet: _wallet } = getDecryptedVault();
 
-    const MemnetworksByChain = this.wallet.networks[networkChain];
     console.log('Checking wallet on memory', this.wallet);
     console.log('Checking network being added', network);
-    console.log(
-      'Checking network from this.wallet.networks',
-      MemnetworksByChain
-    );
-    this.wallet.networks[networkChain][network.chainId] = network;
-    //TODO: this is changing the network definition on memory we probably should have another function for this
-
-    this.wallet.activeNetwork = network; //TODO: we need to change the activeNetwork on memory only after the network transaction being sucessfull
-    console.log('this.wallet after', this.wallet);
-    // this.wallet = {
-    //   ..._wallet,
-    //   networks: {
-    //     ..._wallet.networks,
-    //     [chain]: {
-    //       ...networksByChain,
-    //       [network.chainId]: network,
-    //     },
-    //   },
-    //   activeNetwork: network,
-    // };
-
-    // setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
-
-    //TODO: adjust this in a better way
-    if (chain === 'ethereum') {
-      this.ethereumTransaction.setWeb3Provider(network);
-    }
 
     //TODO: ask why do we need to call setSignerByChain twice?
 
-    let rpc, isTestnet;
+    let rpc, isTestnet, account;
     if (chain === INetworkType.Syscoin) {
       const { rpc: _rpc, isTestnet: _isTestnet } = await this.setSignerUTXO(
         network
@@ -298,34 +270,28 @@ export class NewKeyringManager {
       console.log('SYSCOIN_CHAIN: Check decryptedVault', getDecryptedVault());
       console.log('SYSCOIN_CHAIN: Check rpc', rpc);
       console.log('SYSCOIN_CHAIN: Check isTestnet', isTestnet);
+      account = await this.setSyscoinAccount();
     } else if (chain === INetworkType.Ethereum) {
-      console.log('Ethereum_CHAIN: Fetching EVM network', network);
-      const response = await this.setSignerEVM(network); //TODO: remove the response return from this function is just for validation
-      console.log('Ethereum_CHAIN: And its done', response);
+      await this.setSignerEVM(network);
+      account = this.getLatestUpdateForWeb3Accounts(network);
     }
+    this.wallet.networks[networkChain][network.chainId] = network;
+    //TODO: this is changing the network definition on memory we probably should have another function for this
+
+    this.wallet.activeNetwork = network;
     // if (chain === INetworkType.Syscoin) {
     //   const { rpc, isTestnet } = await this.setSignerByChain(network, chain);
 
     //   setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
     // }
-    console.log('Calling getAccountForNetwork');
-    const account = await this.getAccountForNetwork({
-      isSyscoinChain: chain === INetworkType.Syscoin,
-    });
-
-    //TODO: ask why do we need to set this.wallet twice?
-    this.wallet = {
-      ...this.wallet,
-      accounts: {
-        ...this.wallet.accounts,
-        [account.id]: account,
-      },
-      activeAccount: account.id,
-    };
-
+    // console.log('Calling getAccountForNetwork');
+    // const account = await this.getAccountForNetwork({
+    //   isSyscoinChain: chain === INetworkType.Syscoin,
+    // });
     //todo: ask why do we need to set encrypted vault 3 times?
     setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
-    return account;
+    console.log('this.wallet.activeNetwork after', this.wallet.activeNetwork);
+    return account; //TODO: after end of refactor remove this
   };
 
   public forgetMainWallet = (pwd: string) => {
@@ -692,17 +658,17 @@ export class NewKeyringManager {
     id: number,
     label?: string
   ) => {
-    const { network } = getDecryptedVault();
+    //TODO: completely remove transaction control logic from sysweb3
+    const transactions = [] as ethers.providers.TransactionResponse[];
+    // const transactions = await this.ethereumTransaction.getUserTransactions(
+    //   address,
+    //   network
+    // );
 
-    const transactions = await this.ethereumTransaction.getUserTransactions(
-      address,
-      network
-    );
-
-    const balance = await this.ethereumTransaction.getBalance(address);
+    const balance = await this.ethereumTransaction.getBalance(address); //TODO: get balance without calling ethTransactions
 
     // const assets = await web3Wallet.getAssetsByAddress(address, network);
-    const assets: IEthereumNftDetails[] = [];
+    const assets: IEthereumNftDetails[] = []; //TODO: remove assets from sysweb3
 
     return {
       assets,
@@ -724,21 +690,21 @@ export class NewKeyringManager {
     return CryptoJS.AES.decrypt(mnemonic, hash).toString(CryptoJS.enc.Utf8);
   };
 
-  private getLatestUpdateForWeb3Accounts = async () => {
-    const { wallet: _wallet, network } = getDecryptedVault();
+  private getLatestUpdateForWeb3Accounts = async (network: INetwork) => {
+    // const { wallet: _wallet, network } = getDecryptedVault();
 
-    for (const index in Object.values(_wallet.accounts)) {
+    for (const index in Object.values(this.wallet.accounts)) {
       const id = Number(index);
-      if (_wallet.accounts[id].isImported) {
+      if (this.wallet.accounts[id].isImported) {
         const updatedAccount = await this.getLatestUpdateForPrivateKeyAccount(
-          _wallet.accounts[id],
+          this.wallet.accounts[id],
           network
         );
 
         this.wallet = {
-          ...getDecryptedVault().wallet,
+          ...this.wallet,
           accounts: {
-            ...getDecryptedVault().wallet.accounts,
+            ...this.wallet.accounts,
             [id]: updatedAccount,
           },
         };
@@ -746,25 +712,25 @@ export class NewKeyringManager {
         setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
       }
 
-      if (!_wallet.accounts[id].isImported) {
-        const label = _wallet.accounts[id].label;
+      if (!this.wallet.accounts[id].isImported) {
+        const label = this.wallet.accounts[id].label;
 
         await this.setDerivedWeb3Accounts(id, label);
       }
     }
 
-    const { wallet: _updatedWallet } = getDecryptedVault();
+    // const { wallet: _updatedWallet } = getDecryptedVault();
 
-    const { activeAccount } = _updatedWallet;
+    // const { activeAccount } = _updatedWallet;
 
-    this.wallet = {
-      ..._updatedWallet,
-      activeAccount,
-    };
+    // this.wallet = {
+    //   ..._updatedWallet,
+    //   activeAccount,
+    // };
 
-    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
+    // setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
 
-    return getDecryptedVault().wallet.accounts[activeAccount];
+    return this.wallet.accounts[this.wallet.activeAccount]; //TODO: enhance this implementation
   };
 
   private setDerivedWeb3Accounts = async (id: number, label: string) => {
@@ -792,13 +758,14 @@ export class NewKeyringManager {
       address,
       xpub,
       xprv: CryptoJS.AES.encrypt(xprv, hash).toString(),
+      isImported: false,
       ...basicAccountInfo,
     };
 
     this.wallet = {
-      ...getDecryptedVault().wallet,
+      ...this.wallet,
       accounts: {
-        ...getDecryptedVault().wallet.accounts,
+        ...this.wallet.accounts,
         [id]: createdAccount,
       },
     };
@@ -820,13 +787,14 @@ export class NewKeyringManager {
         xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
         xpub: publicKey,
         address,
+        isImported: false,
         ...basicAccountInfo,
       };
 
       this.wallet = {
-        ...getDecryptedVault().wallet,
+        ...this.wallet,
         accounts: {
-          ...getDecryptedVault().wallet.accounts,
+          ...this.wallet.accounts,
           [ACCOUNT_ZERO]: account,
         },
       };
@@ -850,66 +818,21 @@ export class NewKeyringManager {
     };
   };
 
-  private setSignerEVM = async (network: INetwork): Promise<boolean> => {
+  private setSignerEVM = async (network: INetwork): Promise<void> => {
     // await jsonRpcRequest(network.url, 'eth_chainId');
     const web3Provider = new ethers.providers.JsonRpcProvider(network.url);
     const { chainId } = await web3Provider.getNetwork();
-    console.log(
-      'Check if there is match between network provided with rpc url',
-      chainId,
-      network
-    );
     if (network.chainId === chainId) {
-      console.log('true');
-      return true;
+      this.ethereumTransaction.setWeb3Provider(network); // If chain check was sucessfull we set it as default web3Provider
+      return;
     }
-    return false;
-    // setEncryptedVault({
-    //   ...getDecryptedVault(),
-    //   isTestnet: false,
-    // });
+    throw new Error(
+      `SetSignerEVM: Wrong network information expected ${network.chainId} received ${chainId}`
+    );
   };
 
-  private setSignerByChain = async (
-    network: INetwork,
-    chain: string
-  ): Promise<{ rpc: any; isTestnet: boolean }> => {
-    //todo set encrypted vault maybe it is unnecessary
-    // setEncryptedVault({
-    //   ...getDecryptedVault(),
-    //   network,
-    // });
-
-    const isSyscoinChain = this.isSyscoinChain(chain);
-
-    //todo: turn code inside this if into another function
-    if (isSyscoinChain) {
-      const response = await validateSysRpc(network.url);
-
-      if (!response.valid) throw new Error('Invalid network');
-
-      const rpc = network.default ? null : await getSysRpc(network);
-
-      return {
-        rpc,
-        isTestnet: response.chain === 'test',
-      };
-    }
-
-    const newNetwork =
-      getDecryptedVault().wallet.networks.ethereum[network.chainId];
-    if (!newNetwork) throw new Error('Network not found');
-
-    await jsonRpcRequest(network.url, 'eth_chainId');
-
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      isTestnet: false,
-    });
-    return {
-      rpc: null,
-      isTestnet: false,
-    };
+  private setSyscoinAccount = async () => {
+    throw new Error('Under development');
   };
 
   private getAccountForNetwork = async ({
@@ -917,19 +840,19 @@ export class NewKeyringManager {
   }: {
     isSyscoinChain: boolean;
   }) => {
-    const { network, wallet: _wallet } = getDecryptedVault();
+    // const { network, wallet: _wallet } = getDecryptedVault();
 
-    this.wallet = {
-      ..._wallet,
-      activeNetwork: network,
-    };
+    // this.wallet = {
+    //   ..._wallet,
+    //   activeNetwork: network,
+    // };
 
-    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
+    // setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
 
     if (isSyscoinChain) {
       const vault = getDecryptedVault();
 
-      setEncryptedVault({ ...vault, network });
+      // setEncryptedVault({ ...vault, network });
 
       const { _hd } = getSigners();
 
@@ -956,7 +879,7 @@ export class NewKeyringManager {
     }
 
     //todo: a fn that return another one sounds a little bit weird to me
-    return await this.getLatestUpdateForWeb3Accounts();
+    // return await this.getLatestUpdateForWeb3Accounts();
   };
 
   private clearTemporaryLocalKeys = () => {
