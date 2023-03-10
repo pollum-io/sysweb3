@@ -599,61 +599,15 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
       this.setWeb3Provider(network);
     }
 
-    const { chainId, default: _default, label, apiUrl } = network;
-
-    const networkByLabel = chainId === 1 ? 'homestead' : label.toLowerCase();
+    const { chainId } = network;
 
     //todo how to handle here?
     const pendingTransactions = this.getPendingTransactions(chainId, address);
 
-    if (_default) {
-      if (ETHER_SCAN_SUPPORTED_NETWORKS.includes(networkByLabel)) {
-        const etherscanProvider = new ethers.providers.EtherscanProvider(
-          networkByLabel,
-          'K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
-        );
-
-        const txHistory = await etherscanProvider.getHistory(address);
-
-        const history = await Promise.all(
-          txHistory.map(
-            async (tx) =>
-              await getFormattedTransactionResponse(
-                etherscanProvider,
-                tx,
-                network
-              )
-          )
-        );
-
-        return [...pendingTransactions, ...history] || [...pendingTransactions];
-      }
-
-      const query = `?module=account&action=txlist&address=${address}`;
-
-      const {
-        data: { result },
-      } = await axios.get(`${apiUrl}${query}`);
-
-      if (typeof result !== 'string') {
-        const txs = await Promise.all(
-          result.map(
-            async (tx: TransactionResponse) =>
-              await getFormattedTransactionResponse(
-                this.web3Provider,
-                tx,
-                network
-              )
-          )
-        );
-
-        return [...pendingTransactions, ...txs];
-      }
-    }
-
     return [...pendingTransactions];
   };
 
+  //TODO: remove this method from here and add on Pali inside a new TransactionManager class
   getPendingTransactions = (
     chainId: number,
     address: string
