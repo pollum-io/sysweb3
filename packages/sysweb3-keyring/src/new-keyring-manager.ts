@@ -7,15 +7,19 @@ import { hdkey } from 'ethereumjs-wallet';
 import { ethers } from 'ethers';
 import sys from 'syscoinjs-lib';
 import {
-  IEthSimpleKeyringManger,
+  IAccountType,
   IKeyringAccountState,
   IKeyringBalances,
   ISyscoinTransactions,
   IWalletState,
+  KeyringAccountType,
   NewIEthereumTransactions,
 } from 'types';
 
-import { initialWalletState } from './initial-state';
+import {
+  initialActiveImportedAccountState,
+  initialWalletState,
+} from './initial-state';
 import { getSigners, SyscoinHDSigner } from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
 import { NewEthereumTransactions, SyscoinTransactions } from './transactions';
@@ -31,7 +35,6 @@ import {
   INetwork,
   INetworkType,
 } from '@pollum-io/sysweb3-utils';
-import { EthSimpleKeyringManager } from 'eth-simple-keyring-manager';
 
 //todo: remove vault and add info in the constructor as OPTS
 
@@ -56,7 +59,6 @@ export interface ISysAccountWithId extends ISysAccount {
   id: number;
 }
 
-
 export class NewKeyringManager {
   private hash: string;
   private salt: string;
@@ -65,7 +67,7 @@ export class NewKeyringManager {
   private address: string;
 
   private storage: any; //todo type
-  private wallet: IWalletState //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
+  private wallet: IWalletState; //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
 
   //local variables
   private hd: SyscoinHDSigner;
@@ -77,13 +79,9 @@ export class NewKeyringManager {
   public ethereumTransaction: NewIEthereumTransactions;
   syscoinTransaction: ISyscoinTransactions;
 
-  //eth simple keyring manager to handle private key accounts
-  private ethSimpleKeyring: IEthSimpleKeyringManger
-
   constructor() {
     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
     this.wallet = initialWalletState; //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
-
     this.hd = new sys.utils.HDSigner('');
 
     this.hash = '';
@@ -98,13 +96,24 @@ export class NewKeyringManager {
     this.syscoinTransaction = SyscoinTransactions();
 
     this.ethereumTransaction = new NewEthereumTransactions();
-
-    this.ethSimpleKeyring = new EthSimpleKeyringManager();
   }
 
-  /**
-   * PUBLIC METHODS
-   */
+  // ===================================== PUBLIC METHODS - KEYRING MANAGER FOR HD - SYS ALL ===================================== //
+  public validateAccountType = (account: IKeyringAccountState) => {
+    return account.isImported === true
+      ? KeyringAccountType.Imported
+      : KeyringAccountType.HDAccount;
+  };
+
+  public validateAndGetAccountsByType = (): IAccountType => {
+    const {
+      wallet: { accounts, activeAccountType },
+    } = getDecryptedVault();
+
+    return activeAccountType === KeyringAccountType.HDAccount
+      ? accounts.hd_accounts
+      : accounts.imported_accounts;
+  };
 
   public addNewAccount = async (label?: string) => {
     const { network, mnemonic } = getDecryptedVault();
@@ -161,9 +170,10 @@ export class NewKeyringManager {
         ...this.wallet.accounts,
         hd_accounts: {
           [vault.id]: vault,
-        }
+        },
       },
       activeAccountId: vault.id,
+      activeAccountType: this.validateAccountType(vault),
     };
 
     setEncryptedVault({
@@ -180,16 +190,18 @@ export class NewKeyringManager {
   public setActiveAccount = async (accountId: number) => {
     const { wallet: _wallet } = getDecryptedVault();
 
+    const accountsByType = this.validateAndGetAccountsByType();
+
     this.wallet = {
       ..._wallet,
-      activeAccountId: _wallet.accounts[accountId].id,
+      activeAccountId: accountsByType[accountId].id,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
   };
 
   public getAccountById = (id: number): IKeyringAccountState => {
-    const accounts = Object.values(this.wallet.accounts);
+    const accounts = Object.values(this.validateAndGetAccountsByType());
 
     const account = accounts.find((account) => account.id === id);
 
@@ -201,7 +213,9 @@ export class NewKeyringManager {
   };
 
   public getPrivateKeyByAccountId = (id: number): string => {
-    const account = Object.values(this.wallet.accounts).find(
+    const accounts = this.validateAndGetAccountsByType();
+
+    const account = Object.values(accounts).find(
       (account) => account.id === id
     );
 
@@ -240,7 +254,7 @@ export class NewKeyringManager {
 
     const latestUpdate = isSyscoinChain
       ? await this.getLatestUpdateForSysAccount()
-      : await this.getLatestUpdateForWeb3Accounts(vault.activeNetwork);
+      : await this.getLatestUpdateForWeb3Accounts();
 
     const { wallet: _updatedWallet } = getDecryptedVault();
 
@@ -486,7 +500,10 @@ export class NewKeyringManager {
       ...getDecryptedVault().wallet,
       accounts: {
         ...getDecryptedVault().wallet.accounts,
-        [id]: createdAccount,
+        hd_accounts: {
+          ...getDecryptedVault().wallet.accounts.hd_accounts,
+          [id]: createdAccount,
+        },
       },
     };
 
@@ -608,7 +625,10 @@ export class NewKeyringManager {
       ..._wallet,
       accounts: {
         ..._wallet.accounts,
-        [id]: account,
+        hd_accounts: {
+          ..._wallet.accounts.hd_accounts,
+          [id]: account,
+        },
       },
       activeAccountId: account.id,
     };
@@ -653,7 +673,10 @@ export class NewKeyringManager {
       ..._wallet,
       accounts: {
         ..._wallet.accounts,
-        [createdAccount.id]: createdAccount,
+        hd_accounts: {
+          ..._wallet.accounts.hd_accounts,
+          [createdAccount.id]: createdAccount,
+        },
       },
       activeAccountId: createdAccount.id,
     };
@@ -700,49 +723,34 @@ export class NewKeyringManager {
     return CryptoJS.AES.decrypt(mnemonic, hash).toString(CryptoJS.enc.Utf8);
   };
 
-  //We can delete this because we will update the accounts in Eth Simple Keyring manager calling getLatestUpdateForPrivateKeyAccount
+  private getLatestUpdateForWeb3Accounts = async () => {
+    const {
+      wallet: { accounts, activeAccountId },
+    } = getDecryptedVault();
 
-  private getLatestUpdateForWeb3Accounts = async (network: INetwork) => {
-    // const { wallet: _wallet, network } = getDecryptedVault();
+    const accountTypeToReturn = this.validateAndGetAccountsByType();
 
-    for (const index in Object.values(this.wallet.accounts)) {
+    for (const index in Object.values(accounts.hd_accounts)) {
       const id = Number(index);
-      if (this.wallet.accounts[id].isImported) {
-        const updatedAccount = await this.getLatestUpdateForPrivateKeyAccount(
-          this.wallet.accounts[id],
-          network
-        );
 
-        this.wallet = {
-          ...this.wallet,
-          accounts: {
-            ...this.wallet.accounts,
-            [id]: updatedAccount,
-          },
-        };
+      const label = this.wallet.accounts.hd_accounts[id].label;
 
-        setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
-      }
-
-      if (!this.wallet.accounts[id].isImported) {
-        const label = this.wallet.accounts[id].label;
-
-        await this.setDerivedWeb3Accounts(id, label);
-      }
+      await this.setDerivedWeb3Accounts(id, label);
     }
 
-    // const { wallet: _updatedWallet } = getDecryptedVault();
+    const updatedPrivKeyAccounts = await this.updateAllPrivateKeyAccounts();
 
-    // const { activeAccount } = _updatedWallet;
+    this.wallet = {
+      ...this.wallet,
+      accounts: {
+        ...accounts,
+        imported_accounts: updatedPrivKeyAccounts,
+      },
+    };
 
-    // this.wallet = {
-    //   ..._updatedWallet,
-    //   activeAccount,
-    // };
+    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
 
-    // setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
-
-    return this.wallet.accounts[this.wallet.activeAccount]; //TODO: enhance this implementation
+    return accountTypeToReturn[activeAccountId]; //TODO: enhance this implementation
   };
 
   private setDerivedWeb3Accounts = async (id: number, label: string) => {
@@ -913,25 +921,128 @@ export class NewKeyringManager {
     this.memMnemonic = '';
   };
 
-  public importPrivateKeyAccount = async (privKey: string, label?:string) => {
-    const importedAccount = await this.ethSimpleKeyring.handleImportAccountByPrivateKey(privKey, label)
-
-    return importedAccount
-  }
-
-  public getLatestUpdateForPrivateKeyAccount = async () => {
-    try {
-      return await this.ethSimpleKeyring.updateAllPrivateKeyAccounts();
-    } catch (error) {
-      return error
-    }
-  };
-
-  public getImportedAccounts = () => this.ethSimpleKeyring.getImportedWallets()
-
   private isSyscoinChain = (network: any) =>
     Boolean(this.wallet.networks.syscoin[network.chainId]) &&
     network.url.includes('blockbook');
 
   private generateSalt = () => crypto.randomBytes(16).toString('hex');
+
+  // ===================================== PRIVATE KEY ACCOUNTS METHODS - SIMPLE KEYRING ===================================== //
+  private async _getLatestUpdateForPrivateKeyAccount(
+    account: IKeyringAccountState
+  ) {
+    const balance = await this.ethereumTransaction.getBalance(account.address);
+
+    const updatedAccount = {
+      ...account,
+      balances: {
+        syscoin: 0,
+        ethereum: balance,
+      },
+    } as IKeyringAccountState;
+
+    return updatedAccount;
+  }
+
+  private async _getPrivateKeyAccountInfos(privKey: string, label?: string) {
+    const {
+      wallet: { accounts },
+    } = getDecryptedVault();
+
+    const { hash } = this.storage.get('vault-keys');
+
+    //Validate if the private key value that we receive already starts with 0x or not
+    const validatedPrivateKey =
+      privKey.slice(0, 2) === '0x' ? privKey : `0x${privKey}`;
+
+    const importedAccountValue =
+      this.ethereumTransaction.importAccount(validatedPrivateKey);
+
+    const { address, publicKey, privateKey } = importedAccountValue;
+
+    //Validate if account already exists
+    const accountAlreadyExists = Object.values(
+      accounts as IKeyringAccountState[]
+    ).some((account) => account.address === address);
+
+    if (accountAlreadyExists)
+      throw new Error(
+        'Account already exists, try again with another Private Key.'
+      );
+
+    const ethereumBalance = await this.ethereumTransaction.getBalance(address);
+
+    const newImportedAccountValues = {
+      ...initialActiveImportedAccountState,
+      address,
+      label: label ? label : `Account ${Object.values(accounts).length + 1}`,
+      id: Object.values(accounts).length,
+      balances: {
+        syscoin: 0,
+        ethereum: ethereumBalance,
+      },
+      xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
+      xpub: publicKey,
+      assets: {
+        syscoin: [],
+        ethereum: [],
+      },
+    } as IKeyringAccountState;
+
+    this.wallet.accounts.imported_accounts = {
+      ...this.wallet.accounts.imported_accounts,
+      [newImportedAccountValues.id]: newImportedAccountValues,
+    };
+
+    return newImportedAccountValues;
+  }
+
+  public async handleImportAccountByPrivateKey(
+    privKey: string,
+    label?: string
+  ) {
+    const {
+      wallet: { accounts },
+    } = getDecryptedVault();
+
+    const importedAccountValue = await this._getPrivateKeyAccountInfos(
+      privKey,
+      label
+    );
+
+    const newWalletState = {
+      ...getDecryptedVault().wallet,
+      activeAccountId: importedAccountValue.id,
+      accounts: {
+        ...accounts,
+        imported_accounts: {
+          ...accounts.imported_accounts,
+          [importedAccountValue.id]: importedAccountValue,
+        },
+      },
+    } as IWalletState;
+
+    setEncryptedVault({ ...getDecryptedVault(), newWalletState });
+
+    return importedAccountValue;
+  }
+
+  public async updateAllPrivateKeyAccounts() {
+    const {
+      wallet: { activeAccountId },
+    } = getDecryptedVault();
+
+    const accountToReturn = this.validateAndGetAccountsByType();
+
+    const updatedWallets = await Promise.all(
+      Object.values(this.wallet.accounts.imported_accounts).map(
+        async (account) =>
+          await this._getLatestUpdateForPrivateKeyAccount(account)
+      )
+    );
+
+    this.wallet.accounts.imported_accounts = updatedWallets;
+
+    return accountToReturn[activeAccountId];
+  }
 }
