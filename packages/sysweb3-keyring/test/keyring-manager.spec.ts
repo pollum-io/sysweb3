@@ -67,8 +67,8 @@ describe('', () => {
     expect(account2.label).toBe('Account 2');
 
     const wallet = keyringManager.getState();
-    const { activeAccount } = wallet;
-    expect(wallet.accounts[activeAccount].id).toBe(1);
+    const { activeAccountId } = wallet;
+    expect(wallet.accounts[activeAccountId].id).toBe(1);
   });
 
   //* setActiveAccount
@@ -76,8 +76,8 @@ describe('', () => {
     keyringManager.setActiveAccount(0);
 
     const wallet = keyringManager.getState();
-    const { activeAccount } = wallet;
-    expect(wallet.accounts[activeAccount].id).toBe(0);
+    const { activeAccountId } = wallet;
+    expect(wallet.accounts[activeAccountId].id).toBe(0);
   });
 
   //* getAccountById
@@ -198,10 +198,10 @@ describe('', () => {
     tx.maxFeePerGas = maxFeePerGas;
     tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
     const curState = await keyringManager.getState();
-    const { activeAccount } = curState;
-    tx.from = curState.accounts[activeAccount].address;
+    const { activeAccountId } = curState;
+    tx.from = curState.accounts[activeAccountId].address;
     tx.nonce = await ethereumTransactions.getRecommendedNonce(
-      curState.accounts[activeAccount].address
+      curState.accounts[activeAccountId].address
     );
     tx.chainId = curState.activeNetwork.chainId;
     tx.gasLimit = await ethereumTransactions.getTxGasLimit(tx);

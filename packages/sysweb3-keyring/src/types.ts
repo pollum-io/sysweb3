@@ -118,6 +118,7 @@ export interface IEthereumTransactions {
 
 export interface NewIEthereumTransactions extends IEthereumTransactions {
   setWeb3Provider: (network: INetwork) => void;
+  importAccount: (mnemonicOrPrivKey: string) => ethers.Wallet
 }
 
 export interface ISyscoinTransactions {
@@ -181,6 +182,12 @@ export interface IKeyringManager {
   validateSeed: (seed: string) => boolean;
 }
 
+export interface IEthSimpleKeyringManger {
+  handleImportAccountByPrivateKey(privKey: string, label?: string): Promise<IKeyringAccountState>;
+  updateAllPrivateKeyAccounts(): Promise<void>;
+  getImportedWallets(): IKeyringAccountState[];
+}
+
 export enum KeyringAccountType {
   Trezor,
   Default,
@@ -194,9 +201,15 @@ export type IKeyringDApp = {
 
 export interface IWalletState {
   accounts: {
-    [id: number]: IKeyringAccountState;
+    hd_accounts: {
+      [id: number]: IKeyringAccountState;
+    },
+    imported_accounts: {
+      [id: number]: IKeyringAccountState;
+    }
   };
-  activeAccount: number;
+  activeAccountId: number;
+  activeAccountType: string;
   networks: {
     [INetworkType.Ethereum]: {
       [chainId: number | string]: INetwork;

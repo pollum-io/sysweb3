@@ -70,9 +70,9 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
   getDecryptedPrivateKey = () => {
     const { wallet } = getDecryptedVault();
     const { hash } = this.storage.get('vault-keys');
-    const { activeAccount } = wallet;
+    const { activeAccountId } = wallet;
 
-    const accountXprv = wallet.accounts[activeAccount].xprv;
+    const accountXprv = wallet.accounts[activeAccountId].xprv;
 
     const decryptedPrivateKey = CryptoJS.AES.decrypt(
       accountXprv,
@@ -80,7 +80,7 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
     ).toString(CryptoJS.enc.Utf8);
 
     return {
-      address: wallet.accounts[activeAccount].address,
+      address: wallet.accounts[activeAccountId].address,
       decryptedPrivateKey,
     };
   };
@@ -703,10 +703,23 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
 
     return pendingTransactions;
   };
+  
   public setWeb3Provider(network: INetwork) {
     this.activeNetwork = network;
     this.web3Provider = new ethers.providers.JsonRpcProvider(network.url);
   }
+
+  public importAccount = (mnemonicOrPrivKey: string) => {
+    if (ethers.utils.isHexString(mnemonicOrPrivKey)) {
+      return new ethers.Wallet(mnemonicOrPrivKey);
+    }
+
+    const { privateKey } = ethers.Wallet.fromMnemonic(mnemonicOrPrivKey);
+
+    const account = new ethers.Wallet(privateKey);
+
+    return account;
+  };
 
   private checkActiveNetwork(networkUrl: string) {
     return networkUrl === this.activeNetwork.url;

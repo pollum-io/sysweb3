@@ -65,8 +65,8 @@ describe('testing functions for sys txs', () => {
     expect(account2.label).toBe('Account 2');
 
     const wallet = keyringManager.getState();
-    const { activeAccount } = wallet;
-    expect(wallet.accounts[activeAccount].id).toBe(1);
+    const { activeAccountId } = wallet;
+    expect(wallet.accounts[activeAccountId].id).toBe(1);
   }, 50000);
 
   //* setActiveAccount
@@ -74,8 +74,8 @@ describe('testing functions for sys txs', () => {
     keyringManager.setActiveAccount(0);
 
     const wallet = keyringManager.getState();
-    const { activeAccount } = wallet;
-    expect(wallet.accounts[activeAccount].id).toBe(0);
+    const { activeAccountId } = wallet;
+    expect(wallet.accounts[activeAccountId].id).toBe(0);
   });
 
   //* getSeed

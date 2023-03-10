@@ -1,7 +1,6 @@
-import { ethers } from 'ethers';
-
 import { initialWalletState } from '../src/initial-state';
 import { NewKeyringManager } from '../src/new-keyring-manager';
+import {NewEthereumTransactions} from '../src/transactions/new-ethereum'
 import {
   SYS_EVM_NETWORK,
   FAKE_PASSWORD,
@@ -9,11 +8,18 @@ import {
   TX,
   SECOND_FAKE_SEED_PHRASE,
   FAKE_ADDRESS,
+  POLYGON_MUMBAI_NETWORK,
+  FAKE_PRIVATE_KEY,
+  FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS,
+  SEED_ACCOUNT_ADDRESS_AT_UTX0,
+  SYS_MAINNET_UTXO_NETWORK,
+  SEED_ACCOUNT_ADDRESS_AT_EVM,
 } from './constants';
 import { INetwork } from '@pollum-io/sysweb3-utils';
 
 describe('', () => {
   const keyringManager = new NewKeyringManager();
+  const ethereumTransactions = new NewEthereumTransactions()
 
   jest.setTimeout(50000); // 20s
 
@@ -48,13 +54,169 @@ describe('', () => {
     expect(account).toBeDefined();
   });
 
+  //* ===================================== PRIVATE KEY ACCOUNTS TEST ===================================== *//
+  it('should import a account by private key and validate it', async () => {
+    await keyringManager.setSignerNetwork(
+      POLYGON_MUMBAI_NETWORK as INetwork,
+      'ethereum'
+    );
+
+    const network = keyringManager.getNetwork();
+
+    const createAccount = await keyringManager.importPrivateKeyAccount(
+      FAKE_PRIVATE_KEY as string,
+      'CONTA NOVA'
+    );
+
+    //VALIDATE CURRENT NETWORK
+    expect(network).toEqual(POLYGON_MUMBAI_NETWORK);
+
+    //VALIDATIONS FOR NEW ACCOUNT VALUES
+    expect(createAccount).toBeDefined();
+    expect(typeof createAccount === 'object').toBe(true);
+    expect(typeof createAccount.address === 'string').toBe(true);
+    expect(createAccount.address).toEqual(FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS);
+  });
+
+  it('Should change between networks, run getLatestUpadateForAccount and keep / validate both accounts values correctly', async () => {
+    // ===================================== START FIRST TESTS AT EVM NETWORK ===================================== //
+    await keyringManager.setSignerNetwork(
+      POLYGON_MUMBAI_NETWORK as INetwork,
+      'ethereum'
+    );
+
+    const network = keyringManager.getNetwork();
+
+    //VALIDATE CURRENT NETWORK
+    expect(network).toEqual(POLYGON_MUMBAI_NETWORK);
+
+    const firstUpdateAtEvmNetwork =
+      await keyringManager.getLatestUpdateForAccount();
+
+    const firstStateAtEvm = keyringManager.getState();
+
+    //VALIDATIONS TO COMPARE THE VALUES RECEIVED BY getLatestUpdateForAccount
+    expect(firstUpdateAtEvmNetwork.accountLatestUpdate.address).toEqual(
+      FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS
+    );
+
+    expect(firstUpdateAtEvmNetwork.accountLatestUpdate.id).toEqual(1);
+
+    expect(
+      Object.keys(firstUpdateAtEvmNetwork.walleAccountstLatestUpdate).length
+    ).toEqual(2);
+
+    //VALIDATIONS FOR CURRENT STATE AFTER IMPORT NEW ACCOUNT AND RUN getLatestUpdateForAccount
+    expect(firstStateAtEvm.accounts[0].address).toEqual(
+      SEED_ACCOUNT_ADDRESS_AT_EVM
+    );
+
+    // ===================================== CHANGE ACCOUNT AND NETWORK TO SYS UTX0 NETWORK AND TEST AGAIN ===================================== //
+
+    //SET DEFAULT ACCOUNT BY DEFAULT BEFORE UPDATE AT SYS UTX0 SEEING THAT IMPORTED ACCOUNT BY PRIV KEY
+    //WILL ONLY EXISTS IN EVM NETWORKS AT NOW
+    keyringManager.setActiveAccount(0);
+
+    await keyringManager.setSignerNetwork(
+      SYS_MAINNET_UTXO_NETWORK as INetwork,
+      'syscoin'
+    );
+
+    const getActualNetworkAfterChange = keyringManager.getNetwork();
+
+    //VALIDATE CURRENT NETWORK AFTER CHANGE
+    expect(getActualNetworkAfterChange).toEqual(SYS_MAINNET_UTXO_NETWORK);
+
+    //RUN ANOTHER UPDATE TO SEE IF ACCOUNT WILL BE DERIVATE OR NOT
+    const updateAfterChangeNetwork =
+      await keyringManager.getLatestUpdateForAccount();
+
+    const stateLaterNetworkChanged = keyringManager.getState();
+
+    //RUN SAME VALIDATIONS AS ABOVE TO SEE IF SOMETHING CHANGED
+    expect(updateAfterChangeNetwork.accountLatestUpdate.address).toEqual(
+      SEED_ACCOUNT_ADDRESS_AT_UTX0
+    );
+
+    expect(updateAfterChangeNetwork.accountLatestUpdate.isImported).toBe(false);
+
+    expect(
+      Object.keys(updateAfterChangeNetwork.walleAccountstLatestUpdate).length
+    ).toEqual(2);
+
+    expect(stateLaterNetworkChanged.accounts[0].address).toEqual(
+      SEED_ACCOUNT_ADDRESS_AT_UTX0
+    );
+
+    expect(stateLaterNetworkChanged.accounts[1].address).toEqual(
+      FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS
+    );
+
+    // ===================================== CHANGE AGAIN THE ACCOUNT / NETWORK TO EVM AND DO THE SAME AS FIRST TEST ===================================== //
+    keyringManager.setActiveAccount(1);
+
+    await keyringManager.setSignerNetwork(
+      POLYGON_MUMBAI_NETWORK as INetwork,
+      'ethereum'
+    );
+
+    const lastChangeOfNetwork = keyringManager.getNetwork();
+
+    //VALIDATE CURRENT NETWORK AFTER CHANGE
+    expect(lastChangeOfNetwork).toEqual(POLYGON_MUMBAI_NETWORK);
+
+    const lastUpdate = await keyringManager.getLatestUpdateForAccount();
+
+    const lastState = keyringManager.getState();
+
+    expect(lastUpdate.accountLatestUpdate.address).toEqual(
+      FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS
+    );
+
+    expect(lastUpdate.accountLatestUpdate.id).toEqual(1);
+
+    expect(Object.keys(lastUpdate.walleAccountstLatestUpdate).length).toEqual(
+      2
+    );
+
+    expect(lastState.accounts[0].address).toEqual(SEED_ACCOUNT_ADDRESS_AT_EVM);
+  });
+
+  it('Should send and validate txSend for new account', async () => {
+    keyringManager.setActiveAccount(1);
+
+    await keyringManager.setSignerNetwork(
+      POLYGON_MUMBAI_NETWORK as INetwork,
+      'ethereum'
+    );
+
+    const tx = TX;
+    const { maxFeePerGas, maxPriorityFeePerGas } =
+      await ethereumTransactions.getFeeDataWithDynamicMaxPriorityFeePerGas();
+    tx.maxFeePerGas = maxFeePerGas;
+    tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
+    const curState = keyringManager.getState();
+
+    const { activeAccountId } = curState;
+    tx.to = curState.accounts[0].address;
+    tx.from = curState.accounts[activeAccountId].address; // SHOULD BE IMPORTED ACCOUNT BY PRIVATE KEY ADDRESS
+    tx.nonce = await ethereumTransactions.getRecommendedNonce(
+      curState.accounts[activeAccountId].address
+    );
+    tx.chainId = curState.activeNetwork.chainId;
+    tx.gasLimit = await ethereumTransactions.getTxGasLimit(tx);
+    const resp = await ethereumTransactions.sendFormattedTransaction(tx);
+
+    expect(resp.hash).toBeDefined();
+  });
+
   // * addNewAccount
   // it('should add a new account', async () => {
   //   const account2 = await keyringManager.addNewAccount(undefined);
   //   expect(account2.label).toBe('Account 2');
 
   //   const wallet = keyringManager.getState();
-  //   expect(wallet.activeAccount).toBe(1);
+  //   expect(wallet.activeAccountId).toBe(1);
   // });
 
   // //* setActiveAccount
@@ -62,7 +224,7 @@ describe('', () => {
   //   keyringManager.setActiveAccount(0);
 
   //   const wallet = keyringManager.getState();
-  //   expect(wallet.activeAccount).toBe(0);
+  //   expect(wallet.activeAccountId).toBe(0);
   // });
 
   // // //* getAccountById
@@ -202,9 +364,9 @@ describe('', () => {
 
   //   const curState = await keyringManager.getState();
 
-  //   tx.from = curState.activeAccount.address;
+  //   tx.from = curState.activeAccountId.address;
   //   tx.nonce = await keyringManager.ethereumTransaction.getRecommendedNonce(
-  //     curState.activeAccount.address,
+  //     curState.activeAccountId.address,
   //     keyringManager.web3Provider
   //   );
   //   tx.chainId = curState.activeNetwork.chainId;

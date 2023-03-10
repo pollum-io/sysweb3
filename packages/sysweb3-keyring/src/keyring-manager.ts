@@ -8,7 +8,7 @@ import { hdkey } from 'ethereumjs-wallet';
 import sys from 'syscoinjs-lib';
 
 import { Web3Accounts } from './eth-manager';
-import { initialActiveAccountState, initialWalletState } from './initial-state';
+import { initialActiveImportedAccountState, initialWalletState } from './initial-state';
 import { getSigners, SyscoinHDSigner } from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
 import { initialize } from './trezor';
@@ -158,7 +158,7 @@ export const KeyringManager = (): IKeyringManager => {
 
     wallet = {
       ...getDecryptedVault().wallet,
-      activeAccount: importedAccountValue.id,
+      activeAccountId: importedAccountValue.id,
       accounts: {
         ...accounts,
         [importedAccountValue.id]: importedAccountValue,
@@ -204,7 +204,7 @@ export const KeyringManager = (): IKeyringManager => {
     ]);
 
     const newAccountValues = {
-      ...initialActiveAccountState,
+      ...initialActiveImportedAccountState,
       address,
       label: label ? label : `Account ${Object.values(accounts).length + 1}`,
       id: Object.values(accounts).length,
@@ -219,7 +219,6 @@ export const KeyringManager = (): IKeyringManager => {
         syscoin: [],
         ethereum: [],
       },
-      isImported: true,
     } as IKeyringAccountState;
 
     return newAccountValues;
@@ -451,16 +450,16 @@ export const KeyringManager = (): IKeyringManager => {
 
     const { wallet: _updatedWallet } = getDecryptedVault();
 
-    const { activeAccount } = _updatedWallet;
+    const { activeAccountId } = _updatedWallet;
 
     wallet = {
       ..._updatedWallet,
-      activeAccount,
+      activeAccountId,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
 
-    return getDecryptedVault().wallet.accounts[activeAccount];
+    return getDecryptedVault().wallet.accounts[activeAccountId];
   };
 
   const _getInitialAccountData = ({
@@ -525,10 +524,10 @@ export const KeyringManager = (): IKeyringManager => {
       });
 
       const {
-        wallet: { activeAccount },
+        wallet: { activeAccountId },
       } = vault;
 
-      if (hd && activeAccount > -1) hd.setAccountIndex(activeAccount);
+      if (hd && activeAccountId > -1) hd.setAccountIndex(activeAccountId);
 
       return account;
     }
@@ -667,7 +666,7 @@ export const KeyringManager = (): IKeyringManager => {
   }> => {
     const { wallet: _wallet, network, isTestnet } = getDecryptedVault();
 
-    const { activeAccount } = _wallet;
+    const { activeAccountId } = _wallet;
 
     if (
       !hd.mnemonic ||
@@ -698,7 +697,7 @@ export const KeyringManager = (): IKeyringManager => {
       if (!currAccount.isImported) await _setDerivedSysAccounts(currAccount.id);
     }
 
-    if (hd && activeAccount > -1) hd.setAccountIndex(activeAccount);
+    if (hd && activeAccountId > -1) hd.setAccountIndex(activeAccountId);
 
     const xpub = getAccountXpub();
     const formattedBackendAccount = await _getFormattedBackendAccount({
@@ -706,7 +705,7 @@ export const KeyringManager = (): IKeyringManager => {
       xpub,
     });
     const address = await hd.getNewReceivingAddress(true);
-    const label = _wallet.accounts[activeAccount].label;
+    const label = _wallet.accounts[activeAccountId].label;
     return {
       label,
       address,
@@ -744,7 +743,7 @@ export const KeyringManager = (): IKeyringManager => {
         ...wallet.accounts,
         [vault.id]: vault,
       },
-      activeAccount: vault.id,
+      activeAccountId: vault.id,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet, lastLogin: 0 });
@@ -793,7 +792,7 @@ export const KeyringManager = (): IKeyringManager => {
         ..._wallet.accounts,
         [account.id]: account,
       },
-      activeAccount: account.id,
+      activeAccountId: account.id,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
@@ -804,15 +803,15 @@ export const KeyringManager = (): IKeyringManager => {
   const login = async (password: string): Promise<IKeyringAccountState> => {
     if (!checkPassword(password)) throw new Error('Invalid password');
     wallet = await _unlockWallet(password);
-    const { activeAccount } = wallet;
+    const { activeAccountId } = wallet;
 
     _updateUnlocked();
 
     setEncryptedVault({ ...getDecryptedVault(), wallet, lastLogin: 0 });
 
-    addAccountToSigner(wallet.accounts[activeAccount].id);
+    addAccountToSigner(wallet.accounts[activeAccountId].id);
 
-    return wallet.accounts[activeAccount];
+    return wallet.accounts[activeAccountId];
   };
 
   const removeAccount = (accountId: number) => {
@@ -846,9 +845,9 @@ export const KeyringManager = (): IKeyringManager => {
 
     const { wallet: _wallet } = getDecryptedVault();
     const { hash } = storage.get('vault-keys');
-    const { activeAccount } = _wallet;
+    const { activeAccountId } = _wallet;
 
-    const accountXprv = _wallet.accounts[activeAccount].xprv;
+    const accountXprv = _wallet.accounts[activeAccountId].xprv;
 
     return CryptoJS.AES.decrypt(accountXprv, hash).toString(CryptoJS.enc.Utf8);
   };
@@ -968,7 +967,7 @@ export const KeyringManager = (): IKeyringManager => {
         ...wallet.accounts,
         [account.id]: account,
       },
-      activeAccount: account.id,
+      activeAccountId: account.id,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
@@ -1047,7 +1046,7 @@ export const KeyringManager = (): IKeyringManager => {
           ..._wallet.accounts,
           [id]: account,
         },
-        activeAccount: account.id,
+        activeAccountId: account.id,
       };
 
       setEncryptedVault({ ...getDecryptedVault(), wallet });
@@ -1095,7 +1094,7 @@ export const KeyringManager = (): IKeyringManager => {
         ..._wallet.accounts,
         [createdAccount.id]: createdAccount,
       },
-      activeAccount: createdAccount.id,
+      activeAccountId: createdAccount.id,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });
@@ -1113,7 +1112,7 @@ export const KeyringManager = (): IKeyringManager => {
 
     wallet = {
       ..._wallet,
-      activeAccount: _wallet.accounts[accountId].id,
+      activeAccountId: _wallet.accounts[accountId].id,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet });

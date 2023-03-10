@@ -52,9 +52,9 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   const getDecryptedPrivateKey = () => {
     const { wallet } = getDecryptedVault();
     const { hash } = storage.get('vault-keys');
-    const { activeAccount } = wallet;
+    const { activeAccountId } = wallet;
 
-    const accountXprv = wallet.accounts[activeAccount].xprv;
+    const accountXprv = wallet.accounts[activeAccountId].xprv;
 
     const decryptedPrivateKey = CryptoJS.AES.decrypt(
       accountXprv,
@@ -62,7 +62,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     ).toString(CryptoJS.enc.Utf8);
 
     return {
-      address: wallet.accounts[activeAccount].address,
+      address: wallet.accounts[activeAccountId].address,
       decryptedPrivateKey,
     };
   };

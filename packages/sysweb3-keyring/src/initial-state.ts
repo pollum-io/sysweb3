@@ -1,6 +1,6 @@
 import { IKeyringAccountState, IWalletState } from './types';
 
-export const initialActiveAccountState: IKeyringAccountState = {
+export const initialActiveHdAccountState: IKeyringAccountState = {
   address: '',
   balances: {
     ethereum: 0,
@@ -15,6 +15,11 @@ export const initialActiveAccountState: IKeyringAccountState = {
   assets: [],
   isImported: false,
 };
+
+export const initialActiveImportedAccountState: IKeyringAccountState = {
+  ...initialActiveHdAccountState,
+  isImported: true
+}
 
 export const initialNetworksState = {
   syscoin: {
@@ -88,9 +93,15 @@ export const initialNetworksState = {
 
 export const initialWalletState: IWalletState = {
   accounts: {
-    [initialActiveAccountState.id]: initialActiveAccountState,
+    hd_accounts: {
+      [initialActiveHdAccountState.id]: initialActiveHdAccountState,
+    },
+    imported_accounts: {
+      [initialActiveImportedAccountState.id]: initialActiveImportedAccountState,
+    }
   },
-  activeAccount: 0,
+  activeAccountId: 0,
+  activeAccountType: 'hd',
   networks: initialNetworksState,
   activeNetwork: {
     chainId: 57,

@@ -181,11 +181,11 @@ describe('', () => {
     tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
     const curState = keyringManager.getState();
 
-    const { activeAccount } = curState;
+    const { activeAccountId } = curState;
     tx.to = curState.accounts[0].address;
-    tx.from = curState.accounts[activeAccount].address; // SHOULD BE IMPORTED ACCOUNT BY PRIVATE KEY ADDRESS
+    tx.from = curState.accounts[activeAccountId].address; // SHOULD BE IMPORTED ACCOUNT BY PRIVATE KEY ADDRESS
     tx.nonce = await ethereumTransactions.getRecommendedNonce(
-      curState.accounts[activeAccount].address
+      curState.accounts[activeAccountId].address
     );
     tx.chainId = curState.activeNetwork.chainId;
     tx.gasLimit = await ethereumTransactions.getTxGasLimit(tx);
