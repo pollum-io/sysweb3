@@ -6,15 +6,6 @@ import CryptoJS from 'crypto-js';
 import { hdkey } from 'ethereumjs-wallet';
 import { ethers } from 'ethers';
 import sys from 'syscoinjs-lib';
-import {
-  IAccountType,
-  IKeyringAccountState,
-  IKeyringBalances,
-  ISyscoinTransactions,
-  IWalletState,
-  KeyringAccountType,
-  NewIEthereumTransactions,
-} from 'types';
 
 import {
   initialActiveImportedAccountState,
@@ -23,23 +14,27 @@ import {
 import { getSigners, SyscoinHDSigner } from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
 import { NewEthereumTransactions, SyscoinTransactions } from './transactions';
-import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
-  getSysRpc,
-  jsonRpcRequest,
-  validateSysRpc,
-} from '@pollum-io/sysweb3-network';
+  IAccountType,
+  IKeyringAccountState,
+  IKeyringBalances,
+  ISyscoinTransactions,
+  IWalletState,
+  KeyringAccountType,
+  NewIEthereumTransactions,
+} from './types';
+import * as sysweb3 from '@pollum-io/sysweb3-core/src'; //TODO: temp
+import { getSysRpc } from '@pollum-io/sysweb3-network/src'; //TODO: temp
 import {
   getAsset,
   IEthereumNftDetails,
   INetwork,
   INetworkType,
-} from '@pollum-io/sysweb3-utils';
+} from '@pollum-io/sysweb3-utils/src'; //TODO: temp
 
 //todo: remove vault and add info in the constructor as OPTS
 
 const ACCOUNT_ZERO = 0;
-const SYSCOIN_CHAIN = 'syscoin';
 
 export interface IKeyringManagerOpts {
   activeNetwork?: INetwork;
@@ -297,7 +292,8 @@ export class NewKeyringManager {
       account = await this.setSyscoinAccount();
     } else if (chain === INetworkType.Ethereum) {
       await this.setSignerEVM(network);
-      account = this.getLatestUpdateForWeb3Accounts(network);
+      // account = this.getLatestUpdateForWeb3Accounts(network);
+      account = this.getLatestUpdateForWeb3Accounts();
     }
     this.wallet.networks[networkChain][network.chainId] = network;
     //TODO: this is changing the network definition on memory we probably should have another function for this

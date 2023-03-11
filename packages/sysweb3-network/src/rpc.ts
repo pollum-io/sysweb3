@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 
 import { getFormattedBitcoinLikeNetwork, toDecimalFromHex } from './networks';
 import { jsonRpcRequest } from './rpc-request';
-import { INetwork } from '@pollum-io/sysweb3-utils';
+import { INetwork } from '@pollum-io/sysweb3-utils/src'; //TODO: add source to simplify local testing
 
 const hexRegEx = /^0x[0-9a-f]+$/iu;
 
@@ -178,16 +178,16 @@ export const getSysRpc = async (data: any) => {
       default: false,
       chainId,
     };
-    // const rpc = {
-    //   formattedNetwork,
-    //   formattedBitcoinLikeNetwork,
-    // };
-    return {
+    const rpc = {
       formattedNetwork,
       formattedBitcoinLikeNetwork,
     };
+    // return {
+    //   formattedNetwork,
+    //   formattedBitcoinLikeNetwork,
+    // };
 
-    // return { rpc, coin, chain };
+    return { rpc, coin, chain };
   } catch (error) {
     throw new Error(error);
   }

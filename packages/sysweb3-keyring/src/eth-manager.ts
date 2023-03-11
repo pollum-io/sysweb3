@@ -6,7 +6,7 @@ import _ from 'lodash';
 
 import { getFormattedTransactionResponse } from './format';
 import { getDecryptedVault } from './storage';
-import { setActiveNetwork, web3Provider } from '@pollum-io/sysweb3-network';
+import { setActiveNetwork, web3Provider } from '@pollum-io/sysweb3-network/src'; //TODO: temp
 import {
   createContractUsingAbi,
   getErc20Abi,
@@ -15,7 +15,7 @@ import {
   IEthereumNftDetails,
   IEtherscanNFT,
   INetwork,
-} from '@pollum-io/sysweb3-utils';
+} from '@pollum-io/sysweb3-utils/src'; //TODO: temp
 
 //todo: remove this
 //todo: few fn goes to keyring manager

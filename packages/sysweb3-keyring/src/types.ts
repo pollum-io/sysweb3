@@ -15,7 +15,7 @@ import {
   ITokenSend,
   ITokenUpdate,
   ITxid,
-} from '@pollum-io/sysweb3-utils';
+} from '@pollum-io/sysweb3-utils/src'; //TODO: temp
 
 export interface ITrezorWallet {
   createHardwareWallet: () => Promise<IKeyringAccountState>;

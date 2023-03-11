@@ -4,9 +4,9 @@ import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 
 import { getDecryptedVault } from './storage';
-import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { BitcoinNetwork, IPubTypes } from '@pollum-io/sysweb3-network';
-import { INetwork } from '@pollum-io/sysweb3-utils';
+import * as sysweb3 from '@pollum-io/sysweb3-core/src'; //TODO: tem[]
+import { BitcoinNetwork, IPubTypes } from '@pollum-io/sysweb3-network/src'; //TODO: temp
+import { INetwork } from '@pollum-io/sysweb3-utils/src'; //TODO: temp
 
 //TODO: pass this to keyring on syscoin part
 export const getSyscoinSigners = ({

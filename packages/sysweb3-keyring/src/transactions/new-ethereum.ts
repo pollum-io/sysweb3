@@ -37,22 +37,14 @@ import {
   NewIEthereumTransactions,
   SimpleTransactionRequest,
 } from '../types';
-import { sysweb3Di } from '@pollum-io/sysweb3-core';
+import { sysweb3Di } from '@pollum-io/sysweb3-core/src'; //TODO: temp
 import {
   createContractUsingAbi,
   getErc20Abi,
   getErc21Abi,
   getTokenStandardMetadata,
   INetwork,
-} from '@pollum-io/sysweb3-utils';
-
-const ETHER_SCAN_SUPPORTED_NETWORKS = [
-  'homestead',
-  'ropsten',
-  'rinkeby',
-  'goerli',
-  'kovan',
-];
+} from '@pollum-io/sysweb3-utils/src'; // TODO: temp
 
 export class NewEthereumTransactions implements NewIEthereumTransactions {
   web3Provider: any;
@@ -657,7 +649,7 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
 
     return pendingTransactions;
   };
-  
+
   public setWeb3Provider(network: INetwork) {
     this.activeNetwork = network;
     this.web3Provider = new ethers.providers.JsonRpcProvider(network.url);

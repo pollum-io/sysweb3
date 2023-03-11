@@ -8,7 +8,10 @@ import { hdkey } from 'ethereumjs-wallet';
 import sys from 'syscoinjs-lib';
 
 import { Web3Accounts } from './eth-manager';
-import { initialActiveImportedAccountState, initialWalletState } from './initial-state';
+import {
+  initialActiveImportedAccountState,
+  initialWalletState,
+} from './initial-state';
 import { getSigners, SyscoinHDSigner } from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
 import { initialize } from './trezor';
@@ -24,12 +27,12 @@ import {
   jsonRpcRequest,
   setActiveNetwork,
   validateSysRpc,
-} from '@pollum-io/sysweb3-network';
+} from '@pollum-io/sysweb3-network/src'; //TODO: temp
 import {
   INetwork,
   getAsset,
   IEthereumNftDetails,
-} from '@pollum-io/sysweb3-utils';
+} from '@pollum-io/sysweb3-utils/src'; //TODO: temp
 
 export const KeyringManager = (): IKeyringManager => {
   const web3Wallet = Web3Accounts();
