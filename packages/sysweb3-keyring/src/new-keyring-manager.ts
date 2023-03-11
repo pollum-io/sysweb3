@@ -182,6 +182,7 @@ export class NewKeyringManager {
     return vault;
   };
 
+  //TODO: add function to set account by type as well
   public setActiveAccount = async (accountId: number) => {
     const { wallet: _wallet } = getDecryptedVault();
 
@@ -206,7 +207,7 @@ export class NewKeyringManager {
 
     return account;
   };
-
+  //TODO: add function to get account by type as well
   public getPrivateKeyByAccountId = (id: number): string => {
     const accounts = this.validateAndGetAccountsByType();
 
@@ -272,12 +273,9 @@ export class NewKeyringManager {
       INetworkType.Ethereum === chain
         ? INetworkType.Ethereum
         : INetworkType.Syscoin; //TODO: change to better implementation
-    // const { wallet: _wallet } = getDecryptedVault();
 
     console.log('Checking wallet on memory', this.wallet);
     console.log('Checking network being added', network);
-
-    //TODO: ask why do we need to call setSignerByChain twice?
 
     let rpc, isTestnet, account;
     if (chain === INetworkType.Syscoin) {
@@ -296,19 +294,7 @@ export class NewKeyringManager {
       account = this.getLatestUpdateForWeb3Accounts();
     }
     this.wallet.networks[networkChain][network.chainId] = network;
-    //TODO: this is changing the network definition on memory we probably should have another function for this
-
     this.wallet.activeNetwork = network;
-    // if (chain === INetworkType.Syscoin) {
-    //   const { rpc, isTestnet } = await this.setSignerByChain(network, chain);
-
-    //   setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
-    // }
-    // console.log('Calling getAccountForNetwork');
-    // const account = await this.getAccountForNetwork({
-    //   isSyscoinChain: chain === INetworkType.Syscoin,
-    // });
-    //todo: ask why do we need to set encrypted vault 3 times?
     setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
     console.log('this.wallet.activeNetwork after', this.wallet.activeNetwork);
     return account; //TODO: after end of refactor remove this
@@ -689,14 +675,9 @@ export class NewKeyringManager {
   ) => {
     //TODO: completely remove transaction control logic from sysweb3
     const transactions = [] as ethers.providers.TransactionResponse[];
-    // const transactions = await this.ethereumTransaction.getUserTransactions(
-    //   address,
-    //   network
-    // );
 
     const balance = await this.ethereumTransaction.getBalance(address); //TODO: get balance without calling ethTransactions
 
-    // const assets = await web3Wallet.getAssetsByAddress(address, network);
     const assets: IEthereumNftDetails[] = []; //TODO: remove assets from sysweb3
 
     return {
@@ -734,17 +715,7 @@ export class NewKeyringManager {
       await this.setDerivedWeb3Accounts(id, label);
     }
 
-    const updatedPrivKeyAccounts = await this.updateAllPrivateKeyAccounts();
-
-    this.wallet = {
-      ...this.wallet,
-      accounts: {
-        ...accounts,
-        imported_accounts: updatedPrivKeyAccounts,
-      },
-    };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
+    await this.updateAllPrivateKeyAccounts();
 
     return accountTypeToReturn[activeAccountId]; //TODO: enhance this implementation
   };
@@ -785,40 +756,6 @@ export class NewKeyringManager {
         [id]: createdAccount,
       },
     };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
-
-    if (id === ACCOUNT_ZERO) {
-      const { address, privateKey, publicKey } = this.importWeb3Account(
-        this.getDecryptedMnemonic()
-      );
-
-      const basicAccountInfo = await this.getBasicWeb3AccountInfo(
-        address,
-        ACCOUNT_ZERO,
-        label
-      );
-
-      const account = {
-        xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
-        xpub: publicKey,
-        address,
-        isImported: false,
-        ...basicAccountInfo,
-      };
-
-      this.wallet = {
-        ...this.wallet,
-        accounts: {
-          ...this.wallet.accounts,
-          [ACCOUNT_ZERO]: account,
-        },
-      };
-
-      setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
-
-      return account;
-    }
 
     return createdAccount;
   };
@@ -1024,12 +961,6 @@ export class NewKeyringManager {
   }
 
   public async updateAllPrivateKeyAccounts() {
-    const {
-      wallet: { activeAccountId },
-    } = getDecryptedVault();
-
-    const accountToReturn = this.validateAndGetAccountsByType();
-
     const updatedWallets = await Promise.all(
       Object.values(this.wallet.accounts.imported_accounts).map(
         async (account) =>
@@ -1038,7 +969,5 @@ export class NewKeyringManager {
     );
 
     this.wallet.accounts.imported_accounts = updatedWallets;
-
-    return accountToReturn[activeAccountId];
   }
 }
