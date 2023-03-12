@@ -97,10 +97,10 @@ export const initialNetworksState = {
 
 export const initialWalletState: IWalletState = {
   accounts: {
-    hd_accounts: {
+    [KeyringAccountType.HDAccount]: {
       [initialActiveHdAccountState.id]: initialActiveHdAccountState,
     },
-    imported_accounts: {
+    [KeyringAccountType.Imported]: {
       [initialActiveImportedAccountState.id]: initialActiveImportedAccountState,
     },
   },

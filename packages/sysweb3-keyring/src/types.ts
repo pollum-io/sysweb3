@@ -183,7 +183,7 @@ export interface IKeyringManager {
 }
 
 export enum KeyringAccountType {
-  Trezor,
+  // Trezor,
   Imported,
   HDAccount,
 }
@@ -199,10 +199,7 @@ export type IAccountType = {
 };
 
 export interface IWalletState {
-  accounts: {
-    hd_accounts: IAccountType;
-    imported_accounts: IAccountType;
-  };
+  accounts: { [key in KeyringAccountType]: IAccountType };
   activeAccountId: number;
   activeAccountType: KeyringAccountType;
   networks: {
