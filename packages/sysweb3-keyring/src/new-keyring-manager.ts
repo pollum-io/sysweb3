@@ -15,7 +15,6 @@ import { getSigners, SyscoinHDSigner } from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
 import { NewEthereumTransactions, SyscoinTransactions } from './transactions';
 import {
-  IAccountType,
   IKeyringAccountState,
   IKeyringBalances,
   ISyscoinTransactions,
@@ -64,8 +63,8 @@ export class NewKeyringManager {
   //local variables
   private hd: SyscoinHDSigner;
   private memMnemonic: string;
-  memPassword: string;
-  actualPassword: string;
+  private memPassword: string;
+  private actualPassword: string;
 
   //transactions objects
   public ethereumTransaction: NewIEthereumTransactions;
@@ -85,23 +84,35 @@ export class NewKeyringManager {
     this.address = '';
 
     this.syscoinTransaction = SyscoinTransactions();
-
-    this.ethereumTransaction = new NewEthereumTransactions();
+    this.ethereumTransaction = new NewEthereumTransactions(
+      this.getNetwork,
+      this.getDecryptedPrivateKey
+    );
   }
+  // ===================================== AUXILIARY METHOD - FOR TRANSACTIONS CLASSES ===================================== //
+  private getDecryptedPrivateKey = (): {
+    address: string;
+    decryptedPrivateKey: string;
+  } => {
+    const { accounts, activeAccountId, activeAccountType } = this.wallet;
+    const { hash } = this.storage.get('vault-keys');
+
+    const { xprv, address } = accounts[activeAccountType][activeAccountId];
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(xprv, hash).toString(
+      CryptoJS.enc.Utf8
+    );
+
+    return {
+      address,
+      decryptedPrivateKey,
+    };
+  };
 
   // ===================================== PUBLIC METHODS - KEYRING MANAGER FOR HD - SYS ALL ===================================== //
   public validateAccountType = (account: IKeyringAccountState) => {
     return account.isImported === true
       ? KeyringAccountType.Imported
       : KeyringAccountType.HDAccount;
-  };
-
-  public validateAndGetAccountsByType = (): IAccountType => {
-    const { accounts, activeAccountType } = this.wallet;
-
-    return activeAccountType === KeyringAccountType.HDAccount
-      ? accounts[KeyringAccountType.HDAccount]
-      : accounts[KeyringAccountType.Imported];
   };
 
   public addNewAccount = async (label?: string) => {
@@ -176,21 +187,25 @@ export class NewKeyringManager {
     return rootAccount;
   };
 
-  //TODO: add function to set account by type as well
-  public setActiveAccount = async (accountId: number) => {
-    const accountsByType = this.validateAndGetAccountsByType();
-
+  public setActiveAccount = async (
+    accountId: number,
+    accountType: KeyringAccountType
+  ) => {
+    const accounts = this.wallet.accounts[accountType];
     this.wallet = {
       ...this.wallet,
-      activeAccountId: accountsByType[accountId].id,
+      activeAccountId: accounts[accountId].id,
+      activeAccountType: accountType,
     };
 
     setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
   };
-
-  //TODO: add function to get account by type as well
-  public getAccountById = (id: number): IKeyringAccountState => {
-    const accounts = Object.values(this.validateAndGetAccountsByType());
+  //TODO: this method should just exclude privateKey before sending it
+  public getAccountById = (
+    id: number,
+    accountType: KeyringAccountType
+  ): IKeyringAccountState => {
+    const accounts = Object.values(this.wallet.accounts[accountType]);
 
     const account = accounts.find((account) => account.id === id);
 
@@ -200,9 +215,13 @@ export class NewKeyringManager {
 
     return account;
   };
-  //TODO: add function to get account by type as well
-  public getPrivateKeyByAccountId = (id: number): string => {
-    const accounts = this.validateAndGetAccountsByType();
+
+  //TODO: this method should just send xprv after password validation
+  public getPrivateKeyByAccountId = (
+    id: number,
+    acountType: KeyringAccountType
+  ): string => {
+    const accounts = this.wallet.accounts[acountType];
 
     const account = Object.values(accounts).find(
       (account) => account.id === id
@@ -213,6 +232,18 @@ export class NewKeyringManager {
     }
 
     return account.xprv;
+  };
+
+  public getCurrentActiveAccount = (): {
+    activeAccount: IKeyringAccountState;
+    activeAccountType: KeyringAccountType;
+  } => {
+    const { accounts, activeAccountId, activeAccountType } = this.wallet;
+
+    return {
+      activeAccount: accounts[activeAccountType][activeAccountId],
+      activeAccountType,
+    };
   };
 
   public getEncryptedXprv = () =>
@@ -277,7 +308,6 @@ export class NewKeyringManager {
     this.wallet.networks[networkChain][network.chainId] = network;
     this.wallet.activeNetwork = network;
     setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
-    console.log('this.wallet.activeNetwork after', this.wallet.activeNetwork);
     return true; //TODO: after end of refactor remove this
   };
 
@@ -308,7 +338,7 @@ export class NewKeyringManager {
       return seedPhrase;
     }
   };
-  //todo: get state returns wallet, maybe we can improve this naming
+  //todo: get state Should just be funcitonal for when a UTXO network is connected and must remove the xprv of each account
   public getState = () => this.wallet;
   public getNetwork = () => this.wallet.activeNetwork;
   public createEthAccount = (privateKey: string) =>
@@ -630,7 +660,6 @@ export class NewKeyringManager {
       isImported: false,
       ...basicAccountInfo,
     };
-
     this.wallet = {
       ...this.wallet,
       accounts: {
@@ -642,7 +671,6 @@ export class NewKeyringManager {
       },
       activeAccountId: createdAccount.id,
     };
-
     setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
 
     return createdAccount;
@@ -723,14 +751,7 @@ export class NewKeyringManager {
       isImported: false,
       ...basicAccountInfo,
     };
-
-    this.wallet = {
-      ...this.wallet,
-      accounts: {
-        ...this.wallet.accounts,
-        [id]: createdAccount,
-      },
-    };
+    this.wallet.accounts[KeyringAccountType.HDAccount][id] = createdAccount;
   };
 
   private setSignerUTXO = async (
@@ -831,8 +852,8 @@ export class NewKeyringManager {
     const ethereumBalance = await this.ethereumTransaction.getBalance(address);
     const id =
       Object.values(accounts[KeyringAccountType.Imported]).length <= 1
-        ? Object.values(accounts).length
-        : 0;
+        ? 0
+        : Object.values(accounts).length;
 
     const importedAccount = {
       ...initialActiveImportedAccountState,

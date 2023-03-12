@@ -1,7 +1,4 @@
-// import { ecsign, toBuffer, stripHexPrefix, hashPersonalMessage, toAscii } from '@ethereumjs/util';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
-import axios from 'axios';
-import CryptoJS from 'crypto-js';
 import { Chain, chains } from 'eth-chains';
 import {
   concatSig,
@@ -28,8 +25,6 @@ import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
 
 import { getFormattedTransactionResponse } from '../format';
-import { initialWalletState } from '../initial-state';
-import { getDecryptedVault } from '../storage';
 import {
   IResponseFromSendErcSignedTransaction,
   ISendSignedErcTransactionProps,
@@ -42,40 +37,31 @@ import {
   createContractUsingAbi,
   getErc20Abi,
   getErc21Abi,
-  getTokenStandardMetadata,
   INetwork,
 } from '@pollum-io/sysweb3-utils/src'; // TODO: temp
 
 export class NewEthereumTransactions implements NewIEthereumTransactions {
-  web3Provider: any;
-  activeNetwork: INetwork;
-
+  public web3Provider: any;
+  private getNetwork: () => INetwork;
+  private getDecryptedPrivateKey: () => {
+    address: string;
+    decryptedPrivateKey: string;
+  };
   storage = sysweb3Di.getStateStorageDb();
 
-  constructor() {
-    this.activeNetwork = initialWalletState.activeNetwork;
+  constructor(
+    getNetwork: () => INetwork,
+    getDecryptedPrivateKey: () => {
+      address: string;
+      decryptedPrivateKey: string;
+    }
+  ) {
+    this.getNetwork = getNetwork;
+    this.getDecryptedPrivateKey = getDecryptedPrivateKey;
     this.web3Provider = new ethers.providers.JsonRpcProvider(
-      this.activeNetwork.url
+      this.getNetwork().url
     );
   }
-
-  getDecryptedPrivateKey = () => {
-    const { wallet } = getDecryptedVault();
-    const { hash } = this.storage.get('vault-keys');
-    const { activeAccountId } = wallet;
-
-    const accountXprv = wallet.accounts[activeAccountId].xprv;
-
-    const decryptedPrivateKey = CryptoJS.AES.decrypt(
-      accountXprv,
-      hash
-    ).toString(CryptoJS.enc.Utf8);
-
-    return {
-      address: wallet.accounts[activeAccountId].address,
-      decryptedPrivateKey,
-    };
-  };
 
   signTypedData = (
     addr: string,
@@ -261,7 +247,6 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
   };
 
   sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
-    const { network } = getDecryptedVault();
     const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
 
     const tx: Deferrable<ethers.providers.TransactionRequest> = params;
@@ -272,7 +257,7 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
       return await getFormattedTransactionResponse(
         this.web3Provider,
         transaction,
-        network
+        this.getNetwork()
       );
     } catch (error) {
       throw error;
@@ -292,8 +277,6 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
     const parsedAmount = ethers.utils.parseEther(String(amount));
 
     const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
-
-    const { network } = getDecryptedVault();
 
     const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
 
@@ -335,7 +318,7 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
       return await getFormattedTransactionResponse(
         this.web3Provider,
         transaction,
-        network
+        this.getNetwork()
       );
     } catch (error) {
       throw error;
@@ -494,16 +477,6 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
     }
   };
 
-  getGasOracle = async () => {
-    const {
-      data: { result },
-    } = await axios.get(
-      'https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
-    );
-
-    return result;
-  };
-
   getBalance = async (address: string) => {
     try {
       const balance = await this.web3Provider.getBalance(address);
@@ -535,52 +508,6 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
     } catch (error) {
       return 0;
     }
-  };
-
-  getErc20TokensByAddress = async (
-    address: string,
-    isSupported: boolean,
-    apiUrl: string
-  ) => {
-    const etherscanQuery = `?module=account&action=tokentx&address=${address}&page=1&offset=100&&startblock=0&endblock=99999999&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`;
-
-    const apiUrlQuery = `?module=account&action=tokenlist&address=${address}`;
-
-    const query = isSupported ? etherscanQuery : apiUrlQuery;
-
-    const {
-      data: { result },
-    } = await axios.get(`${apiUrl}${query}`);
-
-    const tokens: any[] = [];
-
-    await Promise.all(
-      result.map(async (token: any) => {
-        const isInTokensList =
-          tokens.findIndex(
-            (listedToken) =>
-              listedToken.contractAddress === token.contractAddress
-          ) > -1;
-
-        if (isInTokensList) return;
-
-        const details = await getTokenStandardMetadata(
-          token.contractAddress,
-          address,
-          this.web3Provider
-        );
-
-        tokens.push({
-          ...token,
-          ...details,
-          isNft: false,
-          id: token.contractAddress,
-          balance: ethers.utils.formatEther(details.balance),
-        });
-      })
-    );
-
-    return tokens;
   };
 
   getUserTransactions = async (
@@ -651,7 +578,7 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
   };
 
   public setWeb3Provider(network: INetwork) {
-    this.activeNetwork = network;
+    // this.this.wallet.activeNetwork = network;
     this.web3Provider = new ethers.providers.JsonRpcProvider(network.url);
   }
 
@@ -668,6 +595,6 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
   };
 
   private checkActiveNetwork(networkUrl: string) {
-    return networkUrl === this.activeNetwork.url;
+    return networkUrl === this.getNetwork().url;
   }
 }

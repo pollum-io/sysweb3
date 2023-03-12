@@ -68,10 +68,7 @@ export interface IEthereumTransactions {
   sendFormattedTransaction: (
     data: SimpleTransactionRequest
   ) => Promise<TransactionResponse>;
-  getRecommendedNonce: (
-    address: string,
-    activeNetwork: INetwork
-  ) => Promise<number>;
+  getRecommendedNonce: (address: string) => Promise<number>;
   getFeeByType: (type: string) => Promise<string>;
   getFeeDataWithDynamicMaxPriorityFeePerGas: () => Promise<any>;
   getGasLimit: (toAddress: string) => Promise<number>;
@@ -83,7 +80,7 @@ export interface IEthereumTransactions {
         ethers: string;
       }
   >;
-  getGasOracle: () => Promise<any>;
+  getGasOracle?: () => Promise<any>;
   getEncryptedPubKey: () => string;
   toBigNumber: (aBigNumberish: string | number) => ethers.BigNumber;
   sendSignedErc20Transaction: ({
@@ -105,7 +102,7 @@ export interface IEthereumTransactions {
     tokenAddress: string,
     walletAddress: string
   ) => Promise<number>;
-  getErc20TokensByAddress: (
+  getErc20TokensByAddress?: (
     address: string,
     isSupported: boolean,
     apiUrl: string
@@ -183,9 +180,9 @@ export interface IKeyringManager {
 }
 
 export enum KeyringAccountType {
-  // Trezor,
-  Imported,
-  HDAccount,
+  // Trezor, //TODO: add trezor as we implement it on sysweb3
+  Imported = 'Imported',
+  HDAccount = 'HDAccount',
 }
 
 export type IKeyringDApp = {
@@ -194,12 +191,12 @@ export type IKeyringDApp = {
   active: boolean;
 };
 
-export type IAccountType = {
+export type accountType = {
   [id: number]: IKeyringAccountState;
 };
 
 export interface IWalletState {
-  accounts: { [key in KeyringAccountType]: IAccountType };
+  accounts: { [key in KeyringAccountType]: accountType };
   activeAccountId: number;
   activeAccountType: KeyringAccountType;
   networks: {
