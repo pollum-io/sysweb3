@@ -97,7 +97,7 @@ describe('', () => {
     expect(wallet.activeAccountType).toBe(KeyringAccountType.Imported);
   });
 
-  // //* getAccountById
+  //* getAccountById
   it('should get an account by id', () => {
     const id = 1;
     const account1 = keyringManager.getAccountById(
@@ -110,7 +110,7 @@ describe('', () => {
     console.log('Check activeAccount', account1);
   });
 
-  //   //* getPrivateKeyByAccountId
+  //* getPrivateKeyByAccountId
   it('should get an account private key by id', () => {
     const id = 1;
     const privateKey = keyringManager.getPrivateKeyByAccountId(
@@ -129,7 +129,7 @@ describe('', () => {
     expect(invalidAccount).toBeUndefined();
   });
 
-  //   //* getEncryptedXprv
+  //* getEncryptedXprv
   it('should get the encrypted private key', async () => {
     const xprv = keyringManager.getEncryptedXprv();
 
@@ -137,7 +137,7 @@ describe('', () => {
     expect(xprv.substring(1, 4)).not.toEqual('prv');
   });
 
-  //   //* getAccountXpub
+  //* getAccountXpub
   it('should get the public key', async () => {
     const xpub = keyringManager.getAccountXpub();
 
@@ -154,14 +154,14 @@ describe('', () => {
     }).toThrow('Invalid password.');
   });
 
-  //   //* getLatestUpdateForAccount
+  //* getLatestUpdateForAccount
   // it('should get an updated account', async () => {
   //   const account = await keyringManager.getLatestUpdateForAccount();
 
   //   expect(account).toBeDefined();
   // });
 
-  // // -----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------
+  // -----------------------------------------------------------------------------------------------EthereumTransaction Tests----------------------------------------------------
 
   it('Validate get nounce', async () => {
     const nonce = await keyringManager.ethereumTransaction.getRecommendedNonce(
@@ -196,7 +196,7 @@ describe('', () => {
     expect(gasLimit instanceof ethers.BigNumber).toBeTruthy();
   });
 
-  //   //* setSignerNetwork
+  //* setSignerNetwork
   it('should set the network', async () => {
     const testnet = initialWalletState.networks.ethereum[80001];
     console.log('Checking testnet network', testnet);
@@ -373,7 +373,7 @@ describe('', () => {
     expect(newAccount.label).toBe('Teddy');
   });
 
-  // //* forgetMainWallet
+  //* forgetMainWallet
   it('should forget wallet / reset to initial state', async () => {
     keyringManager.forgetMainWallet(FAKE_PASSWORD);
 

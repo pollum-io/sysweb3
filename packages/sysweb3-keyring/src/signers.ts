@@ -8,7 +8,6 @@ import * as sysweb3 from '@pollum-io/sysweb3-core/src'; //TODO: tem[]
 import { BitcoinNetwork, IPubTypes } from '@pollum-io/sysweb3-network/src'; //TODO: temp
 import { INetwork } from '@pollum-io/sysweb3-utils/src'; //TODO: temp
 
-//TODO: pass this to keyring on syscoin part
 export const getSyscoinSigners = ({
   mnemonic,
   isTestnet,
@@ -18,7 +17,7 @@ export const getSyscoinSigners = ({
   let main: any;
   let hd: SyscoinHDSigner;
 
-  let config: BitcoinNetwork | null = null;
+  let config: BitcoinNetwork | null = null; //TODO: fix bitcoinNetwork config
   let slip44: number | null = null;
   let pubTypes: IPubTypes | null = null;
 
