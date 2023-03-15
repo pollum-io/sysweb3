@@ -1,6 +1,7 @@
 import axios from 'axios';
 import camelcaseKeys from 'camelcase-keys';
 import { ethers as ethersModule } from 'ethers';
+// import fetch from 'node-fetch';
 import sys from 'syscoinjs-lib';
 
 import { createContractUsingAbi } from '.';

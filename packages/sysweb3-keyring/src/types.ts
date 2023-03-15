@@ -180,7 +180,7 @@ export interface IKeyringManager {
 }
 
 export enum KeyringAccountType {
-  // Trezor, //TODO: add trezor as we implement it on sysweb3
+  // Trezor = 'Trezor', //TODO: add trezor as we implement it on sysweb3
   Imported = 'Imported',
   HDAccount = 'HDAccount',
 }

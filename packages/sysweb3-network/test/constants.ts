@@ -5,7 +5,7 @@ dotenv.config();
 export const CHAIN_ID_NUMBER = 1;
 export const CHAIN_ID_HEX = '0x01';
 export const RPC_URL = 'https://1rpc.io/eth';
-export const BLOCKBOOK_RPC_URL = 'https://blockbook-litecoin.binancechain.io/';
+export const BLOCKBOOK_RPC_URL = 'https://ltc1.trezor.io/';
 
 export const CHAINS_EXPLORERS = [
   {

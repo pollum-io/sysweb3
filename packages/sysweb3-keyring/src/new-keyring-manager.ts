@@ -648,6 +648,7 @@ export class NewKeyringManager {
         isTestnet: chain === 'test',
       };
     }
+    console.log('Getting the neetwoork', network);
     const { rpc, chain } = await getSysRpc(network);
 
     return {
@@ -679,10 +680,7 @@ export class NewKeyringManager {
     isTestnet: boolean
   ) => {
     const accounts = this.wallet.accounts[KeyringAccountType.HDAccount];
-    if (this.hd.blockbookURL === rpc.formattedNetwork.url) {
-      console.log('Creating for the same network already set on syscoinHD');
-    }
-    console.log('Validating creation process');
+
     const { hd, main } = getSyscoinSigners({
       mnemonic: this.memMnemonic,
       isTestnet,
