@@ -382,6 +382,70 @@ describe('', () => {
   });
 });
 
+describe('Syscoin network testing', () => {
+  const keyringManager = new NewKeyringManager();
+
+  jest.setTimeout(50000); // 20s
+
+  //* validateSeed
+  it('should validate a seed', () => {
+    const seed = keyringManager.createNewSeed();
+    const wrong = keyringManager.isSeedValid('invalid seed');
+    if (seed) {
+      expect(keyringManager.isSeedValid(seed)).toBe(true);
+    }
+    expect(wrong).toBe(false);
+    expect(keyringManager.isSeedValid(String(PEACE_SEED_PHRASE))).toBe(true);
+    const newSeed = keyringManager.setSeed(String(PEACE_SEED_PHRASE));
+    expect(newSeed).toBe(String(PEACE_SEED_PHRASE));
+  });
+
+  //* setWalletPassword / checkPassword
+  it('should set and check the password', () => {
+    keyringManager.setWalletPassword(FAKE_PASSWORD);
+
+    const wrong = keyringManager.checkPassword('wrongp@ss123');
+    const right = keyringManager.checkPassword(FAKE_PASSWORD);
+
+    expect(wrong).toBe(false);
+    expect(right).toBe(true);
+  });
+
+  //* createKeyringVault
+  it('should create the keyring vault', async () => {
+    const account = await keyringManager.createKeyringVault();
+
+    expect(account).toBeDefined();
+  });
+
+  //* setSignerNetwork - pass to ethereum
+  it('should set the network', async () => {
+    const testnet = initialWalletState.networks.ethereum[80001];
+    console.log('Checking testnet network', testnet);
+
+    await keyringManager.setSignerNetwork(testnet, 'ethereum');
+
+    const network = keyringManager.getNetwork();
+
+    expect(network).toEqual(testnet);
+  });
+
+  //* setSignerNetwork - back to syscoin testnet
+  it('should set the network', async () => {
+    const testnet = initialWalletState.networks.syscoin[5700]; //Syscoin testnet
+    console.log('Checking testnet network', testnet);
+
+    await keyringManager.setSignerNetwork(testnet, 'syscoin');
+
+    const network = keyringManager.getNetwork();
+
+    expect(network).toEqual(testnet);
+  });
+  //TODO: test with litecoin and bitcoin
+  //TODO: test all transactions methods with other chains (look into sys-txs.spec.ts)
+  //TODO: validate account creations
+});
+
 // describe('Account derivation with another seed in keyring', () => {
 //   const keyringManager = new NewKeyringManager({});
 //   jest.setTimeout(50000); // 50s

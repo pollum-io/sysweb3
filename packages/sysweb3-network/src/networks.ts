@@ -36,18 +36,15 @@ export const getPubType = (
   };
 };
 
-export const getFormattedBitcoinLikeNetwork = (
-  slip44: number,
-  coinName: string
-) => {
+export const getNetworkConfig = (slip44: number, coinName: string) => {
   try {
     const coin = coins.find(
       (supported: any) => supported.coinName === coinName
     );
 
-    if (!(coin && coin.slip44 === slip44))
-      throw new Error(`Coin info not found`);
-
+    if (!(coin && coin.slip44 === slip44)) {
+      throw `${coinName} not supported, add its network config on coins.ts at Pali repo`;
+    }
     const {
       signedMessageHeader,
       bech32Prefix,

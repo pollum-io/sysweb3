@@ -11,51 +11,35 @@ import { INetwork } from '@pollum-io/sysweb3-utils/src'; //TODO: temp
 export const getSyscoinSigners = ({
   mnemonic,
   isTestnet,
-  url,
   rpc,
 }: ISyscoinSignerParams): { hd: SyscoinHDSigner; main: any } => {
-  let main: any;
-  let hd: SyscoinHDSigner;
-
-  let config: BitcoinNetwork | null = null; //TODO: fix bitcoinNetwork config
+  const { url } = rpc.formattedNetwork;
+  let config: BitcoinNetwork | null = null;
   let slip44: number | null = null;
   let pubTypes: IPubTypes | null = null;
-
   let networks: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork } | null =
     null;
+  if (rpc.networkConfig) {
+    const { formattedNetwork, networkConfig } = rpc;
 
-  const hasRpcConfig = rpc && rpc.formattedBitcoinLikeNetwork;
+    const { networks: _networkConfig, types } = networkConfig;
 
-  if (hasRpcConfig) {
-    const { formattedNetwork, formattedBitcoinLikeNetwork } = rpc;
+    config = isTestnet ? _networkConfig.testnet : _networkConfig.mainnet;
 
-    const { networks: _bitcoinLikeNetworks, types } =
-      formattedBitcoinLikeNetwork;
-
-    config = isTestnet
-      ? _bitcoinLikeNetworks.testnet
-      : _bitcoinLikeNetworks.mainnet;
-
-    networks = _bitcoinLikeNetworks;
+    networks = _networkConfig;
     slip44 = formattedNetwork.chainId;
     pubTypes = types.zPubType;
   }
+  const hd: SyscoinHDSigner = new sys.utils.HDSigner(
+    mnemonic,
+    null,
+    isTestnet,
+    networks,
+    slip44,
+    pubTypes
+  );
 
-  // @ts-ignore
-  if (!hd) {
-    hd = new sys.utils.HDSigner(
-      mnemonic,
-      null,
-      isTestnet,
-      networks,
-      slip44,
-      pubTypes
-    );
-  }
-
-  if (!main) {
-    main = new sys.SyscoinJSLib(hd, url, config);
-  }
+  const main: any = new sys.SyscoinJSLib(hd, url, config);
 
   return {
     hd,
@@ -68,7 +52,7 @@ export const getSigners = () => {
 
   const { hash } = storage.get('vault-keys');
 
-  const { network, isTestnet, mnemonic, rpc } = getDecryptedVault();
+  const { isTestnet, mnemonic, rpc } = getDecryptedVault();
 
   const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString(
     CryptoJS.enc.Utf8
@@ -77,7 +61,6 @@ export const getSigners = () => {
   const { hd: _hd, main: _main } = getSyscoinSigners({
     mnemonic: decryptedMnemonic,
     isTestnet,
-    url: network.url,
     rpc,
   });
 
@@ -125,10 +108,9 @@ export interface Bip84FromMnemonic {
 export type ISyscoinSignerParams = {
   mnemonic: string;
   isTestnet: boolean;
-  url: string;
-  rpc?: {
+  rpc: {
     formattedNetwork: INetwork;
-    formattedBitcoinLikeNetwork: {
+    networkConfig?: {
       networks: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork };
       types: { xPubType: IPubTypes; zPubType: IPubTypes };
     };

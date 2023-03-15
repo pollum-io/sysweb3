@@ -3,7 +3,7 @@ import bip44Constants from 'bip44-constants';
 import { Chain, chains } from 'eth-chains';
 import { ethers } from 'ethers';
 
-import { getFormattedBitcoinLikeNetwork, toDecimalFromHex } from './networks';
+import { getNetworkConfig, toDecimalFromHex } from './networks';
 import { jsonRpcRequest } from './rpc-request';
 import { INetwork } from '@pollum-io/sysweb3-utils/src'; //TODO: add source to simplify local testing
 
@@ -157,17 +157,14 @@ export const getBip44Chain = (coin: string, isTestnet?: boolean) => {
 };
 
 // change setsignerbychain keyring manager
-export const getSysRpc = async (data: any) => {
+export const getSysRpc = async (data: INetwork) => {
   try {
     const { valid, coin, chain } = await validateSysRpc(data.url);
     const { nativeCurrency, chainId } = getBip44Chain(coin, chain === 'test');
 
     if (!valid) throw new Error('Invalid Trezor Blockbook Explorer URL');
 
-    const formattedBitcoinLikeNetwork = getFormattedBitcoinLikeNetwork(
-      chainId,
-      coin
-    );
+    const networkConfig = getNetworkConfig(chainId, coin);
     //TODO: pass user label as coin and coin on another parameter (Issue: All testnet token will be with testnet as label)
     const formattedNetwork = {
       url: data.url,
@@ -177,15 +174,11 @@ export const getSysRpc = async (data: any) => {
       label: coin,
       default: false,
       chainId,
-    };
+    }; //TODO: Revied this later before finishing setSignerNetwork
     const rpc = {
       formattedNetwork,
-      formattedBitcoinLikeNetwork,
+      networkConfig,
     };
-    // return {
-    //   formattedNetwork,
-    //   formattedBitcoinLikeNetwork,
-    // };
 
     return { rpc, coin, chain };
   } catch (error) {
