@@ -1,7 +1,7 @@
 import { bech32 } from 'bech32';
 import { ethers } from 'ethers';
 
-import { INetwork, isContractAddress } from '.';
+import { isContractAddress } from '.';
 
 export const isValidEthereumAddress = (address: string) => {
   return ethers.utils.isAddress(address);
@@ -10,7 +10,7 @@ export const isValidEthereumAddress = (address: string) => {
 //TODO: this function needs to be refactorated to validate if its a valid bip84 address of any utxo chain
 export const isValidSYSAddress = (
   address: string,
-  network: INetwork,
+  bip44: number, //From pali bip44 is called chainId
   verification = true
 ) => {
   if (!verification) return true;
@@ -21,8 +21,8 @@ export const isValidSYSAddress = (
       const decodedAddr = bech32.decode(address);
 
       if (
-        (network.chainId === 57 && decodedAddr.prefix === 'sys') ||
-        (network.chainId === 5700 && decodedAddr.prefix === 'tsys')
+        (bip44 === 57 && decodedAddr.prefix === 'sys') ||
+        (bip44 === 5700 && decodedAddr.prefix === 'tsys')
       ) {
         const encode = bech32.encode(decodedAddr.prefix, decodedAddr.words);
 

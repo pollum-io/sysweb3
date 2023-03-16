@@ -1,6 +1,6 @@
 import sys from 'syscoinjs-lib';
 
-import { ITokenMap, ISyscoinToken, INetworkType } from '.';
+import { ITokenMap, ISyscoinToken } from '.';
 // import { web3Provider } from '@pollum-io/sysweb3-network';
 
 export const txUtils = () => {
@@ -112,10 +112,6 @@ export type ISyscoinTransaction = {
     vin: ISyscoinVIn[];
     vout: ISyscoinVOut[];
   };
-};
-
-export type IEthereumTransaction = {
-  [INetworkType.Ethereum]: any;
 };
 
 export type ITxid = { txid: string };

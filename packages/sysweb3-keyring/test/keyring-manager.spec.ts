@@ -11,7 +11,7 @@ import {
   TX,
   SECOND_FAKE_SEED_PHRASE,
 } from './constants';
-import { INetwork } from '@pollum-io/sysweb3-utils';
+import { INetwork } from '@pollum-io/sysweb3-network/src';
 describe('', () => {
   const keyringManager = KeyringManager();
   const ethereumTransactions = EthereumTransactions();

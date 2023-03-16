@@ -1,12 +1,10 @@
-import axios from 'axios';
 import bip44Constants from 'bip44-constants';
 import { Chain, chains } from 'eth-chains';
 import { ethers } from 'ethers';
 
 // import fetch from "node-fetch";
 
-import { getNetworkConfig, toDecimalFromHex } from './networks';
-import { INetwork } from '@pollum-io/sysweb3-utils/src'; //TODO: add source to simplify local testing
+import { getNetworkConfig, toDecimalFromHex, INetwork } from './networks';
 
 const hexRegEx = /^0x[0-9a-f]+$/iu;
 
@@ -106,12 +104,9 @@ export const validateSysRpc = async (
   chain: string;
 }> => {
   try {
-    const tryer = await (await fetch('https://ltc1.trezor.io/api/v2')).json();
-    console.log('tryer', tryer);
-    const response = await axios.get(
-      `${url.endsWith('/') ? url.slice(0, -1) : url}/api/v2`
-    );
-
+    const response = await (
+      await fetch(`${url.endsWith('/') ? url.slice(0, -1) : url}/api/v2`)
+    ).json();
     const {
       blockbook: { coin },
       backend: { chain },

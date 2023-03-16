@@ -62,7 +62,6 @@
     "jest": "^27.5.1",
     "lint-staged": "^12.4.1",
     "minimist": "1.2.6",
-    "node-fetch": "^3.2.2",
     "prettier": "^2.6.0",
     "prettier-eslint": "^13.0.0",
     "rollup": "^2.70.0",

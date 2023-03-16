@@ -11,7 +11,7 @@ import {
   TX,
   SEED_ACCOUNT_ADDRESS_AT_UTX0,
 } from './constants';
-import { INetwork } from '@pollum-io/sysweb3-utils';
+import { INetwork } from '@pollum-io/sysweb3-network/src';
 
 describe('', () => {
   const keyringManager = KeyringManager();

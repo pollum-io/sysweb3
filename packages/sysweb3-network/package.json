@@ -28,7 +28,6 @@
     "localTest": "npm run prebuild && npm run build && npm run rollup && npm run build && npm run copy"
   },
   "dependencies": {
-    "@pollum-io/sysweb3-utils": "../sysweb3-utils",
     "axios": "^0.26.1",
     "bip44-constants": "^114.0.0",
     "bs58check": "^2.1.2",

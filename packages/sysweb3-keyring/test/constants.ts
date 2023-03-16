@@ -30,6 +30,16 @@ export const SYS_TANENBAUM_UTXO_NETWORK = {
   explorer: '',
 };
 
+export const BTC_TESTNET_TOKEN = {
+  chainId: 57,
+  label: 'Bitcoin Testnet',
+  url: 'https://blockbook.elint.services/',
+  default: true,
+  currency: 'sys',
+  apiUrl: '',
+  explorer: 'https://blockbook.elint.services/',
+};
+
 export const SYS_MAINNET_UTXO_NETWORK = {
   chainId: 57,
   label: 'Syscoin Mainnet',

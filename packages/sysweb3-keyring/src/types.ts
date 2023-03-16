@@ -8,9 +8,8 @@ import {
   TransactionConfig,
 } from 'web3-core';
 
+import { INetwork, INetworkType } from '@pollum-io/sysweb3-network/src'; //TODO: temp
 import {
-  INetwork,
-  INetworkType,
   ITokenMint,
   ITokenSend,
   ITokenUpdate,

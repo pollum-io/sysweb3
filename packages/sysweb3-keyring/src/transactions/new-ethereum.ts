@@ -24,7 +24,6 @@ import { ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
 
-import { getFormattedTransactionResponse } from '../format';
 import {
   IResponseFromSendErcSignedTransaction,
   ISendSignedErcTransactionProps,
@@ -33,11 +32,11 @@ import {
   SimpleTransactionRequest,
 } from '../types';
 import { sysweb3Di } from '@pollum-io/sysweb3-core/src'; //TODO: temp
+import { INetwork } from '@pollum-io/sysweb3-network/src'; //TODO: temp
 import {
   createContractUsingAbi,
   getErc20Abi,
   getErc21Abi,
-  INetwork,
 } from '@pollum-io/sysweb3-utils/src'; // TODO: temp
 
 export class NewEthereumTransactions implements NewIEthereumTransactions {
@@ -245,7 +244,7 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
       throw error;
     }
   };
-
+  //TODO: This function needs to be refactored
   sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
     const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
 
@@ -253,17 +252,18 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
     const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
     try {
       const transaction = await wallet.sendTransaction(tx);
-
-      return await getFormattedTransactionResponse(
-        this.web3Provider,
-        transaction,
-        this.getNetwork()
-      );
+      const response = await this.web3Provider.getTransaction(transaction.hash);
+      if (!response) {
+        return await this.getTransactionTimestamp(transaction);
+      } else {
+        return await this.getTransactionTimestamp(response);
+      }
     } catch (error) {
       throw error;
     }
   };
   // tip numerador eip 1559
+  // TODO: refactor this function
   sendTransaction = async ({
     sender,
     receivingAddress,
@@ -314,12 +314,12 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
 
     try {
       const transaction = await wallet.sendTransaction(tx);
-
-      return await getFormattedTransactionResponse(
-        this.web3Provider,
-        transaction,
-        this.getNetwork()
-      );
+      const response = await this.web3Provider.getTransaction(transaction.hash);
+      if (!response) {
+        return await this.getTransactionTimestamp(transaction);
+      } else {
+        return await this.getTransactionTimestamp(response);
+      }
     } catch (error) {
       throw error;
     }
@@ -575,6 +575,19 @@ export class NewEthereumTransactions implements NewIEthereumTransactions {
     });
 
     return pendingTransactions;
+  };
+
+  private getTransactionTimestamp = async (
+    transaction: TransactionResponse
+  ) => {
+    const { timestamp } = await this.web3Provider.getBlock(
+      Number(transaction.blockNumber)
+    );
+
+    return {
+      ...transaction,
+      timestamp,
+    } as TransactionResponse;
   };
 
   public setWeb3Provider(network: INetwork) {

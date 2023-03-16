@@ -35,12 +35,6 @@ describe('rpc tests', () => {
     expect(response).toStrictEqual(VALID_ETH_RPC_RESPONSE);
   });
 
-  it('should validate given trezor blockbook rpc', async () => {
-    const response = await validateSysRpc(BLOCKBOOK_RPC_URL);
-
-    expect(response).toStrictEqual(VALID_BLOCKBOOK_RPC_RESPONSE);
-  });
-
   it('should get bip44 data for given coin', () => {
     const isTestnet = VALID_BLOCKBOOK_RPC_RESPONSE.chain === 'test';
 

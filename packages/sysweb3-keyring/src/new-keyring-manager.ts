@@ -27,12 +27,10 @@ import {
   getSysRpc,
   IPubTypes,
   validateSysRpc,
-} from '@pollum-io/sysweb3-network/src'; //TODO: temp
-import {
-  IEthereumNftDetails,
   INetwork,
   INetworkType,
-} from '@pollum-io/sysweb3-utils/src'; //TODO: temp
+} from '@pollum-io/sysweb3-network/src'; //TODO: temp
+import { IEthereumNftDetails } from '@pollum-io/sysweb3-utils/src'; //TODO: temp
 
 //todo: remove vault and add info in the constructor as OPTS
 export interface IKeyringManagerOpts {

@@ -5,8 +5,11 @@ import sys from 'syscoinjs-lib';
 
 import { getDecryptedVault } from './storage';
 import * as sysweb3 from '@pollum-io/sysweb3-core/src'; //TODO: tem[]
-import { BitcoinNetwork, IPubTypes } from '@pollum-io/sysweb3-network/src'; //TODO: temp
-import { INetwork } from '@pollum-io/sysweb3-utils/src'; //TODO: temp
+import {
+  BitcoinNetwork,
+  IPubTypes,
+  INetwork,
+} from '@pollum-io/sysweb3-network/src'; //TODO: temp
 
 export const getSyscoinSigners = ({
   mnemonic,
