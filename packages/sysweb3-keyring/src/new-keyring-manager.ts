@@ -21,16 +21,18 @@ import {
   KeyringAccountType,
   NewIEthereumTransactions,
 } from './types';
-import * as sysweb3 from '@pollum-io/sysweb3-core/src'; //TODO: temp
+import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
   BitcoinNetwork,
   getSysRpc,
   IPubTypes,
   validateSysRpc,
+} from '@pollum-io/sysweb3-network';
+import {
+  IEthereumNftDetails,
   INetwork,
   INetworkType,
-} from '@pollum-io/sysweb3-network/src'; //TODO: temp
-import { IEthereumNftDetails } from '@pollum-io/sysweb3-utils/src'; //TODO: temp
+} from '@pollum-io/sysweb3-utils';
 
 //todo: remove vault and add info in the constructor as OPTS
 export interface IKeyringManagerOpts {
@@ -278,7 +280,7 @@ export class NewKeyringManager {
     if (INetworkType.Ethereum !== chain && INetworkType.Syscoin !== chain) {
       throw new Error('Unsupported chain');
     }
-    const networkChain =
+    const networkChain: INetworkType =
       INetworkType.Ethereum === chain
         ? INetworkType.Ethereum
         : INetworkType.Syscoin;
@@ -647,7 +649,7 @@ export class NewKeyringManager {
       };
     }
     console.log('Getting the neetwoork', network);
-    const { rpc, chain } = await getSysRpc(network);
+    const { rpc, chain } = await getSysRpc(network); //todo check here
 
     return {
       rpc,

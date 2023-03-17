@@ -8,13 +8,14 @@ import {
   TransactionConfig,
 } from 'web3-core';
 
-import { INetwork, INetworkType } from '@pollum-io/sysweb3-network/src'; //TODO: temp
 import {
   ITokenMint,
   ITokenSend,
   ITokenUpdate,
   ITxid,
-} from '@pollum-io/sysweb3-utils/src'; //TODO: temp
+  INetwork,
+  INetworkType,
+} from '@pollum-io/sysweb3-utils'; //TODO: temp
 
 export interface ITrezorWallet {
   createHardwareWallet: () => Promise<IKeyringAccountState>;

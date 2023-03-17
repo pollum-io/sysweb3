@@ -27,12 +27,12 @@ import {
   jsonRpcRequest,
   setActiveNetwork,
   validateSysRpc,
-} from '@pollum-io/sysweb3-network/src'; //TODO: temp
+} from '@pollum-io/sysweb3-network';
 import {
   INetwork,
   getAsset,
   IEthereumNftDetails,
-} from '@pollum-io/sysweb3-utils/src'; //TODO: temp
+} from '@pollum-io/sysweb3-utils';
 
 export const KeyringManager = (): IKeyringManager => {
   const web3Wallet = Web3Accounts();

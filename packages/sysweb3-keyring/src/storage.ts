@@ -1,6 +1,6 @@
 import CryptoJS from 'crypto-js';
 
-import { sysweb3Di } from '@pollum-io/sysweb3-core/src'; //TODO: temp
+import { sysweb3Di } from '@pollum-io/sysweb3-core';
 
 const storage = sysweb3Di.getStateStorageDb();
 

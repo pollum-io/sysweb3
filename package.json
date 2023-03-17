@@ -10,7 +10,7 @@
   "typings": "types/index.d.ts",
   "homepage": "https://github.com/Pollum-io/sysweb3#readme",
   "scripts": {
-    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "build": "tsc && tsc -p tsconfig.json",
     "build-all": "npm run build && npm run build-rollup",
     "build-rollup": "rollup -c scripts/config/rollup.config.js && rollup -c scripts/config/rollup.config.js --environment NODE_ENV:production",
     "clean": "rimraf dist/",

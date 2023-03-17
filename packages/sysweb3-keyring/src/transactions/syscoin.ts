@@ -14,7 +14,7 @@ import {
   txUtils,
   getAsset,
   countDecimals,
-} from '@pollum-io/sysweb3-utils/src'; // TODO: temp
+} from '@pollum-io/sysweb3-utils';
 
 type EstimateFeeParams = {
   outputs: { value: number; address: string }[];

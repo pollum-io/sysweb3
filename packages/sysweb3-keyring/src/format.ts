@@ -1,7 +1,8 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { ethers } from 'ethers';
 
-import { INetwork } from '@pollum-io/sysweb3-utils/src'; //TODO: temp
+import { setActiveNetwork } from '@pollum-io/sysweb3-network';
+import { INetwork } from '@pollum-io/sysweb3-utils';
 
 const validateCurrentProvider = async (
   provider:
@@ -16,7 +17,7 @@ const validateCurrentProvider = async (
   if (!validateProvider) {
     setActiveNetwork(network);
 
-    return web3Provider;
+    return provider;
   }
 
   return provider;
