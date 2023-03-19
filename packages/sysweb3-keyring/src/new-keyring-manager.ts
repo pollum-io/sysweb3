@@ -12,7 +12,10 @@ import {
 } from './initial-state';
 import { getSyscoinSigners, SyscoinHDSigner } from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
-import { NewEthereumTransactions, SyscoinTransactions } from './transactions';
+import {
+  NewEthereumTransactions,
+  NewSyscoinTransactions,
+} from './transactions';
 import {
   IKeyringAccountState,
   IKeyringBalances,
@@ -49,6 +52,11 @@ export interface ISysAccount {
   label?: string;
 }
 
+export interface IkeyringManagerOpts {
+  wallet?: IWalletState | null;
+  hd?: SyscoinHDSigner | null;
+  //todo: other props
+}
 export interface ISysAccountWithId extends ISysAccount {
   id: number;
 }
@@ -66,15 +74,16 @@ export class NewKeyringManager {
   //transactions objects
   public ethereumTransaction: NewIEthereumTransactions;
   syscoinTransaction: ISyscoinTransactions;
-  constructor() {
+  constructor(opts?: IkeyringManagerOpts) {
     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
-    this.wallet = initialWalletState; //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
-    this.hd = new sys.utils.HDSigner(''); //TODO : in case HD opts are sent initialize again hd signer;
+    this.wallet = opts?.wallet ?? initialWalletState; //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
+    this.hd = opts?.hd ?? new sys.utils.HDSigner(''); //TODO : in case HD opts are sent initialize again hd signer;
 
     this.memMnemonic = '';
     this.memPassword = '';
 
-    this.syscoinTransaction = SyscoinTransactions();
+    // this.syscoinTransaction = SyscoinTransactions();
+    this.syscoinTransaction = new NewSyscoinTransactions();
     this.ethereumTransaction = new NewEthereumTransactions(
       this.getNetwork,
       this.getDecryptedPrivateKey
@@ -285,7 +294,7 @@ export class NewKeyringManager {
         ? INetworkType.Ethereum
         : INetworkType.Syscoin;
 
-    let rpc, isTestnet;
+    let rpc, isTestnet; //todo this doesn't make sense to me
     if (chain === INetworkType.Syscoin) {
       const { rpc: _rpc, isTestnet: _isTestnet } = await this.setSignerUTXO(
         network
@@ -294,7 +303,7 @@ export class NewKeyringManager {
       isTestnet = _isTestnet;
       console.log('SYSCOIN_CHAIN: Check rpc', rpc);
       console.log('SYSCOIN_CHAIN: Check isTestnet', isTestnet);
-      await this.updateUTXOAccounts(rpc, isTestnet);
+      await this.updateUTXOAccounts(rpc, isTestnet); //todo: question: why do we need to recreate these variables? I think they can be imported by setSignerUTXO direclty
     } else if (chain === INetworkType.Ethereum) {
       await this.setSignerEVM(network);
       await this.updateWeb3Accounts();
@@ -648,8 +657,8 @@ export class NewKeyringManager {
         isTestnet: chain === 'test',
       };
     }
-    console.log('Getting the neetwoork', network);
-    const { rpc, chain } = await getSysRpc(network); //todo check here
+    console.log('Getting the network', network);
+    const { rpc, chain } = await getSysRpc(network); //todo check here -> method signature is wrong
 
     return {
       rpc,
@@ -658,15 +667,20 @@ export class NewKeyringManager {
   };
 
   private setSignerEVM = async (network: INetwork): Promise<void> => {
-    const web3Provider = new ethers.providers.JsonRpcProvider(network.url);
-    const { chainId } = await web3Provider.getNetwork();
-    if (network.chainId === chainId) {
+    try {
+      const web3Provider = new ethers.providers.JsonRpcProvider(network.url);
+      const { chainId } = await web3Provider.getNetwork();
+      if (network.chainId !== chainId) {
+        throw new Error(
+          `SetSignerEVM: Wrong network information expected ${network.chainId} received ${chainId}`
+        );
+      }
       this.ethereumTransaction.setWeb3Provider(network); // If chain check was sucessfull we set it as default web3Provider
-      return;
+    } catch (_) {
+      throw new Error(
+        `SetSignerEVM: Wrong network information expected ${network.chainId}`
+      );
     }
-    throw new Error(
-      `SetSignerEVM: Wrong network information expected ${network.chainId} received ${chainId}`
-    );
   };
 
   private updateUTXOAccounts = async (
@@ -681,6 +695,7 @@ export class NewKeyringManager {
   ) => {
     const accounts = this.wallet.accounts[KeyringAccountType.HDAccount];
 
+    console.log('rpc', rpc);
     const { hd, main } = getSyscoinSigners({
       mnemonic: this.memMnemonic,
       isTestnet,
@@ -689,13 +704,15 @@ export class NewKeyringManager {
     this.hd = hd;
     this.syscoinSigner = main;
     const walletAccountsArray = Object.values(accounts);
-    if (walletAccountsArray.length > 1) {
-      for (const id in Object.values(accounts)) {
+
+    //todo: updated here to Promise All
+    await Promise.all(
+      walletAccountsArray.map(({ id }) => {
         if (!hd.Signer.accounts[Number(id)]) {
           this.addUTXOAccount(Number(id));
         }
-      }
-    }
+      })
+    );
   };
 
   private clearTemporaryLocalKeys = () => {

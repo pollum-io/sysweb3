@@ -158,6 +158,7 @@ export const getBip44Chain = (coin: string, isTestnet?: boolean) => {
 };
 
 // TODO: type data with ICustomRpcParams later
+// TODO: type return correctly
 export const getSysRpc = async (data: any) => {
   try {
     const { valid, coin, chain } = await validateSysRpc(data.url);

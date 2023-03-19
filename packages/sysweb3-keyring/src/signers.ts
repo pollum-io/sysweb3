@@ -53,6 +53,7 @@ export const getSigners = () => {
   const { hash } = storage.get('vault-keys');
 
   const { isTestnet, mnemonic, rpc } = getDecryptedVault();
+  console.log('mnemonic and hash', mnemonic, hash);
 
   const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString(
     CryptoJS.enc.Utf8
@@ -63,6 +64,7 @@ export const getSigners = () => {
     isTestnet,
     rpc,
   });
+  //todo: why do we need to change hd and main name into _ here? _ stands for non used variables
 
   return {
     _hd,
