@@ -554,6 +554,7 @@ export class NewKeyringManager {
       isImported: false,
       ...basicAccountInfo,
     };
+
     this.wallet = {
       ...this.wallet,
       accounts: {
@@ -624,11 +625,11 @@ export class NewKeyringManager {
     const derivedCurrentAccount = privateRoot.derivePath(
       `${ethHdPath}/0/${String(id)}`
     );
-    //todo: bad naming newWallet
-    const newWallet = derivedCurrentAccount.getWallet();
-    const address = newWallet.getAddressString();
-    const xprv = newWallet.getPrivateKeyString();
-    const xpub = newWallet.getPublicKeyString();
+
+    const derievedWallet = derivedCurrentAccount.getWallet();
+    const address = derievedWallet.getAddressString();
+    const xprv = derievedWallet.getPrivateKeyString();
+    const xpub = derievedWallet.getPublicKeyString();
 
     const basicAccountInfo = await this.getBasicWeb3AccountInfo(
       address,
@@ -643,6 +644,7 @@ export class NewKeyringManager {
       isImported: false,
       ...basicAccountInfo,
     };
+
     this.wallet.accounts[KeyringAccountType.HDAccount][id] = createdAccount;
   };
 
