@@ -4,9 +4,12 @@ import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 
 import { getDecryptedVault } from './storage';
-import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { BitcoinNetwork, IPubTypes } from '@pollum-io/sysweb3-network';
-import { INetwork } from '@pollum-io/sysweb3-utils';
+import * as sysweb3 from '@pollum-io/sysweb3-core/src';
+import {
+  BitcoinNetwork,
+  IPubTypes,
+  INetwork,
+} from '@pollum-io/sysweb3-network/src';
 
 export const getSyscoinSigners = ({
   mnemonic,
@@ -30,6 +33,7 @@ export const getSyscoinSigners = ({
     slip44 = formattedNetwork.chainId;
     pubTypes = types.zPubType;
   }
+  console.log('Creating hdSigner');
   const hd: SyscoinHDSigner = new sys.utils.HDSigner(
     mnemonic,
     null,

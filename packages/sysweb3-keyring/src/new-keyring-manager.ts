@@ -24,18 +24,16 @@ import {
   KeyringAccountType,
   NewIEthereumTransactions,
 } from './types';
-import * as sysweb3 from '@pollum-io/sysweb3-core';
+import * as sysweb3 from '@pollum-io/sysweb3-core/src';
 import {
   BitcoinNetwork,
   getSysRpc,
   IPubTypes,
   validateSysRpc,
-} from '@pollum-io/sysweb3-network';
-import {
-  IEthereumNftDetails,
   INetwork,
   INetworkType,
-} from '@pollum-io/sysweb3-utils';
+} from '@pollum-io/sysweb3-network/src';
+import { IEthereumNftDetails } from '@pollum-io/sysweb3-utils/src';
 
 //todo: remove vault and add info in the constructor as OPTS
 export interface IKeyringManagerOpts {
@@ -294,15 +292,9 @@ export class NewKeyringManager {
         ? INetworkType.Ethereum
         : INetworkType.Syscoin;
 
-    let rpc, isTestnet; //todo this doesn't make sense to me
     if (chain === INetworkType.Syscoin) {
-      const { rpc: _rpc, isTestnet: _isTestnet } = await this.setSignerUTXO(
-        network
-      );
-      rpc = _rpc;
-      isTestnet = _isTestnet;
-      console.log('SYSCOIN_CHAIN: Check rpc', rpc);
-      console.log('SYSCOIN_CHAIN: Check isTestnet', isTestnet);
+      const { rpc, isTestnet } = await this.setSignerUTXO(network);
+      console.log('Check response', rpc, isTestnet);
       await this.updateUTXOAccounts(rpc, isTestnet); //todo: question: why do we need to recreate these variables? I think they can be imported by setSignerUTXO direclty
     } else if (chain === INetworkType.Ethereum) {
       await this.setSignerEVM(network);
@@ -652,7 +644,9 @@ export class NewKeyringManager {
     network: INetwork
   ): Promise<{ rpc: any; isTestnet: boolean }> => {
     if (network.default) {
+      console.log('Going default network path');
       const { chain, valid } = await validateSysRpc(network.url);
+      console.log('Check result', chain, valid);
       if (!valid) throw new Error('Invalid network');
       return {
         rpc: { formattedNetwork: network, networkConfig: null },

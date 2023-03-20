@@ -31,13 +31,13 @@ import {
   NewIEthereumTransactions,
   SimpleTransactionRequest,
 } from '../types';
-import { sysweb3Di } from '@pollum-io/sysweb3-core';
+import { sysweb3Di } from '@pollum-io/sysweb3-core/src';
+import { INetwork } from '@pollum-io/sysweb3-network/src';
 import {
   createContractUsingAbi,
   getErc20Abi,
   getErc21Abi,
-  INetwork,
-} from '@pollum-io/sysweb3-utils';
+} from '@pollum-io/sysweb3-utils/src';
 
 export class NewEthereumTransactions implements NewIEthereumTransactions {
   public web3Provider: any;

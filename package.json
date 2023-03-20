@@ -5,8 +5,7 @@
   "author": "Pali Wallet",
   "email": "pali@pollum.io",
   "license": "MIT",
-  "main": "cjs/index.js",
-  "module": "esm/index.js",
+  "main": "esm/index.js",
   "typings": "types/index.d.ts",
   "homepage": "https://github.com/Pollum-io/sysweb3#readme",
   "scripts": {

@@ -36,15 +36,14 @@ import {
   ISendTransaction,
   SimpleTransactionRequest,
 } from '../types';
-import { sysweb3Di } from '@pollum-io/sysweb3-core';
-import { web3Provider } from '@pollum-io/sysweb3-network';
+import { sysweb3Di } from '@pollum-io/sysweb3-core/src';
+// import { web3Provider, INetwork } from '@pollum-io/sysweb3-network/src';
 import {
   createContractUsingAbi,
   getErc20Abi,
   getErc21Abi,
   getTokenStandardMetadata,
-  INetwork,
-} from '@pollum-io/sysweb3-utils';
+} from '@pollum-io/sysweb3-utils/src';
 
 export const EthereumTransactions = (): IEthereumTransactions => {
   const storage = sysweb3Di.getStateStorageDb();

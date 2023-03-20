@@ -104,15 +104,14 @@ export const validateSysRpc = async (
   chain: string;
 }> => {
   try {
-    const response = await (
-      await fetch(`${url.endsWith('/') ? url.slice(0, -1) : url}/api/v2`)
-    ).json();
+    const formatURL = `${url.endsWith('/') ? url.slice(0, -1) : url}/api/v2`;
+    const response = await (await fetch(formatURL)).json();
     const {
       blockbook: { coin },
       backend: { chain },
-    } = response.data;
+    } = response;
 
-    const valid = Boolean(response && coin && response.status === 200);
+    const valid = Boolean(response && coin);
 
     return {
       valid,

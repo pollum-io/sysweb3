@@ -2,7 +2,7 @@
   "name": "@pollum-io/sysweb3-utils",
   "version": "1.1.218",
   "description": "A helper for multi-chain accounts.",
-  "main": "cjs/index.js",
+  "main": "esm/index.js",
   "types": "types/index.d.ts",
   "repository": {
     "type": "git",
