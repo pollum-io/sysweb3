@@ -13,7 +13,7 @@ import {
   FAKE_PRIVATE_KEY,
   FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS,
 } from './constants';
-import { INetwork } from '@pollum-io/sysweb3-network/src'; //TODO: TEMP
+import { INetwork } from '@pollum-io/sysweb3-network/src';
 import 'isomorphic-fetch';
 
 describe('Keyring Manager and Ethereum Transaction tests', () => {
@@ -439,9 +439,6 @@ describe('Syscoin network testing', () => {
 
     expect(network).toEqual(testnet);
   });
-  //TODO: test with litecoin and bitcoin
-  //TODO: test all transactions methods with other chains (look into sys-txs.spec.ts)
-  //TODO: validate account creations
 });
 
 describe('Account derivation with another seed in keyring', () => {

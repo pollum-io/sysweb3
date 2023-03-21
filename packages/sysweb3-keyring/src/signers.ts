@@ -1,10 +1,7 @@
 import { BIP32Interface } from 'bip32';
 import { Psbt } from 'bitcoinjs-lib';
-import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 
-import { getDecryptedVault } from './storage';
-import * as sysweb3 from '@pollum-io/sysweb3-core/src';
 import {
   BitcoinNetwork,
   IPubTypes,
@@ -33,7 +30,6 @@ export const getSyscoinSigners = ({
     slip44 = formattedNetwork.chainId;
     pubTypes = types.zPubType;
   }
-  console.log('Creating hdSigner');
   const hd: SyscoinHDSigner = new sys.utils.HDSigner(
     mnemonic,
     null,
@@ -48,31 +44,6 @@ export const getSyscoinSigners = ({
   return {
     hd,
     main,
-  };
-};
-
-export const getSigners = () => {
-  const storage = sysweb3.sysweb3Di.getStateStorageDb();
-
-  const { hash } = storage.get('vault-keys');
-
-  const { isTestnet, mnemonic, rpc } = getDecryptedVault();
-  console.log('mnemonic and hash', mnemonic, hash);
-
-  const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString(
-    CryptoJS.enc.Utf8
-  );
-
-  const { hd: _hd, main: _main } = getSyscoinSigners({
-    mnemonic: decryptedMnemonic,
-    isTestnet,
-    rpc,
-  });
-  //todo: why do we need to change hd and main name into _ here? _ stands for non used variables
-
-  return {
-    _hd,
-    _main,
   };
 };
 

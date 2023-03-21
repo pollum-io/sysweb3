@@ -1,8 +1,4 @@
-// import { ecsign, toBuffer, stripHexPrefix, hashPersonalMessage, toAscii } from '@ethereumjs/util';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
-import axios from 'axios';
-import CryptoJS from 'crypto-js';
-import { Chain, chains } from 'eth-chains';
 import {
   concatSig,
   decrypt,
@@ -27,51 +23,48 @@ import { ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
 
-import { getFormattedTransactionResponse } from '../format';
-import { getDecryptedVault } from '../storage';
 import {
-  IEthereumTransactions,
   IResponseFromSendErcSignedTransaction,
   ISendSignedErcTransactionProps,
   ISendTransaction,
+  IEthereumTransactions,
   SimpleTransactionRequest,
 } from '../types';
-import { sysweb3Di } from '@pollum-io/sysweb3-core/src';
-// import { web3Provider, INetwork } from '@pollum-io/sysweb3-network/src';
+import { INetwork } from '@pollum-io/sysweb3-network/src';
 import {
   createContractUsingAbi,
   getErc20Abi,
   getErc21Abi,
-  getTokenStandardMetadata,
 } from '@pollum-io/sysweb3-utils/src';
 
-export const EthereumTransactions = (): IEthereumTransactions => {
-  const storage = sysweb3Di.getStateStorageDb();
-
-  const getDecryptedPrivateKey = () => {
-    const { wallet } = getDecryptedVault();
-    const { hash } = storage.get('vault-keys');
-    const { activeAccountId } = wallet;
-
-    const accountXprv = wallet.accounts[activeAccountId].xprv;
-
-    const decryptedPrivateKey = CryptoJS.AES.decrypt(
-      accountXprv,
-      hash
-    ).toString(CryptoJS.enc.Utf8);
-
-    return {
-      address: wallet.accounts[activeAccountId].address,
-      decryptedPrivateKey,
-    };
+export class EthereumTransactions implements IEthereumTransactions {
+  public web3Provider: any;
+  private getNetwork: () => INetwork;
+  private getDecryptedPrivateKey: () => {
+    address: string;
+    decryptedPrivateKey: string;
   };
 
-  const signTypedData = (
+  constructor(
+    getNetwork: () => INetwork,
+    getDecryptedPrivateKey: () => {
+      address: string;
+      decryptedPrivateKey: string;
+    }
+  ) {
+    this.getNetwork = getNetwork;
+    this.getDecryptedPrivateKey = getDecryptedPrivateKey;
+    this.web3Provider = new ethers.providers.JsonRpcProvider(
+      this.getNetwork().url
+    );
+  }
+
+  signTypedData = (
     addr: string,
     typedData: TypedData | TypedMessage<any>,
     version: Version
   ) => {
-    const { address, decryptedPrivateKey } = getDecryptedPrivateKey();
+    const { address, decryptedPrivateKey } = this.getDecryptedPrivateKey();
 
     if (addr.toLowerCase() !== address.toLowerCase())
       throw {
@@ -82,7 +75,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     return signTypedMessage(privKey, { data: typedData }, version);
   };
 
-  const verifyTypedSignature = (
+  verifyTypedSignature = (
     data: TypedData | TypedMessage<any>,
     signature: string,
     version: Version
@@ -98,8 +91,8 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const ethSign = (params: string[]) => {
-    const { address, decryptedPrivateKey } = getDecryptedPrivateKey();
+  ethSign = (params: string[]) => {
+    const { address, decryptedPrivateKey } = this.getDecryptedPrivateKey();
 
     let msg = '';
     //Comparisions do not need to care for checksum address
@@ -122,8 +115,8 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const signPersonalMessage = (params: string[]) => {
-    const { address, decryptedPrivateKey } = getDecryptedPrivateKey();
+  signPersonalMessage = (params: string[]) => {
+    const { address, decryptedPrivateKey } = this.getDecryptedPrivateKey();
     let msg = '';
 
     if (params[0].toLowerCase() === address.toLowerCase()) {
@@ -146,7 +139,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const parsePersonalMessage = (hexMsg: string) => {
+  parsePersonalMessage = (hexMsg: string) => {
     try {
       return toAscii(hexMsg);
     } catch (error) {
@@ -154,7 +147,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const verifyPersonalMessage = (message: string, sign: string) => {
+  verifyPersonalMessage = (message: string, sign: string) => {
     try {
       const msgParams: SignedMsgParams<string> = {
         data: message,
@@ -166,8 +159,8 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const getEncryptedPubKey = () => {
-    const { decryptedPrivateKey } = getDecryptedPrivateKey();
+  getEncryptedPubKey = () => {
+    const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
 
     try {
       return getEncryptionPublicKey(stripHexPrefix(decryptedPrivateKey));
@@ -177,8 +170,8 @@ export const EthereumTransactions = (): IEthereumTransactions => {
   };
 
   // eth_decryptMessage
-  const decryptMessage = (msgParams: string[]) => {
-    const { address, decryptedPrivateKey } = getDecryptedPrivateKey();
+  decryptMessage = (msgParams: string[]) => {
+    const { address, decryptedPrivateKey } = this.getDecryptedPrivateKey();
 
     let encryptedData = '';
     if (msgParams[0].toLowerCase() === address.toLowerCase()) {
@@ -200,10 +193,10 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const toBigNumber = (aBigNumberish: string | number) =>
+  toBigNumber = (aBigNumberish: string | number) =>
     ethers.BigNumber.from(String(aBigNumberish));
 
-  const getData = ({
+  getData = ({
     contractAddress,
     receivingAddress,
     value,
@@ -225,14 +218,14 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const getFeeDataWithDynamicMaxPriorityFeePerGas = async () => {
-    let maxFeePerGas = toBigNumber(0);
-    let maxPriorityFeePerGas = toBigNumber(0);
+  getFeeDataWithDynamicMaxPriorityFeePerGas = async () => {
+    let maxFeePerGas = this.toBigNumber(0);
+    let maxPriorityFeePerGas = this.toBigNumber(0);
 
     try {
       const [block, ethMaxPriorityFee] = await Promise.all([
-        await web3Provider.getBlock('latest'),
-        await web3Provider.send('eth_maxPriorityFeePerGas', []),
+        await this.web3Provider.getBlock('latest'),
+        await this.web3Provider.send('eth_maxPriorityFeePerGas', []),
       ]);
 
       if (block && block.baseFeePerGas) {
@@ -248,27 +241,28 @@ export const EthereumTransactions = (): IEthereumTransactions => {
       throw error;
     }
   };
-
-  const sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
-    const { network } = getDecryptedVault();
-    const { decryptedPrivateKey } = getDecryptedPrivateKey();
+  //TODO: This function needs to be refactored
+  sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
+    const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
 
     const tx: Deferrable<ethers.providers.TransactionRequest> = params;
-    const wallet = new ethers.Wallet(decryptedPrivateKey, web3Provider);
+    const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
     try {
       const transaction = await wallet.sendTransaction(tx);
-
-      return await getFormattedTransactionResponse(
-        web3Provider,
-        transaction,
-        network
-      );
+      const response = await this.web3Provider.getTransaction(transaction.hash);
+      //TODO: more precisely on this lines
+      if (!response) {
+        return await this.getTransactionTimestamp(transaction);
+      } else {
+        return await this.getTransactionTimestamp(response);
+      }
     } catch (error) {
       throw error;
     }
   };
   // tip numerador eip 1559
-  const sendTransaction = async ({
+  // TODO: refactor this function
+  sendTransaction = async ({
     sender,
     receivingAddress,
     amount,
@@ -276,24 +270,22 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     token,
   }: ISendTransaction): Promise<TransactionResponse> => {
     const tokenDecimals = token && token.decimals ? token.decimals : 18;
-    const decimals = toBigNumber(tokenDecimals);
+    const decimals = this.toBigNumber(tokenDecimals);
 
     const parsedAmount = ethers.utils.parseEther(String(amount));
 
-    const { decryptedPrivateKey } = getDecryptedPrivateKey();
+    const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
 
-    const { network } = getDecryptedVault();
-
-    const wallet = new ethers.Wallet(decryptedPrivateKey, web3Provider);
+    const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
 
     const value =
       token && token.contract_address
-        ? parsedAmount.mul(toBigNumber('10').pow(decimals))
+        ? parsedAmount.mul(this.toBigNumber('10').pow(decimals))
         : parsedAmount;
 
     const data =
       token && token.contract_address
-        ? getData({
+        ? this.getData({
             contractAddress: token.contract_address,
             receivingAddress,
             value,
@@ -302,37 +294,36 @@ export const EthereumTransactions = (): IEthereumTransactions => {
 
     // gas price, gas limit e maxPriorityFeePerGas (tip)
     const { maxFeePerGas, maxPriorityFeePerGas } =
-      await getFeeDataWithDynamicMaxPriorityFeePerGas();
+      await this.getFeeDataWithDynamicMaxPriorityFeePerGas();
 
     const tx: Deferrable<ethers.providers.TransactionRequest> = {
       to: receivingAddress,
       value,
       maxPriorityFeePerGas,
       maxFeePerGas,
-      nonce: await web3Provider.getTransactionCount(sender, 'latest'),
+      nonce: await this.web3Provider.getTransactionCount(sender, 'latest'),
       type: 2,
-      chainId: web3Provider.network.chainId,
-      gasLimit: toBigNumber(0) || gasLimit,
+      chainId: this.web3Provider.network.chainId,
+      gasLimit: this.toBigNumber(0) || gasLimit,
       data,
     };
 
-    tx.gasLimit = await web3Provider.estimateGas(tx);
+    tx.gasLimit = await this.web3Provider.estimateGas(tx);
 
     try {
       const transaction = await wallet.sendTransaction(tx);
-
-      return await getFormattedTransactionResponse(
-        web3Provider,
-        transaction,
-        network
-      );
+      const response = await this.web3Provider.getTransaction(transaction.hash);
+      if (!response) {
+        return await this.getTransactionTimestamp(transaction);
+      } else {
+        return await this.getTransactionTimestamp(response);
+      }
     } catch (error) {
       throw error;
     }
   };
 
-  const sendSignedErc20Transaction = async ({
-    networkUrl,
+  sendSignedErc20Transaction = async ({
     receiver,
     tokenAddress,
     tokenAmount,
@@ -340,13 +331,11 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     maxFeePerGas,
     gasLimit,
   }: ISendSignedErcTransactionProps): Promise<IResponseFromSendErcSignedTransaction> => {
-    const provider = new ethers.providers.JsonRpcProvider(networkUrl);
-
-    const { decryptedPrivateKey } = getDecryptedPrivateKey();
+    const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
 
     const currentWallet = new ethers.Wallet(decryptedPrivateKey);
 
-    const walletSigned = currentWallet.connect(provider);
+    const walletSigned = currentWallet.connect(this.web3Provider);
 
     try {
       const _contract = new ethers.Contract(
@@ -363,7 +352,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
         receiver,
         calculatedTokenAmount,
         {
-          nonce: await provider.getTransactionCount(
+          nonce: await this.web3Provider.getTransactionCount(
             walletSigned.address,
             'pending'
           ),
@@ -379,19 +368,16 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const sendSignedErc721Transaction = async ({
-    networkUrl,
+  sendSignedErc721Transaction = async ({
     receiver,
     tokenAddress,
     tokenId,
   }: ISendSignedErcTransactionProps): Promise<IResponseFromSendErcSignedTransaction> => {
-    const provider = new ethers.providers.JsonRpcProvider(networkUrl);
-
-    const { decryptedPrivateKey } = getDecryptedPrivateKey();
+    const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
 
     const currentWallet = new ethers.Wallet(decryptedPrivateKey);
 
-    const walletSigned = currentWallet.connect(provider);
+    const walletSigned = currentWallet.connect(this.web3Provider);
 
     try {
       const _contract = new ethers.Contract(
@@ -405,7 +391,7 @@ export const EthereumTransactions = (): IEthereumTransactions => {
         receiver,
         tokenId as number,
         {
-          nonce: await provider.getTransactionCount(
+          nonce: await this.web3Provider.getTransactionCount(
             walletSigned.address,
             'pending'
           ),
@@ -418,24 +404,23 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  //todo: need to receive activeNetwork and web3Provider<MAYBE>?
-  const getRecommendedNonce = async (address: string) => {
+  getRecommendedNonce = async (address: string) => {
     try {
-      return await web3Provider.getTransactionCount(address, 'pending');
+      return await this.web3Provider.getTransactionCount(address, 'pending');
     } catch (error) {
       throw error;
     }
   };
 
-  const getFeeByType = async (type: string) => {
-    const gasPrice = (await getRecommendedGasPrice(false)) as string;
+  getFeeByType = async (type: string) => {
+    const gasPrice = (await this.getRecommendedGasPrice(false)) as string;
 
-    const low = toBigNumber(gasPrice)
+    const low = this.toBigNumber(gasPrice)
       .mul(ethers.BigNumber.from('8'))
       .div(ethers.BigNumber.from('10'))
       .toString();
 
-    const high = toBigNumber(gasPrice)
+    const high = this.toBigNumber(gasPrice)
       .mul(ethers.BigNumber.from('11'))
       .div(ethers.BigNumber.from('10'))
       .toString();
@@ -446,9 +431,9 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     return gasPrice;
   };
 
-  const getGasLimit = async (toAddress: string) => {
+  getGasLimit = async (toAddress: string) => {
     try {
-      const estimated = await web3Provider.estimateGas({
+      const estimated = await this.web3Provider.estimateGas({
         to: toAddress,
       });
 
@@ -458,17 +443,17 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const getTxGasLimit = async (tx: SimpleTransactionRequest) => {
+  getTxGasLimit = async (tx: SimpleTransactionRequest) => {
     try {
-      return web3Provider.estimateGas(tx);
+      return this.web3Provider.estimateGas(tx);
     } catch (error) {
       throw error;
     }
   };
 
-  const getRecommendedGasPrice = async (formatted?: boolean) => {
+  getRecommendedGasPrice = async (formatted?: boolean) => {
     try {
-      const gasPriceBN = await web3Provider.getGasPrice();
+      const gasPriceBN = await this.web3Provider.getGasPrice();
 
       if (formatted) {
         return {
@@ -483,19 +468,9 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const getGasOracle = async () => {
-    const {
-      data: { result },
-    } = await axios.get(
-      'https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
-    );
-
-    return result;
-  };
-
-  const getBalance = async (address: string) => {
+  getBalance = async (address: string) => {
     try {
-      const balance = await web3Provider.getBalance(address);
+      const balance = await this.web3Provider.getBalance(address);
       const formattedBalance = ethers.utils.formatEther(balance);
 
       const roundedBalance = floor(parseFloat(formattedBalance), 4);
@@ -506,209 +481,32 @@ export const EthereumTransactions = (): IEthereumTransactions => {
     }
   };
 
-  const getErc20TokenBalance = async (
-    tokenAddress: string,
-    walletAddress: string
-  ): Promise<number> => {
-    try {
-      const abi = getErc20Abi() as any;
-      const balance = await createContractUsingAbi(abi, tokenAddress).balanceOf(
-        walletAddress
-      );
-
-      const formattedBalance = ethers.utils.formatEther(balance);
-      //todo: import floor from lodash/floor
-      const roundedBalance = floor(parseFloat(formattedBalance), 4);
-
-      return roundedBalance;
-    } catch (error) {
-      return 0;
-    }
-  };
-
-  const getErc20TokensByAddress = async (
-    address: string,
-    isSupported: boolean,
-    apiUrl: string
+  private getTransactionTimestamp = async (
+    transaction: TransactionResponse
   ) => {
-    const etherscanQuery = `?module=account&action=tokentx&address=${address}&page=1&offset=100&&startblock=0&endblock=99999999&sort=asc&apikey=K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA`;
-
-    const apiUrlQuery = `?module=account&action=tokenlist&address=${address}`;
-
-    const query = isSupported ? etherscanQuery : apiUrlQuery;
-
-    const {
-      data: { result },
-    } = await axios.get(`${apiUrl}${query}`);
-
-    const tokens: any[] = [];
-
-    await Promise.all(
-      result.map(async (token: any) => {
-        const isInTokensList =
-          tokens.findIndex(
-            (listedToken) =>
-              listedToken.contractAddress === token.contractAddress
-          ) > -1;
-
-        if (isInTokensList) return;
-
-        const details = await getTokenStandardMetadata(
-          token.contractAddress,
-          address,
-          web3Provider
-        );
-
-        tokens.push({
-          ...token,
-          ...details,
-          isNft: false,
-          id: token.contractAddress,
-          balance: ethers.utils.formatEther(details.balance),
-        });
-      })
+    const { timestamp } = await this.web3Provider.getBlock(
+      Number(transaction.blockNumber)
     );
 
-    return tokens;
+    return {
+      ...transaction,
+      timestamp,
+    } as TransactionResponse;
   };
 
-  const getUserTransactions = async (
-    address: string,
-    network: INetwork
-  ): Promise<TransactionResponse[]> => {
-    const etherscanSupportedNetworks = [
-      'homestead',
-      'ropsten',
-      'rinkeby',
-      'goerli',
-      'kovan',
-    ];
+  public setWeb3Provider(network: INetwork) {
+    this.web3Provider = new ethers.providers.JsonRpcProvider(network.url);
+  }
 
-    const { chainId, default: _default, label, apiUrl } = network;
-
-    const networkByLabel = chainId === 1 ? 'homestead' : label.toLowerCase();
-
-    //todo how to handle here?
-    const pendingTransactions = getPendingTransactions(chainId, address);
-
-    if (_default) {
-      if (etherscanSupportedNetworks.includes(networkByLabel)) {
-        const etherscanProvider = new ethers.providers.EtherscanProvider(
-          networkByLabel,
-          'K46SB2PK5E3T6TZC81V1VK61EFQGMU49KA'
-        );
-
-        const txHistory = await etherscanProvider.getHistory(address);
-
-        const history = await Promise.all(
-          txHistory.map(
-            async (tx) =>
-              await getFormattedTransactionResponse(
-                etherscanProvider,
-                tx,
-                network
-              )
-          )
-        );
-
-        return [...pendingTransactions, ...history] || [...pendingTransactions];
-      }
-
-      const query = `?module=account&action=txlist&address=${address}`;
-
-      const {
-        data: { result },
-      } = await axios.get(`${apiUrl}${query}`);
-
-      if (typeof result !== 'string') {
-        const txs = await Promise.all(
-          result.map(
-            async (tx: TransactionResponse) =>
-              await getFormattedTransactionResponse(web3Provider, tx, network)
-          )
-        );
-
-        return [...pendingTransactions, ...txs];
-      }
+  public importAccount = (mnemonicOrPrivKey: string) => {
+    if (ethers.utils.isHexString(mnemonicOrPrivKey)) {
+      return new ethers.Wallet(mnemonicOrPrivKey);
     }
 
-    return [...pendingTransactions];
+    const { privateKey } = ethers.Wallet.fromMnemonic(mnemonicOrPrivKey);
+
+    const account = new ethers.Wallet(privateKey);
+
+    return account;
   };
-
-  const getPendingTransactions = (
-    chainId: number,
-    address: string
-  ): TransactionResponse[] => {
-    const chain = chains.getById(chainId) as Chain;
-    const chainWsUrl = chain.rpc.find((rpc) => rpc.startsWith('wss://'));
-
-    const wsUrl = chain && chainWsUrl ? chainWsUrl : '';
-
-    const needsApiKey = Boolean(wsUrl.includes('API_KEY'));
-
-    const url = needsApiKey ? null : wsUrl;
-
-    if (!url) return [];
-
-    const wssProvider = new ethers.providers.WebSocketProvider(String(url));
-
-    wssProvider.on('error', (error) => {
-      throw error;
-    });
-
-    const pendingTransactions: TransactionResponse[] = [];
-
-    //TODO: the issue with the test is here
-    wssProvider.on('pending', async (txhash) => {
-      const tx = await wssProvider.getTransaction(txhash);
-      const { from, to, hash, blockNumber } = tx;
-
-      if (tx && (from === address || to === address)) {
-        const { timestamp } = await wssProvider.getBlock(Number(blockNumber));
-
-        const formattedTx = {
-          ...tx,
-          timestamp,
-        };
-
-        const isPendingTxIncluded =
-          pendingTransactions.findIndex(
-            (transaction: TransactionResponse) => transaction.hash === hash
-          ) > -1;
-
-        if (isPendingTxIncluded) return;
-
-        pendingTransactions.push(formattedTx);
-      }
-    });
-
-    return pendingTransactions;
-  };
-
-  return {
-    ethSign,
-    signPersonalMessage,
-    parsePersonalMessage,
-    signTypedData,
-    decryptMessage,
-    verifyPersonalMessage,
-    verifyTypedSignature,
-    getEncryptedPubKey,
-    sendTransaction,
-    sendFormattedTransaction,
-    getFeeByType,
-    getRecommendedNonce,
-    getGasLimit,
-    getTxGasLimit,
-    getRecommendedGasPrice,
-    getGasOracle,
-    getFeeDataWithDynamicMaxPriorityFeePerGas,
-    toBigNumber,
-    sendSignedErc20Transaction,
-    sendSignedErc721Transaction,
-    getBalance,
-    getErc20TokenBalance,
-    getErc20TokensByAddress,
-    getUserTransactions,
-  };
-};
+}

@@ -97,22 +97,11 @@ export interface IEthereumTransactions {
   }: ISendSignedErcTransactionProps) => Promise<IResponseFromSendErcSignedTransaction>;
 
   getBalance: (address: string) => Promise<number>;
-  getErc20TokenBalance: (
-    tokenAddress: string,
-    walletAddress: string
-  ) => Promise<number>;
   getErc20TokensByAddress?: (
     address: string,
     isSupported: boolean,
     apiUrl: string
   ) => Promise<any[]>;
-  getUserTransactions: (
-    address: string,
-    network: INetwork
-  ) => Promise<TransactionResponse[]>;
-}
-
-export interface NewIEthereumTransactions extends IEthereumTransactions {
   setWeb3Provider: (network: INetwork) => void;
   importAccount: (mnemonicOrPrivKey: string) => ethers.Wallet;
 }

@@ -12,17 +12,14 @@ import {
 } from './initial-state';
 import { getSyscoinSigners, SyscoinHDSigner } from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
-import {
-  NewEthereumTransactions,
-  NewSyscoinTransactions,
-} from './transactions';
+import { EthereumTransactions, NewSyscoinTransactions } from './transactions';
 import {
   IKeyringAccountState,
   IKeyringBalances,
   ISyscoinTransactions,
   IWalletState,
   KeyringAccountType,
-  NewIEthereumTransactions,
+  IEthereumTransactions,
 } from './types';
 import * as sysweb3 from '@pollum-io/sysweb3-core/src';
 import {
@@ -39,7 +36,6 @@ import { IEthereumNftDetails } from '@pollum-io/sysweb3-utils/src';
 export interface IKeyringManagerOpts {
   activeNetwork?: INetwork;
 }
-//TODO: adjust _wallet
 export interface ISysAccount {
   xprv?: string;
   xpub: string;
@@ -52,7 +48,7 @@ export interface ISysAccount {
 
 export interface IkeyringManagerOpts {
   wallet?: IWalletState | null;
-  hd?: SyscoinHDSigner | null;
+  activeChain?: INetworkType | null;
   //todo: other props
 }
 export interface ISysAccountWithId extends ISysAccount {
@@ -68,30 +64,39 @@ export class NewKeyringManager {
   private syscoinSigner: any; //TODO: type this following syscoinJSLib interface
   private memMnemonic: string;
   private memPassword: string;
+  public activeChain: INetworkType;
 
   //transactions objects
-  public ethereumTransaction: NewIEthereumTransactions;
+  public ethereumTransaction: IEthereumTransactions;
   syscoinTransaction: ISyscoinTransactions;
   constructor(opts?: IkeyringManagerOpts) {
     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
     this.wallet = opts?.wallet ?? initialWalletState; //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
-    this.hd = opts?.hd ?? new sys.utils.HDSigner(''); //TODO : in case HD opts are sent initialize again hd signer;
-
+    this.hd = new sys.utils.HDSigner(''); //TODO : Recreate HDSigner and SyscoinSigner upon initialization by parameter sent;
+    this.activeChain = opts?.activeChain ?? INetworkType.Syscoin;
     this.memMnemonic = '';
     this.memPassword = '';
 
     // this.syscoinTransaction = SyscoinTransactions();
-    this.syscoinTransaction = new NewSyscoinTransactions();
-    this.ethereumTransaction = new NewEthereumTransactions(
+    this.syscoinTransaction = new NewSyscoinTransactions(
+      this.getNetwork,
+      this.getSigner
+    );
+    this.ethereumTransaction = new EthereumTransactions(
       this.getNetwork,
       this.getDecryptedPrivateKey
     );
+    console.log('Main not yet set', this.syscoinSigner);
   }
   // ===================================== AUXILIARY METHOD - FOR TRANSACTIONS CLASSES ===================================== //
   private getDecryptedPrivateKey = (): {
     address: string;
     decryptedPrivateKey: string;
   } => {
+    if (!this.memPassword)
+      throw new Error('Wallet is locked cant proceed with transactions');
+    if (this.activeChain !== INetworkType.Ethereum)
+      throw new Error('Switch to EVM chain');
     const { accounts, activeAccountId, activeAccountType } = this.wallet;
 
     const { xprv, address } = accounts[activeAccountType][activeAccountId];
@@ -104,6 +109,23 @@ export class NewKeyringManager {
       address,
       decryptedPrivateKey,
     };
+  };
+  private getSigner = (): {
+    hd: SyscoinHDSigner;
+    main: any; //TODO: Type this
+  } => {
+    if (!this.memPassword)
+      throw new Error('Wallet is locked cant proceed with transactions');
+    if (this.activeChain !== INetworkType.Syscoin) {
+      throw new Error('Switch to UTXO chain');
+    }
+    if (!this.syscoinSigner) {
+      throw new Error(
+        'Wallet is not initialised yet call createKeyringVault first'
+      );
+    }
+
+    return { hd: this.hd, main: this.syscoinSigner };
   };
 
   // ===================================== PUBLIC METHODS - KEYRING MANAGER FOR HD - SYS ALL ===================================== //
@@ -137,11 +159,8 @@ export class NewKeyringManager {
 
     if (this.memMnemonic) {
       setEncryptedVault({
-        wallet: this.wallet,
-        network: this.wallet.activeNetwork,
         mnemonic: CryptoJS.AES.encrypt(this.memMnemonic, pwd).toString(),
       });
-      console.log('Check this.wallet setWalletPassword', this.wallet.accounts);
     }
   };
 
@@ -175,12 +194,8 @@ export class NewKeyringManager {
       activeAccountType: this.validateAccountType(rootAccount),
     };
 
-    console.log('Check this.wallet', this.wallet.accounts);
-
     setEncryptedVault({
       ...getDecryptedVault(),
-      wallet: this.wallet,
-      network: this.wallet.activeNetwork,
       mnemonic: encryptedMnemonic,
       lastLogin: 0,
     });
@@ -193,13 +208,12 @@ export class NewKeyringManager {
     accountType: KeyringAccountType
   ) => {
     const accounts = this.wallet.accounts[accountType];
+    if (!accounts[accountId].xpub) throw new Error('Account not set');
     this.wallet = {
       ...this.wallet,
       activeAccountId: accounts[accountId].id,
       activeAccountType: accountType,
     };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
   };
   //TODO: this method should just exclude privateKey before sending it
   public getAccountById = (
@@ -279,7 +293,6 @@ export class NewKeyringManager {
   //   };
   // };
 
-  // todo: ask why do we need to return account on setting signer network
   public setSignerNetwork = async (
     network: INetwork,
     chain: string
@@ -293,16 +306,16 @@ export class NewKeyringManager {
         : INetworkType.Syscoin;
 
     if (chain === INetworkType.Syscoin) {
-      const { rpc, isTestnet } = await this.setSignerUTXO(network);
-      console.log('Check response', rpc, isTestnet);
+      const { rpc, isTestnet } = await this.getSignerUTXO(network);
       await this.updateUTXOAccounts(rpc, isTestnet); //todo: question: why do we need to recreate these variables? I think they can be imported by setSignerUTXO direclty
+      console.log('Wallet is set', this.wallet.accounts.HDAccount);
     } else if (chain === INetworkType.Ethereum) {
       await this.setSignerEVM(network);
       await this.updateWeb3Accounts();
     }
     this.wallet.networks[networkChain][network.chainId] = network;
     this.wallet.activeNetwork = network;
-    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
+    this.activeChain = networkChain;
     return true; //TODO: after end of refactor remove this
   };
 
@@ -359,6 +372,7 @@ export class NewKeyringManager {
       this.hd,
       this.wallet.activeNetwork.url
     );
+    console.log('Main set', this.syscoinSigner);
     const formattedBackendAccount: ISysAccount =
       await this.getFormattedBackendAccount({
         url: this.wallet.activeNetwork.url,
@@ -462,6 +476,7 @@ export class NewKeyringManager {
     const transaction: any[] = [];
     const assets: any[] = [];
     const stealthAddr = await this.hd.getNewReceivingAddress(true);
+    console.log('Check addr', stealthAddr);
 
     return {
       address: stealthAddr,
@@ -511,8 +526,6 @@ export class NewKeyringManager {
       activeAccountId: account.id,
     };
 
-    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
-
     return {
       ...account,
       id,
@@ -558,7 +571,6 @@ export class NewKeyringManager {
       },
       activeAccountId: createdAccount.id,
     };
-    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
 
     return createdAccount;
   }
@@ -607,7 +619,7 @@ export class NewKeyringManager {
       await this.updateAllPrivateKeyAccounts();
     }
 
-    return this.wallet.accounts[activeAccountType][activeAccountId]; //TODO: enhance this implementation
+    return this.wallet.accounts[activeAccountType][activeAccountId];
   };
 
   private setDerivedWeb3Accounts = async (id: number, label: string) => {
@@ -640,21 +652,18 @@ export class NewKeyringManager {
     this.wallet.accounts[KeyringAccountType.HDAccount][id] = createdAccount;
   };
 
-  private setSignerUTXO = async (
+  private getSignerUTXO = async (
     network: INetwork
   ): Promise<{ rpc: any; isTestnet: boolean }> => {
     if (network.default) {
-      console.log('Going default network path');
       const { chain, valid } = await validateSysRpc(network.url);
-      console.log('Check result', chain, valid);
       if (!valid) throw new Error('Invalid network');
       return {
         rpc: { formattedNetwork: network, networkConfig: null },
         isTestnet: chain === 'test',
       };
     }
-    console.log('Getting the network', network);
-    const { rpc, chain } = await getSysRpc(network); //todo check here -> method signature is wrong
+    const { rpc, chain } = await getSysRpc(network);
 
     return {
       rpc,
@@ -691,7 +700,6 @@ export class NewKeyringManager {
   ) => {
     const accounts = this.wallet.accounts[KeyringAccountType.HDAccount];
 
-    console.log('rpc', rpc);
     const { hd, main } = getSyscoinSigners({
       mnemonic: this.memMnemonic,
       isTestnet,
@@ -701,7 +709,6 @@ export class NewKeyringManager {
     this.syscoinSigner = main;
     const walletAccountsArray = Object.values(accounts);
 
-    //todo: updated here to Promise All
     await Promise.all(
       walletAccountsArray.map(({ id }) => {
         if (!hd.Signer.accounts[Number(id)]) {
@@ -716,8 +723,6 @@ export class NewKeyringManager {
 
     setEncryptedVault({
       mnemonic: '',
-      wallet: this.wallet,
-      network: this.wallet.activeNetwork,
     });
 
     this.logout();
@@ -811,8 +816,6 @@ export class NewKeyringManager {
     );
     this.wallet.accounts[KeyringAccountType.Imported][importedAccount.id] =
       importedAccount;
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
 
     return importedAccount;
   }

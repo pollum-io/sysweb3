@@ -173,7 +173,7 @@ export const getSysRpc = async (data: any) => {
     }
     const formattedNetwork = {
       url: data.url,
-      apiUrl: data.url, //apiURL and data URL are the same for blockbooks explorer TODO: remove this field from UTXO networks
+      apiUrl: data.url, //apiURL and URL are the same for blockbooks explorer TODO: remove this field from UTXO networks
       explorer,
       currency: nativeCurrency.symbol,
       label: data.label || coin,
