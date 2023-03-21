@@ -262,9 +262,9 @@ export class NewKeyringManager {
     };
   };
 
-  public getEncryptedXprv = async () =>
+  public getEncryptedXprv = () =>
     CryptoJS.AES.encrypt(
-      await this.getSysActivePrivateKey(),
+      this.getSysActivePrivateKey(),
       this.memPassword
     ).toString();
 
@@ -328,8 +328,7 @@ export class NewKeyringManager {
     return account;
   };
 
-  public getAccountXpub = async (): Promise<string> =>
-    await this.hd.getAccountXpub();
+  public getAccountXpub = (): string => this.hd.getAccountXpub();
 
   public isSeedValid = (seedPhrase: string) => validateMnemonic(seedPhrase);
   public createNewSeed = () => generateMnemonic();
@@ -373,7 +372,7 @@ export class NewKeyringManager {
     );
     console.log('Main set', this.syscoinSigner);
 
-    const xpub = await this.hd.getAccountXpub();
+    const xpub = this.hd.getAccountXpub();
 
     const formattedBackendAccount: ISysAccount =
       await this.getFormattedBackendAccount({
@@ -384,15 +383,13 @@ export class NewKeyringManager {
     const account = this.getInitialAccountData({
       signer: this.hd,
       sysAccount: formattedBackendAccount,
-      xprv: await this.getEncryptedXprv(),
+      xprv: this.getEncryptedXprv(),
     });
     return account;
   };
 
-  private getSysActivePrivateKey = async () =>
-    await this.hd.Signer.accounts[
-      await this.hd.Signer.accountIndex
-    ].getAccountPrivateKey();
+  private getSysActivePrivateKey = () =>
+    this.hd.Signer.accounts[this.hd.Signer.accountIndex].getAccountPrivateKey();
 
   private getInitialAccountData = ({
     label,
@@ -424,7 +421,7 @@ export class NewKeyringManager {
   private addUTXOAccount = async (accountId: number): Promise<any> => {
     if (accountId !== 0 && !this.hd.Signer.accounts[accountId]) {
       //We must recreate the account if it doesn't exist at the signer
-      const childAccount = await this.hd.deriveAccount(accountId);
+      const childAccount = this.hd.deriveAccount(accountId);
 
       const derivedAccount = new fromZPrv(
         childAccount,
@@ -435,8 +432,8 @@ export class NewKeyringManager {
       this.hd.Signer.accounts.push(derivedAccount);
       this.hd.setAccountIndex(accountId);
     }
-    const xpub = await this.hd.getAccountXpub();
-    const xprv = await this.getEncryptedXprv();
+    const xpub = this.hd.getAccountXpub();
+    const xprv = this.getEncryptedXprv();
 
     const basicAccountInfo = await this.getBasicSysAccountInfo(xpub, accountId);
 
@@ -505,9 +502,9 @@ export class NewKeyringManager {
       );
     }
 
-    const id = await this.hd.createAccount();
-    const xpub = await this.hd.getAccountXpub();
-    const xprv = await this.getEncryptedXprv();
+    const id = this.hd.createAccount();
+    const xpub = this.hd.getAccountXpub();
+    const xprv = this.getEncryptedXprv();
 
     const latestUpdate: ISysAccount = await this.getFormattedBackendAccount({
       url: network.url,
@@ -716,13 +713,28 @@ export class NewKeyringManager {
     this.syscoinSigner = main;
     const walletAccountsArray = Object.values(accounts);
 
-    await Promise.all([
-      walletAccountsArray.map(({ id }) => {
-        if (!hd.Signer.accounts[Number(id)]) {
-          this.addUTXOAccount(Number(id));
-        }
-      }),
-    ]);
+    // Create an array of promises.
+    const accountPromises = walletAccountsArray.map(async ({ id }) => {
+      if (!hd.Signer.accounts[Number(id)]) {
+        await this.addUTXOAccount(Number(id));
+      }
+    });
+    //Alternative solution needs refining
+    // // Wait for all promises to resolve.
+    // await Promise.all(accountPromises);
+    // Create an array of promises.
+    // const accountPromises = walletAccountsArray.map(({ id }) => {
+    //   // eslint-disable-next-line no-async-promise-executor
+    //   return new Promise<void>(async (resolve) => {
+    //     if (!hd.Signer.accounts[Number(id)]) {
+    //       await this.addUTXOAccount(Number(id));
+    //     }
+    //     resolve();
+    //   });
+    // });
+
+    // Wait for all promises to resolve.
+    await Promise.all(accountPromises);
   };
 
   private clearTemporaryLocalKeys = () => {
@@ -826,13 +838,19 @@ export class NewKeyringManager {
 
     return importedAccount;
   }
-
+  //TODO: validate updateAllPrivateKeyAccounts updating 2 accounts or more works properly
   public async updateAllPrivateKeyAccounts() {
-    const updatedWallets = await Promise.all(
-      Object.values(this.wallet.accounts[KeyringAccountType.Imported]).map(
-        async (account) => await this.updatePrivWeb3Account(account)
-      )
-    );
+    const accountPromises = Object.values(
+      this.wallet.accounts[KeyringAccountType.Imported]
+    ).map(async (account) => await this.updatePrivWeb3Account(account));
+
+    const updatedWallets = await Promise.all(accountPromises);
+
+    // const updatedWallets = await Promise.all(
+    //   Object.values(this.wallet.accounts[KeyringAccountType.Imported]).map(
+    //     async (account) => await this.updatePrivWeb3Account(account)
+    //   )
+    // );
 
     this.wallet.accounts[KeyringAccountType.Imported] = updatedWallets;
   }

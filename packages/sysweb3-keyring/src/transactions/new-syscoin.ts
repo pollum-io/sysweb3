@@ -800,7 +800,7 @@ export class NewSyscoinTransactions implements ISyscoinTransactions {
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    const xpub = await hd.getAccountXpub();
+    const xpub = hd.getAccountXpub();
 
     const backendAccount = await sys.utils.fetchBackendAccount(
       main.blockbookURL,

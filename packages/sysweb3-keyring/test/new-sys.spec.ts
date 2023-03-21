@@ -17,7 +17,7 @@ describe('testing functions for the new-sys txs', () => {
   //   const newSeed = keyringManager.setSeed(String(PEACE_SEED_PHRASE));
   //   console.log('NewSeed', newSeed);
   //   expect(newSeed).toBe(String(PEACE_SEED_PHRASE));
-  //   const right = keyringManager.checkPassword(FAKE_PASSWORD);
+  //   const right =  keyringManager.checkPassword(FAKE_PASSWORD);
   //   console.log('checkPassword', right);
   //   expect(right).toBe(true);
   //   const account = await keyringManager.createKeyringVault();
