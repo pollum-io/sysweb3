@@ -83,15 +83,17 @@ describe('testing functions for the new-sys txs', () => {
   //--------------------------------------------------------SyscoinTransactions Tests----------------------------------------------------
   it('should create SPT tx', async () => {
     // Initializing wallet and setting seed, password and vault.
-    await keyringManager.setSignerNetwork(
+    const a = await keyringManager.setSignerNetwork(
       SYS_TANENBAUM_UTXO_NETWORK,
       'syscoin'
     );
+    console.log('setSignerNetwork', a);
     const wallet = keyringManager.getState();
     expect(wallet.activeAccountId).toBe(1);
-    console.log('Check wallet state', wallet.accounts.HDAccount[0].address);
+    const activeUTXOAccount = keyringManager.getActiveUTXOAccountState();
+    console.log(activeUTXOAccount);
+    address = activeUTXOAccount.address;
     console.log('Address', address);
-    address = wallet.accounts.HDAccount[0].address;
 
     const { txid } =
       await keyringManager.syscoinTransaction.confirmTokenCreation({

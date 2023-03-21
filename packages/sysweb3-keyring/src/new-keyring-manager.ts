@@ -262,9 +262,9 @@ export class NewKeyringManager {
     };
   };
 
-  public getEncryptedXprv = () =>
+  public getEncryptedXprv = async () =>
     CryptoJS.AES.encrypt(
-      this.getSysActivePrivateKey(),
+      await this.getSysActivePrivateKey(),
       this.memPassword
     ).toString();
 
@@ -288,18 +288,26 @@ export class NewKeyringManager {
         ? INetworkType.Ethereum
         : INetworkType.Syscoin;
 
-    if (chain === INetworkType.Syscoin) {
-      const { rpc, isTestnet } = await this.getSignerUTXO(network);
-      await this.updateUTXOAccounts(rpc, isTestnet); //todo: question: why do we need to recreate these variables? I think they can be imported by setSignerUTXO direclty
-      console.log('Wallet is set', this.wallet.accounts.HDAccount);
-    } else if (chain === INetworkType.Ethereum) {
-      await this.setSignerEVM(network);
-      await this.updateWeb3Accounts();
+    try {
+      if (chain === INetworkType.Syscoin) {
+        const { rpc, isTestnet } = await this.getSignerUTXO(network);
+        await this.updateUTXOAccounts(rpc, isTestnet);
+        console.log('Wallet is set', this.wallet.accounts.HDAccount);
+      } else if (chain === INetworkType.Ethereum) {
+        await this.setSignerEVM(network);
+        await this.updateWeb3Accounts();
+      }
+
+      this.wallet.networks[networkChain][network.chainId] = network;
+      this.wallet.activeNetwork = network;
+      this.activeChain = networkChain;
+
+      console.log('wallet', this.wallet, network, networkChain);
+      return true; //TODO: after end of refactor remove this
+    } catch (err) {
+      console.log('setSignerNetwrok error', err);
+      return false;
     }
-    this.wallet.networks[networkChain][network.chainId] = network;
-    this.wallet.activeNetwork = network;
-    this.activeChain = networkChain;
-    return true; //TODO: after end of refactor remove this
   };
 
   public forgetMainWallet = (pwd: string) => {
@@ -320,7 +328,9 @@ export class NewKeyringManager {
     return account;
   };
 
-  public getAccountXpub = (): string => this.hd.getAccountXpub();
+  public getAccountXpub = async (): Promise<string> =>
+    await this.hd.getAccountXpub();
+
   public isSeedValid = (seedPhrase: string) => validateMnemonic(seedPhrase);
   public createNewSeed = () => generateMnemonic();
   public setSeed = (seedPhrase: string) => {
@@ -332,6 +342,12 @@ export class NewKeyringManager {
   };
   //todo: get state Should just be funcitonal for when a UTXO network is connected and must remove the xprv of each account
   public getState = () => this.wallet;
+  public getActiveUTXOAccountState = () => {
+    return {
+      ...this.wallet.accounts.HDAccount[this.wallet.activeAccountId],
+      xprv: undefined,
+    };
+  };
   public getNetwork = () => this.wallet.activeNetwork;
   public createEthAccount = (privateKey: string) =>
     new ethers.Wallet(privateKey);
@@ -356,21 +372,27 @@ export class NewKeyringManager {
       this.wallet.activeNetwork.url
     );
     console.log('Main set', this.syscoinSigner);
+
+    const xpub = await this.hd.getAccountXpub();
+
     const formattedBackendAccount: ISysAccount =
       await this.getFormattedBackendAccount({
         url: this.wallet.activeNetwork.url,
-        xpub: this.hd.getAccountXpub(),
+        xpub,
       });
+
     const account = this.getInitialAccountData({
       signer: this.hd,
       sysAccount: formattedBackendAccount,
-      xprv: this.getEncryptedXprv(),
+      xprv: await this.getEncryptedXprv(),
     });
     return account;
   };
 
-  private getSysActivePrivateKey = () =>
-    this.hd.Signer.accounts[this.hd.Signer.accountIndex].getAccountPrivateKey();
+  private getSysActivePrivateKey = async () =>
+    await this.hd.Signer.accounts[
+      await this.hd.Signer.accountIndex
+    ].getAccountPrivateKey();
 
   private getInitialAccountData = ({
     label,
@@ -399,10 +421,10 @@ export class NewKeyringManager {
     };
   };
 
-  private addUTXOAccount = async (accountId: number) => {
+  private addUTXOAccount = async (accountId: number): Promise<any> => {
     if (accountId !== 0 && !this.hd.Signer.accounts[accountId]) {
       //We must recreate the account if it doesn't exist at the signer
-      const childAccount = this.hd.deriveAccount(accountId);
+      const childAccount = await this.hd.deriveAccount(accountId);
 
       const derivedAccount = new fromZPrv(
         childAccount,
@@ -413,8 +435,8 @@ export class NewKeyringManager {
       this.hd.Signer.accounts.push(derivedAccount);
       this.hd.setAccountIndex(accountId);
     }
-    const xpub = this.hd.getAccountXpub();
-    const xprv = this.getEncryptedXprv();
+    const xpub = await this.hd.getAccountXpub();
+    const xprv = await this.getEncryptedXprv();
 
     const basicAccountInfo = await this.getBasicSysAccountInfo(xpub, accountId);
 
@@ -423,6 +445,7 @@ export class NewKeyringManager {
       isImported: false,
       ...basicAccountInfo,
     };
+    console.log('created account', basicAccountInfo, createdAccount);
     this.wallet.accounts[KeyringAccountType.HDAccount][accountId] =
       createdAccount;
   };
@@ -456,7 +479,8 @@ export class NewKeyringManager {
       options,
       true
     );
-    const transaction: any[] = [];
+
+    const transaction: any[] = []; //todo: why do we need to initialize these empty variables?
     const assets: any[] = [];
     const stealthAddr = await this.hd.getNewReceivingAddress(true);
     console.log('Check addr', stealthAddr);
@@ -481,9 +505,9 @@ export class NewKeyringManager {
       );
     }
 
-    const id = this.hd.createAccount();
-    const xpub = this.hd.getAccountXpub();
-    const xprv = this.getEncryptedXprv();
+    const id = await this.hd.createAccount();
+    const xpub = await this.hd.getAccountXpub();
+    const xprv = await this.getEncryptedXprv();
 
     const latestUpdate: ISysAccount = await this.getFormattedBackendAccount({
       url: network.url,
@@ -692,13 +716,13 @@ export class NewKeyringManager {
     this.syscoinSigner = main;
     const walletAccountsArray = Object.values(accounts);
 
-    await Promise.all(
+    await Promise.all([
       walletAccountsArray.map(({ id }) => {
         if (!hd.Signer.accounts[Number(id)]) {
           this.addUTXOAccount(Number(id));
         }
-      })
-    );
+      }),
+    ]);
   };
 
   private clearTemporaryLocalKeys = () => {

@@ -341,23 +341,28 @@ export class NewSyscoinTransactions implements ISyscoinTransactions {
     confirmations: number;
     guid: string;
   }> => {
+    console.log(temporaryTransaction);
     const { hd, main } = this.getSigner();
     const { getRawTransaction } = this.txUtilsFunctions();
 
     const { precision, initialSupply, maxsupply, fee, receiver } =
       temporaryTransaction;
 
+    console.log(receiver);
     const amount = maxsupply * 10 ** precision;
 
     const tokenOptions = this.getTokenCreationOptions(temporaryTransaction);
     const txOptions = { rbf: true };
 
+    const newChangeAddress = hd.getNewChangeAddress(true);
+    const newFee = new sys.utils.BN(fee * 1e8);
+
     const pendingTransaction = await main.assetNew(
       tokenOptions,
       txOptions,
-      await hd.getNewChangeAddress(true),
+      newChangeAddress,
       receiver,
-      new sys.utils.BN(fee * 1e8)
+      newFee
     );
 
     const txid = pendingTransaction.extractTransaction().getId();
@@ -795,7 +800,7 @@ export class NewSyscoinTransactions implements ISyscoinTransactions {
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    const xpub = hd.getAccountXpub();
+    const xpub = await hd.getAccountXpub();
 
     const backendAccount = await sys.utils.fetchBackendAccount(
       main.blockbookURL,

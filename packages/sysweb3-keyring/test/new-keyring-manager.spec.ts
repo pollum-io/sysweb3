@@ -128,7 +128,7 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
 
   //* getEncryptedXprv
   it('should get the encrypted private key', async () => {
-    const xprv = keyringManager.getEncryptedXprv();
+    const xprv = await keyringManager.getEncryptedXprv();
 
     expect(xprv).toBeDefined();
     expect(xprv.substring(1, 4)).not.toEqual('prv');
@@ -136,7 +136,7 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
 
   //* getAccountXpub
   it('should get the public key', async () => {
-    const xpub = keyringManager.getAccountXpub();
+    const xpub = await keyringManager.getAccountXpub();
 
     expect(xpub).toBeDefined();
     expect(xpub.substring(1, 4)).toEqual('pub');
