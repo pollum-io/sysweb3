@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import CryptoJS from 'crypto-js';
 import { hdkey } from 'ethereumjs-wallet';
 import { ethers } from 'ethers';
+import omit from 'lodash/omit';
 import sys from 'syscoinjs-lib';
 
 import {
@@ -212,11 +213,12 @@ export class KeyringManager {
       activeAccountType: accountType,
     };
   };
-  //TODO: this method should just exclude privateKey before sending it
+
+  //TODO: this method should just exclude privateKey before sending it -- Possible solution done
   public getAccountById = (
     id: number,
     accountType: KeyringAccountType
-  ): IKeyringAccountState => {
+  ): Omit<IKeyringAccountState, 'xprv'> => {
     const accounts = Object.values(this.wallet.accounts[accountType]);
 
     const account = accounts.find((account) => account.id === id);
@@ -225,7 +227,7 @@ export class KeyringManager {
       throw new Error('Account not found');
     }
 
-    return account;
+    return omit(account, 'xprv');
   };
 
   //TODO: this method should just send xprv after password validation
