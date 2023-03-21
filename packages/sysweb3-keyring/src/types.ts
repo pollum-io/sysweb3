@@ -220,8 +220,6 @@ export interface IKeyringAccountState {
   xprv: string;
   balances: IKeyringBalances;
   xpub: string;
-  transactions: any;
-  assets: any;
   isImported: boolean;
 }
 
@@ -239,8 +237,6 @@ export interface ISyscoinBackendAccount {
 }
 
 export interface ILatestUpdateForSysAccount {
-  transactions: any;
-  assets: any;
   xpub: any;
   balances: {
     syscoin: number;

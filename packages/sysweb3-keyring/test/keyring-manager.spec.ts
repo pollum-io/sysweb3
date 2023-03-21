@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
 import { initialWalletState } from '../src/initial-state';
-import { NewKeyringManager } from '../src/new-keyring-manager';
+import { KeyringManager } from '../src/keyring-manager';
 import { KeyringAccountType } from '../src/types';
 import {
   FAKE_PASSWORD,
@@ -17,7 +17,7 @@ import { INetwork } from '@pollum-io/sysweb3-network/src';
 import 'isomorphic-fetch';
 
 describe('Keyring Manager and Ethereum Transaction tests', () => {
-  const keyringManager = new NewKeyringManager();
+  const keyringManager = new KeyringManager();
 
   jest.setTimeout(50000); // 20s
 
@@ -380,7 +380,7 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
 });
 
 describe('Syscoin network testing', () => {
-  const keyringManager = new NewKeyringManager();
+  const keyringManager = new KeyringManager();
 
   jest.setTimeout(50000); // 20s
 
@@ -442,7 +442,7 @@ describe('Syscoin network testing', () => {
 });
 
 describe('Account derivation with another seed in keyring', () => {
-  const keyringManager = new NewKeyringManager({});
+  const keyringManager = new KeyringManager({});
   jest.setTimeout(50000); // 50s
 
   it('should derivate a new account with specific address', async () => {

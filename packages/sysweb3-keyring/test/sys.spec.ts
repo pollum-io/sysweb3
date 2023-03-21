@@ -1,4 +1,4 @@
-import { NewKeyringManager } from '../src/new-keyring-manager';
+import { KeyringManager } from '../src/keyring-manager';
 import { KeyringAccountType } from '../src/types';
 import {
   CREATE_TOKEN_PARAMS,
@@ -7,9 +7,10 @@ import {
   PEACE_SEED_PHRASE,
   SYS_TANENBAUM_UTXO_NETWORK,
 } from './constants';
+import { IKeyringTokenType } from '@pollum-io/sysweb3-utils/src';
 
 describe('testing functions for the new-sys txs', () => {
-  const keyringManager = new NewKeyringManager();
+  const keyringManager = new KeyringManager();
   let address;
   //TODO: remove intialisation test and substitue for globalSetup
   // beforeAll(async () => {
@@ -168,7 +169,7 @@ describe('testing functions for the new-sys txs', () => {
       SYS_TANENBAUM_UTXO_NETWORK,
       'syscoin'
     );
-
+    keyringManager.setActiveAccount(0, KeyringAccountType.HDAccount);
     const tx = { ...DATA['updateToken'], receiver: address };
     const { txid } = await keyringManager.syscoinTransaction.confirmUpdateToken(
       tx

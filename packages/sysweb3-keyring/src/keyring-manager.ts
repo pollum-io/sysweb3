@@ -12,7 +12,7 @@ import {
 } from './initial-state';
 import { getSyscoinSigners, SyscoinHDSigner } from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
-import { EthereumTransactions, NewSyscoinTransactions } from './transactions';
+import { EthereumTransactions, SyscoinTransactions } from './transactions';
 import {
   IKeyringAccountState,
   IKeyringBalances,
@@ -30,7 +30,6 @@ import {
   INetwork,
   INetworkType,
 } from '@pollum-io/sysweb3-network/src';
-import { IEthereumNftDetails } from '@pollum-io/sysweb3-utils/src';
 
 //todo: remove vault and add info in the constructor as OPTS
 export interface IKeyringManagerOpts {
@@ -40,8 +39,6 @@ export interface ISysAccount {
   xprv?: string;
   xpub: string;
   balances: IKeyringBalances;
-  transactions: any[];
-  assets: any[];
   address: string;
   label?: string;
 }
@@ -55,7 +52,7 @@ export interface ISysAccountWithId extends ISysAccount {
   id: number;
 }
 const ethHdPath: Readonly<string> = "m/44'/60'/0'";
-export class NewKeyringManager {
+export class KeyringManager {
   private storage: any; //todo type
   private wallet: IWalletState; //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
 
@@ -78,7 +75,7 @@ export class NewKeyringManager {
     this.memPassword = '';
 
     // this.syscoinTransaction = SyscoinTransactions();
-    this.syscoinTransaction = new NewSyscoinTransactions(
+    this.syscoinTransaction = new SyscoinTransactions(
       this.getNetwork,
       this.getSigner
     );
@@ -93,7 +90,7 @@ export class NewKeyringManager {
     decryptedPrivateKey: string;
   } => {
     if (!this.memPassword)
-      throw new Error('Wallet is locked cant proceed with transactions');
+      throw new Error('Wallet is locked cant proceed with transaction');
     if (this.activeChain !== INetworkType.Ethereum)
       throw new Error('Switch to EVM chain');
     const { accounts, activeAccountId, activeAccountType } = this.wallet;
@@ -114,7 +111,7 @@ export class NewKeyringManager {
     main: any; //TODO: Type this
   } => {
     if (!this.memPassword) {
-      throw new Error('Wallet is locked cant proceed with transactions');
+      throw new Error('Wallet is locked cant proceed with transaction');
     }
     if (this.activeChain !== INetworkType.Syscoin) {
       throw new Error('Switch to UTXO chain');
@@ -274,7 +271,7 @@ export class NewKeyringManager {
 
     return this.memMnemonic;
   };
-
+  //TODO: test failure case to validate rollback;
   public setSignerNetwork = async (
     network: INetwork,
     chain: string
@@ -286,7 +283,10 @@ export class NewKeyringManager {
       INetworkType.Ethereum === chain
         ? INetworkType.Ethereum
         : INetworkType.Syscoin;
-
+    const prevWalletState = this.wallet;
+    const prevActiveChainState = this.activeChain;
+    const prevHDState = this.hd;
+    const prevSyscoinSignerState = this.syscoinSigner;
     try {
       if (chain === INetworkType.Syscoin) {
         const { rpc, isTestnet } = await this.getSignerUTXO(network);
@@ -300,8 +300,19 @@ export class NewKeyringManager {
       this.wallet.activeNetwork = network;
       this.activeChain = networkChain;
 
-      return true; //TODO: after end of refactor remove this
+      return true;
     } catch (err) {
+      //Rollback to previous values
+      console.error('Set Signer Network failed with', err);
+      this.wallet = prevWalletState;
+      this.activeChain = prevActiveChainState;
+      if (this.activeChain === INetworkType.Ethereum) {
+        this.ethereumTransaction.setWeb3Provider(this.wallet.activeNetwork);
+      } else if (this.activeChain === INetworkType.Syscoin) {
+        this.hd = prevHDState;
+        this.syscoinSigner = prevSyscoinSignerState;
+      }
+
       return false;
     }
   };
@@ -397,7 +408,7 @@ export class NewKeyringManager {
     sysAccount: ISysAccount;
     xprv: string;
   }) => {
-    const { balances, address, xpub, transactions, assets } = sysAccount;
+    const { balances, address, xpub } = sysAccount;
 
     return {
       id: signer.Signer.accountIndex,
@@ -407,8 +418,6 @@ export class NewKeyringManager {
       xprv,
       address,
       isTrezorWallet: false,
-      transactions,
-      assets,
       isImported: false,
     };
   };
@@ -470,15 +479,10 @@ export class NewKeyringManager {
       options,
       true
     );
-
-    const transaction: any[] = []; //todo: why do we need to initialize these empty variables?
-    const assets: any[] = [];
     const stealthAddr = await this.hd.getNewReceivingAddress(true);
 
     return {
       address: stealthAddr,
-      transactions: transaction,
-      assets: assets,
       xpub: xpub,
       balances: {
         syscoin: balance / 1e8,
@@ -577,15 +581,9 @@ export class NewKeyringManager {
     id: number,
     label?: string
   ) => {
-    //TODO: completely remove transaction control logic from sysweb3
-    const transactions = [] as ethers.providers.TransactionResponse[];
-
-    const balance = await this.ethereumTransaction.getBalance(address); //TODO: get balance without calling ethTransactions
-
-    const assets: IEthereumNftDetails[] = []; //TODO: remove assets from sysweb3
+    const balance = await this.ethereumTransaction.getBalance(address);
 
     return {
-      assets,
       id,
       isTrezorWallet: false,
       label: label ? label : `Account ${id + 1}`,
@@ -593,7 +591,6 @@ export class NewKeyringManager {
         syscoin: 0,
         ethereum: balance,
       },
-      transactions,
     };
   };
 
@@ -677,11 +674,9 @@ export class NewKeyringManager {
           `SetSignerEVM: Wrong network information expected ${network.chainId} received ${chainId}`
         );
       }
-      this.ethereumTransaction.setWeb3Provider(network); // If chain check was sucessfull we set it as default web3Provider
-    } catch (_) {
-      throw new Error(
-        `SetSignerEVM: Wrong network information expected ${network.chainId}`
-      );
+      this.ethereumTransaction.setWeb3Provider(network);
+    } catch (error) {
+      throw new Error(`SetSignerEVM: Failed with ${error}`);
     }
   };
 

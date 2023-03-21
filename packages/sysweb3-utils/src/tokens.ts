@@ -765,13 +765,6 @@ export interface NftMetadata {
   owner: Address;
   rawData: Record<string, unknown> | null;
 }
-
-export interface IEthereumNftDetails extends IEtherscanNFT, NftMetadata {
-  isNft: boolean;
-  id: string | number;
-  balance: number;
-}
-
 export type IErc20Token = {
   name: string;
   symbol: string;
