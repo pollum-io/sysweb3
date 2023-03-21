@@ -10,7 +10,7 @@ import {
 
 describe('testing functions for the new-sys txs', () => {
   const keyringManager = new NewKeyringManager();
-  let address, transactions, assets;
+  let address;
   //TODO: remove intialisation test and substitue for globalSetup
   // beforeAll(async () => {
   //   console.log('Before ALL');
@@ -68,8 +68,6 @@ describe('testing functions for the new-sys txs', () => {
     console.log('this account', account);
 
     address = account.address;
-    transactions = account.transactions;
-    assets = account.assets;
     expect(account).toBeDefined();
   });
 
@@ -85,13 +83,15 @@ describe('testing functions for the new-sys txs', () => {
   //--------------------------------------------------------SyscoinTransactions Tests----------------------------------------------------
   it('should create SPT tx', async () => {
     // Initializing wallet and setting seed, password and vault.
-    const wallet = keyringManager.getState();
-    expect(wallet.activeAccountId).toBe(1);
-    console.log('Check wallet state', wallet);
     await keyringManager.setSignerNetwork(
       SYS_TANENBAUM_UTXO_NETWORK,
       'syscoin'
     );
+    const wallet = keyringManager.getState();
+    expect(wallet.activeAccountId).toBe(1);
+    console.log('Check wallet state', wallet.accounts.HDAccount[0].address);
+    console.log('Address', address);
+    address = wallet.accounts.HDAccount[0].address;
 
     const { txid } =
       await keyringManager.syscoinTransaction.confirmTokenCreation({

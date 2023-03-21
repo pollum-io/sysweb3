@@ -114,8 +114,9 @@ export class NewKeyringManager {
     hd: SyscoinHDSigner;
     main: any; //TODO: Type this
   } => {
-    if (!this.memPassword)
+    if (!this.memPassword) {
       throw new Error('Wallet is locked cant proceed with transactions');
+    }
     if (this.activeChain !== INetworkType.Syscoin) {
       throw new Error('Switch to UTXO chain');
     }
@@ -274,24 +275,6 @@ export class NewKeyringManager {
 
     return this.memMnemonic;
   };
-
-  //TODO: completely remove this function as we will manage updates by it through pulling or ws straight on pali
-  // public getLatestUpdateForAccount = async () => {
-  //   const isSyscoinChain =
-  //     Boolean(
-  //       this.wallet.networks.syscoin[this.wallet.activeNetwork.chainId]
-  //     ) && this.wallet.activeNetwork.url.includes('blockbook');
-
-  //   const latestUpdate = isSyscoinChain
-  //     ? await this.getLatestUpdateForSysAccount()
-  //     : await this.updateWeb3Accounts();
-
-  //   setEncryptedVault({ ...getDecryptedVault(), wallet: this.wallet });
-  //   return {
-  //     accountLatestUpdate: latestUpdate,
-  //     walleAccountstLatestUpdate: this.wallet.accounts,
-  //   };
-  // };
 
   public setSignerNetwork = async (
     network: INetwork,
