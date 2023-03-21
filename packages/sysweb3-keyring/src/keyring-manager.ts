@@ -230,11 +230,16 @@ export class KeyringManager {
     return omit(account, 'xprv');
   };
 
-  //TODO: this method should just send xprv after password validation
+  //TODO: this method should just send xprv after password validation -- possible solution done
   public getPrivateKeyByAccountId = (
     id: number,
-    acountType: KeyringAccountType
+    acountType: KeyringAccountType,
+    pwd: string
   ): string => {
+    if (!this.checkPassword(pwd)) {
+      throw new Error('Invalid Password');
+    }
+
     const accounts = this.wallet.accounts[acountType];
 
     const account = Object.values(accounts).find(

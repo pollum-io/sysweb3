@@ -104,7 +104,7 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
 
     expect(account1).toBeDefined();
     expect(account1.id).toBe(id);
-    console.log('Check activeAccount', account1);
+    expect(account1).not.toHaveProperty('xprv');
   });
 
   //* getPrivateKeyByAccountId
@@ -112,7 +112,8 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
     const id = 1;
     const privateKey = keyringManager.getPrivateKeyByAccountId(
       id,
-      KeyringAccountType.HDAccount
+      KeyringAccountType.HDAccount,
+      FAKE_PASSWORD
     );
 
     expect(privateKey).toBeDefined();
