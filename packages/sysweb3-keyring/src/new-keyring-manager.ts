@@ -86,7 +86,6 @@ export class NewKeyringManager {
       this.getNetwork,
       this.getDecryptedPrivateKey
     );
-    console.log('Main not yet set', this.syscoinSigner);
   }
   // ===================================== AUXILIARY METHOD - FOR TRANSACTIONS CLASSES ===================================== //
   private getDecryptedPrivateKey = (): {
@@ -292,7 +291,6 @@ export class NewKeyringManager {
       if (chain === INetworkType.Syscoin) {
         const { rpc, isTestnet } = await this.getSignerUTXO(network);
         await this.updateUTXOAccounts(rpc, isTestnet);
-        console.log('Wallet is set', this.wallet.accounts.HDAccount);
       } else if (chain === INetworkType.Ethereum) {
         await this.setSignerEVM(network);
         await this.updateWeb3Accounts();
@@ -302,10 +300,8 @@ export class NewKeyringManager {
       this.wallet.activeNetwork = network;
       this.activeChain = networkChain;
 
-      console.log('wallet', this.wallet, network, networkChain);
       return true; //TODO: after end of refactor remove this
     } catch (err) {
-      console.log('setSignerNetwrok error', err);
       return false;
     }
   };
@@ -370,7 +366,6 @@ export class NewKeyringManager {
       this.hd,
       this.wallet.activeNetwork.url
     );
-    console.log('Main set', this.syscoinSigner);
 
     const xpub = this.hd.getAccountXpub();
 
@@ -442,7 +437,6 @@ export class NewKeyringManager {
       isImported: false,
       ...basicAccountInfo,
     };
-    console.log('created account', basicAccountInfo, createdAccount);
     this.wallet.accounts[KeyringAccountType.HDAccount][accountId] =
       createdAccount;
   };
@@ -480,7 +474,6 @@ export class NewKeyringManager {
     const transaction: any[] = []; //todo: why do we need to initialize these empty variables?
     const assets: any[] = [];
     const stealthAddr = await this.hd.getNewReceivingAddress(true);
-    console.log('Check addr', stealthAddr);
 
     return {
       address: stealthAddr,

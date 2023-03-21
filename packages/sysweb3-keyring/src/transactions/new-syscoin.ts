@@ -354,7 +354,7 @@ export class NewSyscoinTransactions implements ISyscoinTransactions {
     const tokenOptions = this.getTokenCreationOptions(temporaryTransaction);
     const txOptions = { rbf: true };
 
-    const newChangeAddress = hd.getNewChangeAddress(true);
+    const newChangeAddress = await hd.getNewChangeAddress(true);
     const newFee = new sys.utils.BN(fee * 1e8);
 
     const pendingTransaction = await main.assetNew(
