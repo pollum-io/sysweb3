@@ -9,9 +9,16 @@ import {
 } from './constants';
 import { IKeyringTokenType } from '@pollum-io/sysweb3-utils/src';
 
+const sjs = require('syscoinjs-lib');
+
 describe('testing functions for the new-sys txs', () => {
   const keyringManager = new KeyringManager();
   let address;
+  const sysJS = new sjs.SyscoinJSLib(
+    null,
+    `https://blockbook-dev.elint.services`,
+    sjs.utils.syscoinNetworks.testnet
+  );
   //TODO: remove intialisation test and substitue for globalSetup
   // beforeAll(async () => {
   //   console.log('Before ALL');
@@ -66,7 +73,6 @@ describe('testing functions for the new-sys txs', () => {
   //* createKeyringVault
   it('should create the keyring vault', async () => {
     const account = await keyringManager.createKeyringVault();
-    console.log('this account', account);
 
     address = account.address;
     expect(account).toBeDefined();
@@ -84,17 +90,14 @@ describe('testing functions for the new-sys txs', () => {
   //--------------------------------------------------------SyscoinTransactions Tests----------------------------------------------------
   it('should create SPT tx', async () => {
     // Initializing wallet and setting seed, password and vault.
-    const a = await keyringManager.setSignerNetwork(
+    await keyringManager.setSignerNetwork(
       SYS_TANENBAUM_UTXO_NETWORK,
       'syscoin'
     );
-    console.log('setSignerNetwork', a);
     const wallet = keyringManager.getState();
     expect(wallet.activeAccountId).toBe(1);
     const activeUTXOAccount = keyringManager.getActiveUTXOAccountState();
-    console.log(activeUTXOAccount);
     address = activeUTXOAccount.address;
-    console.log('Address', address);
 
     const { txid } =
       await keyringManager.syscoinTransaction.confirmTokenCreation({
@@ -144,8 +147,7 @@ describe('testing functions for the new-sys txs', () => {
     );
     const res = await keyringManager.syscoinTransaction.signTransaction(
       DATA['sign'],
-      true,
-      false
+      true
     );
 
     expect(res).toBeDefined();
@@ -156,8 +158,31 @@ describe('testing functions for the new-sys txs', () => {
       SYS_TANENBAUM_UTXO_NETWORK,
       'syscoin'
     );
+    const feeRate = new sjs.utils.BN(10);
+    const txOpts = { rbf: false };
+    // if SYS need change sent, set this address. null to let HDSigner find a new address for you
+    const sysChangeAddress = await keyringManager.getNewChangeAddress();
+    const outputsArr = [
+      {
+        address: 'tsys1qdsvzmrxkq5uh0kwc6cyndsj7fluszcu3pl2wlv',
+        value: new sjs.utils.BN(1 * 1e8),
+      },
+    ];
+    const fromXpubOrAddress =
+      'vpub5YBbnk2FsQPCd4LsK7rESWaGVeWtq7nr3SgrdbeaQgctXBwpFQfLbKdwtDAkxLwhKubbpNwQqKPodfKTwVc4uN8jbsknuPTpJuW8aN1S3nC';
+    const response = await sysJS.createTransaction(
+      txOpts,
+      sysChangeAddress,
+      outputsArr,
+      feeRate,
+      fromXpubOrAddress
+    );
+    const data = {
+      psbt: response.psbt.toBase64(),
+      assets: JSON.stringify([...response.assets]),
+    };
     const res = await keyringManager.syscoinTransaction.signTransaction(
-      DATA['signAndSend'],
+      data,
       false
     );
 
@@ -170,6 +195,8 @@ describe('testing functions for the new-sys txs', () => {
       'syscoin'
     );
     keyringManager.setActiveAccount(0, KeyringAccountType.HDAccount);
+    const activeUTXOAccount = keyringManager.getActiveUTXOAccountState();
+    address = activeUTXOAccount.address;
     const tx = { ...DATA['updateToken'], receiver: address };
     const { txid } = await keyringManager.syscoinTransaction.confirmUpdateToken(
       tx

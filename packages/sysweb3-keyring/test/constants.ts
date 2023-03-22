@@ -80,8 +80,8 @@ export const DATA: { [type: string]: any } = {
     assets: '[]',
   },
   updateToken: {
-    assetGuid: '1687030527',
-    description: 'test pali 1',
+    assetGuid: '468741931',
+    description: 'test pali 2',
     capabilityflags: 127,
     eventName: 'txUpdateToken',
     fee: 0.00001,

@@ -173,6 +173,10 @@ export class KeyringManager {
     return hashPassword === hash;
   };
 
+  public getNewChangeAddress = async (): Promise<string> => {
+    return await this.hd.getNewChangeAddress(true);
+  };
+
   public createKeyringVault = async (): Promise<IKeyringAccountState> => {
     const encryptedMnemonic = CryptoJS.AES.encrypt(
       this.memMnemonic,
@@ -214,7 +218,6 @@ export class KeyringManager {
     };
   };
 
-  //TODO: this method should just exclude privateKey before sending it -- Possible solution done
   public getAccountById = (
     id: number,
     accountType: KeyringAccountType
@@ -230,7 +233,7 @@ export class KeyringManager {
     return omit(account, 'xprv');
   };
 
-  //TODO: this method should just send xprv after password validation -- possible solution done
+  //TODO: this method needs to decrypt password before validation is done
   public getPrivateKeyByAccountId = (
     id: number,
     acountType: KeyringAccountType,

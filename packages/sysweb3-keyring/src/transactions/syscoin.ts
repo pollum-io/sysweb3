@@ -639,7 +639,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     return { success: false };
   };
 
-  public sendSignedPsbt = async ({
+  public signPSBT = async ({
     psbt,
     signer,
   }: {
@@ -654,16 +654,19 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     notaryAssets,
   }: {
     psbt: string;
-    notaryAssets: string;
-    signer: any;
+    notaryAssets: any;
   }): Promise<JSON> => {
     const { main } = this.getSigner();
-    return await main.signAndSend(psbt, notaryAssets);
+    if (notaryAssets.size === 0) {
+      return await main.signAndSend(psbt);
+    } else {
+      return await main.signAndSend(psbt, notaryAssets);
+    }
   };
 
   signTransaction = async (
     data: { psbt: string; assets: string },
-    isSendOnly: boolean
+    isSignOnly: boolean
   ): Promise<any> => {
     const { hd } = this.getSigner();
 
@@ -676,8 +679,8 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     try {
       const response = sys.utils.importPsbtFromJson(data);
 
-      if (isSendOnly) {
-        return await this.sendSignedPsbt({
+      if (isSignOnly) {
+        return await this.signPSBT({
           psbt: response.psbt,
           signer: hd,
         });
@@ -686,10 +689,9 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       return await this.signAndSendPsbt({
         psbt: response.psbt,
         notaryAssets: response.assets,
-        signer: hd,
       });
     } catch (error) {
-      throw new Error('Bad Request: Could not create transaction.');
+      throw new Error('Bad Request: Could not create transaction.', error);
     }
   };
 
