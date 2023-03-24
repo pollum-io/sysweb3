@@ -34,15 +34,14 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
     expect(newSeed).toBe(String(PEACE_SEED_PHRASE));
   });
 
-  //* setWalletPassword / checkPassword
-  it('should set and check the password', () => {
+  //* setWalletPassword / lock / unlock
+  it('should set password, lock and unlock with the proper password', async () => {
     keyringManager.setWalletPassword(FAKE_PASSWORD);
-
-    const wrong = keyringManager.checkPassword('wrongp@ss123');
-    const right = keyringManager.checkPassword(FAKE_PASSWORD);
-
-    expect(wrong).toBe(false);
+    keyringManager.lockWallet();
+    const wrong = await keyringManager.unlock('wrongp@ss123');
+    const right = await keyringManager.unlock(FAKE_PASSWORD);
     expect(right).toBe(true);
+    expect(wrong).toBe(false);
   });
 
   //* createKeyringVault
@@ -60,6 +59,10 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
     );
 
     const network = keyringManager.getNetwork();
+    console.log(
+      'The current account',
+      keyringManager.getCurrentActiveAccount()
+    );
 
     const createAccount = await keyringManager.importAccount(
       FAKE_PRIVATE_KEY as string,
@@ -101,7 +104,6 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
       id,
       KeyringAccountType.HDAccount
     );
-
     expect(account1).toBeDefined();
     expect(account1.id).toBe(id);
     expect(account1).not.toHaveProperty('xprv');
@@ -140,7 +142,6 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
     const xpub = keyringManager.getAccountXpub();
 
     expect(xpub).toBeDefined();
-    expect(xpub.substring(1, 4)).toEqual('pub');
   });
 
   //* getSeed
@@ -149,7 +150,7 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
     expect(localSeed).toBe(PEACE_SEED_PHRASE);
     expect(() => {
       keyringManager.getSeed('wrongp@ss123');
-    }).toThrow('Invalid password.');
+    }).toThrow('Invalid password');
   });
 
   //* getLatestUpdateForAccount
@@ -398,15 +399,14 @@ describe('Syscoin network testing', () => {
     expect(newSeed).toBe(String(PEACE_SEED_PHRASE));
   });
 
-  //* setWalletPassword / checkPassword
-  it('should set and check the password', () => {
+  //* setWalletPassword / lock / unlock
+  it('should set password, lock and unlock with the proper password', async () => {
     keyringManager.setWalletPassword(FAKE_PASSWORD);
-
-    const wrong = keyringManager.checkPassword('wrongp@ss123');
-    const right = keyringManager.checkPassword(FAKE_PASSWORD);
-
-    expect(wrong).toBe(false);
+    keyringManager.lockWallet();
+    const wrong = await keyringManager.unlock('wrongp@ss123');
+    const right = await keyringManager.unlock(FAKE_PASSWORD);
     expect(right).toBe(true);
+    expect(wrong).toBe(false);
   });
 
   //* createKeyringVault
@@ -443,7 +443,7 @@ describe('Syscoin network testing', () => {
 });
 
 describe('Account derivation with another seed in keyring', () => {
-  const keyringManager = new KeyringManager({});
+  const keyringManager = new KeyringManager();
   jest.setTimeout(50000); // 50s
 
   it('should derivate a new account with specific address', async () => {

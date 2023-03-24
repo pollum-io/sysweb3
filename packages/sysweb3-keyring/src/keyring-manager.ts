@@ -32,10 +32,6 @@ import {
   INetworkType,
 } from '@pollum-io/sysweb3-network/src';
 
-//todo: remove vault and add info in the constructor as OPTS
-export interface IKeyringManagerOpts {
-  activeNetwork?: INetwork;
-}
 export interface ISysAccount {
   xprv?: string;
   xpub: string;
@@ -45,9 +41,10 @@ export interface ISysAccount {
 }
 
 export interface IkeyringManagerOpts {
-  wallet?: IWalletState | null;
-  activeChain?: INetworkType | null;
-  //todo: other props
+  wallet: IWalletState;
+  activeChain: INetworkType;
+  mnemonic?: string;
+  password?: string;
 }
 export interface ISysAccountWithId extends ISysAccount {
   id: number;
@@ -58,7 +55,7 @@ export class KeyringManager {
   private wallet: IWalletState; //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
 
   //local variables
-  private hd: SyscoinHDSigner;
+  private hd: SyscoinHDSigner | null;
   private syscoinSigner: any; //TODO: type this following syscoinJSLib interface
   private memMnemonic: string;
   private memPassword: string;
@@ -67,13 +64,21 @@ export class KeyringManager {
   //transactions objects
   public ethereumTransaction: IEthereumTransactions;
   syscoinTransaction: ISyscoinTransactions;
-  constructor(opts?: IkeyringManagerOpts) {
+  constructor(opts?: IkeyringManagerOpts | null) {
     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
-    this.wallet = opts?.wallet ?? initialWalletState; //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
-    this.hd = new sys.utils.HDSigner(''); //TODO : Recreate HDSigner and SyscoinSigner upon initialization by parameter sent;
-    this.activeChain = opts?.activeChain ?? INetworkType.Syscoin;
+    if (opts) {
+      this.wallet = opts.wallet;
+      this.activeChain = opts.activeChain;
+      if (opts.mnemonic) this.memMnemonic = opts.mnemonic;
+      if (opts.password) this.setWalletPassword(opts.password);
+      this.hd = null;
+    } else {
+      this.wallet = initialWalletState;
+      this.activeChain = INetworkType.Syscoin;
+      this.hd = new sys.utils.HDSigner('');
+    }
     this.memMnemonic = '';
-    this.memPassword = '';
+    this.memPassword = ''; //Lock wallet in case opts.password has been provided
 
     // this.syscoinTransaction = SyscoinTransactions();
     this.syscoinTransaction = new SyscoinTransactions(
@@ -109,7 +114,7 @@ export class KeyringManager {
   };
   private getSigner = (): {
     hd: SyscoinHDSigner;
-    main: any; //TODO: Type this
+    main: any; //TODO: Type this following syscoinJSLib interface
   } => {
     if (!this.memPassword) {
       throw new Error('Wallet is locked cant proceed with transaction');
@@ -117,7 +122,7 @@ export class KeyringManager {
     if (this.activeChain !== INetworkType.Syscoin) {
       throw new Error('Switch to UTXO chain');
     }
-    if (!this.syscoinSigner) {
+    if (!this.syscoinSigner || !this.hd) {
       throw new Error(
         'Wallet is not initialised yet call createKeyringVault first'
       );
@@ -131,6 +136,13 @@ export class KeyringManager {
     return account.isImported === true
       ? KeyringAccountType.Imported
       : KeyringAccountType.HDAccount;
+  };
+
+  public isUnlocked = () => {
+    return !!this.memPassword;
+  };
+  public lockWallet = () => {
+    this.memPassword = '';
   };
 
   public addNewAccount = async (label?: string) => {
@@ -149,35 +161,57 @@ export class KeyringManager {
     return this.addNewAccountToEth(label);
   };
 
-  public setWalletPassword = (pwd: string) => {
+  public setWalletPassword = (pwd: string, prvPwd?: string) => {
+    if (this.memPassword) {
+      if (!prvPwd) {
+        throw new Error('Previous password is required to change the password');
+      }
+      if (prvPwd !== this.memPassword) {
+        throw new Error('Previous password is not correct');
+      }
+    }
     const salt = this.generateSalt();
     const hash = this.encryptSHA512(pwd, salt);
     this.memPassword = pwd;
     this.storage.set('vault-keys', { hash, salt });
 
     if (this.memMnemonic) {
-      setEncryptedVault({
-        mnemonic: CryptoJS.AES.encrypt(this.memMnemonic, pwd).toString(),
-      });
+      setEncryptedVault(
+        {
+          mnemonic: CryptoJS.AES.encrypt(this.memMnemonic, pwd).toString(),
+        },
+        this.memPassword
+      );
     }
   };
 
-  public checkPassword = (password: string): boolean => {
+  public unlock = async (password: string): Promise<boolean> => {
     const { hash, salt } = this.storage.get('vault-keys');
 
     const hashPassword = this.encryptSHA512(password, salt);
 
     if (hashPassword === hash) {
       this.memPassword = password;
+      if (!this.hd) {
+        await this.restoreWallet();
+      }
     }
     return hashPassword === hash;
   };
 
   public getNewChangeAddress = async (): Promise<string> => {
+    if (this.hd === null)
+      throw new Error('HD not created yet, unlock or initialize wallet first');
     return await this.hd.getNewChangeAddress(true);
   };
 
   public createKeyringVault = async (): Promise<IKeyringAccountState> => {
+    if (this.syscoinSigner) {
+      throw new Error('Wallet is already initialised');
+    }
+    if (!this.memPassword) {
+      throw new Error('Create a password first');
+    }
     const encryptedMnemonic = CryptoJS.AES.encrypt(
       this.memMnemonic,
       this.memPassword
@@ -196,11 +230,13 @@ export class KeyringManager {
       activeAccountType: this.validateAccountType(rootAccount),
     };
 
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      mnemonic: encryptedMnemonic,
-      lastLogin: 0,
-    });
+    setEncryptedVault(
+      {
+        ...getDecryptedVault(this.memPassword),
+        mnemonic: encryptedMnemonic,
+      },
+      this.memPassword
+    );
 
     return rootAccount;
   };
@@ -239,8 +275,10 @@ export class KeyringManager {
     acountType: KeyringAccountType,
     pwd: string
   ): string => {
-    if (!this.checkPassword(pwd)) {
-      throw new Error('Invalid Password');
+    if (!this.memPassword) {
+      throw new Error('Unlock wallet first');
+    } else if (this.memPassword !== pwd) {
+      throw new Error('Invalid password');
     }
 
     const accounts = this.wallet.accounts[acountType];
@@ -275,8 +313,10 @@ export class KeyringManager {
     ).toString();
 
   public getSeed = (pwd: string) => {
-    if (!this.checkPassword(pwd)) {
-      throw new Error('Invalid password.');
+    if (!this.memPassword) {
+      throw new Error('Unlock wallet first');
+    } else if (this.memPassword !== pwd) {
+      throw new Error('Invalid password');
     }
 
     return this.memMnemonic;
@@ -328,7 +368,9 @@ export class KeyringManager {
   };
 
   public forgetMainWallet = (pwd: string) => {
-    if (!this.checkPassword(pwd)) {
+    if (!this.memPassword) {
+      throw new Error('Unlock wallet first');
+    } else if (this.memPassword !== pwd) {
       throw new Error('Invalid password');
     }
 
@@ -345,7 +387,11 @@ export class KeyringManager {
     return account;
   };
 
-  public getAccountXpub = (): string => this.hd.getAccountXpub();
+  public getAccountXpub = (): string => {
+    const { activeAccountId, activeAccountType } = this.wallet;
+    const account = this.wallet.accounts[activeAccountType][activeAccountId];
+    return account.xpub;
+  };
 
   public isSeedValid = (seedPhrase: string) => validateMnemonic(seedPhrase);
   public createNewSeed = () => generateMnemonic();
@@ -382,7 +428,7 @@ export class KeyringManager {
     crypto.createHmac('sha512', salt).update(password).digest('hex');
 
   private createMainWallet = async (): Promise<IKeyringAccountState> => {
-    this.hd = new sys.utils.HDSigner(this.memMnemonic, null); //To understand better this look at: https://github.com/syscoin/syscoinjs-lib/blob/298fda26b26d7007f0c915a6f77626fb2d3c852f/utils.js#L894
+    this.hd = new sys.utils.HDSigner(this.memMnemonic, null) as SyscoinHDSigner; //To understand better this look at: https://github.com/syscoin/syscoinjs-lib/blob/298fda26b26d7007f0c915a6f77626fb2d3c852f/utils.js#L894
     this.syscoinSigner = new sys.SyscoinJSLib(
       this.hd,
       this.wallet.activeNetwork.url
@@ -404,8 +450,12 @@ export class KeyringManager {
     return account;
   };
 
-  private getSysActivePrivateKey = () =>
-    this.hd.Signer.accounts[this.hd.Signer.accountIndex].getAccountPrivateKey();
+  private getSysActivePrivateKey = () => {
+    if (this.hd === null) throw new Error('No HD Signer');
+    return this.hd.Signer.accounts[
+      this.hd.Signer.accountIndex
+    ].getAccountPrivateKey();
+  };
 
   private getInitialAccountData = ({
     label,
@@ -433,6 +483,7 @@ export class KeyringManager {
   };
 
   private addUTXOAccount = async (accountId: number): Promise<any> => {
+    if (this.hd === null) throw new Error('No HD Signer');
     if (accountId !== 0 && !this.hd.Signer.accounts[accountId]) {
       //We must recreate the account if it doesn't exist at the signer
       const childAccount = this.hd.deriveAccount(accountId);
@@ -481,6 +532,7 @@ export class KeyringManager {
     url: string;
     xpub: string;
   }): Promise<ISysAccount> => {
+    if (this.hd === null) throw new Error('No HD Signer');
     const options = 'details=basic';
 
     const { balance } = await sys.utils.fetchBackendAccount(
@@ -503,7 +555,7 @@ export class KeyringManager {
 
   //todo network type
   private async addNewAccountToSyscoinChain(network: any, label?: string) {
-    if (!this.hd.mnemonic) {
+    if (this.hd === null || !this.hd.mnemonic) {
       throw new Error(
         'Keyring Vault is not created, should call createKeyringVault first '
       );
@@ -701,7 +753,6 @@ export class KeyringManager {
     isTestnet: boolean
   ) => {
     const accounts = this.wallet.accounts[KeyringAccountType.HDAccount];
-
     const { hd, main } = getSyscoinSigners({
       mnemonic: this.memMnemonic,
       isTestnet,
@@ -713,9 +764,7 @@ export class KeyringManager {
 
     // Create an array of promises.
     const accountPromises = walletAccountsArray.map(async ({ id }) => {
-      if (!hd.Signer.accounts[Number(id)]) {
-        await this.addUTXOAccount(Number(id));
-      }
+      await this.addUTXOAccount(Number(id));
     });
     //Alternative solution needs refining
     // // Wait for all promises to resolve.
@@ -738,9 +787,12 @@ export class KeyringManager {
   private clearTemporaryLocalKeys = () => {
     this.wallet = initialWalletState;
 
-    setEncryptedVault({
-      mnemonic: '',
-    });
+    setEncryptedVault(
+      {
+        mnemonic: '',
+      },
+      this.memPassword
+    );
 
     this.logout();
   };
@@ -771,6 +823,22 @@ export class KeyringManager {
     } as IKeyringAccountState;
 
     return updatedAccount;
+  }
+
+  private async restoreWallet() {
+    if (!this.memMnemonic) {
+      const { mnemonic } = getDecryptedVault(this.memPassword);
+      this.memMnemonic = CryptoJS.AES.decrypt(
+        mnemonic,
+        this.memPassword
+      ).toString(CryptoJS.enc.Utf8);
+    }
+    if (this.activeChain === INetworkType.Syscoin) {
+      const { rpc, isTestnet } = await this.getSignerUTXO(
+        this.wallet.activeNetwork
+      );
+      await this.updateUTXOAccounts(rpc, isTestnet);
+    }
   }
 
   private async _getPrivateKeyAccountInfos(privKey: string, label?: string) {

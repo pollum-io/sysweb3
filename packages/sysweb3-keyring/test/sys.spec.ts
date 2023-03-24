@@ -51,15 +51,14 @@ describe('testing functions for the new-sys txs', () => {
     expect(newSeed).toBe(String(PEACE_SEED_PHRASE));
   });
 
-  //* setWalletPassword / checkPassword
-  it('should set and check the password', () => {
+  //* setWalletPassword / lock / unlock
+  it('should set password, lock and unlock with the proper password', async () => {
     keyringManager.setWalletPassword(FAKE_PASSWORD);
-
-    const wrong = keyringManager.checkPassword('wrongp@ss123');
-    const right = keyringManager.checkPassword(FAKE_PASSWORD);
-
-    expect(wrong).toBe(false);
+    keyringManager.lockWallet();
+    const wrong = await keyringManager.unlock('wrongp@ss123');
+    const right = await keyringManager.unlock(FAKE_PASSWORD);
     expect(right).toBe(true);
+    expect(wrong).toBe(false);
   });
 
   it('should overwrite current seed', () => {

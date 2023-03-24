@@ -15,8 +15,6 @@ export const initialActiveHdAccountState: IKeyringAccountState = {
   label: 'Account 1',
   xprv: '',
   xpub: '',
-  transactions: [],
-  assets: [],
   isImported: false,
 };
 

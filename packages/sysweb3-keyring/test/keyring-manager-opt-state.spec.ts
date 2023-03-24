@@ -1,8 +1,11 @@
-import { INetworkType } from '@pollum-io/sysweb3-network/src';
-import { initialWalletState } from '../src/initial-state';
 import { KeyringManager } from '../src/keyring-manager';
-import { KeyringAccountType } from '../src/types';
-import { FAKE_PASSWORD, PEACE_SEED_PHRASE } from './constants';
+import {
+  FAKE_PASSWORD,
+  PEACE_SEED_PHRASE,
+  previousWalletState,
+  secPreviousWalletState,
+} from './constants';
+import { INetworkType } from '@pollum-io/sysweb3-network/src';
 /**
  * export interface IkeyringManagerOpts {
   wallet?: IWalletState | null;
@@ -33,61 +36,44 @@ import { FAKE_PASSWORD, PEACE_SEED_PHRASE } from './constants';
   Ethereum = 'ethereum',
   Syscoin = 'syscoin',
 }
+ wallet: IWalletState;
+  activeChain: INetworkType;
+  mnemonic?: string;
+  password?: string;
  */
 describe('testing functions for the new-sys txs', () => {
   //--------------------------------------------------------Tests for initialize wallet state----------------------------------------------------
 
-  it('should initialize a new keyring with eth as the active chain', () => {
+  it('should initialize a new keyring with syscoin as the active chain and unlock it', async () => {
     const keyringManager = new KeyringManager({
-      activeChain: INetworkType.Ethereum,
-    });
-    const activeChain = keyringManager.activeChain;
-    expect(activeChain).toBe(INetworkType.Ethereum);
-  });
-
-  it('should initialize a new keyring with sys as the active chain', () => {
-    const keyringManager = new KeyringManager({
+      wallet: previousWalletState,
       activeChain: INetworkType.Syscoin,
+      mnemonic: PEACE_SEED_PHRASE,
+      password: FAKE_PASSWORD,
     });
     const activeChain = keyringManager.activeChain;
     expect(activeChain).toBe(INetworkType.Syscoin);
+
+    const right = await keyringManager.unlock(FAKE_PASSWORD);
+    expect(right).toBe(true);
+    const xpub = await keyringManager.getAccountXpub();
+    expect(xpub).toBeDefined();
+    expect(xpub.substring(1, 4)).toEqual('pub');
   });
 
-  it('should initialize a new keyring with activeAccount 1 instead', () => {
-    const activeAccountId = 1;
+  it('should initialize a new keyring with syscoin as the active chain', async () => {
     const keyringManager = new KeyringManager({
-      wallet: {
-        ...initialWalletState,
-        activeAccountId: 1,
-      },
+      wallet: secPreviousWalletState,
+      activeChain: INetworkType.Ethereum,
+      mnemonic: PEACE_SEED_PHRASE,
+      password: FAKE_PASSWORD,
     });
-    const walletActiveAccountId = keyringManager.getState().activeAccountId;
-
-    expect(walletActiveAccountId).toBe(activeAccountId);
-  });
-
-  it('should initialize a new keyring with activeAccount 1 instead', () => {
-    const activeAccountId = 1;
-    const keyringManager = new KeyringManager({
-      wallet: {
-        ...initialWalletState,
-        activeAccountId: 1,
-      },
-    });
-    const walletActiveAccountId = keyringManager.getState().activeAccountId;
-
-    expect(walletActiveAccountId).toBe(activeAccountId);
-  });
-
-  it('should initialize a new keyring with a imported account type ', () => {
-    const keyringManager = new KeyringManager({
-      wallet: {
-        ...initialWalletState,
-        activeAccountType: KeyringAccountType.Imported,
-      },
-    });
-    const walletActiveAccountType = keyringManager.getState().activeAccountType;
-
-    expect(walletActiveAccountType).toBe(KeyringAccountType.Imported);
+    const activeChain = keyringManager.activeChain;
+    expect(activeChain).toBe(INetworkType.Ethereum);
+    const right = await keyringManager.unlock(FAKE_PASSWORD);
+    expect(right).toBe(true);
+    const xpub = await keyringManager.getAccountXpub();
+    expect(xpub).toBeDefined();
+    expect(xpub.substring(0, 2)).toEqual('0x');
   });
 });
