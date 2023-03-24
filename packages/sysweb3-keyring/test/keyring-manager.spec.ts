@@ -1,4 +1,7 @@
 import { ethers } from 'ethers';
+import 'isomorphic-fetch';
+import mapValues from 'lodash/mapValues';
+import omit from 'lodash/omit';
 
 import { initialWalletState } from '../src/initial-state';
 import { KeyringManager } from '../src/keyring-manager';
@@ -14,7 +17,6 @@ import {
   FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS,
 } from './constants';
 import { INetwork } from '@pollum-io/sysweb3-network/src';
-import 'isomorphic-fetch';
 
 describe('Keyring Manager and Ethereum Transaction tests', () => {
   const keyringManager = new KeyringManager();
@@ -84,16 +86,16 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
     const account2 = await keyringManager.addNewAccount(undefined);
     expect(account2.label).toBe('Account 2');
 
-    const wallet = keyringManager.getState();
-    expect(wallet.activeAccountId).toBe(1);
+    const wallet = keyringManager.getActiveAccount();
+    expect(wallet.activeAccount.id).toBe(1);
   });
 
   //* setActiveAccount
   it('should set the active account', () => {
     keyringManager.setActiveAccount(0, KeyringAccountType.Imported);
 
-    const wallet = keyringManager.getState();
-    expect(wallet.activeAccountId).toBe(0);
+    const wallet = keyringManager.getActiveAccount();
+    expect(wallet.activeAccount.id).toBe(0);
     expect(wallet.activeAccountType).toBe(KeyringAccountType.Imported);
   });
 
@@ -122,9 +124,12 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
     expect(privateKey.length).toBeGreaterThan(50);
   });
 
-  it('should be undefined when pass invalid account id', () => {
+  it('should be undefined when pass invalid account id', async () => {
     const invalidId = 3;
-    const wallet = keyringManager.getState();
+    const testnet = initialWalletState.networks.syscoin[5700]; //Syscoin testnet
+    await keyringManager.setSignerNetwork(testnet, 'syscoin');
+
+    const wallet = keyringManager.getUTXOState();
     const invalidAccount = wallet.accounts[invalidId];
     expect(invalidAccount).toBeUndefined();
   });
@@ -198,7 +203,6 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
   //* setSignerNetwork
   it('should set the network', async () => {
     const testnet = initialWalletState.networks.ethereum[80001];
-    console.log('Checking testnet network', testnet);
 
     await keyringManager.setSignerNetwork(testnet, 'ethereum');
 
@@ -215,7 +219,7 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
     tx.maxFeePerGas = maxFeePerGas;
     tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
 
-    const { activeAccount } = keyringManager.getCurrentActiveAccount();
+    const { activeAccount } = keyringManager.getActiveAccount();
     const network = keyringManager.getNetwork();
 
     tx.from = activeAccount.address;
@@ -376,8 +380,20 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
   it('should forget wallet / reset to initial state', async () => {
     keyringManager.forgetMainWallet(FAKE_PASSWORD);
 
-    const wallet = keyringManager.getState();
-    expect(wallet).toEqual(initialWalletState);
+    const testnet = initialWalletState.networks.syscoin[5700]; //Syscoin testnet
+    await keyringManager.setSignerNetwork(testnet, 'syscoin');
+
+    const wallet = keyringManager.getUTXOState();
+    const utxoAccounts = mapValues(wallet.accounts.HDAccount, (value) =>
+      omit(value, 'xprv')
+    );
+    expect(wallet).toEqual({
+      ...initialWalletState,
+      accounts: {
+        [KeyringAccountType.HDAccount]: utxoAccounts,
+        [KeyringAccountType.Imported]: {},
+      },
+    });
   });
 });
 
