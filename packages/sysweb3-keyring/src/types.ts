@@ -8,13 +8,13 @@ import {
   TransactionConfig,
 } from 'web3-core';
 
-import { INetwork, INetworkType } from '@pollum-io/sysweb3-network/src'; //TODO: temp
+import { INetwork, INetworkType } from '@pollum-io/sysweb3-network/src';
 import {
   ITokenMint,
   ITokenSend,
   ITokenUpdate,
   ITxid,
-} from '@pollum-io/sysweb3-utils/src'; //TODO: temp
+} from '@pollum-io/sysweb3-utils/src';
 
 export interface ITrezorWallet {
   createHardwareWallet: () => Promise<IKeyringAccountState>;
@@ -97,22 +97,11 @@ export interface IEthereumTransactions {
   }: ISendSignedErcTransactionProps) => Promise<IResponseFromSendErcSignedTransaction>;
 
   getBalance: (address: string) => Promise<number>;
-  getErc20TokenBalance: (
-    tokenAddress: string,
-    walletAddress: string
-  ) => Promise<number>;
   getErc20TokensByAddress?: (
     address: string,
     isSupported: boolean,
     apiUrl: string
   ) => Promise<any[]>;
-  getUserTransactions: (
-    address: string,
-    network: INetwork
-  ) => Promise<TransactionResponse[]>;
-}
-
-export interface NewIEthereumTransactions extends IEthereumTransactions {
   setWeb3Provider: (network: INetwork) => void;
   importAccount: (mnemonicOrPrivKey: string) => ethers.Wallet;
 }
@@ -231,8 +220,6 @@ export interface IKeyringAccountState {
   xprv: string;
   balances: IKeyringBalances;
   xpub: string;
-  transactions: any;
-  assets: any;
   isImported: boolean;
 }
 
@@ -250,8 +237,6 @@ export interface ISyscoinBackendAccount {
 }
 
 export interface ILatestUpdateForSysAccount {
-  transactions: any;
-  assets: any;
   xpub: any;
   balances: {
     syscoin: number;

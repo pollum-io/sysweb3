@@ -1,484 +1,494 @@
-import SafeEventEmitter from '@metamask/safe-event-emitter';
-import axios from 'axios';
 import { generateMnemonic, validateMnemonic, mnemonicToSeed } from 'bip39';
 import { fromZPrv } from 'bip84';
 import crypto from 'crypto';
 import CryptoJS from 'crypto-js';
 import { hdkey } from 'ethereumjs-wallet';
+import { ethers } from 'ethers';
+import mapValues from 'lodash/mapValues';
+import omit from 'lodash/omit';
 import sys from 'syscoinjs-lib';
 
-import { Web3Accounts } from './eth-manager';
 import {
   initialActiveImportedAccountState,
   initialWalletState,
 } from './initial-state';
-import { getSigners, SyscoinHDSigner } from './signers';
+import { getSyscoinSigners, SyscoinHDSigner } from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
-import { initialize } from './trezor';
+import { EthereumTransactions, SyscoinTransactions } from './transactions';
 import {
   IKeyringAccountState,
-  IWalletState,
   IKeyringBalances,
-  IKeyringManager,
+  ISyscoinTransactions,
+  IWalletState,
+  KeyringAccountType,
+  IEthereumTransactions,
 } from './types';
-import * as sysweb3 from '@pollum-io/sysweb3-core';
+import * as sysweb3 from '@pollum-io/sysweb3-core/src';
 import {
+  BitcoinNetwork,
   getSysRpc,
-  jsonRpcRequest,
-  setActiveNetwork,
+  IPubTypes,
   validateSysRpc,
-} from '@pollum-io/sysweb3-network/src'; //TODO: temp
-import {
   INetwork,
-  getAsset,
-  IEthereumNftDetails,
-} from '@pollum-io/sysweb3-utils/src'; //TODO: temp
+  INetworkType,
+} from '@pollum-io/sysweb3-network/src';
 
-export const KeyringManager = (): IKeyringManager => {
-  const web3Wallet = Web3Accounts();
-  const storage = sysweb3.sysweb3Di.getStateStorageDb();
+export interface ISysAccount {
+  xprv?: string;
+  xpub: string;
+  balances: IKeyringBalances;
+  address: string;
+  label?: string;
+}
 
-  let wallet: IWalletState = initialWalletState;
+export interface IkeyringManagerOpts {
+  wallet: IWalletState;
+  activeChain: INetworkType;
+  mnemonic?: string;
+  password?: string;
+}
+export interface ISysAccountWithId extends ISysAccount {
+  id: number;
+}
+const ethHdPath: Readonly<string> = "m/44'/60'/0'";
+export class KeyringManager {
+  private storage: any; //todo type
+  private wallet: IWalletState; //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
 
-  let hd: SyscoinHDSigner = new sys.utils.HDSigner('');
-  let memMnemonic = '';
-  let memPassword = '';
-  let actualPassword = '';
+  //local variables
+  private hd: SyscoinHDSigner | null;
+  private syscoinSigner: any; //TODO: type this following syscoinJSLib interface
+  private memMnemonic: string;
+  private memPassword: string;
+  public activeChain: INetworkType;
 
-  const getSalt = () => crypto.randomBytes(16).toString('hex');
+  //transactions objects
+  public ethereumTransaction: IEthereumTransactions;
+  syscoinTransaction: ISyscoinTransactions;
+  constructor(opts?: IkeyringManagerOpts | null) {
+    this.storage = sysweb3.sysweb3Di.getStateStorageDb();
+    if (opts) {
+      this.wallet = opts.wallet;
+      this.activeChain = opts.activeChain;
+      if (opts.mnemonic) this.memMnemonic = opts.mnemonic;
+      if (opts.password) this.setWalletPassword(opts.password);
+      this.hd = null;
+    } else {
+      this.wallet = initialWalletState;
+      this.activeChain = INetworkType.Syscoin;
+      this.hd = new sys.utils.HDSigner('');
+    }
+    this.memMnemonic = '';
+    this.memPassword = ''; //Lock wallet in case opts.password has been provided
 
-  const setStorage = (client: any) => storage.setClient(client);
+    // this.syscoinTransaction = SyscoinTransactions();
+    this.syscoinTransaction = new SyscoinTransactions(
+      this.getNetwork,
+      this.getSigner
+    );
+    this.ethereumTransaction = new EthereumTransactions(
+      this.getNetwork,
+      this.getDecryptedPrivateKey
+    );
+  }
+  // ===================================== AUXILIARY METHOD - FOR TRANSACTIONS CLASSES ===================================== //
+  private getDecryptedPrivateKey = (): {
+    address: string;
+    decryptedPrivateKey: string;
+  } => {
+    if (!this.memPassword)
+      throw new Error('Wallet is locked cant proceed with transaction');
+    if (this.activeChain !== INetworkType.Ethereum)
+      throw new Error('Switch to EVM chain');
+    const { accounts, activeAccountId, activeAccountType } = this.wallet;
 
-  const encryptSHA512 = (password: string, salt: string) => {
-    const hash = crypto.createHmac('sha512', salt);
-
-    hash.update(password);
+    const { xprv, address } = accounts[activeAccountType][activeAccountId];
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      xprv,
+      this.memPassword
+    ).toString(CryptoJS.enc.Utf8);
 
     return {
-      salt,
-      hash: hash.digest('hex'),
+      address,
+      decryptedPrivateKey,
+    };
+  };
+  private getSigner = (): {
+    hd: SyscoinHDSigner;
+    main: any; //TODO: Type this following syscoinJSLib interface
+  } => {
+    if (!this.memPassword) {
+      throw new Error('Wallet is locked cant proceed with transaction');
+    }
+    if (this.activeChain !== INetworkType.Syscoin) {
+      throw new Error('Switch to UTXO chain');
+    }
+    if (!this.syscoinSigner || !this.hd) {
+      throw new Error(
+        'Wallet is not initialised yet call createKeyringVault first'
+      );
+    }
+
+    return { hd: this.hd, main: this.syscoinSigner };
+  };
+
+  // ===================================== PUBLIC METHODS - KEYRING MANAGER FOR HD - SYS ALL ===================================== //
+  public validateAccountType = (account: IKeyringAccountState) => {
+    return account.isImported === true
+      ? KeyringAccountType.Imported
+      : KeyringAccountType.HDAccount;
+  };
+
+  public isUnlocked = () => {
+    return !!this.memPassword;
+  };
+  public lockWallet = () => {
+    this.memPassword = '';
+  };
+
+  public addNewAccount = async (label?: string) => {
+    const network = this.wallet.activeNetwork;
+    const mnemonic = this.memMnemonic;
+    const isSyscoinChain = this.isSyscoinChain(network);
+
+    if (isSyscoinChain) {
+      return this.addNewAccountToSyscoinChain(network, label);
+    }
+
+    if (!mnemonic) {
+      throw new Error('Seed phrase is required to create a new account.');
+    }
+
+    return this.addNewAccountToEth(label);
+  };
+
+  public setWalletPassword = (pwd: string, prvPwd?: string) => {
+    if (this.memPassword) {
+      if (!prvPwd) {
+        throw new Error('Previous password is required to change the password');
+      }
+      if (prvPwd !== this.memPassword) {
+        throw new Error('Previous password is not correct');
+      }
+    }
+    const salt = this.generateSalt();
+    const hash = this.encryptSHA512(pwd, salt);
+    this.memPassword = pwd;
+    this.storage.set('vault-keys', { hash, salt });
+
+    if (this.memMnemonic) {
+      setEncryptedVault(
+        {
+          mnemonic: CryptoJS.AES.encrypt(this.memMnemonic, pwd).toString(),
+        },
+        this.memPassword
+      );
+    }
+  };
+
+  public unlock = async (password: string): Promise<boolean> => {
+    const { hash, salt } = this.storage.get('vault-keys');
+
+    const hashPassword = this.encryptSHA512(password, salt);
+
+    if (hashPassword === hash) {
+      this.memPassword = password;
+      if (!this.hd) {
+        await this.restoreWallet();
+      }
+    }
+    return hashPassword === hash;
+  };
+
+  public getNewChangeAddress = async (): Promise<string> => {
+    if (this.hd === null)
+      throw new Error('HD not created yet, unlock or initialize wallet first');
+    return await this.hd.getNewChangeAddress(true);
+  };
+
+  public createKeyringVault = async (): Promise<IKeyringAccountState> => {
+    if (this.syscoinSigner) {
+      throw new Error('Wallet is already initialised');
+    }
+    if (!this.memPassword) {
+      throw new Error('Create a password first');
+    }
+    const encryptedMnemonic = CryptoJS.AES.encrypt(
+      this.memMnemonic,
+      this.memPassword
+    ).toString();
+    const rootAccount = await this.createMainWallet();
+    this.wallet = {
+      ...initialWalletState,
+      ...this.wallet,
+      accounts: {
+        ...this.wallet.accounts,
+        [KeyringAccountType.HDAccount]: {
+          [rootAccount.id]: rootAccount,
+        },
+      },
+      activeAccountId: rootAccount.id,
+      activeAccountType: this.validateAccountType(rootAccount),
+    };
+
+    setEncryptedVault(
+      {
+        ...getDecryptedVault(this.memPassword),
+        mnemonic: encryptedMnemonic,
+      },
+      this.memPassword
+    );
+
+    return rootAccount;
+  };
+
+  public setActiveAccount = async (
+    accountId: number,
+    accountType: KeyringAccountType
+  ) => {
+    const accounts = this.wallet.accounts[accountType];
+    if (!accounts[accountId].xpub) throw new Error('Account not set');
+    this.wallet = {
+      ...this.wallet,
+      activeAccountId: accounts[accountId].id,
+      activeAccountType: accountType,
     };
   };
 
-  const setWalletPassword = (pwd: string) => {
-    const salt = getSalt();
-    const saltHashPassword = encryptSHA512(pwd, salt);
+  public getAccountById = (
+    id: number,
+    accountType: KeyringAccountType
+  ): Omit<IKeyringAccountState, 'xprv'> => {
+    const accounts = Object.values(this.wallet.accounts[accountType]);
 
-    const { hash, salt: passwordSalt } = saltHashPassword;
+    const account = accounts.find((account) => account.id === id);
 
-    storage.set('vault-keys', { hash, salt: passwordSalt });
-
-    memPassword = hash;
-
-    wallet = initialWalletState;
-
-    if (memMnemonic) {
-      setEncryptedVault({
-        wallet,
-        network: wallet.activeNetwork,
-        mnemonic: CryptoJS.AES.encrypt(memMnemonic, hash).toString(),
-      });
+    if (!account) {
+      throw new Error('Account not found');
     }
+
+    return omit(account, 'xprv');
   };
 
-  const isUnlocked = () => !!memPassword;
-  const unlockedByPassword = () => !!actualPassword;
-
-  const logout = () => {
-    hd = new sys.utils.HDSigner('');
-
-    memPassword = '';
-    memMnemonic = '';
-  };
-
-  const checkPassword = (pwd: string) => {
-    const { hash, salt } = storage.get('vault-keys');
-    const hashPassword = encryptSHA512(pwd, salt);
-    if (hashPassword.hash === hash) {
-      actualPassword = pwd;
+  //TODO: this method needs to decrypt password before validation is done
+  public getPrivateKeyByAccountId = (
+    id: number,
+    acountType: KeyringAccountType,
+    pwd: string
+  ): string => {
+    if (!this.memPassword) {
+      throw new Error('Unlock wallet first');
+    } else if (this.memPassword !== pwd) {
+      throw new Error('Invalid password');
     }
-    return hashPassword.hash === hash;
-  };
 
-  const getEncryptedMnemonic = () => getDecryptedVault().mnemonic;
+    const accounts = this.wallet.accounts[acountType];
 
-  const getDecryptedMnemonic = () => {
-    const { mnemonic } = getDecryptedVault();
-    const { hash } = storage.get('vault-keys');
-
-    return CryptoJS.AES.decrypt(mnemonic, hash).toString(CryptoJS.enc.Utf8);
-  };
-
-  const getSeed = (pwd: string) => {
-    if (!checkPassword(pwd)) throw new Error('Invalid password.');
-
-    return getDecryptedMnemonic();
-  };
-
-  const getState = () => wallet;
-  const getNetwork = () => wallet.activeNetwork;
-  const getAccounts = () => Object.values(wallet.accounts);
-
-  const getPrivateKeyByAccountId = (id: number): string => {
-    const account = Object.values(wallet.accounts).find(
+    const account = Object.values(accounts).find(
       (account) => account.id === id
     );
 
-    if (!account) throw new Error('Account not found');
+    if (!account) {
+      throw new Error('Account not found');
+    }
 
     return account.xprv;
   };
 
-  const getAccountXpub = (): string => hd.getAccountXpub();
-  const getChangeAddress = (accountId: number): string => {
-    const { _hd } = getSigners();
-    _hd.setAccountIndex(accountId);
-    return _hd.getNewChangeAddress(true);
+  public getActiveAccount = (): {
+    activeAccount: Omit<IKeyringAccountState, 'xprv'>;
+    activeAccountType: KeyringAccountType;
+  } => {
+    const { accounts, activeAccountId, activeAccountType } = this.wallet;
+
+    return {
+      activeAccount: omit(accounts[activeAccountType][activeAccountId], 'xprv'),
+      activeAccountType,
+    };
   };
 
-  const getAccountById = (id: number): IKeyringAccountState => {
-    const account = Object.values(wallet.accounts).find(
-      (account) => account.id === id
-    );
+  public getEncryptedXprv = () =>
+    CryptoJS.AES.encrypt(
+      this.getSysActivePrivateKey(),
+      this.memPassword
+    ).toString();
 
-    if (!account) throw new Error('Account not found');
+  public getSeed = (pwd: string) => {
+    if (!this.memPassword) {
+      throw new Error('Unlock wallet first');
+    } else if (this.memPassword !== pwd) {
+      throw new Error('Invalid password');
+    }
+
+    return this.memMnemonic;
+  };
+  //TODO: test failure case to validate rollback;
+  public setSignerNetwork = async (
+    network: INetwork,
+    chain: string
+  ): Promise<boolean> => {
+    if (INetworkType.Ethereum !== chain && INetworkType.Syscoin !== chain) {
+      throw new Error('Unsupported chain');
+    }
+    const networkChain: INetworkType =
+      INetworkType.Ethereum === chain
+        ? INetworkType.Ethereum
+        : INetworkType.Syscoin;
+    const prevWalletState = this.wallet;
+    const prevActiveChainState = this.activeChain;
+    const prevHDState = this.hd;
+    const prevSyscoinSignerState = this.syscoinSigner;
+    try {
+      if (chain === INetworkType.Syscoin) {
+        const { rpc, isTestnet } = await this.getSignerUTXO(network);
+        await this.updateUTXOAccounts(rpc, isTestnet);
+      } else if (chain === INetworkType.Ethereum) {
+        await this.setSignerEVM(network);
+        await this.updateWeb3Accounts();
+      }
+
+      this.wallet.networks[networkChain][network.chainId] = network;
+      this.wallet.activeNetwork = network;
+      this.activeChain = networkChain;
+
+      return true;
+    } catch (err) {
+      //Rollback to previous values
+      console.error('Set Signer Network failed with', err);
+      this.wallet = prevWalletState;
+      this.activeChain = prevActiveChainState;
+      if (this.activeChain === INetworkType.Ethereum) {
+        this.ethereumTransaction.setWeb3Provider(this.wallet.activeNetwork);
+      } else if (this.activeChain === INetworkType.Syscoin) {
+        this.hd = prevHDState;
+        this.syscoinSigner = prevSyscoinSignerState;
+      }
+
+      return false;
+    }
+  };
+
+  public forgetMainWallet = (pwd: string) => {
+    if (!this.memPassword) {
+      throw new Error('Unlock wallet first');
+    } else if (this.memPassword !== pwd) {
+      throw new Error('Invalid password');
+    }
+
+    this.clearTemporaryLocalKeys();
+  };
+
+  public importWeb3Account = (mnemonicOrPrivKey: string) => {
+    if (ethers.utils.isHexString(mnemonicOrPrivKey)) {
+      return new ethers.Wallet(mnemonicOrPrivKey);
+    }
+
+    const account = ethers.Wallet.fromMnemonic(mnemonicOrPrivKey);
 
     return account;
   };
 
-  const handleImportAccountByPrivateKey = async (
-    privKey: string,
-    label?: string
-  ) => {
-    const {
-      wallet: { accounts },
-    } = getDecryptedVault();
+  public getAccountXpub = (): string => {
+    const { activeAccountId, activeAccountType } = this.wallet;
+    const account = this.wallet.accounts[activeAccountType][activeAccountId];
+    return account.xpub;
+  };
 
-    const importedAccountValue = await _getPrivateKeyAccountInfos(
-      privKey,
-      label
+  public isSeedValid = (seedPhrase: string) => validateMnemonic(seedPhrase);
+  public createNewSeed = () => generateMnemonic();
+  public setSeed = (seedPhrase: string) => {
+    if (validateMnemonic(seedPhrase)) {
+      this.memMnemonic = seedPhrase;
+      return seedPhrase;
+    }
+    throw new Error('Invalid Seed');
+  };
+
+  // public getState = () => this.wallet;
+  public getUTXOState = () => {
+    if (this.activeChain !== INetworkType.Syscoin) {
+      throw new Error('Cannot get state in a ethereum network');
+    }
+
+    const utxOAccounts = mapValues(this.wallet.accounts.HDAccount, (value) =>
+      omit(value, 'xprv')
     );
 
-    wallet = {
-      ...getDecryptedVault().wallet,
-      activeAccountId: importedAccountValue.id,
+    return {
+      ...this.wallet,
       accounts: {
-        ...accounts,
-        [importedAccountValue.id]: importedAccountValue,
+        [KeyringAccountType.HDAccount]: utxOAccounts,
+        [KeyringAccountType.Imported]: {},
       },
     };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-    return importedAccountValue;
   };
-
-  const _getPrivateKeyAccountInfos = async (
-    privKey: string,
-    label?: string
-  ) => {
-    const {
-      wallet: { accounts, activeNetwork },
-    } = getDecryptedVault();
-
-    const { hash } = storage.get('vault-keys');
-
-    //Validate if the private key value that we receive already starts with 0x or not
-    const validatedPrivateKey =
-      privKey.slice(0, 2) === '0x' ? privKey : `0x${privKey}`;
-
-    const importedAccountValue = web3Wallet.importAccount(validatedPrivateKey);
-
-    const { address, publicKey, privateKey } = importedAccountValue;
-
-    //Validate if account already exists
-    const accountAlreadyExists = Object.values(
-      accounts as IKeyringAccountState[]
-    ).some((account) => account.address === address);
-
-    if (accountAlreadyExists)
-      throw new Error(
-        'Account already exists, try again with another Private Key.'
-      );
-
-    const [ethereumBalance, userTransactions] = await Promise.all([
-      web3Wallet.getBalance(address),
-      web3Wallet.getUserTransactions(address, activeNetwork),
-    ]);
-
-    const newAccountValues = {
-      ...initialActiveImportedAccountState,
-      address,
-      label: label ? label : `Account ${Object.values(accounts).length + 1}`,
-      id: Object.values(accounts).length,
-      balances: {
-        syscoin: 0,
-        ethereum: ethereumBalance,
-      },
-      xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
-      xpub: publicKey,
-      transactions: userTransactions.filter(Boolean),
-      assets: {
-        syscoin: [],
-        ethereum: [],
-      },
-    } as IKeyringAccountState;
-
-    return newAccountValues;
+  public getActiveUTXOAccountState = () => {
+    return {
+      ...this.wallet.accounts.HDAccount[this.wallet.activeAccountId],
+      xprv: undefined,
+    };
   };
+  public getNetwork = () => this.wallet.activeNetwork;
+  public createEthAccount = (privateKey: string) =>
+    new ethers.Wallet(privateKey);
 
-  const _getLatestUpdateForPrivateKeyAccount = async (
-    account: IKeyringAccountState,
-    network: INetwork
-  ) => {
-    const [balance, transactions] = await Promise.all([
-      await web3Wallet.getBalance(account.address),
-      await web3Wallet.getUserTransactions(account.address, network),
-    ]);
+  /**
+   * PRIVATE METHODS
+   */
 
-    const updatedAccount = {
-      ...account,
-      balances: {
-        syscoin: 0,
-        ethereum: balance,
-      },
-      transactions,
-    } as IKeyringAccountState;
+  /**
+   *
+   * @param password
+   * @param salt
+   * @returns hash: string
+   */
+  private encryptSHA512 = (password: string, salt: string) =>
+    crypto.createHmac('sha512', salt).update(password).digest('hex');
 
-    return updatedAccount;
-  };
+  private createMainWallet = async (): Promise<IKeyringAccountState> => {
+    this.hd = new sys.utils.HDSigner(this.memMnemonic, null) as SyscoinHDSigner; //To understand better this look at: https://github.com/syscoin/syscoinjs-lib/blob/298fda26b26d7007f0c915a6f77626fb2d3c852f/utils.js#L894
+    this.syscoinSigner = new sys.SyscoinJSLib(
+      this.hd,
+      this.wallet.activeNetwork.url
+    );
 
-  const _clearWallet = () => {
-    wallet = initialWalletState;
+    const xpub = this.hd.getAccountXpub();
 
-    const vault = storage.get('vault');
-
-    const clearingObject = vault
-      ? { ...getDecryptedVault(), wallet }
-      : { wallet };
-
-    setEncryptedVault(clearingObject);
-  };
-
-  const _clearTemporaryLocalKeys = () => {
-    wallet = initialWalletState;
-
-    setEncryptedVault({
-      mnemonic: '',
-      wallet,
-      network: wallet.activeNetwork,
-    });
-
-    logout();
-  };
-
-  const _updateUnlocked = () => {
-    const eventEmitter = new SafeEventEmitter();
-
-    eventEmitter.emit('unlock');
-  };
-
-  const _unlockWallet = async (password: string) => {
-    const vault = getDecryptedVault();
-
-    const { salt } = storage.get('vault-keys');
-    const { hash, salt: _salt } = encryptSHA512(password, salt);
-
-    if (!vault.wallet) {
-      storage.set('vault-keys', {
-        hash,
-        salt: _salt,
+    const formattedBackendAccount: ISysAccount =
+      await this.getFormattedBackendAccount({
+        url: this.wallet.activeNetwork.url,
+        xpub,
       });
 
-      throw new Error('Wallet not found');
-    }
-
-    _clearWallet();
-
-    storage.set('vault-keys', {
-      hash,
-      salt: _salt,
+    const account = this.getInitialAccountData({
+      signer: this.hd,
+      sysAccount: formattedBackendAccount,
+      xprv: this.getEncryptedXprv(),
     });
-
-    memPassword = hash;
-
-    setEncryptedVault({
-      ...vault,
-      wallet: vault.wallet,
-    });
-
-    return vault.wallet;
-  };
-
-  const _createMainWallet = async (): Promise<IKeyringAccountState> => {
-    const { _hd } = getSigners();
-
-    hd = _hd;
-
-    const xprv = getEncryptedXprv();
-    const createdAccount = await _getLatestUpdateForSysAccount();
-    const account = _getInitialAccountData({
-      signer: _hd,
-      createdAccount,
-      xprv,
-    });
-
-    hd.setAccountIndex(account.id);
-
     return account;
   };
 
-  const _getEncryptedPrivateKeyFromHd = () =>
-    hd.Signer.accounts[hd.Signer.accountIndex].getAccountPrivateKey();
-
-  const _getBasicWeb3AccountInfo = async (
-    address: string,
-    id: number,
-    label?: string
-  ) => {
-    const { network } = getDecryptedVault();
-
-    const [balance, transactions] = await Promise.all([
-      await web3Wallet.getBalance(address),
-      await web3Wallet.getUserTransactions(address, network),
-    ]);
-
-    // const assets = await web3Wallet.getAssetsByAddress(address, network);
-    const assets: IEthereumNftDetails[] = [];
-    return {
-      assets,
-      id,
-      isTrezorWallet: false,
-      label: label ? label : `Account ${id + 1}`,
-      balances: {
-        syscoin: 0,
-        ethereum: balance,
-      },
-      transactions,
-      isImported: false,
-    };
+  private getSysActivePrivateKey = () => {
+    if (this.hd === null) throw new Error('No HD Signer');
+    return this.hd.Signer.accounts[
+      this.hd.Signer.accountIndex
+    ].getAccountPrivateKey();
   };
 
-  const _setDerivedWeb3Accounts = async (id: number, label: string) => {
-    const seed = await mnemonicToSeed(getDecryptedMnemonic());
-    const privateRoot = hdkey.fromMasterSeed(seed);
-    const derivedCurrentAccount = privateRoot.derivePath(
-      `m/44'/60'/0'/0/${String(id)}`
-    );
-    const newWallet = derivedCurrentAccount.getWallet();
-    const address = newWallet.getAddressString();
-    const xprv = newWallet.getPrivateKeyString();
-    const xpub = newWallet.getPublicKeyString();
-
-    const { hash } = storage.get('vault-keys');
-
-    const basicAccountInfo = await _getBasicWeb3AccountInfo(address, id, label);
-    const createdAccount = {
-      address,
-      xpub,
-      xprv: CryptoJS.AES.encrypt(xprv, hash).toString(),
-      ...basicAccountInfo,
-    };
-
-    wallet = {
-      ...getDecryptedVault().wallet,
-      accounts: {
-        ...getDecryptedVault().wallet.accounts,
-        [id]: createdAccount,
-      },
-    };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-    if (id === 0) {
-      const { address, privateKey, publicKey } = web3Wallet.importAccount(
-        getDecryptedMnemonic()
-      );
-
-      const basicAccountInfo = await _getBasicWeb3AccountInfo(
-        address,
-        0,
-        label
-      );
-      const account = {
-        xprv: CryptoJS.AES.encrypt(privateKey, hash).toString(),
-        xpub: publicKey,
-        address,
-        ...basicAccountInfo,
-      };
-
-      wallet = {
-        ...getDecryptedVault().wallet,
-        accounts: {
-          ...getDecryptedVault().wallet.accounts,
-          [0]: account,
-        },
-      };
-
-      setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-      return account;
-    }
-
-    return createdAccount;
-  };
-
-  const _getLatestUpdateForWeb3Accounts = async () => {
-    const { wallet: _wallet, network } = getDecryptedVault();
-
-    for (const index in Object.values(_wallet.accounts)) {
-      const id = Number(index);
-      if (_wallet.accounts[id].isImported) {
-        const updatedAccount = await _getLatestUpdateForPrivateKeyAccount(
-          _wallet.accounts[id],
-          network
-        );
-
-        wallet = {
-          ...getDecryptedVault().wallet,
-          accounts: {
-            ...getDecryptedVault().wallet.accounts,
-            [id]: updatedAccount,
-          },
-        };
-
-        setEncryptedVault({ ...getDecryptedVault(), wallet });
-      }
-
-      if (!_wallet.accounts[id].isImported) {
-        const label = _wallet.accounts[id].label;
-        await _setDerivedWeb3Accounts(id, label);
-      }
-    }
-
-    const { wallet: _updatedWallet } = getDecryptedVault();
-
-    const { activeAccountId } = _updatedWallet;
-
-    wallet = {
-      ..._updatedWallet,
-      activeAccountId,
-    };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-    return getDecryptedVault().wallet.accounts[activeAccountId];
-  };
-
-  const _getInitialAccountData = ({
+  private getInitialAccountData = ({
     label,
     signer,
-    createdAccount,
+    sysAccount,
     xprv,
   }: {
     label?: string;
     signer: any;
-    createdAccount: any;
+    sysAccount: ISysAccount;
     xprv: string;
   }) => {
-    const { balances, address, xpub, transactions, assets } = createdAccount;
+    const { balances, address, xpub } = sysAccount;
 
-    const account = {
+    return {
       id: signer.Signer.accountIndex,
       label: label ? label : `Account ${signer.Signer.accountIndex + 1}`,
       balances,
@@ -486,143 +496,45 @@ export const KeyringManager = (): IKeyringManager => {
       xprv,
       address,
       isTrezorWallet: false,
-      transactions,
-      assets,
       isImported: false,
     };
-
-    return account;
   };
 
-  const _getAccountForNetwork = async ({
-    isSyscoinChain,
-  }: {
-    isSyscoinChain: boolean;
-  }) => {
-    const { network, wallet: _wallet } = getDecryptedVault();
+  private addUTXOAccount = async (accountId: number): Promise<any> => {
+    if (this.hd === null) throw new Error('No HD Signer');
+    if (accountId !== 0 && !this.hd.Signer.accounts[accountId]) {
+      //We must recreate the account if it doesn't exist at the signer
+      const childAccount = this.hd.deriveAccount(accountId);
 
-    wallet = {
-      ..._wallet,
-      activeNetwork: network,
-    };
+      const derivedAccount = new fromZPrv(
+        childAccount,
+        this.hd.Signer.pubTypes,
+        this.hd.Signer.networks
+      );
 
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-    if (isSyscoinChain) {
-      const vault = getDecryptedVault();
-
-      setEncryptedVault({ ...vault, network });
-
-      const { _hd } = getSigners();
-
-      hd = _hd;
-
-      const xprv = getEncryptedXprv();
-      const updatedAccountInfo = await _getLatestUpdateForSysAccount();
-      const account = _getInitialAccountData({
-        label: updatedAccountInfo.label,
-        signer: hd,
-        createdAccount: updatedAccountInfo,
-        xprv,
-      });
-
-      const {
-        wallet: { activeAccountId },
-      } = vault;
-
-      if (hd && activeAccountId > -1) hd.setAccountIndex(activeAccountId);
-
-      return account;
+      this.hd.Signer.accounts.push(derivedAccount);
+      this.hd.setAccountIndex(accountId);
     }
+    const xpub = this.hd.getAccountXpub();
+    const xprv = this.getEncryptedXprv();
 
-    return await _getLatestUpdateForWeb3Accounts();
-  };
+    const basicAccountInfo = await this.getBasicSysAccountInfo(xpub, accountId);
 
-  const _getFormattedBackendAccount = async ({
-    url,
-    xpub,
-  }: {
-    url: string;
-    xpub: string;
-  }) => {
-    const options = 'tokens=nonzero&details=txs';
-    const { address, balance, transactions, tokensAsset } =
-      await sys.utils.fetchBackendAccount(url, xpub, options, true);
-    const latestAssets = tokensAsset ? tokensAsset.slice(0, 30) : [];
-
-    const filteredAssets: any = [];
-
-    await Promise.all(
-      latestAssets.map(async (token: any) => {
-        let details;
-        const uncreatedTokens = [];
-        const unconfirmedTxs = transactions
-          .slice(0, 20)
-          .filter((item: any) => item.confirmations === 0);
-
-        for (const txs of unconfirmedTxs) {
-          for (const tokens of txs.tokenTransfers) {
-            if (tokens) {
-              uncreatedTokens.push(tokens.token);
-            }
-          }
-        }
-
-        //TODO: add a timeout for getAsset and axios.get calls
-        try {
-          if (!uncreatedTokens.includes(token.assetGuid)) {
-            details = await getAsset(url, token.assetGuid);
-          }
-        } catch (e) {
-          // console.error('could not fetch assetData', e);
-        }
-        const description =
-          details && details.pubData && details.pubData.desc
-            ? atob(details.pubData.desc)
-            : '';
-
-        let image = '';
-
-        if (description.startsWith('https://ipfs.io/ipfs/')) {
-          try {
-            const { data } = await axios.get(description);
-            image = data.image ? data.image : '';
-          } catch (e) {
-            // console.error('could not fetch ipfs image', e);
-          }
-        }
-        const asset = {
-          ...token,
-          ...details,
-          description,
-          symbol: token.symbol ? atob(String(token.symbol)) : '',
-          image,
-          balance: Number(token.balance) / 10 ** Number(token.decimals),
-        };
-
-        if (!filteredAssets.includes(asset)) filteredAssets.push(asset);
-      })
-    );
-    return {
-      transactions: transactions ? transactions.slice(0, 20) : [],
-      assets: filteredAssets,
-      xpub: address,
-      balances: {
-        syscoin: balance / 1e8,
-        ethereum: 0,
-      },
+    const createdAccount = {
+      xprv,
       isImported: false,
+      ...basicAccountInfo,
     };
+    this.wallet.accounts[KeyringAccountType.HDAccount][accountId] =
+      createdAccount;
   };
 
-  const _getBasicSysAccountInfo = async (xpub: string, id: number) => {
-    const { network } = getDecryptedVault();
-
-    const formattedBackendAccount = await _getFormattedBackendAccount({
-      url: network.url,
+  private getBasicSysAccountInfo = async (xpub: string, id: number) => {
+    if (!this.syscoinSigner) throw new Error('No HD Signer');
+    const formattedBackendAccount = await this.getFormattedBackendAccount({
+      url: this.syscoinSigner.blockbookURL,
       xpub,
     });
-
     return {
       id,
       isTrezorWallet: false,
@@ -631,530 +543,404 @@ export const KeyringManager = (): IKeyringManager => {
     };
   };
 
-  const _setDerivedSysAccounts = async (id: number) => {
-    if (hd && id > -1) hd.setAccountIndex(id);
+  private getFormattedBackendAccount = async ({
+    url,
+    xpub,
+  }: {
+    url: string;
+    xpub: string;
+  }): Promise<ISysAccount> => {
+    if (this.hd === null) throw new Error('No HD Signer');
+    const options = 'details=basic';
+    let balance = 0;
+    try {
+      const { balance: _balance } = await sys.utils.fetchBackendAccount(
+        url,
+        xpub,
+        options,
+        true
+      );
+      balance = _balance;
+    } catch (e) {
+      throw new Error(`Error fetching account from network ${url}: ${e}`);
+    }
+    const stealthAddr = await this.hd.getNewReceivingAddress(true);
 
-    const xpub = hd.getAccountXpub();
-    const xprv = getEncryptedXprv();
-    const address = await hd.getNewReceivingAddress(true);
-
-    const basicAccountInfo = await _getBasicSysAccountInfo(xpub, id);
-
-    const createdAccount = {
-      address,
-      xprv,
-      ...basicAccountInfo,
-    };
-
-    wallet = {
-      ...getDecryptedVault().wallet,
-      accounts: {
-        ...getDecryptedVault().wallet.accounts,
-        [id]: createdAccount,
+    return {
+      address: stealthAddr,
+      xpub: xpub,
+      balances: {
+        syscoin: balance / 1e8,
+        ethereum: 0,
       },
     };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-    return createdAccount;
   };
 
-  const _getLatestUpdateForSysAccount = async (): Promise<{
-    xpub: string;
-    balances: IKeyringBalances;
-    transactions: any;
-    assets: any;
-    address: string;
-    label: string;
-  }> => {
-    const { wallet: _wallet, network, isTestnet } = getDecryptedVault();
-
-    const { activeAccountId } = _wallet;
-
-    if (
-      !hd.mnemonic ||
-      hd.Signer.isTestnet !== isTestnet ||
-      hd.blockbookURL !== network.url
-    ) {
-      const { _hd } = getSigners();
-
-      hd = _hd;
+  //todo network type
+  private async addNewAccountToSyscoinChain(network: any, label?: string) {
+    if (this.hd === null || !this.hd.mnemonic) {
+      throw new Error(
+        'Keyring Vault is not created, should call createKeyringVault first '
+      );
     }
 
-    const walletAccountsArray = Object.values(_wallet.accounts);
+    const id = this.hd.createAccount();
+    const xpub = this.hd.getAccountXpub();
+    const xprv = this.getEncryptedXprv();
 
-    const { length } = hd.Signer.accounts;
-
-    if (length > 1 || walletAccountsArray.length > 1) {
-      for (const id in Object.values(_wallet.accounts)) {
-        if (!hd.Signer.accounts[Number(id)]) {
-          addAccountToSigner(Number(id));
-        }
-      }
-    }
-
-    for (const account of Object.values(_wallet.accounts)) {
-      const currAccount = account as IKeyringAccountState;
-
-      //Prevent to don't derive Imported Account using Priv Keys and keep the original state values for it
-      if (!currAccount.isImported) await _setDerivedSysAccounts(currAccount.id);
-    }
-
-    if (hd && activeAccountId > -1) hd.setAccountIndex(activeAccountId);
-
-    const xpub = getAccountXpub();
-    const formattedBackendAccount = await _getFormattedBackendAccount({
+    const latestUpdate: ISysAccount = await this.getFormattedBackendAccount({
       url: network.url,
       xpub,
     });
-    const address = await hd.getNewReceivingAddress(true);
-    const label = _wallet.accounts[activeAccountId].label;
-    return {
+
+    const account = this.getInitialAccountData({
       label,
-      address,
-      ...formattedBackendAccount,
-    };
-  };
-
-  const createSeed = () => {
-    memMnemonic = generateMnemonic();
-
-    return memMnemonic;
-  };
-
-  const createKeyringVault = async (): Promise<IKeyringAccountState> => {
-    wallet = initialWalletState;
-
-    const { hash } = storage.get('vault-keys');
-    const encryptedMnemonic = CryptoJS.AES.encrypt(
-      memMnemonic,
-      hash
-    ).toString();
-
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      wallet,
-      network: wallet.activeNetwork,
-      mnemonic: encryptedMnemonic,
+      signer: this.hd,
+      sysAccount: latestUpdate,
+      xprv,
     });
 
-    const vault = await _createMainWallet();
-
-    wallet = {
-      ...wallet,
+    this.wallet = {
+      ...this.wallet,
       accounts: {
-        ...wallet.accounts,
-        [vault.id]: vault,
-      },
-      activeAccountId: vault.id,
-    };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet, lastLogin: 0 });
-
-    return vault;
-  };
-
-  const createHardwareWallet = async () => {
-    await initialize();
-
-    const trezorSigner = new sys.utils.TrezorSigner();
-
-    const { _main } = getSigners();
-
-    if (!hd.mnemonic) {
-      const { _hd } = getSigners();
-
-      hd = _hd;
-    }
-
-    await trezorSigner.createAccount();
-
-    const createdAccount = await _getFormattedBackendAccount({
-      url: _main.blockbookURL,
-      xpub: hd.getAccountXpub(),
-    });
-
-    const address = await hd.getNewReceivingAddress(true);
-
-    const account = _getInitialAccountData({
-      label: `Trezor ${hd.Signer.accountIndex + 1}`,
-      createdAccount: {
-        address,
-        isTrezorWallet: true,
-        ...createdAccount,
-      },
-      xprv: getEncryptedXprv(),
-      signer: hd,
-    });
-
-    const { wallet: _wallet } = getDecryptedVault();
-
-    wallet = {
-      ..._wallet,
-      accounts: {
-        ..._wallet.accounts,
-        [account.id]: account,
-      },
-      activeAccountId: account.id,
-    };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-    return account;
-  };
-
-  const login = async (password: string): Promise<IKeyringAccountState> => {
-    if (!checkPassword(password)) throw new Error('Invalid password');
-    wallet = await _unlockWallet(password);
-    const { activeAccountId } = wallet;
-
-    _updateUnlocked();
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet, lastLogin: 0 });
-
-    addAccountToSigner(wallet.accounts[activeAccountId].id);
-
-    return wallet.accounts[activeAccountId];
-  };
-
-  const removeAccount = (accountId: number) => {
-    delete wallet.accounts[accountId];
-  };
-
-  const forgetMainWallet = (pwd: string) => {
-    if (!checkPassword(pwd)) throw new Error('Invalid password');
-
-    _clearTemporaryLocalKeys();
-  };
-
-  const getEncryptedXprv = () =>
-    CryptoJS.AES.encrypt(
-      _getEncryptedPrivateKeyFromHd(),
-      storage.get('vault-keys').hash
-    ).toString();
-
-  const validateSeed = (seedphrase: string) => {
-    if (validateMnemonic(seedphrase)) {
-      memMnemonic = seedphrase;
-
-      return true;
-    }
-
-    return false;
-  };
-
-  const getDecryptedPrivateKey = (key: string) => {
-    if (!checkPassword(key)) return '';
-
-    const { wallet: _wallet } = getDecryptedVault();
-    const { hash } = storage.get('vault-keys');
-    const { activeAccountId } = _wallet;
-
-    const accountXprv = _wallet.accounts[activeAccountId].xprv;
-
-    return CryptoJS.AES.decrypt(accountXprv, hash).toString(CryptoJS.enc.Utf8);
-  };
-
-  /** get updates */
-  const getLatestUpdateForAccount = async () => {
-    const vault = getDecryptedVault();
-
-    wallet = vault.wallet;
-
-    setEncryptedVault({ ...vault, wallet });
-    //TODO: Transform this into a function to be reused
-    let checkExplorer = false;
-    try {
-      //Only trezor blockbooks are accepted as endpoint for UTXO chains for now
-      const rpcoutput = await (
-        await fetch(wallet.activeNetwork.url + 'api/v2')
-      ).json();
-      checkExplorer = rpcoutput.blockbook.coin ? true : false;
-    } catch (e) {
-      //Its not a blockbook, so it might be a ethereum RPC
-      checkExplorer = false;
-    }
-
-    const isSyscoinChain =
-      Boolean(wallet.networks.syscoin[wallet.activeNetwork.chainId]) &&
-      checkExplorer;
-
-    const latestUpdate = isSyscoinChain
-      ? await _getLatestUpdateForSysAccount()
-      : await _getLatestUpdateForWeb3Accounts();
-
-    const { wallet: _updatedWallet } = getDecryptedVault();
-
-    return {
-      accountLatestUpdate: latestUpdate,
-      walleAccountstLatestUpdate: _updatedWallet.accounts,
-    };
-  };
-
-  const _setSignerByChain = async (
-    network: INetwork,
-    chain: string
-  ): Promise<{ rpc: any; isTestnet: boolean }> => {
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      network,
-    });
-    if (chain === 'syscoin') {
-      const response = await validateSysRpc(network.url);
-
-      if (!response.valid) throw new Error('Invalid network');
-
-      const rpc = network.default ? null : await getSysRpc(network);
-
-      return {
-        rpc,
-        isTestnet: response.chain === 'test',
-      };
-    }
-    const newNetwork =
-      getDecryptedVault().wallet.networks.ethereum[network.chainId];
-
-    if (!newNetwork) throw new Error('Network not found');
-
-    await jsonRpcRequest(network.url, 'eth_chainId');
-
-    setActiveNetwork(newNetwork);
-    setEncryptedVault({
-      ...getDecryptedVault(),
-      isTestnet: false,
-    });
-    return {
-      rpc: null,
-      isTestnet: false,
-    };
-  };
-
-  /** networks */
-  const setSignerNetwork = async (
-    network: INetwork,
-    chain: string
-  ): Promise<IKeyringAccountState> => {
-    const { wallet: _wallet } = getDecryptedVault();
-
-    const networksByChain = _wallet.networks[chain];
-
-    wallet = {
-      ..._wallet,
-      networks: {
-        ..._wallet.networks,
-        [chain]: {
-          ...networksByChain,
-          [network.chainId]: network,
-        },
-      },
-      activeNetwork: network,
-    };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-    await _setSignerByChain(network, chain);
-
-    if (chain === 'syscoin') {
-      const { rpc, isTestnet } = await _setSignerByChain(network, chain);
-
-      setEncryptedVault({ ...getDecryptedVault(), isTestnet, rpc });
-    }
-
-    const account = await _getAccountForNetwork({
-      isSyscoinChain: chain === 'syscoin',
-    });
-
-    wallet = {
-      ...wallet,
-      accounts: {
-        ...wallet.accounts,
-        [account.id]: account,
-      },
-      activeAccountId: account.id,
-    };
-
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
-
-    return account;
-  };
-
-  const addAccountToSigner = (accountId: number) => {
-    if (accountId === 0) return;
-    if (hd.Signer.accounts[accountId]) return;
-
-    const childAccount = hd.deriveAccount(accountId);
-
-    const derivedAccount = new fromZPrv(
-      childAccount,
-      hd.Signer.pubTypes,
-      hd.Signer.networks
-    );
-
-    hd.Signer.accounts.push(derivedAccount);
-  };
-
-  const addNewAccount = async (label?: string) => {
-    const { network, mnemonic } = getDecryptedVault();
-    //TODO: Transform this into a function to be reused
-    let checkExplorer = false;
-    try {
-      //Only trezor blockbooks are accepted as endpoint for UTXO chains for now
-      const rpcoutput = await (
-        await fetch(wallet.activeNetwork.url + 'api/v2')
-      ).json();
-      checkExplorer = rpcoutput.blockbook.coin ? true : false;
-    } catch (e) {
-      //Its not a blockbook, so it might be a ethereum RPC
-      checkExplorer = false;
-    }
-
-    const isSyscoinChain =
-      Boolean(wallet.networks.syscoin[network.chainId]) && checkExplorer;
-
-    if (isSyscoinChain) {
-      if (!hd.mnemonic) {
-        const { _hd } = getSigners();
-
-        hd = _hd;
-      }
-
-      const id = hd.createAccount();
-      const xpub = hd.getAccountXpub();
-      const xprv = getEncryptedXprv();
-
-      const formattedBackendAccount = await _getFormattedBackendAccount({
-        url: network.url,
-        xpub,
-      });
-
-      const address = await hd.getNewReceivingAddress(true);
-
-      const latestUpdate = {
-        address,
-        ...formattedBackendAccount,
-      };
-
-      const account = _getInitialAccountData({
-        label,
-        signer: hd,
-        createdAccount: latestUpdate,
-        xprv,
-      });
-
-      const { wallet: _wallet } = getDecryptedVault();
-
-      wallet = {
-        ..._wallet,
-        accounts: {
-          ..._wallet.accounts,
+        ...this.wallet.accounts,
+        [KeyringAccountType.HDAccount]: {
+          ...this.wallet.accounts[KeyringAccountType.HDAccount],
           [id]: account,
         },
-        activeAccountId: account.id,
-      };
+      },
+      activeAccountId: account.id,
+    };
 
-      setEncryptedVault({ ...getDecryptedVault(), wallet });
+    return {
+      ...account,
+      id,
+    };
+  }
 
-      return {
-        ...account,
-        id,
-      };
-    }
-
-    if (!mnemonic) {
-      throw new Error('Seed phrase is required to create a new account.');
-    }
-
-    const { wallet: _wallet } = getDecryptedVault();
-    const { length } = Object.values(_wallet.accounts);
-    const seed = await mnemonicToSeed(getDecryptedMnemonic());
+  private async addNewAccountToEth(label?: string) {
+    const { length } = Object.values(
+      this.wallet.accounts[KeyringAccountType.HDAccount]
+    );
+    const seed = await mnemonicToSeed(this.memMnemonic);
     const privateRoot = hdkey.fromMasterSeed(seed);
     const derivedCurrentAccount = privateRoot.derivePath(
-      `m/44'/60'/0'/0/${length}`
+      `${ethHdPath}/0/${length}`
     );
     const newWallet = derivedCurrentAccount.getWallet();
     const address = newWallet.getAddressString();
     const xprv = newWallet.getPrivateKeyString();
     const xpub = newWallet.getPublicKeyString();
 
-    const basicAccountInfo = await _getBasicWeb3AccountInfo(
+    const basicAccountInfo = await this.getBasicWeb3AccountInfo(
       address,
       length,
       label
     );
 
-    const { hash } = storage.get('vault-keys');
-
-    const createdAccount = {
+    const createdAccount: IKeyringAccountState = {
       address,
       xpub,
-      xprv: CryptoJS.AES.encrypt(xprv, hash).toString(),
+      xprv: CryptoJS.AES.encrypt(xprv, this.memPassword).toString(),
+      isImported: false,
       ...basicAccountInfo,
     };
 
-    wallet = {
-      ..._wallet,
+    this.wallet = {
+      ...this.wallet,
       accounts: {
-        ..._wallet.accounts,
-        [createdAccount.id]: createdAccount,
+        ...this.wallet.accounts,
+        [KeyringAccountType.HDAccount]: {
+          ...this.wallet.accounts[KeyringAccountType.HDAccount],
+          [createdAccount.id]: createdAccount,
+        },
       },
       activeAccountId: createdAccount.id,
     };
 
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
-
     return createdAccount;
+  }
+
+  private getBasicWeb3AccountInfo = async (
+    address: string,
+    id: number,
+    label?: string
+  ) => {
+    const balance = await this.ethereumTransaction.getBalance(address);
+
+    return {
+      id,
+      isTrezorWallet: false,
+      label: label ? label : `Account ${id + 1}`,
+      balances: {
+        syscoin: 0,
+        ethereum: balance,
+      },
+    };
   };
 
-  const removeNetwork = (chain: string, chainId: number) => {
-    // @ts-ignore
-    delete wallet.networks[chain][chainId];
+  private updateWeb3Accounts = async () => {
+    const { accounts, activeAccountId, activeAccountType } = this.wallet;
+
+    //Account of HDAccount is always initialized as it is required to create a network
+    for (const index in Object.values(accounts[KeyringAccountType.HDAccount])) {
+      const id = Number(index);
+
+      const label =
+        this.wallet.accounts[KeyringAccountType.HDAccount][id].label;
+
+      await this.setDerivedWeb3Accounts(id, label);
+    }
+    if (
+      accounts[KeyringAccountType.Imported] &&
+      Object.keys(accounts[KeyringAccountType.Imported]).length > 0
+    ) {
+      await this.updateAllPrivateKeyAccounts();
+    }
+
+    return this.wallet.accounts[activeAccountType][activeAccountId];
   };
 
-  const setActiveAccount = async (accountId: number) => {
-    const { wallet: _wallet } = getDecryptedVault();
+  private setDerivedWeb3Accounts = async (id: number, label: string) => {
+    const seed = await mnemonicToSeed(this.memMnemonic);
+    const privateRoot = hdkey.fromMasterSeed(seed);
 
-    wallet = {
-      ..._wallet,
-      activeAccountId: _wallet.accounts[accountId].id,
+    const derivedCurrentAccount = privateRoot.derivePath(
+      `${ethHdPath}/0/${String(id)}`
+    );
+
+    const derievedWallet = derivedCurrentAccount.getWallet();
+    const address = derievedWallet.getAddressString();
+    const xprv = derievedWallet.getPrivateKeyString();
+    const xpub = derievedWallet.getPublicKeyString();
+
+    const basicAccountInfo = await this.getBasicWeb3AccountInfo(
+      address,
+      id,
+      label
+    );
+
+    const createdAccount = {
+      address,
+      xpub,
+      xprv: CryptoJS.AES.encrypt(xprv, this.memPassword).toString(),
+      isImported: false,
+      ...basicAccountInfo,
     };
 
-    setEncryptedVault({ ...getDecryptedVault(), wallet });
+    this.wallet.accounts[KeyringAccountType.HDAccount][id] = createdAccount;
   };
 
-  return {
-    addNewAccount,
-    checkPassword,
-    createKeyringVault,
-    createSeed,
-    forgetMainWallet,
-    getAccounts,
-    getAccountById,
-    getAccountXpub,
-    getChangeAddress,
-    getDecryptedMnemonic,
-    getDecryptedPrivateKey,
-    getEncryptedMnemonic,
-    getEncryptedXprv,
-    getLatestUpdateForAccount,
-    getNetwork,
-    getPrivateKeyByAccountId,
-    getSeed,
-    getState,
-    handleImportAccountByPrivateKey,
-    isUnlocked,
-    unlockedByPassword,
-    login,
-    logout,
-    removeAccount,
-    removeNetwork,
-    addAccountToSigner,
-    setActiveAccount,
-    setStorage,
-    setSignerNetwork,
-    setWalletPassword,
-    trezor: {
-      createHardwareWallet,
-    },
-    validateSeed,
+  private getSignerUTXO = async (
+    network: INetwork
+  ): Promise<{ rpc: any; isTestnet: boolean }> => {
+    if (network.default) {
+      const { chain, valid } = await validateSysRpc(network.url);
+      if (!valid) throw new Error('Invalid network');
+      return {
+        rpc: { formattedNetwork: network, networkConfig: null },
+        isTestnet: chain === 'test',
+      };
+    }
+    const { rpc, chain } = await getSysRpc(network);
+
+    return {
+      rpc,
+      isTestnet: chain === 'test',
+    };
   };
-};
+
+  private setSignerEVM = async (network: INetwork): Promise<void> => {
+    try {
+      const web3Provider = new ethers.providers.JsonRpcProvider(network.url);
+      const { chainId } = await web3Provider.getNetwork();
+      if (network.chainId !== chainId) {
+        throw new Error(
+          `SetSignerEVM: Wrong network information expected ${network.chainId} received ${chainId}`
+        );
+      }
+      this.ethereumTransaction.setWeb3Provider(network);
+    } catch (error) {
+      throw new Error(`SetSignerEVM: Failed with ${error}`);
+    }
+  };
+
+  private updateUTXOAccounts = async (
+    rpc: {
+      formattedNetwork: INetwork;
+      networkConfig?: {
+        networks: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork };
+        types: { xPubType: IPubTypes; zPubType: IPubTypes };
+      };
+    },
+    isTestnet: boolean
+  ) => {
+    const accounts = this.wallet.accounts[KeyringAccountType.HDAccount];
+    const { hd, main } = getSyscoinSigners({
+      mnemonic: this.memMnemonic,
+      isTestnet,
+      rpc,
+    });
+    this.hd = hd;
+    this.syscoinSigner = main;
+    const walletAccountsArray = Object.values(accounts);
+
+    // Create an array of promises.
+    const accountPromises = walletAccountsArray.map(async ({ id }) => {
+      await this.addUTXOAccount(Number(id));
+    });
+    //Alternative solution needs refining
+    // // Wait for all promises to resolve.
+    // await Promise.all(accountPromises);
+    // Create an array of promises.
+    // const accountPromises = walletAccountsArray.map(({ id }) => {
+    //   // eslint-disable-next-line no-async-promise-executor
+    //   return new Promise<void>(async (resolve) => {
+    //     if (!hd.Signer.accounts[Number(id)]) {
+    //       await this.addUTXOAccount(Number(id));
+    //     }
+    //     resolve();
+    //   });
+    // });
+
+    // Wait for all promises to resolve.
+    await Promise.all(accountPromises);
+  };
+
+  private clearTemporaryLocalKeys = () => {
+    this.wallet = initialWalletState;
+
+    setEncryptedVault(
+      {
+        mnemonic: '',
+      },
+      this.memPassword
+    );
+
+    this.logout();
+  };
+
+  private logout = () => {
+    this.hd = new sys.utils.HDSigner('');
+
+    this.memPassword = '';
+    this.memMnemonic = '';
+  };
+
+  private isSyscoinChain = (network: any) =>
+    Boolean(this.wallet.networks.syscoin[network.chainId]) &&
+    network.url.includes('blockbook');
+
+  private generateSalt = () => crypto.randomBytes(16).toString('hex');
+
+  // ===================================== PRIVATE KEY ACCOUNTS METHODS - SIMPLE KEYRING ===================================== //
+  private async updatePrivWeb3Account(account: IKeyringAccountState) {
+    const balance = await this.ethereumTransaction.getBalance(account.address);
+
+    const updatedAccount = {
+      ...account,
+      balances: {
+        syscoin: 0,
+        ethereum: balance,
+      },
+    } as IKeyringAccountState;
+
+    return updatedAccount;
+  }
+
+  private async restoreWallet() {
+    if (!this.memMnemonic) {
+      const { mnemonic } = getDecryptedVault(this.memPassword);
+      this.memMnemonic = CryptoJS.AES.decrypt(
+        mnemonic,
+        this.memPassword
+      ).toString(CryptoJS.enc.Utf8);
+    }
+    if (this.activeChain === INetworkType.Syscoin) {
+      const { rpc, isTestnet } = await this.getSignerUTXO(
+        this.wallet.activeNetwork
+      );
+      await this.updateUTXOAccounts(rpc, isTestnet);
+    }
+  }
+
+  private async _getPrivateKeyAccountInfos(privKey: string, label?: string) {
+    const { accounts } = this.wallet;
+
+    //Validate if the private key value that we receive already starts with 0x or not
+    const hexPrivateKey =
+      privKey.slice(0, 2) === '0x' ? privKey : `0x${privKey}`;
+
+    const importedAccountValue =
+      this.ethereumTransaction.importAccount(hexPrivateKey);
+
+    const { address, publicKey, privateKey } = importedAccountValue;
+
+    //Validate if account already exists
+    const accountAlreadyExists =
+      (accounts[KeyringAccountType.Imported] &&
+        Object.values(
+          accounts[KeyringAccountType.Imported] as IKeyringAccountState[]
+        ).some((account) => account.address === address)) ||
+      Object.values(
+        accounts[KeyringAccountType.HDAccount] as IKeyringAccountState[]
+      ).some((account) => account.address === address); //Find a way to verify if private Key is not par of seed wallet derivation path
+
+    if (accountAlreadyExists)
+      throw new Error(
+        'Account already exists, try again with another Private Key.'
+      );
+
+    const ethereumBalance = await this.ethereumTransaction.getBalance(address);
+    const id =
+      Object.values(accounts[KeyringAccountType.Imported]).length <= 1
+        ? 0
+        : Object.values(accounts).length;
+
+    const importedAccount = {
+      ...initialActiveImportedAccountState,
+      address,
+      label: label ? label : `Imported ${id + 1}`,
+      id: id,
+      balances: {
+        syscoin: 0,
+        ethereum: ethereumBalance,
+      },
+      xprv: CryptoJS.AES.encrypt(privateKey, this.memPassword).toString(),
+      xpub: publicKey,
+      assets: {
+        syscoin: [],
+        ethereum: [],
+      },
+    } as IKeyringAccountState;
+
+    return importedAccount;
+  }
+
+  public async importAccount(privKey: string, label?: string) {
+    const importedAccount = await this._getPrivateKeyAccountInfos(
+      privKey,
+      label
+    );
+    this.wallet.accounts[KeyringAccountType.Imported][importedAccount.id] =
+      importedAccount;
+
+    return importedAccount;
+  }
+  //TODO: validate updateAllPrivateKeyAccounts updating 2 accounts or more works properly
+  public async updateAllPrivateKeyAccounts() {
+    const accountPromises = Object.values(
+      this.wallet.accounts[KeyringAccountType.Imported]
+    ).map(async (account) => await this.updatePrivWeb3Account(account));
+
+    const updatedWallets = await Promise.all(accountPromises);
+
+    // const updatedWallets = await Promise.all(
+    //   Object.values(this.wallet.accounts[KeyringAccountType.Imported]).map(
+    //     async (account) => await this.updatePrivWeb3Account(account)
+    //   )
+    // );
+
+    this.wallet.accounts[KeyringAccountType.Imported] = updatedWallets;
+  }
+}

@@ -39,29 +39,6 @@ export const txUtils = () => {
 
   const getFeeRate = (fee: number): bigint => new sys.utils.BN(fee * 1e8);
 
-  //todo: move this function inside eth manager (web3Wallet)
-  // const getGasUsedInTransaction = async (transactionHash: string) => {
-  //   try {
-  //     const { gasUsed, effectiveGasPrice } =
-  //       await web3Provider.getTransactionReceipt(transactionHash);
-
-  //     if (!gasUsed || !effectiveGasPrice) {
-  //       throw new Error(
-  //         'Can not find this transaction at the current network, please verify it and try again.'
-  //       );
-  //     }
-
-  //     return {
-  //       gasUsed: Number(gasUsed),
-  //       effectiveGasPrice: Number(effectiveGasPrice),
-  //     };
-  //   } catch (error) {
-  //     throw new Error(
-  //       `Incorrect transaction hash, please try again with a correct one!`
-  //     );
-  //   }
-  // };
-
   return {
     getPsbtFromJson,
     getRawTransaction,

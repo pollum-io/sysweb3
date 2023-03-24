@@ -2,9 +2,9 @@ import coinSelectSyscoin from 'coinselectsyscoin';
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
 
-import { getSigners } from '../signers';
-import { getDecryptedVault } from '../storage';
+import { SyscoinHDSigner } from '../signers';
 import { ISyscoinTransactions } from '../types';
+import { INetwork } from '@pollum-io/sysweb3-network/src';
 import {
   INewNFT,
   isBase64,
@@ -14,7 +14,7 @@ import {
   txUtils,
   getAsset,
   countDecimals,
-} from '@pollum-io/sysweb3-utils/src'; // TODO: temp
+} from '@pollum-io/sysweb3-utils/src';
 
 type EstimateFeeParams = {
   outputs: { value: number; address: string }[];
@@ -24,15 +24,32 @@ type EstimateFeeParams = {
   explorerUrl: string;
 };
 
-export const SyscoinTransactions = (): ISyscoinTransactions => {
-  const estimateSysTransactionFee = async ({
+export class SyscoinTransactions implements ISyscoinTransactions {
+  //TODO: test and validate for general UTXO chains which will be the working methods, for now we just allow contentScripts for syscoin Chains
+  private getNetwork: () => INetwork;
+  private getSigner: () => {
+    hd: SyscoinHDSigner;
+    main: any;
+  };
+  constructor(
+    getNetwork: () => INetwork,
+    getSyscoinSigner: () => {
+      hd: SyscoinHDSigner;
+      main: any;
+    }
+  ) {
+    this.getNetwork = getNetwork;
+    this.getSigner = getSyscoinSigner;
+  }
+
+  public estimateSysTransactionFee = async ({
     outputs,
     changeAddress,
     feeRateBN,
     xpub,
     explorerUrl,
   }: EstimateFeeParams) => {
-    const { _hd } = getSigners();
+    const { hd } = this.getSigner();
 
     const txOpts = { rbf: true };
 
@@ -40,7 +57,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     const utxosSanitized = sys.utils.sanitizeBlockbookUTXOs(
       null,
       utxos,
-      _hd.Signer.network
+      hd.Signer.network
     );
 
     // 0 feerate to create tx, then find bytes and multiply feeRate by bytes to get estimated txfee
@@ -60,12 +77,20 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     return txFee;
   };
 
-  const getRecommendedFee = async (explorerUrl: string): Promise<number> =>
-    (await sys.utils.fetchEstimateFee(explorerUrl, 1)) / 10 ** 8;
+  public getRecommendedFee = async (explorerUrl: string): Promise<number> => {
+    return (await sys.utils.fetchEstimateFee(explorerUrl, 1)) / 10 ** 8;
+  };
 
-  const { getFeeRate, getRawTransaction, getTokenMap } = txUtils();
+  public txUtilsFunctions = () => {
+    const { getFeeRate, getRawTransaction, getTokenMap } = txUtils();
+    return {
+      getFeeRate,
+      getRawTransaction,
+      getTokenMap,
+    };
+  };
 
-  const _createMintedToken = async ({
+  public createMintedToken = async ({
     txid,
     guid,
     initialSupply,
@@ -80,12 +105,14 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     receivingAddress: string;
     fee: number;
   }) => {
-    const { network } = getDecryptedVault();
+    const network = this.getNetwork();
 
-    const { _hd, _main } = getSigners();
+    const { hd, main } = this.getSigner();
 
     return await new Promise((resolve: any, reject: any) => {
       const interval = setInterval(async () => {
+        const { getRawTransaction, getFeeRate, getTokenMap } =
+          this.txUtilsFunctions();
         const createdTokenTransaction = await getRawTransaction(
           network.url,
           txid
@@ -95,7 +122,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
           createdTokenTransaction &&
           createdTokenTransaction.confirmations > 1
         ) {
-          const changeAddress = await _hd.getNewChangeAddress(true);
+          const changeAddress = await hd.getNewChangeAddress(true);
 
           try {
             const tokenMap = getTokenMap({
@@ -106,7 +133,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
             });
             const txOptions = { rbf: true };
 
-            const pendingTransaction = await _main.assetSend(
+            const pendingTransaction = await main.assetSend(
               txOptions,
               tokenMap,
               receivingAddress,
@@ -137,8 +164,8 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     });
   };
 
-  const transferAssetOwnership = async (transaction: any): Promise<ITxid> => {
-    const { _hd, _main } = getSigners();
+  public transferAssetOwnership = async (transaction: any): Promise<ITxid> => {
+    const { hd, main } = this.getSigner();
     const { fee, assetGuid, newOwner } = transaction;
 
     const feeRate = new sys.utils.BN(fee * 1e8);
@@ -149,7 +176,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
       [
         assetGuid,
         {
-          changeAddress: await _hd.getNewChangeAddress(true),
+          changeAddress: await hd.getNewChangeAddress(true),
           outputs: [
             {
               value: new sys.utils.BN(0),
@@ -160,7 +187,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
       ],
     ]);
 
-    const pendingTx = await _main.assetUpdate(
+    const pendingTx = await main.assetUpdate(
       assetGuid,
       assetOpts,
       txOpts,
@@ -179,8 +206,8 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
   };
 
   // todo: create temp tx type new token
-  const _getTokenUpdateOptions = (temporaryTransaction: any) => {
-    const { _main } = getSigners();
+  public getTokenUpdateOptions = (temporaryTransaction: any) => {
+    const { main } = this.getSigner();
 
     const {
       capabilityflags,
@@ -204,7 +231,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     if (notaryAddress) {
       const notaryPayment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: notaryAddress,
-        network: _main.network,
+        network: main.network,
       });
 
       tokenOptions = {
@@ -222,7 +249,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     if (payoutAddress) {
       const payment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: payoutAddress,
-        network: _main.network,
+        network: main.network,
       });
 
       const auxFeeKeyID = Buffer.from(payment.hash.toString('hex'), 'hex');
@@ -240,8 +267,8 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
   };
 
   // todo: create temp tx type new token
-  const _getTokenCreationOptions = (temporaryTransaction: any) => {
-    const { _main } = getSigners();
+  public getTokenCreationOptions = (temporaryTransaction: any) => {
+    const { main } = this.getSigner();
 
     const {
       capabilityflags,
@@ -271,7 +298,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     if (notaryAddress) {
       const notaryPayment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: notaryAddress,
-        network: _main.network,
+        network: main.network,
       });
 
       tokenOptions = {
@@ -289,7 +316,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     if (payoutAddress) {
       const payment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: payoutAddress,
-        network: _main.network,
+        network: main.network,
       });
 
       const auxFeeKeyID = Buffer.from(payment.hash.toString('hex'), 'hex');
@@ -305,8 +332,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
 
     return tokenOptions;
   };
-
-  const confirmTokenCreation = async (
+  confirmTokenCreation = async (
     // todo: type
     temporaryTransaction: any
   ): Promise<{
@@ -315,34 +341,37 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     confirmations: number;
     guid: string;
   }> => {
-    const { _hd, _main } = getSigners();
+    const { hd, main } = this.getSigner();
+    const { getRawTransaction } = this.txUtilsFunctions();
 
     const { precision, initialSupply, maxsupply, fee, receiver } =
       temporaryTransaction;
 
     const amount = maxsupply * 10 ** precision;
 
-    const tokenOptions = _getTokenCreationOptions(temporaryTransaction);
+    const tokenOptions = this.getTokenCreationOptions(temporaryTransaction);
     const txOptions = { rbf: true };
 
-    const pendingTransaction = await _main.assetNew(
+    const newChangeAddress = await hd.getNewChangeAddress(true);
+    const newFee = new sys.utils.BN(fee * 1e8);
+
+    const pendingTransaction = await main.assetNew(
       tokenOptions,
       txOptions,
-      await _hd.getNewChangeAddress(true),
+      newChangeAddress,
       receiver,
-      new sys.utils.BN(fee * 1e8)
+      newFee
     );
 
     const txid = pendingTransaction.extractTransaction().getId();
-
-    const transactionData = await getRawTransaction(_main.blockbookURL, txid);
+    const transactionData = await getRawTransaction(main.blockbookURL, txid);
     const assets = syscointx.getAssetsFromTx(
       pendingTransaction.extractTransaction()
     );
     const createdTokenGuid = assets.keys().next().value;
 
     if (initialSupply && initialSupply < amount) {
-      _createMintedToken({
+      this.createMintedToken({
         txid,
         guid: createdTokenGuid,
         initialSupply,
@@ -360,14 +389,15 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     };
   };
 
-  const confirmTokenMint = async (temporaryTransaction: any): Promise<any> => {
-    const { _main } = getSigners();
+  public confirmTokenMint = async (temporaryTransaction: any): Promise<any> => {
+    const { getTokenMap } = this.txUtilsFunctions();
+    const { main } = this.getSigner();
 
     const { fee, assetGuid, amount, receivingAddress } = temporaryTransaction;
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    const token = await getAsset(_main.blockbookURL, assetGuid);
+    const token = await getAsset(main.blockbookURL, assetGuid);
 
     if (!token)
       throw new Error(
@@ -384,7 +414,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     });
 
     try {
-      const pendingTransaction = await _main.assetSend(
+      const pendingTransaction = await main.assetSend(
         txOptions,
         tokenMap,
         null,
@@ -405,7 +435,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     }
   };
 
-  const _createParentToken = async ({
+  public createParentToken = async ({
     tokenOptions,
     feeRate,
   }: {
@@ -417,12 +447,12 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     };
     feeRate: number;
   }) => {
-    const { _hd, _main } = getSigners();
+    const { hd, main } = this.getSigner();
 
-    const tokenChangeAddress = await _hd.getNewChangeAddress(true);
+    const tokenChangeAddress = await hd.getNewChangeAddress(true);
     const txOptions = { rbf: true };
 
-    const pendingTransaction = await _main.assetNew(
+    const pendingTransaction = await main.assetNew(
       tokenOptions,
       txOptions,
       tokenChangeAddress,
@@ -447,11 +477,12 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     };
   };
 
-  const _nftCreationStep3 = async (
+  public nftCreationStep3 = async (
     tx: INewNFT,
     guid: string
   ): Promise<ITxid> => {
-    const { _main } = getSigners();
+    const { main } = this.getSigner();
+    const { getRawTransaction, getTokenMap } = this.txUtilsFunctions();
 
     const { receivingAddress } = tx;
 
@@ -466,7 +497,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
       receivingAddress,
     });
 
-    const pendingTransaction = await _main.assetUpdate(
+    const pendingTransaction = await main.assetUpdate(
       guid,
       tokenOptions,
       txOptions,
@@ -486,7 +517,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     return await new Promise((resolve, reject) => {
       const interval = setInterval(async () => {
         try {
-          const updateTx = await getRawTransaction(_main.blockbookURL, txid);
+          const updateTx = await getRawTransaction(main.blockbookURL, txid);
 
           if (updateTx.confirmations <= 0) return;
 
@@ -500,11 +531,12 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     });
   };
 
-  const _nftCreationStep2 = async (
+  public nftCreationStep2 = async (
     tx: INewNFT,
     guid: string
   ): Promise<ITxid> => {
-    const { _main } = getSigners();
+    const { main } = this.getSigner();
+    const { getRawTransaction, getTokenMap } = this.txUtilsFunctions();
 
     const { receivingAddress, precision, fee } = tx;
 
@@ -518,7 +550,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     });
 
     const txOptions = { rbf: true };
-    const pendingTransaction = await _main.assetSend(
+    const pendingTransaction = await main.assetSend(
       txOptions,
       tokenMap,
       null,
@@ -536,7 +568,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     return await new Promise((resolve, reject) => {
       const interval = setInterval(async () => {
         try {
-          const mintTx = await getRawTransaction(_main.blockbookURL, txid);
+          const mintTx = await getRawTransaction(main.blockbookURL, txid);
 
           if (mintTx.confirmations <= 0) return;
 
@@ -550,10 +582,11 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     });
   };
 
-  const _nftCreationStep1 = async (
+  public nftCreationStep1 = async (
     tx: INewNFT
   ): Promise<{ parent: { guid: string; txid: string } }> => {
-    const { _main } = getSigners();
+    const { main } = this.getSigner();
+    const { getRawTransaction } = this.txUtilsFunctions();
 
     const { fee, symbol, description, precision } = tx;
 
@@ -566,13 +599,13 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
       description,
     };
 
-    const parentToken = await _createParentToken({ tokenOptions, feeRate });
+    const parentToken = await this.createParentToken({ tokenOptions, feeRate });
 
     return await new Promise((resolve, reject) => {
       const interval = setInterval(async () => {
         try {
           const creationTx = await getRawTransaction(
-            _main.blockbookURL,
+            main.blockbookURL,
             parentToken.txid
           );
 
@@ -588,17 +621,17 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     });
   };
 
-  const confirmNftCreation = (tx: any) => {
+  confirmNftCreation = (tx: any) => {
     if (tx) {
       // create token
-      _nftCreationStep1(tx).then((createRes) => {
+      this.nftCreationStep1(tx).then((createRes) => {
         const {
           parent: { guid },
         } = createRes;
         // mint token
-        _nftCreationStep2(tx, guid).then(() => {
+        this.nftCreationStep2(tx, guid).then(() => {
           // update token
-          _nftCreationStep3(tx, guid);
+          this.nftCreationStep3(tx, guid);
         });
       });
       return { success: true };
@@ -606,7 +639,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     return { success: false };
   };
 
-  const _sendSignedPsbt = async ({
+  public signPSBT = async ({
     psbt,
     signer,
   }: {
@@ -616,24 +649,26 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     return sys.utils.exportPsbtToJson(await signer.sign(psbt));
   };
 
-  const _signAndSendPsbt = async ({
+  public signAndSendPsbt = async ({
     psbt,
-    assets,
-    signer,
+    notaryAssets,
   }: {
     psbt: string;
-    assets: string;
-    signer: any;
+    notaryAssets: any;
   }): Promise<JSON> => {
-    return sys.utils.exportPsbtToJson(await signer.sign(psbt));
+    const { main } = this.getSigner();
+    if (notaryAssets.size === 0) {
+      return await main.signAndSend(psbt);
+    } else {
+      return await main.signAndSend(psbt, notaryAssets);
+    }
   };
 
-  const signTransaction = async (
+  signTransaction = async (
     data: { psbt: string; assets: string },
-    isSendOnly: boolean
+    isSignOnly: boolean
   ): Promise<any> => {
-    // get trezor signer as well
-    const { _hd } = getSigners();
+    const { hd } = this.getSigner();
 
     if (!isBase64(data.psbt) || typeof data.assets !== 'string') {
       throw new Error(
@@ -644,27 +679,27 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     try {
       const response = sys.utils.importPsbtFromJson(data);
 
-      if (isSendOnly) {
-        return await _sendSignedPsbt({
+      if (isSignOnly) {
+        return await this.signPSBT({
           psbt: response.psbt,
-          signer: _hd,
+          signer: hd,
         });
       }
 
-      return await _signAndSendPsbt({
+      return await this.signAndSendPsbt({
         psbt: response.psbt,
-        assets: response.assets,
-        signer: _hd,
+        notaryAssets: response.assets,
       });
     } catch (error) {
-      throw new Error('Bad Request: Could not create transaction.');
+      throw new Error('Bad Request: Could not create transaction.', error);
     }
   };
 
-  const confirmUpdateToken = async (
+  public confirmUpdateToken = async (
     temporaryTransaction: ITokenUpdate
   ): Promise<ITxid> => {
-    const { _hd, _main } = getSigners();
+    const { hd, main } = this.getSigner(); //TODO: remove hd as its defined inside main
+    const { getTokenMap } = this.txUtilsFunctions();
 
     const { fee, assetGuid, assetWhiteList } = temporaryTransaction;
 
@@ -673,14 +708,14 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     try {
       const tokenMap = getTokenMap({
         guid: assetGuid,
-        changeAddress: await _hd.getNewChangeAddress(true),
+        changeAddress: await hd.getNewChangeAddress(true),
         amount: new sys.utils.BN(0),
-        receivingAddress: await _hd.getNewReceivingAddress(true),
+        receivingAddress: await hd.getNewReceivingAddress(true),
       });
 
-      const tokenOptions = _getTokenUpdateOptions(temporaryTransaction);
+      const tokenOptions = this.getTokenUpdateOptions(temporaryTransaction);
 
-      const pendingTransaction = await _main.assetUpdate(
+      const pendingTransaction = await main.assetUpdate(
         assetGuid,
         tokenOptions,
         txOptions,
@@ -703,14 +738,15 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     }
   };
 
-  const _confirmCustomTokenSend = async (
+  public confirmCustomTokenSend = async (
     temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
-    const { _main } = getSigners();
+    const { main } = this.getSigner();
+    const { getTokenMap } = this.txUtilsFunctions();
 
     const { amount, rbf, receivingAddress, fee, token } = temporaryTransaction;
 
-    const asset = await getAsset(_main.blockbookURL, token);
+    const asset = await getAsset(main.blockbookURL, token);
 
     if (!asset)
       throw new Error(
@@ -738,7 +774,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
         receivingAddress,
       });
 
-      const pendingTransaction = await _main.assetAllocationSend(
+      const pendingTransaction = await main.assetAllocationSend(
         txOptions,
         tokenOptions,
         null,
@@ -753,19 +789,19 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     }
   };
 
-  const _confirmNativeTokenSend = async (
+  public confirmNativeTokenSend = async (
     temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
-    const { _hd, _main } = getSigners();
+    const { hd, main } = this.getSigner();
 
     const { receivingAddress, amount, fee } = temporaryTransaction;
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
-    const xpub = _hd.getAccountXpub();
+    const xpub = hd.getAccountXpub();
 
     const backendAccount = await sys.utils.fetchBackendAccount(
-      _main.blockbookURL,
+      main.blockbookURL,
       xpub,
       {},
       true
@@ -780,17 +816,17 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
       },
     ];
 
-    const changeAddress = await _hd.getNewChangeAddress(true);
+    const changeAddress = await hd.getNewChangeAddress(true);
 
     const txOptions = { rbf: true };
 
     try {
-      const txFee = await estimateSysTransactionFee({
+      const txFee = await this.estimateSysTransactionFee({
         outputs,
         changeAddress,
         feeRateBN: feeRate,
         xpub,
-        explorerUrl: _main.blockbookURL,
+        explorerUrl: main.blockbookURL,
       });
 
       if (value.add(txFee).gte(backendAccount.balance)) {
@@ -802,7 +838,7 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
         ];
       }
 
-      const pendingTransaction = await _main.createTransaction(
+      const pendingTransaction = await main.createTransaction(
         txOptions,
         changeAddress,
         outputs,
@@ -819,26 +855,15 @@ export const SyscoinTransactions = (): ISyscoinTransactions => {
     }
   };
 
-  const sendTransaction = async (
+  public sendTransaction = async (
     temporaryTransaction: ITokenSend
   ): Promise<ITxid> => {
     const { isToken, token } = temporaryTransaction;
 
     if (isToken && token) {
-      return await _confirmCustomTokenSend(temporaryTransaction);
+      return await this.confirmCustomTokenSend(temporaryTransaction);
     }
 
-    return await _confirmNativeTokenSend(temporaryTransaction);
+    return await this.confirmNativeTokenSend(temporaryTransaction);
   };
-
-  return {
-    confirmNftCreation,
-    confirmTokenMint,
-    confirmTokenCreation,
-    confirmUpdateToken,
-    getRecommendedFee,
-    transferAssetOwnership,
-    sendTransaction,
-    signTransaction,
-  };
-};
+}

@@ -7,3 +7,4 @@ declare module 'coinselectsyscoin';
 interface Window {
   pali: Readonly<any>;
 }
+//TODO: remove window dependence

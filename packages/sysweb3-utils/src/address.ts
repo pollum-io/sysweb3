@@ -7,10 +7,10 @@ export const isValidEthereumAddress = (address: string) => {
   return ethers.utils.isAddress(address);
 };
 
-//TODO: this function needs to be refactorated to validate if its a valid bip84 address of any utxo chain
+//TODO: this function needs to be refactorated to validate with descriptors in mind
 export const isValidSYSAddress = (
   address: string,
-  bip44: number, //From pali bip44 is called chainId
+  purpose: number, //From pali purpose is called chainId
   verification = true
 ) => {
   if (!verification) return true;
@@ -21,8 +21,8 @@ export const isValidSYSAddress = (
       const decodedAddr = bech32.decode(address);
 
       if (
-        (bip44 === 57 && decodedAddr.prefix === 'sys') ||
-        (bip44 === 5700 && decodedAddr.prefix === 'tsys')
+        (purpose === 57 && decodedAddr.prefix === 'sys') ||
+        (purpose === 5700 && decodedAddr.prefix === 'tsys')
       ) {
         const encode = bech32.encode(decodedAddr.prefix, decodedAddr.words);
 

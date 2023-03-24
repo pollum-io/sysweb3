@@ -2,7 +2,7 @@
   "name": "@pollum-io/sysweb3-core",
   "version": "1.0.21",
   "description": "",
-  "main": "cjs/index.js",
+  "main": "esm/index.js",
   "types": "types/index.d.ts",
   "repository": {
     "type": "git",
@@ -13,7 +13,7 @@
   "private": false,
   "scripts": {
     "prebuild": "rimraf dist/",
-    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "build": "tsc && tsc -p tsconfig.json",
     "rollup": "rollup -c ../../scripts/config/rollup.config.js",
     "prerelease": "npm run build && npm version patch",
     "copy": "node ../../scripts/package/copy",
@@ -22,7 +22,6 @@
     "publish": "npm run prebuild && npm run build && npm run rollup && npm run prerelease && npm run copy && npm run release:npm",
     "type-check": "tsc --pretty --noEmit",
     "localTest": "npm run prebuild && npm run build && npm run rollup && npm run build && npm run copy"
-
   },
   "dependencies": {
     "rimraf": "^3.0.2"

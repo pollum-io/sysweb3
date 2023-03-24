@@ -104,15 +104,14 @@ export const validateSysRpc = async (
   chain: string;
 }> => {
   try {
-    const response = await (
-      await fetch(`${url.endsWith('/') ? url.slice(0, -1) : url}/api/v2`)
-    ).json();
+    const formatURL = `${url.endsWith('/') ? url.slice(0, -1) : url}/api/v2`;
+    const response = await (await fetch(formatURL)).json();
     const {
       blockbook: { coin },
       backend: { chain },
-    } = response.data;
+    } = response;
 
-    const valid = Boolean(response && coin && response.status === 200);
+    const valid = Boolean(response && coin);
 
     return {
       valid,
@@ -158,6 +157,7 @@ export const getBip44Chain = (coin: string, isTestnet?: boolean) => {
 };
 
 // TODO: type data with ICustomRpcParams later
+// TODO: type return correctly
 export const getSysRpc = async (data: any) => {
   try {
     const { valid, coin, chain } = await validateSysRpc(data.url);
@@ -173,7 +173,7 @@ export const getSysRpc = async (data: any) => {
     }
     const formattedNetwork = {
       url: data.url,
-      apiUrl: data.url, //apiURL and data URL are the same for blockbooks explorer TODO: remove this field from UTXO networks
+      apiUrl: data.url, //apiURL and URL are the same for blockbooks explorer TODO: remove this field from UTXO networks
       explorer,
       currency: nativeCurrency.symbol,
       label: data.label || coin,
