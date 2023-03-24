@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import CryptoJS from 'crypto-js';
 import { hdkey } from 'ethereumjs-wallet';
 import { ethers } from 'ethers';
+import mapValues from 'lodash/mapValues';
 import omit from 'lodash/omit';
 import sys from 'syscoinjs-lib';
 
@@ -256,14 +257,14 @@ export class KeyringManager {
     return account.xprv;
   };
 
-  public getCurrentActiveAccount = (): {
-    activeAccount: IKeyringAccountState;
+  public getActiveAccount = (): {
+    activeAccount: Omit<IKeyringAccountState, 'xprv'>;
     activeAccountType: KeyringAccountType;
   } => {
     const { accounts, activeAccountId, activeAccountType } = this.wallet;
 
     return {
-      activeAccount: accounts[activeAccountType][activeAccountId],
+      activeAccount: omit(accounts[activeAccountType][activeAccountId], 'xprv'),
       activeAccountType,
     };
   };
@@ -356,8 +357,25 @@ export class KeyringManager {
     }
     throw new Error('Invalid Seed');
   };
-  //todo: get state Should just be funcitonal for when a UTXO network is connected and must remove the xprv of each account
-  public getState = () => this.wallet;
+
+  // public getState = () => this.wallet;
+  public getUTXOState = () => {
+    if (this.activeChain !== INetworkType.Syscoin) {
+      throw new Error('Cannot get state in a ethereum network');
+    }
+
+    const utxOAccounts = mapValues(this.wallet.accounts.HDAccount, (value) =>
+      omit(value, 'xprv')
+    );
+
+    return {
+      ...this.wallet,
+      accounts: {
+        [KeyringAccountType.HDAccount]: utxOAccounts,
+        [KeyringAccountType.Imported]: {},
+      },
+    };
+  };
   public getActiveUTXOAccountState = () => {
     return {
       ...this.wallet.accounts.HDAccount[this.wallet.activeAccountId],
