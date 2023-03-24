@@ -1,5 +1,4 @@
 import { ethers } from 'ethers';
-import 'isomorphic-fetch';
 import mapValues from 'lodash/mapValues';
 import omit from 'lodash/omit';
 
@@ -61,10 +60,7 @@ describe('Keyring Manager and Ethereum Transaction tests', () => {
     );
 
     const network = keyringManager.getNetwork();
-    console.log(
-      'The current account',
-      keyringManager.getCurrentActiveAccount()
-    );
+    console.log('The current account', keyringManager.getActiveAccount());
 
     const createAccount = await keyringManager.importAccount(
       FAKE_PRIVATE_KEY as string,

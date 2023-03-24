@@ -530,9 +530,9 @@ export class KeyringManager {
   };
 
   private getBasicSysAccountInfo = async (xpub: string, id: number) => {
-    const network = this.wallet.activeNetwork;
+    if (!this.syscoinSigner) throw new Error('No HD Signer');
     const formattedBackendAccount = await this.getFormattedBackendAccount({
-      url: network.url,
+      url: this.syscoinSigner.blockbookURL,
       xpub,
     });
     return {
@@ -552,13 +552,18 @@ export class KeyringManager {
   }): Promise<ISysAccount> => {
     if (this.hd === null) throw new Error('No HD Signer');
     const options = 'details=basic';
-
-    const { balance } = await sys.utils.fetchBackendAccount(
-      url,
-      xpub,
-      options,
-      true
-    );
+    let balance = 0;
+    try {
+      const { balance: _balance } = await sys.utils.fetchBackendAccount(
+        url,
+        xpub,
+        options,
+        true
+      );
+      balance = _balance;
+    } catch (e) {
+      throw new Error(`Error fetching account from network ${url}: ${e}`);
+    }
     const stealthAddr = await this.hd.getNewReceivingAddress(true);
 
     return {
