@@ -6,7 +6,7 @@ import {
   BitcoinNetwork,
   IPubTypes,
   INetwork,
-} from '@pollum-io/sysweb3-network/src';
+} from '@pollum-io/sysweb3-network';
 
 export const getSyscoinSigners = ({
   mnemonic,

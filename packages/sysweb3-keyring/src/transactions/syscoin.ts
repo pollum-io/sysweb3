@@ -4,7 +4,7 @@ import syscointx from 'syscointx-js';
 
 import { SyscoinHDSigner } from '../signers';
 import { ISyscoinTransactions } from '../types';
-import { INetwork } from '@pollum-io/sysweb3-network/src';
+import { INetwork } from '@pollum-io/sysweb3-network';
 import {
   INewNFT,
   isBase64,
@@ -14,7 +14,7 @@ import {
   txUtils,
   getAsset,
   countDecimals,
-} from '@pollum-io/sysweb3-utils/src';
+} from '@pollum-io/sysweb3-utils';
 
 type EstimateFeeParams = {
   outputs: { value: number; address: string }[];

@@ -8,13 +8,13 @@ import {
   TransactionConfig,
 } from 'web3-core';
 
-import { INetwork, INetworkType } from '@pollum-io/sysweb3-network/src';
+import { INetwork, INetworkType } from '@pollum-io/sysweb3-network';
 import {
   ITokenMint,
   ITokenSend,
   ITokenUpdate,
   ITxid,
-} from '@pollum-io/sysweb3-utils/src';
+} from '@pollum-io/sysweb3-utils';
 
 export interface ITrezorWallet {
   createHardwareWallet: () => Promise<IKeyringAccountState>;
@@ -128,43 +128,29 @@ export interface ISyscoinTransactions {
 
 export interface IKeyringManager {
   addNewAccount: (label?: string) => Promise<IKeyringAccountState>;
-  checkPassword: (password: string) => boolean;
   createKeyringVault: () => Promise<IKeyringAccountState>;
-  createSeed: () => string;
   forgetMainWallet: (password: string) => void;
-  getAccounts: () => IKeyringAccountState[];
-  getAccountById: (id: number) => IKeyringAccountState;
+  getAccountById: (
+    id: number,
+    accountType: KeyringAccountType
+  ) => Omit<IKeyringAccountState, 'xprv'>;
   getAccountXpub: () => string;
-  getChangeAddress: (accountId: number) => string;
-  getDecryptedMnemonic: () => string;
-  getDecryptedPrivateKey: (key: string) => string;
-  getEncryptedMnemonic: () => string;
   getEncryptedXprv: () => string;
-  getLatestUpdateForAccount: () => Promise<any>;
   getNetwork: () => INetwork;
-  getPrivateKeyByAccountId: (id: number) => string;
+  getPrivateKeyByAccountId: (
+    id: number,
+    acountType: KeyringAccountType,
+    pwd: string
+  ) => string;
   getSeed: (password: string) => string;
-  getState: () => IWalletState;
-  handleImportAccountByPrivateKey: (
-    privKey: string,
-    label?: string
-  ) => Promise<IKeyringAccountState>;
   isUnlocked: () => boolean;
-  unlockedByPassword: () => boolean;
-  login: (password: string) => Promise<IKeyringAccountState>;
   logout: () => void;
-  removeAccount: (id: number) => void;
-  removeNetwork: (chain: string, chainId: number) => void;
-  addAccountToSigner: (accountId: number) => void;
-  setActiveAccount: (accountId: number) => void;
-  setStorage: (client: any) => void;
-  setSignerNetwork: (
-    network: INetwork,
-    chain: string
-  ) => Promise<IKeyringAccountState>;
+  setActiveAccount: (
+    accountId: number,
+    accountType: KeyringAccountType
+  ) => void;
+  setSignerNetwork: (network: INetwork, chain: string) => Promise<boolean>;
   setWalletPassword: (password: string) => void;
-  trezor: ITrezorWallet;
-  validateSeed: (seed: string) => boolean;
 }
 
 export enum KeyringAccountType {

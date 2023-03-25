@@ -22,8 +22,9 @@ import {
   IWalletState,
   KeyringAccountType,
   IEthereumTransactions,
+  IKeyringManager,
 } from './types';
-import * as sysweb3 from '@pollum-io/sysweb3-core/src';
+import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
   BitcoinNetwork,
   getSysRpc,
@@ -31,7 +32,7 @@ import {
   validateSysRpc,
   INetwork,
   INetworkType,
-} from '@pollum-io/sysweb3-network/src';
+} from '@pollum-io/sysweb3-network';
 
 export interface ISysAccount {
   xprv?: string;
@@ -51,7 +52,7 @@ export interface ISysAccountWithId extends ISysAccount {
   id: number;
 }
 const ethHdPath: Readonly<string> = "m/44'/60'/0'";
-export class KeyringManager {
+export class KeyringManager implements IKeyringManager {
   private storage: any; //todo type
   private wallet: IWalletState; //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
 
@@ -137,6 +138,38 @@ export class KeyringManager {
     return account.isImported === true
       ? KeyringAccountType.Imported
       : KeyringAccountType.HDAccount;
+  };
+
+  private checkPassword = (pwd: string) => {
+    const { hash, salt } = this.storage.get('vault-keys');
+
+    const hashPassword = this.encryptSHA512(pwd, salt);
+
+    return hashPassword === hash;
+  };
+
+  //todo: need refactor and also for its functions
+  public login = async (
+    password: string
+  ): Promise<Omit<IKeyringAccountState, 'xprv'>> => {
+    if (!this.checkPassword(password)) {
+      throw new Error('Invalid password');
+    }
+
+    this.wallet = await this.unlockWallet(password);
+
+    this.updateUnlocked();
+
+    setEncryptedVault(
+      { ...getDecryptedVault(password), wallet: this.wallet, lastLogin: 0 },
+      password
+    );
+
+    const activeAccount = this.getActiveAccount();
+
+    this.addAccountToSigner(activeAccount.id);
+
+    return activeAccount;
   };
 
   public isUnlocked = () => {
@@ -820,7 +853,7 @@ export class KeyringManager {
     this.logout();
   };
 
-  private logout = () => {
+  public logout = () => {
     this.hd = new sys.utils.HDSigner('');
 
     this.memPassword = '';
