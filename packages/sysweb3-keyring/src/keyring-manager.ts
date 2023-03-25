@@ -140,38 +140,6 @@ export class KeyringManager implements IKeyringManager {
       : KeyringAccountType.HDAccount;
   };
 
-  private checkPassword = (pwd: string) => {
-    const { hash, salt } = this.storage.get('vault-keys');
-
-    const hashPassword = this.encryptSHA512(pwd, salt);
-
-    return hashPassword === hash;
-  };
-
-  //todo: need refactor and also for its functions
-  public login = async (
-    password: string
-  ): Promise<Omit<IKeyringAccountState, 'xprv'>> => {
-    if (!this.checkPassword(password)) {
-      throw new Error('Invalid password');
-    }
-
-    this.wallet = await this.unlockWallet(password);
-
-    this.updateUnlocked();
-
-    setEncryptedVault(
-      { ...getDecryptedVault(password), wallet: this.wallet, lastLogin: 0 },
-      password
-    );
-
-    const activeAccount = this.getActiveAccount();
-
-    this.addAccountToSigner(activeAccount.id);
-
-    return activeAccount;
-  };
-
   public isUnlocked = () => {
     return !!this.memPassword;
   };
