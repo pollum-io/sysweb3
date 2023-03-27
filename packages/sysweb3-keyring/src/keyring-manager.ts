@@ -270,7 +270,6 @@ export class KeyringManager {
     return omit(account, 'xprv');
   };
 
-  //TODO: this method needs to decrypt password before validation is done
   public getPrivateKeyByAccountId = (
     id: number,
     acountType: KeyringAccountType,
@@ -291,8 +290,12 @@ export class KeyringManager {
     if (!account) {
       throw new Error('Account not found');
     }
+    const decryptedPrivateKey = CryptoJS.AES.decrypt(
+      account.xprv,
+      this.memPassword
+    ).toString(CryptoJS.enc.Utf8);
 
-    return account.xprv;
+    return decryptedPrivateKey;
   };
 
   public getActiveAccount = (): {
