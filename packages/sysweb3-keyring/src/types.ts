@@ -151,6 +151,8 @@ export interface IKeyringManager {
   ) => void;
   setSignerNetwork: (network: INetwork, chain: string) => Promise<boolean>;
   setWalletPassword: (password: string) => void;
+  ethereumTransaction: IEthereumTransactions;
+  syscoinTransaction: ISyscoinTransactions;
 }
 
 export enum KeyringAccountType {

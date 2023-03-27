@@ -65,7 +65,7 @@ export class KeyringManager implements IKeyringManager {
 
   //transactions objects
   public ethereumTransaction: IEthereumTransactions;
-  syscoinTransaction: ISyscoinTransactions;
+  public syscoinTransaction: ISyscoinTransactions;
   constructor(opts?: IkeyringManagerOpts | null) {
     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
     if (opts) {

@@ -15,7 +15,7 @@ import {
   FAKE_PRIVATE_KEY,
   FAKE_PRIVATE_KEY_ACCOUNT_ADDRESS,
 } from './constants';
-import { INetwork } from '@pollum-io/sysweb3-network/src';
+import { INetwork } from '@pollum-io/sysweb3-network';
 
 describe('Keyring Manager and Ethereum Transaction tests', () => {
   const keyringManager = new KeyringManager();
