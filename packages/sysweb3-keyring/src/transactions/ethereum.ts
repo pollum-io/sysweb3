@@ -38,7 +38,7 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export class EthereumTransactions implements IEthereumTransactions {
-  public web3Provider: any;
+  public web3Provider: ethers.providers.JsonRpcProvider;
   private getNetwork: () => INetwork;
   private getDecryptedPrivateKey: () => {
     address: string;

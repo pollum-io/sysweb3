@@ -134,6 +134,9 @@ export class KeyringManager implements IKeyringManager {
   };
 
   // ===================================== PUBLIC METHODS - KEYRING MANAGER FOR HD - SYS ALL ===================================== //
+
+  public setStorage = (client: any) => this.storage.setClient(client);
+
   public validateAccountType = (account: IKeyringAccountState) => {
     return account.isImported === true
       ? KeyringAccountType.Imported
@@ -205,6 +208,23 @@ export class KeyringManager implements IKeyringManager {
     if (this.hd === null)
       throw new Error('HD not created yet, unlock or initialize wallet first');
     return await this.hd.getNewChangeAddress(true);
+  };
+  public getChangeAddress = async (id: number): Promise<string> => {
+    if (this.hd === null)
+      throw new Error('HD not created yet, unlock or initialize wallet first');
+    this.hd.setAccountIndex(id);
+    const address = await this.hd.getNewChangeAddress(true);
+    this.hd.setAccountIndex(this.wallet.activeAccountId);
+    return address;
+  };
+  public updateReceivingAddress = async (): Promise<string> => {
+    if (this.hd === null)
+      throw new Error('HD not created yet, unlock or initialize wallet first');
+    const address = await this.hd.getNewReceivingAddress(true);
+    this.wallet.accounts[KeyringAccountType.HDAccount][
+      this.wallet.activeAccountId
+    ].address = address;
+    return address;
   };
 
   public createKeyringVault = async (): Promise<IKeyringAccountState> => {
@@ -323,7 +343,17 @@ export class KeyringManager implements IKeyringManager {
 
     return this.memMnemonic;
   };
-  //TODO: test failure case to validate rollback;
+
+  public removeNetwork = async (chain: INetworkType, chainId: number) => {
+    //TODO: test failure case to validate rollback;
+    if (
+      this.activeChain === chain &&
+      this.wallet.activeNetwork.chainId === chainId
+    ) {
+      throw new Error('Cannot remove active network');
+    }
+    delete this.wallet.networks[chain][chainId];
+  };
   public setSignerNetwork = async (
     network: INetwork,
     chain: string
