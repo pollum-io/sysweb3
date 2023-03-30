@@ -378,7 +378,17 @@ export class KeyringManager implements IKeyringManager {
         await this.updateWeb3Accounts();
       }
 
-      this.wallet.networks[networkChain][network.chainId] = network;
+      this.wallet = {
+        ...this.wallet,
+        networks: {
+          ...this.wallet.networks,
+          [networkChain]: {
+            ...this.wallet.networks[networkChain],
+            [network.chainId]: network,
+          },
+        },
+        activeNetwork: network,
+      };
       this.wallet.activeNetwork = network;
       this.activeChain = networkChain;
 

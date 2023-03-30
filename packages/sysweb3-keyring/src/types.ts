@@ -154,7 +154,7 @@ export interface IKeyringManager {
   setWalletPassword: (password: string) => void;
   isSeedValid: (seed: string) => boolean;
   setSeed: (seed: string) => void;
-  createNewSeed: () => void;
+  createNewSeed: () => string;
   setStorage: (client: any) => void;
   ethereumTransaction: IEthereumTransactions;
   syscoinTransaction: ISyscoinTransactions;
