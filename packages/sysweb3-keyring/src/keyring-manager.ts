@@ -357,7 +357,11 @@ export class KeyringManager implements IKeyringManager {
   public setSignerNetwork = async (
     network: INetwork,
     chain: string
-  ): Promise<boolean> => {
+  ): Promise<{
+    sucess: boolean;
+    wallet?: IWalletState;
+    activeChain?: INetworkType;
+  }> => {
     if (INetworkType.Ethereum !== chain && INetworkType.Syscoin !== chain) {
       throw new Error('Unsupported chain');
     }
@@ -392,7 +396,11 @@ export class KeyringManager implements IKeyringManager {
       this.wallet.activeNetwork = network;
       this.activeChain = networkChain;
 
-      return true;
+      return {
+        sucess: true,
+        wallet: this.wallet,
+        activeChain: this.activeChain,
+      };
     } catch (err) {
       //Rollback to previous values
       console.error('Set Signer Network failed with', err);
@@ -405,7 +413,7 @@ export class KeyringManager implements IKeyringManager {
         this.syscoinSigner = prevSyscoinSignerState;
       }
 
-      return false;
+      return { sucess: false };
     }
   };
 

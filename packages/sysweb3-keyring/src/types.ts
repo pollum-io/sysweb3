@@ -150,7 +150,14 @@ export interface IKeyringManager {
     accountId: number,
     accountType: KeyringAccountType
   ) => void;
-  setSignerNetwork: (network: INetwork, chain: string) => Promise<boolean>;
+  setSignerNetwork: (
+    network: INetwork,
+    chain: string
+  ) => Promise<{
+    sucess: boolean;
+    wallet?: IWalletState;
+    activeChain?: INetworkType;
+  }>;
   setWalletPassword: (password: string) => void;
   isSeedValid: (seed: string) => boolean;
   setSeed: (seed: string) => void;
