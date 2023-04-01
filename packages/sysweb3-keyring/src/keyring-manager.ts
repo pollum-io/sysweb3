@@ -45,7 +45,6 @@ export interface ISysAccount {
 export interface IkeyringManagerOpts {
   wallet: IWalletState;
   activeChain: INetworkType;
-  mnemonic?: string;
   password?: string;
 }
 export interface ISysAccountWithId extends ISysAccount {
@@ -71,7 +70,6 @@ export class KeyringManager implements IKeyringManager {
     if (opts) {
       this.wallet = opts.wallet;
       this.activeChain = opts.activeChain;
-      if (opts.mnemonic) this.memMnemonic = opts.mnemonic;
       if (opts.password) this.setWalletPassword(opts.password);
       this.hd = null;
     } else {
@@ -870,7 +868,7 @@ export class KeyringManager implements IKeyringManager {
   };
 
   public logout = () => {
-    this.hd = new sys.utils.HDSigner('');
+    // this.hd = new sys.utils.HDSigner('');
 
     this.memPassword = '';
     this.memMnemonic = '';
