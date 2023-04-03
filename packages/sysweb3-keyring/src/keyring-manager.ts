@@ -195,8 +195,9 @@ export class KeyringManager implements IKeyringManager {
 
     if (hashPassword === hash) {
       this.memPassword = password;
-      if (!this.hd) {
-        await this.restoreWallet();
+      const hdCreated = this.hd ? true : false;
+      if (!hdCreated || !this.memMnemonic) {
+        await this.restoreWallet(hdCreated);
       }
     }
     return hashPassword === hash;
@@ -895,7 +896,7 @@ export class KeyringManager implements IKeyringManager {
     return updatedAccount;
   }
 
-  private async restoreWallet() {
+  private async restoreWallet(hdCreated: boolean) {
     if (!this.memMnemonic) {
       const { mnemonic } = getDecryptedVault(this.memPassword);
       this.memMnemonic = CryptoJS.AES.decrypt(
@@ -903,7 +904,7 @@ export class KeyringManager implements IKeyringManager {
         this.memPassword
       ).toString(CryptoJS.enc.Utf8);
     }
-    if (this.activeChain === INetworkType.Syscoin) {
+    if (this.activeChain === INetworkType.Syscoin && !hdCreated) {
       const { rpc, isTestnet } = await this.getSignerUTXO(
         this.wallet.activeNetwork
       );
