@@ -596,6 +596,7 @@ export class KeyringManager implements IKeyringManager {
 
   private getBasicSysAccountInfo = async (xpub: string, id: number) => {
     if (!this.syscoinSigner) throw new Error('No HD Signer');
+    const label = this.wallet.accounts[KeyringAccountType.HDAccount][id].label;
     const formattedBackendAccount = await this.getFormattedBackendAccount({
       url: this.syscoinSigner.blockbookURL,
       xpub,
@@ -604,7 +605,7 @@ export class KeyringManager implements IKeyringManager {
     return {
       id,
       isTrezorWallet: false,
-      label: `Account ${Number(id) + 1}`,
+      label: label ? label : `Account ${Number(id) + 1}`,
       ...formattedBackendAccount,
     };
   };
