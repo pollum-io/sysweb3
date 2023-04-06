@@ -270,6 +270,13 @@ export class KeyringManager implements IKeyringManager {
     accountId: number,
     accountType: KeyringAccountType
   ) => {
+    if (!this.hd)
+      throw new Error(
+        'Initialise wallet first, cant change accounts without an active HD'
+      );
+    if (accountType === KeyringAccountType.HDAccount) {
+      this.hd.setAccountIndex(accountId);
+    }
     const accounts = this.wallet.accounts[accountType];
     if (!accounts[accountId].xpub) throw new Error('Account not set');
     this.wallet = {
@@ -383,6 +390,8 @@ export class KeyringManager implements IKeyringManager {
       if (chain === INetworkType.Syscoin) {
         const { rpc, isTestnet } = await this.getSignerUTXO(network);
         await this.updateUTXOAccounts(rpc, isTestnet);
+        if (!this.hd) throw new Error('Error initialising HD');
+        this.hd.setAccountIndex(this.wallet.activeAccountId);
       } else if (chain === INetworkType.Ethereum) {
         await this.setSignerEVM(network);
         await this.updateWeb3Accounts();
@@ -643,8 +652,8 @@ export class KeyringManager implements IKeyringManager {
   };
 
   private setLatestIndexesFromXPubTokens = (tokens: any) => {
-    let changeIndex = -1;
-    let receivingIndex = -1;
+    let changeIndex = 0;
+    let receivingIndex = 0;
     if (tokens) {
       tokens.forEach((token: any) => {
         if (!token.transfers || !token.path) {
@@ -953,6 +962,8 @@ export class KeyringManager implements IKeyringManager {
         this.wallet.activeNetwork
       );
       await this.updateUTXOAccounts(rpc, isTestnet);
+      if (!this.hd) throw new Error('Error initialising HD');
+      this.hd.setAccountIndex(this.wallet.activeAccountId);
     }
   }
 
