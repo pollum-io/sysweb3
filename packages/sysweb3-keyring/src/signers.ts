@@ -58,24 +58,6 @@ export type SyscoinHdAccount = {
   zprv: string;
 };
 
-export interface SyscoinFromZprvAccount extends SyscoinHdAccount {
-  toNode: (zprv: string) => string;
-  getAccountPrivateKey: () => string;
-  getAccountPublicKey: () => string;
-  getPrivateKey: () => string;
-  getPublicKey: () => string;
-  getAddress: () => string;
-  getKeypair: () => string;
-}
-
-export interface SyscoinFromZpubAccount extends SyscoinHdAccount {
-  toNode: (zprv: string) => string;
-  getAccountPublicKey: () => string;
-  getPublicKey: () => string;
-  getAddress: () => string;
-  getPayment: () => string;
-}
-
 export interface Bip84FromMnemonic {
   getRootPrivateKey: () => string;
   getRootPublicKey: () => string;
@@ -117,7 +99,7 @@ export interface SyscoinHDSigner {
     SLIP44: number;
     network: BitcoinNetwork;
     pubTypes: IPubTypes;
-    accounts: SyscoinFromZprvAccount[];
+    accounts: any;
     changeIndex: number;
     receivingIndex: number;
     accountIndex: number;

@@ -12,7 +12,11 @@ import {
   initialActiveImportedAccountState,
   initialWalletState,
 } from './initial-state';
-import { getSyscoinSigners, SyscoinHDSigner } from './signers';
+import {
+  getSyscoinSigners,
+  SyscoinHDSigner,
+  SyscoinMainSigner,
+} from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
 import { EthereumTransactions, SyscoinTransactions } from './transactions';
 import {
@@ -57,7 +61,7 @@ export class KeyringManager implements IKeyringManager {
 
   //local variables
   private hd: SyscoinHDSigner | null;
-  private syscoinSigner: any; //TODO: type this following syscoinJSLib interface
+  private syscoinSigner: SyscoinMainSigner | undefined;
   private memMnemonic: string;
   private memPassword: string;
   public activeChain: INetworkType;
@@ -509,6 +513,7 @@ export class KeyringManager implements IKeyringManager {
       await this.getFormattedBackendAccount({
         url: this.wallet.activeNetwork.url,
         xpub,
+        id: this.hd.Signer.accountIndex,
       });
 
     const account = this.getInitialAccountData({
@@ -585,6 +590,7 @@ export class KeyringManager implements IKeyringManager {
     const formattedBackendAccount = await this.getFormattedBackendAccount({
       url: this.syscoinSigner.blockbookURL,
       xpub,
+      id,
     });
     return {
       id,
@@ -597,25 +603,34 @@ export class KeyringManager implements IKeyringManager {
   private getFormattedBackendAccount = async ({
     url,
     xpub,
+    id,
   }: {
     url: string;
     xpub: string;
+    id: number;
   }): Promise<ISysAccount> => {
     if (this.hd === null) throw new Error('No HD Signer');
-    const options = 'details=basic';
-    let balance = 0;
+    const bipNum = 84; //TODO: we need to change this logic to use descriptors for now we only use bip84
+    const options = 'tokens=used&details=tokens';
+    let balance = 0,
+      stealthAddr = '';
     try {
-      const { balance: _balance } = await sys.utils.fetchBackendAccount(
+      const { balance: _balance, tokens } = await sys.utils.fetchBackendAccount(
         url,
         xpub,
         options,
         true
       );
+      const { receivingIndex } = this.setLatestIndexesFromXPubTokens(tokens);
       balance = _balance;
+      stealthAddr = this.hd.Signer.accounts[id].getAddress(
+        receivingIndex,
+        false,
+        bipNum
+      );
     } catch (e) {
       throw new Error(`Error fetching account from network ${url}: ${e}`);
     }
-    const stealthAddr = await this.hd.getNewReceivingAddress(true);
 
     return {
       address: stealthAddr,
@@ -625,6 +640,31 @@ export class KeyringManager implements IKeyringManager {
         ethereum: 0,
       },
     };
+  };
+
+  private setLatestIndexesFromXPubTokens = (tokens: any) => {
+    let changeIndex = -1;
+    let receivingIndex = -1;
+    if (tokens) {
+      tokens.forEach((token: any) => {
+        if (!token.transfers || !token.path) {
+          return;
+        }
+        const transfers = parseInt(token.transfers, 10);
+        if (token.path && transfers > 0) {
+          const splitPath = token.path.split('/');
+          if (splitPath.length >= 6) {
+            const change = parseInt(splitPath[4], 10);
+            const index = parseInt(splitPath[5], 10);
+            if (change === 1) {
+              changeIndex = index + 1;
+            }
+            receivingIndex = index + 1;
+          }
+        }
+      });
+    }
+    return { changeIndex, receivingIndex };
   };
 
   //todo network type
@@ -642,6 +682,7 @@ export class KeyringManager implements IKeyringManager {
     const latestUpdate: ISysAccount = await this.getFormattedBackendAccount({
       url: network.url,
       xpub,
+      id,
     });
 
     const account = this.getInitialAccountData({
