@@ -260,7 +260,6 @@ export class EthereumTransactions implements IEthereumTransactions {
       throw error;
     }
   };
-  // tip numerador eip 1559
   // TODO: refactor this function
   sendTransaction = async ({
     sender,
