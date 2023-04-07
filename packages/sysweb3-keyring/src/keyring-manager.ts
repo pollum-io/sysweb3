@@ -12,7 +12,11 @@ import {
   initialActiveImportedAccountState,
   initialWalletState,
 } from './initial-state';
-import { getSyscoinSigners, SyscoinHDSigner } from './signers';
+import {
+  getSyscoinSigners,
+  SyscoinHDSigner,
+  SyscoinMainSigner,
+} from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
 import { EthereumTransactions, SyscoinTransactions } from './transactions';
 import {
@@ -22,8 +26,9 @@ import {
   IWalletState,
   KeyringAccountType,
   IEthereumTransactions,
+  IKeyringManager,
 } from './types';
-import * as sysweb3 from '@pollum-io/sysweb3-core/src';
+import * as sysweb3 from '@pollum-io/sysweb3-core';
 import {
   BitcoinNetwork,
   getSysRpc,
@@ -31,7 +36,7 @@ import {
   validateSysRpc,
   INetwork,
   INetworkType,
-} from '@pollum-io/sysweb3-network/src';
+} from '@pollum-io/sysweb3-network';
 
 export interface ISysAccount {
   xprv?: string;
@@ -44,33 +49,31 @@ export interface ISysAccount {
 export interface IkeyringManagerOpts {
   wallet: IWalletState;
   activeChain: INetworkType;
-  mnemonic?: string;
   password?: string;
 }
 export interface ISysAccountWithId extends ISysAccount {
   id: number;
 }
 const ethHdPath: Readonly<string> = "m/44'/60'/0'";
-export class KeyringManager {
+export class KeyringManager implements IKeyringManager {
   private storage: any; //todo type
   private wallet: IWalletState; //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
 
   //local variables
   private hd: SyscoinHDSigner | null;
-  private syscoinSigner: any; //TODO: type this following syscoinJSLib interface
+  private syscoinSigner: SyscoinMainSigner | undefined;
   private memMnemonic: string;
   private memPassword: string;
   public activeChain: INetworkType;
 
   //transactions objects
   public ethereumTransaction: IEthereumTransactions;
-  syscoinTransaction: ISyscoinTransactions;
+  public syscoinTransaction: ISyscoinTransactions;
   constructor(opts?: IkeyringManagerOpts | null) {
     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
     if (opts) {
       this.wallet = opts.wallet;
       this.activeChain = opts.activeChain;
-      if (opts.mnemonic) this.memMnemonic = opts.mnemonic;
       if (opts.password) this.setWalletPassword(opts.password);
       this.hd = null;
     } else {
@@ -133,6 +136,9 @@ export class KeyringManager {
   };
 
   // ===================================== PUBLIC METHODS - KEYRING MANAGER FOR HD - SYS ALL ===================================== //
+
+  public setStorage = (client: any) => this.storage.setClient(client);
+
   public validateAccountType = (account: IKeyringAccountState) => {
     return account.isImported === true
       ? KeyringAccountType.Imported
@@ -193,8 +199,9 @@ export class KeyringManager {
 
     if (hashPassword === hash) {
       this.memPassword = password;
-      if (!this.hd) {
-        await this.restoreWallet();
+      const hdCreated = this.hd ? true : false;
+      if (!hdCreated || !this.memMnemonic) {
+        await this.restoreWallet(hdCreated);
       }
     }
     return hashPassword === hash;
@@ -204,6 +211,23 @@ export class KeyringManager {
     if (this.hd === null)
       throw new Error('HD not created yet, unlock or initialize wallet first');
     return await this.hd.getNewChangeAddress(true);
+  };
+  public getChangeAddress = async (id: number): Promise<string> => {
+    if (this.hd === null)
+      throw new Error('HD not created yet, unlock or initialize wallet first');
+    this.hd.setAccountIndex(id);
+    const address = await this.hd.getNewChangeAddress(true);
+    this.hd.setAccountIndex(this.wallet.activeAccountId);
+    return address;
+  };
+  public updateReceivingAddress = async (): Promise<string> => {
+    if (this.hd === null)
+      throw new Error('HD not created yet, unlock or initialize wallet first');
+    const address = await this.hd.getNewReceivingAddress(true);
+    this.wallet.accounts[KeyringAccountType.HDAccount][
+      this.wallet.activeAccountId
+    ].address = address;
+    return address;
   };
 
   public createKeyringVault = async (): Promise<IKeyringAccountState> => {
@@ -246,6 +270,13 @@ export class KeyringManager {
     accountId: number,
     accountType: KeyringAccountType
   ) => {
+    if (!this.hd)
+      throw new Error(
+        'Initialise wallet first, cant change accounts without an active HD'
+      );
+    if (accountType === KeyringAccountType.HDAccount) {
+      this.hd.setAccountIndex(accountId);
+    }
     const accounts = this.wallet.accounts[accountType];
     if (!accounts[accountId].xpub) throw new Error('Account not set');
     this.wallet = {
@@ -292,7 +323,7 @@ export class KeyringManager {
     }
     const decryptedPrivateKey = CryptoJS.AES.decrypt(
       account.xprv,
-      this.memPassword
+      pwd
     ).toString(CryptoJS.enc.Utf8);
 
     return decryptedPrivateKey;
@@ -325,11 +356,25 @@ export class KeyringManager {
 
     return this.memMnemonic;
   };
-  //TODO: test failure case to validate rollback;
+
+  public removeNetwork = async (chain: INetworkType, chainId: number) => {
+    //TODO: test failure case to validate rollback;
+    if (
+      this.activeChain === chain &&
+      this.wallet.activeNetwork.chainId === chainId
+    ) {
+      throw new Error('Cannot remove active network');
+    }
+    delete this.wallet.networks[chain][chainId];
+  };
   public setSignerNetwork = async (
     network: INetwork,
     chain: string
-  ): Promise<boolean> => {
+  ): Promise<{
+    sucess: boolean;
+    wallet?: IWalletState;
+    activeChain?: INetworkType;
+  }> => {
     if (INetworkType.Ethereum !== chain && INetworkType.Syscoin !== chain) {
       throw new Error('Unsupported chain');
     }
@@ -345,16 +390,32 @@ export class KeyringManager {
       if (chain === INetworkType.Syscoin) {
         const { rpc, isTestnet } = await this.getSignerUTXO(network);
         await this.updateUTXOAccounts(rpc, isTestnet);
+        if (!this.hd) throw new Error('Error initialising HD');
+        this.hd.setAccountIndex(this.wallet.activeAccountId);
       } else if (chain === INetworkType.Ethereum) {
         await this.setSignerEVM(network);
         await this.updateWeb3Accounts();
       }
 
-      this.wallet.networks[networkChain][network.chainId] = network;
+      this.wallet = {
+        ...this.wallet,
+        networks: {
+          ...this.wallet.networks,
+          [networkChain]: {
+            ...this.wallet.networks[networkChain],
+            [network.chainId]: network,
+          },
+        },
+        activeNetwork: network,
+      };
       this.wallet.activeNetwork = network;
       this.activeChain = networkChain;
 
-      return true;
+      return {
+        sucess: true,
+        wallet: this.wallet,
+        activeChain: this.activeChain,
+      };
     } catch (err) {
       //Rollback to previous values
       console.error('Set Signer Network failed with', err);
@@ -367,7 +428,7 @@ export class KeyringManager {
         this.syscoinSigner = prevSyscoinSignerState;
       }
 
-      return false;
+      return { sucess: false };
     }
   };
 
@@ -461,6 +522,7 @@ export class KeyringManager {
       await this.getFormattedBackendAccount({
         url: this.wallet.activeNetwork.url,
         xpub,
+        id: this.hd.Signer.accountIndex,
       });
 
     const account = this.getInitialAccountData({
@@ -534,14 +596,16 @@ export class KeyringManager {
 
   private getBasicSysAccountInfo = async (xpub: string, id: number) => {
     if (!this.syscoinSigner) throw new Error('No HD Signer');
+    const label = this.wallet.accounts[KeyringAccountType.HDAccount][id].label;
     const formattedBackendAccount = await this.getFormattedBackendAccount({
       url: this.syscoinSigner.blockbookURL,
       xpub,
+      id,
     });
     return {
       id,
       isTrezorWallet: false,
-      label: `Account ${Number(id) + 1}`,
+      label: label ? label : `Account ${Number(id) + 1}`,
       ...formattedBackendAccount,
     };
   };
@@ -549,25 +613,34 @@ export class KeyringManager {
   private getFormattedBackendAccount = async ({
     url,
     xpub,
+    id,
   }: {
     url: string;
     xpub: string;
+    id: number;
   }): Promise<ISysAccount> => {
     if (this.hd === null) throw new Error('No HD Signer');
-    const options = 'details=basic';
-    let balance = 0;
+    const bipNum = 84; //TODO: we need to change this logic to use descriptors for now we only use bip84
+    const options = 'tokens=used&details=tokens';
+    let balance = 0,
+      stealthAddr = '';
     try {
-      const { balance: _balance } = await sys.utils.fetchBackendAccount(
+      const { balance: _balance, tokens } = await sys.utils.fetchBackendAccount(
         url,
         xpub,
         options,
         true
       );
+      const { receivingIndex } = this.setLatestIndexesFromXPubTokens(tokens);
       balance = _balance;
+      stealthAddr = this.hd.Signer.accounts[id].getAddress(
+        receivingIndex,
+        false,
+        bipNum
+      );
     } catch (e) {
       throw new Error(`Error fetching account from network ${url}: ${e}`);
     }
-    const stealthAddr = await this.hd.getNewReceivingAddress(true);
 
     return {
       address: stealthAddr,
@@ -577,6 +650,31 @@ export class KeyringManager {
         ethereum: 0,
       },
     };
+  };
+
+  private setLatestIndexesFromXPubTokens = (tokens: any) => {
+    let changeIndex = 0;
+    let receivingIndex = 0;
+    if (tokens) {
+      tokens.forEach((token: any) => {
+        if (!token.transfers || !token.path) {
+          return;
+        }
+        const transfers = parseInt(token.transfers, 10);
+        if (token.path && transfers > 0) {
+          const splitPath = token.path.split('/');
+          if (splitPath.length >= 6) {
+            const change = parseInt(splitPath[4], 10);
+            const index = parseInt(splitPath[5], 10);
+            if (change === 1) {
+              changeIndex = index + 1;
+            }
+            receivingIndex = index + 1;
+          }
+        }
+      });
+    }
+    return { changeIndex, receivingIndex };
   };
 
   //todo network type
@@ -594,6 +692,7 @@ export class KeyringManager {
     const latestUpdate: ISysAccount = await this.getFormattedBackendAccount({
       url: network.url,
       xpub,
+      id,
     });
 
     const account = this.getInitialAccountData({
@@ -823,8 +922,8 @@ export class KeyringManager {
     this.logout();
   };
 
-  private logout = () => {
-    this.hd = new sys.utils.HDSigner('');
+  public logout = () => {
+    // this.hd = new sys.utils.HDSigner('');
 
     this.memPassword = '';
     this.memMnemonic = '';
@@ -851,7 +950,7 @@ export class KeyringManager {
     return updatedAccount;
   }
 
-  private async restoreWallet() {
+  private async restoreWallet(hdCreated: boolean) {
     if (!this.memMnemonic) {
       const { mnemonic } = getDecryptedVault(this.memPassword);
       this.memMnemonic = CryptoJS.AES.decrypt(
@@ -859,11 +958,13 @@ export class KeyringManager {
         this.memPassword
       ).toString(CryptoJS.enc.Utf8);
     }
-    if (this.activeChain === INetworkType.Syscoin) {
+    if (this.activeChain === INetworkType.Syscoin && !hdCreated) {
       const { rpc, isTestnet } = await this.getSignerUTXO(
         this.wallet.activeNetwork
       );
       await this.updateUTXOAccounts(rpc, isTestnet);
+      if (!this.hd) throw new Error('Error initialising HD');
+      this.hd.setAccountIndex(this.wallet.activeAccountId);
     }
   }
 

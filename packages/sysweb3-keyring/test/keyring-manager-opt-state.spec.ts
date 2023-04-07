@@ -5,7 +5,7 @@ import {
   previousWalletState,
   secPreviousWalletState,
 } from './constants';
-import { INetworkType } from '@pollum-io/sysweb3-network/src';
+import { INetworkType } from '@pollum-io/sysweb3-network';
 /**
  * export interface IkeyringManagerOpts {
   wallet?: IWalletState | null;

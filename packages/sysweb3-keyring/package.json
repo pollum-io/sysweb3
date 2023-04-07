@@ -26,9 +26,9 @@
   "dependencies": {
     "@metamask/obs-store": "^7.0.0",
     "@metamask/safe-event-emitter": "^2.0.0",
-    "@pollum-io/sysweb3-core": "../sysweb3-core/",
-    "@pollum-io/sysweb3-network": "../sysweb3-network/",
-    "@pollum-io/sysweb3-utils": "../sysweb3-utils/",
+    "@pollum-io/sysweb3-core": "../sysweb3-core/dist",
+    "@pollum-io/sysweb3-network": "../sysweb3-network/dist",
+    "@pollum-io/sysweb3-utils": "../sysweb3-utils/dist",
     "axios": "^0.26.1",
     "bip39": "^3.0.4",
     "bitcoinjs-lib": "^6.1.0",
@@ -43,7 +43,7 @@
     "ethers": "^5.6.4",
     "ethers-eip712": "^0.2.0",
     "lodash": "^4.17.21",
-    "syscoinjs-lib": "^1.0.214",
+    "syscoinjs-lib": "^1.0.215",
     "syscointx-js": "^1.0.101",
     "web3": "^1.7.1",
     "web3-utils": "^1.7.1"

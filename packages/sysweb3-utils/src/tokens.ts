@@ -18,6 +18,13 @@ import type {
 import type { BaseProvider, JsonRpcProvider } from '@ethersproject/providers';
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
+const config = {
+  headers: {
+    'X-User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+  },
+  withCredentials: true,
+};
 
 type NftMetadataMixedInJsonSchema = {
   title: string;
@@ -441,7 +448,7 @@ export const getHost = (url: string) => {
 export const getToken = async (id: string): Promise<ICoingeckoToken> => {
   let token;
   try {
-    const response = await axios.get(`${COINGECKO_API}/coins/${id}`);
+    const response = await axios.get(`${COINGECKO_API}/coins/${id}`, config);
     token = response.data;
   } catch (error) {
     throw new Error('Unable to retrieve token data');
@@ -486,7 +493,8 @@ export const getFiatValueByToken = async (
 ): Promise<number> => {
   try {
     const response = await axios.get(
-      `${COINGECKO_API}/simple/price?ids=${token}&vs_currencies=${fiat}`
+      `${COINGECKO_API}/simple/price?ids=${token}&vs_currencies=${fiat}`,
+      config
     );
 
     return response.data[token][fiat];
@@ -522,7 +530,10 @@ export const getTokenBySymbol = async (
 export const getSearch = async (
   query: string
 ): Promise<ICoingeckoSearchResults> => {
-  const response = await axios.get(`${COINGECKO_API}/search?query=${query}`);
+  const response = await axios.get(
+    `${COINGECKO_API}/search?query=${query}`,
+    config
+  );
 
   return camelcaseKeys(response.data, { deep: true });
 };
@@ -537,7 +548,8 @@ export const getTokenByContract = async (
   let token;
   try {
     const response = await axios.get(
-      `${COINGECKO_API}/coins/ethereum/contract/${contractAddress}`
+      `${COINGECKO_API}/coins/ethereum/contract/${contractAddress}`,
+      config
     );
     token = response.data;
   } catch (error) {

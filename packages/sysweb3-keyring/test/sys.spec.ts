@@ -7,7 +7,6 @@ import {
   PEACE_SEED_PHRASE,
   SYS_TANENBAUM_UTXO_NETWORK,
 } from './constants';
-import { IKeyringTokenType } from '@pollum-io/sysweb3-utils/src';
 
 const sjs = require('syscoinjs-lib');
 
