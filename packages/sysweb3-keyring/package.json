@@ -26,9 +26,9 @@
   "dependencies": {
     "@metamask/obs-store": "^7.0.0",
     "@metamask/safe-event-emitter": "^2.0.0",
-    "@pollum-io/sysweb3-core": "/Users/claudiovilasboas/Desktop/Pollum/Pali&Sysmint/sysweb3/packages/sysweb3-core/dist",
-    "@pollum-io/sysweb3-network": "/Users/claudiovilasboas/Desktop/Pollum/Pali&Sysmint/sysweb3/packages/sysweb3-network/dist",
-    "@pollum-io/sysweb3-utils": "/Users/claudiovilasboas/Desktop/Pollum/Pali&Sysmint/sysweb3/packages/sysweb3-utils/dist",
+    "@pollum-io/sysweb3-core": "../sysweb3-core/dist",
+    "@pollum-io/sysweb3-network": "../sysweb3-network/dist",
+    "@pollum-io/sysweb3-utils": "../sysweb3-utils/dist",
     "axios": "^0.26.1",
     "bip39": "^3.0.4",
     "bitcoinjs-lib": "^6.1.0",
