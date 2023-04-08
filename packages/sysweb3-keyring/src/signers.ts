@@ -36,7 +36,8 @@ export const getSyscoinSigners = ({
     isTestnet,
     networks,
     slip44,
-    pubTypes
+    pubTypes,
+    84
   );
 
   const main: any = new sys.SyscoinJSLib(hd, url, config);
@@ -118,18 +119,26 @@ export interface SyscoinHDSigner {
   signPSBT: (psbt: Psbt, pathIn?: string) => Psbt;
   sign: (psbt: Psbt, pathIn?: string) => Psbt;
   getMasterFingerprint: () => Buffer;
-  deriveAccount: (index: number) => string;
+  deriveAccount: (index: number, bipNum?: number) => string;
   setAccountIndex: (accountIndex: number) => void;
-  restore: (password: string) => boolean;
+  restore: (password: string, bipNum?: number) => boolean;
   backup: () => void;
-  getNewChangeAddress: (skipIncrement?: boolean) => string;
-  getNewReceivingAddress: (skipIncrement?: boolean) => string;
-  createAccount: () => number;
+  getNewChangeAddress: (skipIncrement?: boolean, bipNum?: number) => string;
+  getNewReceivingAddress: (skipIncrement?: boolean, bipNum?: number) => string;
+  createAccount: (bipNum?: number) => number;
   getAccountXpub: () => string;
   setLatestIndexesFromXPubTokens: (tokens: any) => void;
-  createAddress: (addressIndex: number, isChange: boolean) => string;
+  createAddress: (
+    addressIndex: number,
+    isChange: boolean,
+    bipNum?: number
+  ) => string;
   createKeypair: (addressIndex: number, isChange: boolean) => BIP32Interface;
-  getHDPath: (addressIndex: number, isChange: boolean) => string;
+  getHDPath: (
+    addressIndex: number,
+    isChange: boolean,
+    bipNum?: number
+  ) => string;
   getAddressFromKeypair: (keypair: BIP32Interface) => string;
   getAddressFromPubKey: (pubkey: string) => string;
   deriveKeypair: (keypath: string) => BIP32Interface;

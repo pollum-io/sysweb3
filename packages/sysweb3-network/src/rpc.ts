@@ -24,7 +24,9 @@ export const validateChainId = (
 
 /** eth rpc */
 export const isValidChainIdForEthNetworks = (chainId: number | string) =>
-  Number.isSafeInteger(chainId) && chainId > 0 && chainId <= 4503599627370476;
+  Number.isSafeInteger(chainId) &&
+  Number(chainId) > 0 &&
+  Number(chainId) <= 4503599627370476;
 
 export const validateEthRpc = async (
   url: string

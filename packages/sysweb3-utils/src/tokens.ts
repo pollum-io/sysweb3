@@ -1,7 +1,6 @@
 import axios from 'axios';
 import camelcaseKeys from 'camelcase-keys';
 import { ethers as ethersModule } from 'ethers';
-// import fetch from 'node-fetch';
 import sys from 'syscoinjs-lib';
 
 import { createContractUsingAbi } from '.';
@@ -18,13 +17,6 @@ import type {
 import type { BaseProvider, JsonRpcProvider } from '@ethersproject/providers';
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
-const config = {
-  headers: {
-    'X-User-Agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-  },
-  withCredentials: true,
-};
 
 type NftMetadataMixedInJsonSchema = {
   title: string;
@@ -448,8 +440,13 @@ export const getHost = (url: string) => {
 export const getToken = async (id: string): Promise<ICoingeckoToken> => {
   let token;
   try {
-    const response = await axios.get(`${COINGECKO_API}/coins/${id}`, config);
-    token = response.data;
+    if (fetch) {
+      const response = await fetch(`${COINGECKO_API}/coins/${id}`);
+      token = await response.json();
+    } else {
+      const response = await axios.get(`${COINGECKO_API}/coins/${id}`);
+      token = response.data;
+    }
   } catch (error) {
     throw new Error('Unable to retrieve token data');
   }
@@ -492,12 +489,18 @@ export const getFiatValueByToken = async (
   fiat: string
 ): Promise<number> => {
   try {
-    const response = await axios.get(
-      `${COINGECKO_API}/simple/price?ids=${token}&vs_currencies=${fiat}`,
-      config
-    );
-
-    return response.data[token][fiat];
+    if (fetch) {
+      const response = await fetch(
+        `${COINGECKO_API}/simple/price?ids=${token}&vs_currencies=${fiat}`
+      );
+      const data = await response.json();
+      return data[token][fiat];
+    } else {
+      const response = await axios.get(
+        `${COINGECKO_API}/simple/price?ids=${token}&vs_currencies=${fiat}`
+      );
+      return response.data[token][fiat];
+    }
   } catch (error) {
     throw new Error(`Unable to retrieve ${token} price as ${fiat} `);
   }
@@ -530,12 +533,14 @@ export const getTokenBySymbol = async (
 export const getSearch = async (
   query: string
 ): Promise<ICoingeckoSearchResults> => {
-  const response = await axios.get(
-    `${COINGECKO_API}/search?query=${query}`,
-    config
-  );
-
-  return camelcaseKeys(response.data, { deep: true });
+  if (fetch) {
+    const response = await fetch(`${COINGECKO_API}/search?query=${query}`);
+    const data = await response.json();
+    return camelcaseKeys(data, { deep: true });
+  } else {
+    const response = await axios.get(`${COINGECKO_API}/search?query=${query}`);
+    return camelcaseKeys(response.data, { deep: true });
+  }
 };
 
 /**
@@ -547,11 +552,17 @@ export const getTokenByContract = async (
 ): Promise<ICoingeckoToken> => {
   let token;
   try {
-    const response = await axios.get(
-      `${COINGECKO_API}/coins/ethereum/contract/${contractAddress}`,
-      config
-    );
-    token = response.data;
+    if (fetch) {
+      const response = await fetch(
+        `${COINGECKO_API}/coins/ethereum/contract/${contractAddress}`
+      );
+      token = await response.json();
+    } else {
+      const response = await axios.get(
+        `${COINGECKO_API}/coins/ethereum/contract/${contractAddress}`
+      );
+      token = response.data;
+    }
   } catch (error) {
     throw new Error('Token not found');
   }

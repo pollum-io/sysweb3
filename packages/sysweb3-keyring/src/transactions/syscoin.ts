@@ -122,7 +122,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
           createdTokenTransaction &&
           createdTokenTransaction.confirmations > 1
         ) {
-          const changeAddress = await hd.getNewChangeAddress(true);
+          const changeAddress = await hd.getNewChangeAddress(true, 84);
 
           try {
             const tokenMap = getTokenMap({
@@ -176,7 +176,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       [
         assetGuid,
         {
-          changeAddress: await hd.getNewChangeAddress(true),
+          changeAddress: await hd.getNewChangeAddress(true, 84),
           outputs: [
             {
               value: new sys.utils.BN(0),
@@ -352,7 +352,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     const tokenOptions = this.getTokenCreationOptions(temporaryTransaction);
     const txOptions = { rbf: true };
 
-    const newChangeAddress = await hd.getNewChangeAddress(true);
+    const newChangeAddress = await hd.getNewChangeAddress(true, 84);
     const newFee = new sys.utils.BN(fee * 1e8);
 
     const pendingTransaction = await main.assetNew(
@@ -449,7 +449,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
   }) => {
     const { hd, main } = this.getSigner();
 
-    const tokenChangeAddress = await hd.getNewChangeAddress(true);
+    const tokenChangeAddress = await hd.getNewChangeAddress(true, 84);
     const txOptions = { rbf: true };
 
     const pendingTransaction = await main.assetNew(
@@ -708,9 +708,9 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     try {
       const tokenMap = getTokenMap({
         guid: assetGuid,
-        changeAddress: await hd.getNewChangeAddress(true),
+        changeAddress: await hd.getNewChangeAddress(true, 84),
         amount: new sys.utils.BN(0),
-        receivingAddress: await hd.getNewReceivingAddress(true),
+        receivingAddress: await hd.getNewReceivingAddress(true, 84),
       });
 
       const tokenOptions = this.getTokenUpdateOptions(temporaryTransaction);
@@ -816,7 +816,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       },
     ];
 
-    const changeAddress = await hd.getNewChangeAddress(true);
+    const changeAddress = await hd.getNewChangeAddress(true, 84);
 
     const txOptions = { rbf: true };
 

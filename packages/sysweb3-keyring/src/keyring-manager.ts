@@ -210,7 +210,8 @@ export class KeyringManager implements IKeyringManager {
   public getNewChangeAddress = async (): Promise<string> => {
     if (this.hd === null)
       throw new Error('HD not created yet, unlock or initialize wallet first');
-    return await this.hd.getNewChangeAddress(true);
+    //Sysweb3 only allow segwit change addresses for now
+    return await this.hd.getNewChangeAddress(true, 84);
   };
   public getChangeAddress = async (id: number): Promise<string> => {
     if (this.hd === null)
@@ -223,7 +224,7 @@ export class KeyringManager implements IKeyringManager {
   public updateReceivingAddress = async (): Promise<string> => {
     if (this.hd === null)
       throw new Error('HD not created yet, unlock or initialize wallet first');
-    const address = await this.hd.getNewReceivingAddress(true);
+    const address = await this.hd.getNewReceivingAddress(true, 84);
     this.wallet.accounts[KeyringAccountType.HDAccount][
       this.wallet.activeAccountId
     ].address = address;
@@ -510,7 +511,15 @@ export class KeyringManager implements IKeyringManager {
     crypto.createHmac('sha512', salt).update(password).digest('hex');
 
   private createMainWallet = async (): Promise<IKeyringAccountState> => {
-    this.hd = new sys.utils.HDSigner(this.memMnemonic, null) as SyscoinHDSigner; //To understand better this look at: https://github.com/syscoin/syscoinjs-lib/blob/298fda26b26d7007f0c915a6f77626fb2d3c852f/utils.js#L894
+    this.hd = new sys.utils.HDSigner(
+      this.memMnemonic,
+      null,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      84
+    ) as SyscoinHDSigner; //To understand better this look at: https://github.com/syscoin/syscoinjs-lib/blob/298fda26b26d7007f0c915a6f77626fb2d3c852f/utils.js#L894
     this.syscoinSigner = new sys.SyscoinJSLib(
       this.hd,
       this.wallet.activeNetwork.url
@@ -569,7 +578,7 @@ export class KeyringManager implements IKeyringManager {
     if (this.hd === null) throw new Error('No HD Signer');
     if (accountId !== 0 && !this.hd.Signer.accounts[accountId]) {
       //We must recreate the account if it doesn't exist at the signer
-      const childAccount = this.hd.deriveAccount(accountId);
+      const childAccount = this.hd.deriveAccount(accountId, 84);
 
       const derivedAccount = new fromZPrv(
         childAccount,
@@ -641,7 +650,6 @@ export class KeyringManager implements IKeyringManager {
     } catch (e) {
       throw new Error(`Error fetching account from network ${url}: ${e}`);
     }
-
     return {
       address: stealthAddr,
       xpub: xpub,
@@ -685,7 +693,7 @@ export class KeyringManager implements IKeyringManager {
       );
     }
 
-    const id = this.hd.createAccount();
+    const id = this.hd.createAccount(84);
     const xpub = this.hd.getAccountXpub();
     const xprv = this.getEncryptedXprv();
 
@@ -891,21 +899,6 @@ export class KeyringManager implements IKeyringManager {
     const accountPromises = walletAccountsArray.map(async ({ id }) => {
       await this.addUTXOAccount(Number(id));
     });
-    //Alternative solution needs refining
-    // // Wait for all promises to resolve.
-    // await Promise.all(accountPromises);
-    // Create an array of promises.
-    // const accountPromises = walletAccountsArray.map(({ id }) => {
-    //   // eslint-disable-next-line no-async-promise-executor
-    //   return new Promise<void>(async (resolve) => {
-    //     if (!hd.Signer.accounts[Number(id)]) {
-    //       await this.addUTXOAccount(Number(id));
-    //     }
-    //     resolve();
-    //   });
-    // });
-
-    // Wait for all promises to resolve.
     await Promise.all(accountPromises);
   };
 
@@ -923,8 +916,6 @@ export class KeyringManager implements IKeyringManager {
   };
 
   public logout = () => {
-    // this.hd = new sys.utils.HDSigner('');
-
     this.memPassword = '';
     this.memMnemonic = '';
   };
