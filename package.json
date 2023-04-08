@@ -82,6 +82,6 @@
   },
   "dependencies": {
     "dotenv": "^16.0.3",
-    "syscoinjs-lib": "^1.0.216"
+    "syscoinjs-lib": "^1.0.217"
   }
 }
