@@ -271,11 +271,11 @@ export class KeyringManager implements IKeyringManager {
     accountId: number,
     accountType: KeyringAccountType
   ) => {
-    if (!this.hd)
+    if (!this.hd && this.activeChain === INetworkType.Syscoin)
       throw new Error(
         'Initialise wallet first, cant change accounts without an active HD'
       );
-    if (accountType === KeyringAccountType.HDAccount) {
+    if (accountType === KeyringAccountType.HDAccount && this.hd) {
       this.hd.setAccountIndex(accountId);
     }
     const accounts = this.wallet.accounts[accountType];
