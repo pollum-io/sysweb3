@@ -494,6 +494,13 @@ export class KeyringManager implements IKeyringManager {
     };
   };
   public getNetwork = () => this.wallet.activeNetwork;
+  public verifyIfIsTestnet = () => {
+    const { chainId } = this.wallet.activeNetwork;
+    if (this.wallet.networks.syscoin[chainId] && this.hd) {
+      return this.hd.Signer.isTestnet;
+    }
+    return undefined;
+  };
   public createEthAccount = (privateKey: string) =>
     new ethers.Wallet(privateKey);
 
