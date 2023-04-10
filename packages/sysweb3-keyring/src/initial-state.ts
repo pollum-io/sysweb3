@@ -23,6 +23,11 @@ export const initialActiveImportedAccountState: IKeyringAccountState = {
   isImported: true,
 };
 
+export const initialActiveTrezorAccountState: IKeyringAccountState = {
+  ...initialActiveHdAccountState,
+  isTrezorWallet: true,
+};
+
 export const initialNetworksState = {
   syscoin: {
     57: {
@@ -100,6 +105,9 @@ export const initialWalletState: IWalletState = {
     },
     [KeyringAccountType.Imported]: {
       [initialActiveImportedAccountState.id]: initialActiveImportedAccountState,
+    },
+    [KeyringAccountType.Trezor]: {
+      [initialActiveTrezorAccountState.id]: initialActiveTrezorAccountState,
     },
   },
   activeAccountId: 0,
