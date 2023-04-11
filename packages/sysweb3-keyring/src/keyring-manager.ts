@@ -68,6 +68,7 @@ export class KeyringManager implements IKeyringManager {
   private memMnemonic: string;
   private memPassword: string;
   public activeChain: INetworkType;
+  public initialTrezorAccountState: IKeyringAccountState;
 
   //transactions objects
   public ethereumTransaction: IEthereumTransactions;
@@ -86,6 +87,7 @@ export class KeyringManager implements IKeyringManager {
     }
     this.memMnemonic = '';
     this.memPassword = ''; //Lock wallet in case opts.password has been provided
+    this.initialTrezorAccountState = initialActiveTrezorAccountState;
 
     this.trezorSigner = new TrezorKeyring();
 
@@ -682,7 +684,7 @@ export class KeyringManager implements IKeyringManager {
         : Object.values(accounts[KeyringAccountType.Trezor]).length;
 
     const trezorAccount = {
-      ...initialActiveTrezorAccountState,
+      ...this.initialTrezorAccountState,
       address,
       label: label ? label : `Trezor ${id + 1}`,
       id: id,
