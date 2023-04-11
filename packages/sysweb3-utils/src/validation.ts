@@ -1,8 +1,13 @@
 export const isBase64 = (string: string) => {
-  const base64 =
-    /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$/;
-
-  return base64.test(string);
+  try {
+    const b = Buffer.from(string, 'base64');
+    return b.toString('base64') === string;
+  } catch (err) {
+    return false;
+  }
+};
+export const repairBase64 = (base64Str: string) => {
+  return base64Str.replace(/ /g, '+');
 };
 
 export const isPrefixedFormattedHexString = (value: number | string) => {
