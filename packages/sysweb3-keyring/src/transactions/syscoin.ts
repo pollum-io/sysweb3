@@ -8,6 +8,7 @@ import { INetwork } from '@pollum-io/sysweb3-network';
 import {
   INewNFT,
   isBase64,
+  repairBase64,
   ITokenSend,
   ITokenUpdate,
   ITxid,
@@ -669,6 +670,11 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     isSignOnly: boolean
   ): Promise<any> => {
     const { hd } = this.getSigner();
+
+    if (!isBase64(data.psbt)) {
+      //Trying to recover from a bad base64 string, replacing spaces with + which happens by lack of encodeURI usage
+      data.psbt = repairBase64(data.psbt);
+    }
 
     if (!isBase64(data.psbt) || typeof data.assets !== 'string') {
       throw new Error(
