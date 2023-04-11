@@ -170,6 +170,19 @@ const imp0 = {
   xpub: '',
   isImported: true,
 };
+const trezorAcc0 = {
+  address: '',
+  balances: {
+    ethereum: 0,
+    syscoin: 0,
+  },
+  id: 0,
+  isTrezorWallet: true,
+  label: 'Trezor 1',
+  xprv: '',
+  xpub: '',
+  isImported: false,
+};
 const ethAcc0 = {
   address: '0x6a92ef94f6db88098625a30396e0fde7255e97d5',
   xpub: '0x8d5466dc6f075d8c90ce7a84f03fc9ac608109e976fd133dce0bfbb85748c0ab78328ee292d43b1f2c9a642def96bf891a54eb43d345ee9dad9c6688ed2e3eb4',
@@ -187,6 +200,9 @@ export const previousWalletState: IWalletState = {
     },
     [KeyringAccountType.Imported]: {
       [0]: imp0,
+    },
+    [KeyringAccountType.Trezor]: {
+      [0]: trezorAcc0,
     },
   },
   activeAccountId: 0,
@@ -208,6 +224,9 @@ export const secPreviousWalletState: IWalletState = {
     },
     [KeyringAccountType.Imported]: {
       [0]: imp0,
+    },
+    [KeyringAccountType.Trezor]: {
+      [0]: trezorAcc0,
     },
   },
   activeAccountId: 0,

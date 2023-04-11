@@ -59,7 +59,7 @@ export class TrezorKeyring {
    * @returns true, if trezor was initialized successfully and false, if some error happen
    */
 
-  public async init() {
+  private async init() {
     window.TrezorConnect = TrezorConnect;
     try {
       await TrezorConnect.init({
@@ -146,7 +146,7 @@ export class TrezorKeyring {
     slip44: string;
     hdPath?: string;
     index?: string;
-  }) {
+  }): Promise<AccountInfo> {
     switch (coin) {
       case 'sys':
         this.hdPath = `m/84'/57'/0'`;
@@ -161,16 +161,15 @@ export class TrezorKeyring {
 
     if (hdPath) this.hdPath === hdPath;
 
-    try {
-      const address = await TrezorConnect.getAccountInfo({
-        coin,
-        path: this.hdPath,
-      });
+    const response = await TrezorConnect.getAccountInfo({
+      coin,
+      path: this.hdPath,
+    });
 
-      return address.payload;
-    } catch (error) {
-      throw error;
+    if (response.success) {
+      return response.payload;
     }
+    return response.payload as any;
   }
 
   /**

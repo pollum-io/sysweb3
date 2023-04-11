@@ -1,10 +1,10 @@
-import { KeyringManager } from '../src/keyring-manager';
 import {
   FAKE_PASSWORD,
   PEACE_SEED_PHRASE,
   previousWalletState,
   secPreviousWalletState,
 } from './constants';
+import { KeyringManager } from '../src/keyring-manager';
 import { INetworkType } from '@pollum-io/sysweb3-network';
 /**
  * export interface IkeyringManagerOpts {
@@ -48,6 +48,7 @@ describe('testing functions for the new-sys txs', () => {
     const keyringManager = new KeyringManager({
       wallet: previousWalletState,
       activeChain: INetworkType.Syscoin,
+      // @ts-ignore
       mnemonic: PEACE_SEED_PHRASE,
       password: FAKE_PASSWORD,
     });
@@ -65,6 +66,7 @@ describe('testing functions for the new-sys txs', () => {
     const keyringManager = new KeyringManager({
       wallet: secPreviousWalletState,
       activeChain: INetworkType.Ethereum,
+      // @ts-ignore
       mnemonic: PEACE_SEED_PHRASE,
       password: FAKE_PASSWORD,
     });

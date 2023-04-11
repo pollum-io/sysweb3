@@ -137,6 +137,11 @@ export interface IKeyringManager {
   ) => Omit<IKeyringAccountState, 'xprv'>;
   getAccountXpub: () => string;
   getEncryptedXprv: () => string;
+  importTrezorAccount(
+    coin: string,
+    slip44: string,
+    index: string
+  ): Promise<IKeyringAccountState>;
   getNetwork: () => INetwork;
   getPrivateKeyByAccountId: (
     id: number,
