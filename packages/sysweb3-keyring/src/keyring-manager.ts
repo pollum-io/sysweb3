@@ -1070,9 +1070,9 @@ export class KeyringManager implements IKeyringManager {
 
     const ethereumBalance = await this.ethereumTransaction.getBalance(address);
     const id =
-      Object.values(accounts[KeyringAccountType.Imported]).length <= 1
+      Object.values(accounts[KeyringAccountType.Imported]).length < 1
         ? 0
-        : Object.values(accounts).length;
+        : Object.values(accounts[KeyringAccountType.Imported]).length;
 
     const importedAccount = {
       ...initialActiveImportedAccountState,
