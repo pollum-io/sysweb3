@@ -173,6 +173,7 @@ export const getSysRpc = async (data: any) => {
       //We accept only trezor blockbook for UTXO chains, this method won't work for non trezor apis
       explorer = data.url.replace(/\/api\/v[12]/, ''); //trimming /api/v{number}/ from explorer
     }
+    const networkType = chain === 'test' ? 'testnet' : 'mainnet';
     const formattedNetwork = {
       url: data.url,
       apiUrl: data.url, //apiURL and URL are the same for blockbooks explorer TODO: remove this field from UTXO networks
@@ -181,6 +182,7 @@ export const getSysRpc = async (data: any) => {
       label: data.label || coin,
       default: false,
       chainId,
+      slip44: networkConfig.networks[networkType].slip44,
     };
     const rpc = {
       formattedNetwork,

@@ -69,6 +69,7 @@ export const getNetworkConfig = (slip44: number, coinName: string) => {
       },
       pubKeyHash: hexPubKeyHash,
       scriptHash: hexScriptHash,
+      slip44: coin.slip44,
       wif,
     };
 
@@ -118,6 +119,7 @@ export type INetwork = {
   apiUrl?: string;
   currency?: string;
   explorer?: string;
+  slip44?: number;
 };
 
 export enum INetworkType {
