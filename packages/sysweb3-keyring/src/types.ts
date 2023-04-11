@@ -170,6 +170,7 @@ export interface IKeyringManager {
   setStorage: (client: any) => void;
   ethereumTransaction: IEthereumTransactions;
   syscoinTransaction: ISyscoinTransactions;
+  verifyIfIsTestnet: () => boolean | undefined;
 }
 
 export enum KeyringAccountType {
