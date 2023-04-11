@@ -667,6 +667,9 @@ export class KeyringManager implements IKeyringManager {
       ).some((account) => account.address === address) ||
       Object.values(
         accounts[KeyringAccountType.HDAccount] as IKeyringAccountState[]
+      ).some((account) => account.address === address) ||
+      Object.values(
+        accounts[KeyringAccountType.Imported] as IKeyringAccountState[]
       ).some((account) => account.address === address);
 
     if (accountAlreadyExists)

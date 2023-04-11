@@ -60,7 +60,9 @@ export class TrezorKeyring {
    */
 
   private async init() {
-    window.TrezorConnect = TrezorConnect;
+    if (window) {
+      window.TrezorConnect = TrezorConnect;
+    }
     try {
       await TrezorConnect.init({
         manifest: TREZOR_CONNECT_MANIFEST,
@@ -152,7 +154,7 @@ export class TrezorKeyring {
         this.hdPath = `m/84'/57'/0'`;
         break;
       case 'btc':
-        this.hdPath = "m/49'/0'/0'";
+        this.hdPath = "m/84'/0'/0'";
         break;
       default:
         this.hdPath = `m/44'/${slip44}'/0'/0/${index ? index : 0}`;
@@ -262,7 +264,7 @@ export class TrezorKeyring {
         this.hdPath = `m/84'/57'/0'`;
         break;
       case 'btc':
-        this.hdPath = "m/49'/0'/0'";
+        this.hdPath = "m/84'/0'/0'";
         break;
       default:
         this.hdPath = `m/44'/${slip44}'/0'/0/0`;
@@ -318,7 +320,7 @@ export class TrezorKeyring {
         this.hdPath = `m/84'/57'/0'`;
         break;
       case 'btc':
-        this.hdPath = "m/49'/0'/0'";
+        this.hdPath = "m/84'/0'/0'";
         break;
       case 'eth':
         this.hdPath = pathBase;
@@ -411,17 +413,17 @@ export class TrezorKeyring {
   }) {
     switch (coin) {
       case 'sys':
-        this.hdPath = `m/84'/57'/0'/0/0`;
+        this.hdPath = `m/84'/57'/0'/0/${index ? index : 0}`;
         break;
       case 'btc':
-        this.hdPath = "m/49'/0'/0'/0/0";
+        this.hdPath = `m/84'/0'/0'/0/${index ? index : 0}`;
         break;
       default:
-        this.hdPath = `m/44'/${slip44}'/0'/0/0`;
+        this.hdPath = `m/44'/${slip44}'/0'/0/${index ? index : 0}`;
         break;
     }
 
-    if (coin === 'eth' && `${index}` && message) {
+    if (coin === 'eth' && `${index ? index : 0}` && message) {
       return this._signEthPersonalMessage(Number(index), message);
     }
     return this._signUtxoPersonalMessage({ coin, hdPath: this.hdPath });
@@ -583,7 +585,7 @@ export class TrezorKeyring {
         this.hdPath = `m/84'/57'/0'/0`;
         break;
       case 'btc':
-        this.hdPath = "m/49'/0'/0'";
+        this.hdPath = "m/84'/0'/0'";
         break;
       default:
         this.hdPath = `m/44'/${slip44}'/0'/0`;
