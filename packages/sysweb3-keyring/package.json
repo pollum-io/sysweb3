@@ -29,7 +29,7 @@
     "@pollum-io/sysweb3-core": "../sysweb3-core/dist",
     "@pollum-io/sysweb3-network": "../sysweb3-network/dist",
     "@pollum-io/sysweb3-utils": "../sysweb3-utils/dist",
-    "@trezor/connect-web": "^9.0.7",
+    "@trezor/connect-web": "9.0.6",
     "axios": "^0.26.1",
     "bip39": "^3.0.4",
     "bitcoinjs-lib": "^6.1.0",
