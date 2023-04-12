@@ -10,6 +10,7 @@ import sys from 'syscoinjs-lib';
 
 import {
   initialActiveImportedAccountState,
+  initialActiveTrezorAccountState,
   initialWalletState,
 } from './initial-state';
 import {
@@ -19,6 +20,7 @@ import {
 } from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
 import { EthereumTransactions, SyscoinTransactions } from './transactions';
+// import { TrezorKeyring } from './trezor';
 import {
   IKeyringAccountState,
   IKeyringBalances,
@@ -62,9 +64,11 @@ export class KeyringManager implements IKeyringManager {
   //local variables
   private hd: SyscoinHDSigner | null;
   private syscoinSigner: SyscoinMainSigner | undefined;
+  // private trezorSigner: TrezorKeyring;
   private memMnemonic: string;
   private memPassword: string;
   public activeChain: INetworkType;
+  public initialTrezorAccountState: IKeyringAccountState;
 
   //transactions objects
   public ethereumTransaction: IEthereumTransactions;
@@ -83,6 +87,9 @@ export class KeyringManager implements IKeyringManager {
     }
     this.memMnemonic = '';
     this.memPassword = ''; //Lock wallet in case opts.password has been provided
+    this.initialTrezorAccountState = initialActiveTrezorAccountState;
+
+    // this.trezorSigner = new TrezorKeyring();
 
     // this.syscoinTransaction = SyscoinTransactions();
     this.syscoinTransaction = new SyscoinTransactions(
@@ -484,9 +491,25 @@ export class KeyringManager implements IKeyringManager {
       accounts: {
         [KeyringAccountType.HDAccount]: utxOAccounts,
         [KeyringAccountType.Imported]: {},
+        [KeyringAccountType.Trezor]: {},
       },
     };
   };
+  // public async importTrezorAccount(
+  //   coin: string,
+  //   slip44: string,
+  //   index: string
+  // ) {
+  //   const importedAccount = await this._createTrezorAccount(
+  //     coin,
+  //     slip44,
+  //     index
+  //   );
+  //   this.wallet.accounts[KeyringAccountType.Trezor][importedAccount.id] =
+  //     importedAccount;
+
+  //   return importedAccount;
+  // }
   public getActiveUTXOAccountState = () => {
     return {
       ...this.wallet.accounts.HDAccount[this.wallet.activeAccountId],
@@ -625,6 +648,63 @@ export class KeyringManager implements IKeyringManager {
       ...formattedBackendAccount,
     };
   };
+
+  // private async _createTrezorAccount(
+  //   coin: string,
+  //   slip44: string,
+  //   index: string,
+  //   label?: string
+  // ) {
+  //   const { accounts } = this.wallet;
+  //   const { descriptor: xpub, balance } =
+  //     await this.trezorSigner.getAccountInfo({ coin, slip44 });
+
+  //   const address = await this.trezorSigner.getAddress({ coin, slip44, index });
+
+  //   const accountAlreadyExists =
+  //     Object.values(
+  //       accounts[KeyringAccountType.Trezor] as IKeyringAccountState[]
+  //     ).some((account) => account.address === address) ||
+  //     Object.values(
+  //       accounts[KeyringAccountType.HDAccount] as IKeyringAccountState[]
+  //     ).some((account) => account.address === address) ||
+  //     Object.values(
+  //       accounts[KeyringAccountType.Imported] as IKeyringAccountState[]
+  //     ).some((account) => account.address === address);
+
+  //   if (accountAlreadyExists)
+  //     throw new Error(
+  //       'Account already exists, try again with another Private Key.'
+  //     );
+  //   if (!xpub || !balance || !address)
+  //     throw new Error(
+  //       'Something wrong happened. Please, try again or report it'
+  //     );
+
+  //   const id =
+  //     Object.values(accounts[KeyringAccountType.Trezor]).length < 1
+  //       ? 0
+  //       : Object.values(accounts[KeyringAccountType.Trezor]).length;
+
+  //   const trezorAccount = {
+  //     ...this.initialTrezorAccountState,
+  //     address,
+  //     label: label ? label : `Trezor ${id + 1}`,
+  //     id: id,
+  //     balances: {
+  //       syscoin: +balance,
+  //       ethereum: 0,
+  //     },
+  //     xprv: '',
+  //     xpub,
+  //     assets: {
+  //       syscoin: [],
+  //       ethereum: [],
+  //     },
+  //   } as IKeyringAccountState;
+
+  //   return trezorAccount;
+  // }
 
   private getFormattedBackendAccount = async ({
     url,
@@ -995,9 +1075,9 @@ export class KeyringManager implements IKeyringManager {
 
     const ethereumBalance = await this.ethereumTransaction.getBalance(address);
     const id =
-      Object.values(accounts[KeyringAccountType.Imported]).length <= 1
+      Object.values(accounts[KeyringAccountType.Imported]).length < 1
         ? 0
-        : Object.values(accounts).length;
+        : Object.values(accounts[KeyringAccountType.Imported]).length;
 
     const importedAccount = {
       ...initialActiveImportedAccountState,

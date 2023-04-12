@@ -137,6 +137,11 @@ export interface IKeyringManager {
   ) => Omit<IKeyringAccountState, 'xprv'>;
   getAccountXpub: () => string;
   getEncryptedXprv: () => string;
+  // importTrezorAccount(
+  //   coin: string,
+  //   slip44: string,
+  //   index: string
+  // ): Promise<IKeyringAccountState>;
   getNetwork: () => INetwork;
   getPrivateKeyByAccountId: (
     id: number,
@@ -169,7 +174,7 @@ export interface IKeyringManager {
 }
 
 export enum KeyringAccountType {
-  // Trezor = 'Trezor', //TODO: add trezor as we implement it on sysweb3
+  Trezor = 'Trezor',
   Imported = 'Imported',
   HDAccount = 'HDAccount',
 }
