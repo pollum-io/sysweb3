@@ -1,4 +1,7 @@
 import * as dotenv from 'dotenv';
+
+import { initialNetworksState } from '../src/initial-state';
+import { IWalletState, KeyringAccountType } from '../src/types';
 dotenv.config();
 export const FAKE_PASSWORD = 'Asdqwe123!';
 export const FAKE_INVALID_PASSWORD = '12345';
@@ -28,6 +31,16 @@ export const SYS_TANENBAUM_UTXO_NETWORK = {
   currency: 'tsys',
   apiUrl: '',
   explorer: '',
+};
+
+export const BTC_TESTNET_TOKEN = {
+  chainId: 57,
+  label: 'Bitcoin Testnet',
+  url: 'https://blockbook.elint.services/',
+  default: true,
+  currency: 'sys',
+  apiUrl: '',
+  explorer: 'https://blockbook.elint.services/',
 };
 
 export const SYS_MAINNET_UTXO_NETWORK = {
@@ -70,8 +83,8 @@ export const DATA: { [type: string]: any } = {
     assets: '[]',
   },
   updateToken: {
-    assetGuid: '1687030527',
-    description: 'test pali 1',
+    assetGuid: '468741931',
+    description: 'test pali 2',
     capabilityflags: 127,
     eventName: 'txUpdateToken',
     fee: 0.00001,
@@ -130,4 +143,94 @@ export const TX: any = {
   // v: '0x1',
   // r: '0xe48cd40bae42146f44d4d8caab1edd2f19ec5a136db3f4e3f6678441afa23b3',
   // s: '0x739de80ac6b7c4c478b0669faa44282848445e16c110271de4ec0501bfeaabb7',
+};
+const account0 = {
+  address: '',
+  balances: {
+    ethereum: 0,
+    syscoin: 0,
+  },
+  id: 0,
+  isTrezorWallet: false,
+  label: 'Account 1',
+  xprv: '',
+  xpub: '',
+  isImported: false,
+};
+const imp0 = {
+  address: '',
+  balances: {
+    ethereum: 0,
+    syscoin: 0,
+  },
+  id: 0,
+  isTrezorWallet: false,
+  label: 'Account 1',
+  xprv: '',
+  xpub: '',
+  isImported: true,
+};
+const trezorAcc0 = {
+  address: '',
+  balances: {
+    ethereum: 0,
+    syscoin: 0,
+  },
+  id: 0,
+  isTrezorWallet: true,
+  label: 'Trezor 1',
+  xprv: '',
+  xpub: '',
+  isImported: false,
+};
+const ethAcc0 = {
+  address: '0x6a92ef94f6db88098625a30396e0fde7255e97d5',
+  xpub: '0x8d5466dc6f075d8c90ce7a84f03fc9ac608109e976fd133dce0bfbb85748c0ab78328ee292d43b1f2c9a642def96bf891a54eb43d345ee9dad9c6688ed2e3eb4',
+  xprv: 'U2FsdGVkX19ryI/42IJW7ER13/UNdMHlnSmFG5UV9s3LSe4IfN/85d5hAWu9vEoS/Ts8wTLTM/7ev/9uvHabpaKrSqMLiMukz3RiWpmU9BOAMyg02dnkXiy9qptKMrb2',
+  isImported: false,
+  id: 0,
+  isTrezorWallet: false,
+  label: 'Account 1',
+  balances: { syscoin: 0, ethereum: 0 },
+};
+export const previousWalletState: IWalletState = {
+  accounts: {
+    [KeyringAccountType.HDAccount]: {
+      [0]: account0,
+    },
+    [KeyringAccountType.Imported]: {
+      [0]: imp0,
+    },
+    [KeyringAccountType.Trezor]: {
+      [0]: trezorAcc0,
+    },
+  },
+  activeAccountId: 0,
+  activeAccountType: KeyringAccountType.HDAccount,
+  networks: initialNetworksState,
+  activeNetwork: {
+    chainId: 57,
+    label: 'Syscoin Mainnet',
+    url: 'https://blockbook.elint.services/',
+    default: true,
+    currency: 'sys',
+  },
+};
+
+export const secPreviousWalletState: IWalletState = {
+  accounts: {
+    [KeyringAccountType.HDAccount]: {
+      [0]: ethAcc0,
+    },
+    [KeyringAccountType.Imported]: {
+      [0]: imp0,
+    },
+    [KeyringAccountType.Trezor]: {
+      [0]: trezorAcc0,
+    },
+  },
+  activeAccountId: 0,
+  activeAccountType: KeyringAccountType.HDAccount,
+  networks: initialNetworksState,
+  activeNetwork: POLYGON_MUMBAI_NETWORK,
 };

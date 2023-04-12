@@ -1,11 +1,10 @@
-import axios from 'axios';
 import bip44Constants from 'bip44-constants';
 import { Chain, chains } from 'eth-chains';
 import { ethers } from 'ethers';
 
-import { getFormattedBitcoinLikeNetwork, toDecimalFromHex } from './networks';
-import { jsonRpcRequest } from './rpc-request';
-import { INetwork } from '@pollum-io/sysweb3-utils';
+// import fetch from "node-fetch";
+
+import { getNetworkConfig, toDecimalFromHex, INetwork } from './networks';
 
 const hexRegEx = /^0x[0-9a-f]+$/iu;
 
@@ -25,7 +24,9 @@ export const validateChainId = (
 
 /** eth rpc */
 export const isValidChainIdForEthNetworks = (chainId: number | string) =>
-  Number.isSafeInteger(chainId) && chainId > 0 && chainId <= 4503599627370476;
+  Number.isSafeInteger(chainId) &&
+  Number(chainId) > 0 &&
+  Number(chainId) <= 4503599627370476;
 
 export const validateEthRpc = async (
   url: string
@@ -37,21 +38,24 @@ export const validateEthRpc = async (
   chain: string;
 }> => {
   try {
-    const chainId = await jsonRpcRequest(url, 'eth_chainId');
+    const web3Provider = new ethers.providers.JsonRpcProvider(url);
+    const { chainId } = await web3Provider.getNetwork();
     if (!chainId) {
       throw new Error('Invalid RPC URL. Could not get chain ID for network.');
     }
-    const numberChainId = parseInt(chainId, 16);
-    if (!isValidChainIdForEthNetworks(Number(numberChainId)))
+
+    if (!isValidChainIdForEthNetworks(Number(chainId))) {
       throw new Error('Invalid chain ID for ethereum networks.');
-    const { valid, hexChainId } = validateChainId(numberChainId);
-    const details = chains.getById(numberChainId);
+    }
+
+    const { valid, hexChainId } = validateChainId(chainId);
+    const details = chains.getById(chainId);
     if (!valid) {
       throw new Error('RPC has an invalid chain ID');
     }
 
     return {
-      chainId: numberChainId,
+      chainId,
       details,
       chain: details && details.chain ? details.chain : 'unknown',
       hexChainId,
@@ -102,16 +106,14 @@ export const validateSysRpc = async (
   chain: string;
 }> => {
   try {
-    const response = await axios.get(
-      `${url.endsWith('/') ? url.slice(0, -1) : url}/api/v2`
-    );
-
+    const formatURL = `${url.endsWith('/') ? url.slice(0, -1) : url}/api/v2`;
+    const response = await (await fetch(formatURL)).json();
     const {
       blockbook: { coin },
       backend: { chain },
-    } = response.data;
+    } = response;
 
-    const valid = Boolean(response && coin && response.status === 200);
+    const valid = Boolean(response && coin);
 
     return {
       valid,
@@ -156,33 +158,38 @@ export const getBip44Chain = (coin: string, isTestnet?: boolean) => {
   };
 };
 
-// change setsignerbychain keyring manager
+// TODO: type data with ICustomRpcParams later
+// TODO: type return correctly
 export const getSysRpc = async (data: any) => {
   try {
     const { valid, coin, chain } = await validateSysRpc(data.url);
     const { nativeCurrency, chainId } = getBip44Chain(coin, chain === 'test');
+    let explorer: string | undefined = data.explorer;
 
     if (!valid) throw new Error('Invalid Trezor Blockbook Explorer URL');
 
-    const formattedBitcoinLikeNetwork = getFormattedBitcoinLikeNetwork(
-      chainId,
-      coin
-    );
-
+    const networkConfig = getNetworkConfig(chainId, coin);
+    if (!explorer) {
+      //We accept only trezor blockbook for UTXO chains, this method won't work for non trezor apis
+      explorer = data.url.replace(/\/api\/v[12]/, ''); //trimming /api/v{number}/ from explorer
+    }
+    const networkType = chain === 'test' ? 'testnet' : 'mainnet';
     const formattedNetwork = {
       url: data.url,
-      apiUrl: data.url,
-      explorer: data.url,
+      apiUrl: data.url, //apiURL and URL are the same for blockbooks explorer TODO: remove this field from UTXO networks
+      explorer,
       currency: nativeCurrency.symbol,
-      label: coin,
+      label: data.label || coin,
       default: false,
       chainId,
+      slip44: networkConfig.networks[networkType].slip44,
+    };
+    const rpc = {
+      formattedNetwork,
+      networkConfig,
     };
 
-    return {
-      formattedNetwork,
-      formattedBitcoinLikeNetwork,
-    };
+    return { rpc, coin, chain };
   } catch (error) {
     throw new Error(error);
   }

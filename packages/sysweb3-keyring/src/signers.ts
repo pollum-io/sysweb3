@@ -1,88 +1,50 @@
 import { BIP32Interface } from 'bip32';
 import { Psbt } from 'bitcoinjs-lib';
-import CryptoJS from 'crypto-js';
 import sys from 'syscoinjs-lib';
 
-import { getDecryptedVault, INetwork } from '.';
-import * as sysweb3 from '@pollum-io/sysweb3-core';
-import { BitcoinNetwork, IPubTypes } from '@pollum-io/sysweb3-network';
+import {
+  BitcoinNetwork,
+  IPubTypes,
+  INetwork,
+} from '@pollum-io/sysweb3-network';
 
 export const getSyscoinSigners = ({
   mnemonic,
   isTestnet,
-  url,
   rpc,
 }: ISyscoinSignerParams): { hd: SyscoinHDSigner; main: any } => {
-  let main: any;
-  let hd: SyscoinHDSigner;
-
+  const { url } = rpc.formattedNetwork;
   let config: BitcoinNetwork | null = null;
   let slip44: number | null = null;
   let pubTypes: IPubTypes | null = null;
-
   let networks: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork } | null =
     null;
+  if (rpc.networkConfig) {
+    const { formattedNetwork, networkConfig } = rpc;
 
-  const hasRpcConfig = rpc && rpc.formattedBitcoinLikeNetwork;
+    const { networks: _networkConfig, types } = networkConfig;
 
-  if (hasRpcConfig) {
-    const { formattedNetwork, formattedBitcoinLikeNetwork } = rpc;
+    config = isTestnet ? _networkConfig.testnet : _networkConfig.mainnet;
 
-    const { networks: _bitcoinLikeNetworks, types } =
-      formattedBitcoinLikeNetwork;
-
-    config = isTestnet
-      ? _bitcoinLikeNetworks.testnet
-      : _bitcoinLikeNetworks.mainnet;
-
-    networks = _bitcoinLikeNetworks;
+    networks = _networkConfig;
     slip44 = formattedNetwork.chainId;
     pubTypes = types.zPubType;
   }
+  const hd: SyscoinHDSigner = new sys.utils.HDSigner(
+    mnemonic,
+    null,
+    isTestnet,
+    networks,
+    slip44,
+    pubTypes,
+    84
+  );
 
-  // @ts-ignore
-  if (!hd) {
-    hd = new sys.utils.HDSigner(
-      mnemonic,
-      null,
-      isTestnet,
-      networks,
-      slip44,
-      pubTypes
-    );
-  }
-
-  if (!main) {
-    main = new sys.SyscoinJSLib(hd, url, config);
-  }
+  const main: any = new sys.SyscoinJSLib(hd, url, config);
 
   return {
     hd,
     main,
-  };
-};
-
-export const getSigners = () => {
-  const storage = sysweb3.sysweb3Di.getStateStorageDb();
-
-  const { hash } = storage.get('vault-keys');
-
-  const { network, isTestnet, mnemonic, rpc } = getDecryptedVault();
-
-  const decryptedMnemonic = CryptoJS.AES.decrypt(mnemonic, hash).toString(
-    CryptoJS.enc.Utf8
-  );
-
-  const { hd: _hd, main: _main } = getSyscoinSigners({
-    mnemonic: decryptedMnemonic,
-    isTestnet,
-    url: network.url,
-    rpc,
-  });
-
-  return {
-    _hd,
-    _main,
   };
 };
 
@@ -97,24 +59,6 @@ export type SyscoinHdAccount = {
   zprv: string;
 };
 
-export interface SyscoinFromZprvAccount extends SyscoinHdAccount {
-  toNode: (zprv: string) => string;
-  getAccountPrivateKey: () => string;
-  getAccountPublicKey: () => string;
-  getPrivateKey: () => string;
-  getPublicKey: () => string;
-  getAddress: () => string;
-  getKeypair: () => string;
-}
-
-export interface SyscoinFromZpubAccount extends SyscoinHdAccount {
-  toNode: (zprv: string) => string;
-  getAccountPublicKey: () => string;
-  getPublicKey: () => string;
-  getAddress: () => string;
-  getPayment: () => string;
-}
-
 export interface Bip84FromMnemonic {
   getRootPrivateKey: () => string;
   getRootPublicKey: () => string;
@@ -124,10 +68,9 @@ export interface Bip84FromMnemonic {
 export type ISyscoinSignerParams = {
   mnemonic: string;
   isTestnet: boolean;
-  url: string;
-  rpc?: {
+  rpc: {
     formattedNetwork: INetwork;
-    formattedBitcoinLikeNetwork: {
+    networkConfig?: {
       networks: { mainnet: BitcoinNetwork; testnet: BitcoinNetwork };
       types: { xPubType: IPubTypes; zPubType: IPubTypes };
     };
@@ -157,7 +100,7 @@ export interface SyscoinHDSigner {
     SLIP44: number;
     network: BitcoinNetwork;
     pubTypes: IPubTypes;
-    accounts: SyscoinFromZprvAccount[];
+    accounts: any;
     changeIndex: number;
     receivingIndex: number;
     accountIndex: number;
@@ -176,18 +119,26 @@ export interface SyscoinHDSigner {
   signPSBT: (psbt: Psbt, pathIn?: string) => Psbt;
   sign: (psbt: Psbt, pathIn?: string) => Psbt;
   getMasterFingerprint: () => Buffer;
-  deriveAccount: (index: number) => string;
+  deriveAccount: (index: number, bipNum?: number) => string;
   setAccountIndex: (accountIndex: number) => void;
-  restore: (password: string) => boolean;
+  restore: (password: string, bipNum?: number) => boolean;
   backup: () => void;
-  getNewChangeAddress: (skipIncrement?: boolean) => string;
-  getNewReceivingAddress: (skipIncrement?: boolean) => string;
-  createAccount: () => number;
+  getNewChangeAddress: (skipIncrement?: boolean, bipNum?: number) => string;
+  getNewReceivingAddress: (skipIncrement?: boolean, bipNum?: number) => string;
+  createAccount: (bipNum?: number) => number;
   getAccountXpub: () => string;
   setLatestIndexesFromXPubTokens: (tokens: any) => void;
-  createAddress: (addressIndex: number, isChange: boolean) => string;
+  createAddress: (
+    addressIndex: number,
+    isChange: boolean,
+    bipNum?: number
+  ) => string;
   createKeypair: (addressIndex: number, isChange: boolean) => BIP32Interface;
-  getHDPath: (addressIndex: number, isChange: boolean) => string;
+  getHDPath: (
+    addressIndex: number,
+    isChange: boolean,
+    bipNum?: number
+  ) => string;
   getAddressFromKeypair: (keypair: BIP32Interface) => string;
   getAddressFromPubKey: (pubkey: string) => string;
   deriveKeypair: (keypath: string) => BIP32Interface;

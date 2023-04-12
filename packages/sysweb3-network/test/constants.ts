@@ -5,7 +5,7 @@ dotenv.config();
 export const CHAIN_ID_NUMBER = 1;
 export const CHAIN_ID_HEX = '0x01';
 export const RPC_URL = 'https://1rpc.io/eth';
-export const BLOCKBOOK_RPC_URL = 'https://blockbook-litecoin.binancechain.io/';
+export const SYS_RPC_URL = 'https://blockbook-dev.elint.services/';
 
 export const CHAINS_EXPLORERS = [
   {
@@ -79,7 +79,11 @@ export const VALID_BLOCKBOOK_RPC_RESPONSE = {
   coin: 'Litecoin',
   chain: 'main',
 };
-
+export const VALID_SYS_BLOCKBOOK_RESPONSE = {
+  valid: true,
+  coin: 'Syscoin Testnet',
+  chain: 'test',
+};
 export const VALID_BIP44_DATA_RESPONSE = {
   nativeCurrency: { name: 'Litecoin', symbol: 'ltc', decimals: 8 },
   coinType: 2147483650,

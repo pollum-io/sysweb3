@@ -8,9 +8,8 @@ import {
   TransactionConfig,
 } from 'web3-core';
 
+import { INetwork, INetworkType } from '@pollum-io/sysweb3-network';
 import {
-  INetwork,
-  INetworkType,
   ITokenMint,
   ITokenSend,
   ITokenUpdate,
@@ -80,7 +79,7 @@ export interface IEthereumTransactions {
         ethers: string;
       }
   >;
-  getGasOracle: () => Promise<any>;
+  getGasOracle?: () => Promise<any>;
   getEncryptedPubKey: () => string;
   toBigNumber: (aBigNumberish: string | number) => ethers.BigNumber;
   sendSignedErc20Transaction: ({
@@ -96,6 +95,16 @@ export interface IEthereumTransactions {
     tokenAddress,
     tokenId,
   }: ISendSignedErcTransactionProps) => Promise<IResponseFromSendErcSignedTransaction>;
+
+  getBalance: (address: string) => Promise<number>;
+  getErc20TokensByAddress?: (
+    address: string,
+    isSupported: boolean,
+    apiUrl: string
+  ) => Promise<any[]>;
+  setWeb3Provider: (network: INetwork) => void;
+  importAccount: (mnemonicOrPrivKey: string) => ethers.Wallet;
+  web3Provider: ethers.providers.JsonRpcProvider;
 }
 
 export interface ISyscoinTransactions {
@@ -120,46 +129,54 @@ export interface ISyscoinTransactions {
 
 export interface IKeyringManager {
   addNewAccount: (label?: string) => Promise<IKeyringAccountState>;
-  checkPassword: (password: string) => boolean;
   createKeyringVault: () => Promise<IKeyringAccountState>;
-  createSeed: () => string;
   forgetMainWallet: (password: string) => void;
-  getAccounts: () => IKeyringAccountState[];
-  getAccountById: (id: number) => IKeyringAccountState;
+  getAccountById: (
+    id: number,
+    accountType: KeyringAccountType
+  ) => Omit<IKeyringAccountState, 'xprv'>;
   getAccountXpub: () => string;
-  getChangeAddress: (accountId: number) => string;
-  getDecryptedMnemonic: () => string;
-  getDecryptedPrivateKey: (key: string) => string;
-  getEncryptedMnemonic: () => string;
   getEncryptedXprv: () => string;
-  getLatestUpdateForAccount: () => Promise<any>;
+  // importTrezorAccount(
+  //   coin: string,
+  //   slip44: string,
+  //   index: string
+  // ): Promise<IKeyringAccountState>;
   getNetwork: () => INetwork;
-  getPrivateKeyByAccountId: (id: number) => string;
+  getPrivateKeyByAccountId: (
+    id: number,
+    acountType: KeyringAccountType,
+    pwd: string
+  ) => string;
   getSeed: (password: string) => string;
-  getState: () => IWalletState;
-  handleImportAccountByPrivateKey: (
-    privKey: string,
-    label?: string
-  ) => Promise<IKeyringAccountState>;
   isUnlocked: () => boolean;
-  login: (password: string) => Promise<IKeyringAccountState>;
   logout: () => void;
-  removeAccount: (id: number) => void;
-  removeNetwork: (chain: string, chainId: number) => void;
-  addAccountToSigner: (accountId: number) => void;
-  setActiveAccount: (accountId: number) => void;
+  setActiveAccount: (
+    accountId: number,
+    accountType: KeyringAccountType
+  ) => void;
   setSignerNetwork: (
     network: INetwork,
     chain: string
-  ) => Promise<IKeyringAccountState>;
+  ) => Promise<{
+    sucess: boolean;
+    wallet?: IWalletState;
+    activeChain?: INetworkType;
+  }>;
   setWalletPassword: (password: string) => void;
-  trezor: ITrezorWallet;
-  validateSeed: (seed: string) => boolean;
+  isSeedValid: (seed: string) => boolean;
+  setSeed: (seed: string) => void;
+  createNewSeed: () => string;
+  setStorage: (client: any) => void;
+  ethereumTransaction: IEthereumTransactions;
+  syscoinTransaction: ISyscoinTransactions;
+  verifyIfIsTestnet: () => boolean | undefined;
 }
 
 export enum KeyringAccountType {
-  Trezor,
-  Default,
+  Trezor = 'Trezor',
+  Imported = 'Imported',
+  HDAccount = 'HDAccount',
 }
 
 export type IKeyringDApp = {
@@ -168,11 +185,14 @@ export type IKeyringDApp = {
   active: boolean;
 };
 
+export type accountType = {
+  [id: number]: IKeyringAccountState;
+};
+
 export interface IWalletState {
-  accounts: {
-    [id: number]: IKeyringAccountState;
-  };
-  activeAccount: number;
+  accounts: { [key in KeyringAccountType]: accountType };
+  activeAccountId: number;
+  activeAccountType: KeyringAccountType;
   networks: {
     [INetworkType.Ethereum]: {
       [chainId: number | string]: INetwork;
@@ -206,8 +226,6 @@ export interface IKeyringAccountState {
   xprv: string;
   balances: IKeyringBalances;
   xpub: string;
-  transactions: any;
-  assets: any;
   isImported: boolean;
 }
 
@@ -225,8 +243,6 @@ export interface ISyscoinBackendAccount {
 }
 
 export interface ILatestUpdateForSysAccount {
-  transactions: any;
-  assets: any;
   xpub: any;
   balances: {
     syscoin: number;

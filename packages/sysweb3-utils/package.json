@@ -1,8 +1,8 @@
 {
   "name": "@pollum-io/sysweb3-utils",
-  "version": "1.1.218",
+  "version": "1.1.220",
   "description": "A helper for multi-chain accounts.",
-  "main": "cjs/index.js",
+  "main": "esm/index.js",
   "types": "types/index.d.ts",
   "repository": {
     "type": "git",
@@ -13,7 +13,7 @@
   "private": false,
   "scripts": {
     "prebuild": "rimraf dist/",
-    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "build": "tsc && tsc -p tsconfig.json",
     "rollup": "rollup -c ../../scripts/config/rollup.config.js",
     "prerelease": "npm run build && npm version patch",
     "copy": "node ../../scripts/package/copy",
@@ -21,12 +21,11 @@
     "release:preflight": "npm pack ./dist --dry-run",
     "publish": "npm run prebuild && npm run build && npm run rollup && npm run prerelease && npm run copy && npm run release:npm",
     "test": "jest",
-    "type-check": "tsc --pretty --noEmit"
+    "type-check": "tsc --pretty --noEmit",
+    "localTest": "npm run prebuild && npm run build && npm run rollup && npm run build && npm run copy"
   },
   "dependencies": {
     "@ethersproject/contracts": "^5.6.2",
-    "@pollum-io/sysweb3-core": "^1.0.19",
-    "@pollum-io/sysweb3-network": "^1.0.84",
     "axios": "^0.26.1",
     "bech32": "^2.0.0",
     "bip32": "^3.0.1",
@@ -37,8 +36,8 @@
     "coinselectsyscoin": "^1.0.77",
     "crypto-js": "^4.1.1",
     "ethers": "^5.6.4",
-    "syscoinjs-lib": "^1.0.214",
-    "syscointx-js": "^1.0.101",
+    "syscoinjs-lib": "^1.0.217",
+    "syscointx-js": "^1.0.106",
     "web3": "^1.7.1"
   },
   "devDependencies": {

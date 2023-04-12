@@ -1,6 +1,10 @@
-import { IKeyringAccountState, IWalletState } from './types';
+import {
+  IKeyringAccountState,
+  IWalletState,
+  KeyringAccountType,
+} from './types';
 
-export const initialActiveAccountState: IKeyringAccountState = {
+export const initialActiveHdAccountState: IKeyringAccountState = {
   address: '',
   balances: {
     ethereum: 0,
@@ -11,9 +15,17 @@ export const initialActiveAccountState: IKeyringAccountState = {
   label: 'Account 1',
   xprv: '',
   xpub: '',
-  transactions: [],
-  assets: [],
   isImported: false,
+};
+
+export const initialActiveImportedAccountState: IKeyringAccountState = {
+  ...initialActiveHdAccountState,
+  isImported: true,
+};
+
+export const initialActiveTrezorAccountState: IKeyringAccountState = {
+  ...initialActiveHdAccountState,
+  isTrezorWallet: true,
 };
 
 export const initialNetworksState = {
@@ -61,7 +73,7 @@ export const initialNetworksState = {
       currency: 'matic',
       default: true,
       label: 'Polygon Mumbai Testnet',
-      url: 'https://rpc.ankr.com/polygon_mumbai',
+      url: 'https://endpoints.omniatech.io/v1/matic/mumbai/public',
       apiUrl: 'https://api-testnet.polygonscan.com/api',
       explorer: 'https://mumbai.polygonscan.com/',
     },
@@ -88,9 +100,18 @@ export const initialNetworksState = {
 
 export const initialWalletState: IWalletState = {
   accounts: {
-    [initialActiveAccountState.id]: initialActiveAccountState,
+    [KeyringAccountType.HDAccount]: {
+      [initialActiveHdAccountState.id]: initialActiveHdAccountState,
+    },
+    [KeyringAccountType.Imported]: {
+      [initialActiveImportedAccountState.id]: initialActiveImportedAccountState,
+    },
+    [KeyringAccountType.Trezor]: {
+      [initialActiveTrezorAccountState.id]: initialActiveTrezorAccountState,
+    },
   },
-  activeAccount: 0,
+  activeAccountId: 0,
+  activeAccountType: KeyringAccountType.HDAccount,
   networks: initialNetworksState,
   activeNetwork: {
     chainId: 57,

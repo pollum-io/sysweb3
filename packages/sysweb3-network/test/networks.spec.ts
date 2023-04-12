@@ -1,4 +1,4 @@
-import { getFormattedBitcoinLikeNetwork, getPubType } from '../src/networks';
+import { getNetworkConfig, getPubType } from '../src/networks';
 import {
   VALID_BIP44_DATA_RESPONSE,
   VALID_BITCOIN_LIKE_NETWORK,
@@ -11,7 +11,7 @@ describe('networks tests', () => {
       chainId,
     } = VALID_BIP44_DATA_RESPONSE;
 
-    const response = getFormattedBitcoinLikeNetwork(chainId, name);
+    const response = getNetworkConfig(chainId, name);
 
     expect(response.networks).toStrictEqual(
       VALID_BITCOIN_LIKE_NETWORK.networks

@@ -36,18 +36,15 @@ export const getPubType = (
   };
 };
 
-export const getFormattedBitcoinLikeNetwork = (
-  slip44: number,
-  coinName: string
-) => {
+export const getNetworkConfig = (slip44: number, coinName: string) => {
   try {
     const coin = coins.find(
       (supported: any) => supported.coinName === coinName
     );
 
-    if (!(coin && coin.slip44 === slip44))
-      throw new Error(`Coin info not found`);
-
+    if (!(coin && coin.slip44 === slip44)) {
+      throw `${coinName} not supported, add its network config on coins.ts at Pali repo`;
+    }
     const {
       signedMessageHeader,
       bech32Prefix,
@@ -72,6 +69,7 @@ export const getFormattedBitcoinLikeNetwork = (
       },
       pubKeyHash: hexPubKeyHash,
       scriptHash: hexScriptHash,
+      slip44: coin.slip44,
       wif,
     };
 
@@ -111,3 +109,20 @@ export type IPubTypes = {
   mainnet: { zprv: string; zpub: string };
   testnet: { vprv: string; vpub: string };
 };
+
+export type INetwork = {
+  chainId: number;
+  url: string;
+  default?: boolean;
+  label: string;
+  key?: string;
+  apiUrl?: string;
+  currency?: string;
+  explorer?: string;
+  slip44?: number;
+};
+
+export enum INetworkType {
+  Ethereum = 'ethereum',
+  Syscoin = 'syscoin',
+}

@@ -1,8 +1,8 @@
 {
   "name": "@pollum-io/sysweb3-network",
-  "version": "1.0.86",
+  "version": "1.0.88",
   "description": "A network management tool for multi-chain accounts.",
-  "main": "cjs/index.js",
+  "main": "esm/index.js",
   "types": "types/index.d.ts",
   "repository": {
     "type": "git",
@@ -17,23 +17,25 @@
   "homepage": "https://github.com/Pollum-io/sysweb3#readme",
   "scripts": {
     "prebuild": "rimraf dist/",
-    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "build": "tsc && tsc -p tsconfig.json",
     "rollup": "rollup -c ../../scripts/config/rollup.config.js",
     "prerelease": "npm run build && npm version patch",
     "copy": "node ../../scripts/package/copy",
     "release:npm": "npm publish ./dist --access=public",
     "release:preflight": "npm pack ./dist --dry-run",
-    "publish": "npm run prebuild && npm run build && npm run rollup && npm run prerelease && npm run copy && npm run release:npm --bundleConfigAsCjs",
-    "type-check": "tsc --pretty --noEmit"
+    "publish": "npm run prebuild && npm run build && npm run rollup && npm run prerelease && npm run copy && npm run release:npm",
+    "type-check": "tsc --pretty --noEmit",
+    "localTest": "npm run prebuild && npm run build && npm run rollup && npm run build && npm run copy"
   },
   "dependencies": {
-    "@pollum-io/sysweb3-core": "^1.0.19",
-    "@pollum-io/sysweb3-utils": "^1.1.214",
     "axios": "^0.26.1",
     "bip44-constants": "^114.0.0",
     "bs58check": "^2.1.2",
     "eth-chains": "^1.0.0",
     "ethers": "^5.6.9",
     "web3": "^1.7.1"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.191"
   }
 }

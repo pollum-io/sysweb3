@@ -6,14 +6,16 @@ import {
   validateSysRpc,
 } from '../src/rpc';
 import {
-  BLOCKBOOK_RPC_URL,
   CHAIN_ID_HEX,
   CHAIN_ID_NUMBER,
   RPC_URL,
   VALID_BIP44_DATA_RESPONSE,
   VALID_BLOCKBOOK_RPC_RESPONSE,
+  VALID_SYS_BLOCKBOOK_RESPONSE,
   VALID_ETH_RPC_RESPONSE,
+  SYS_RPC_URL,
 } from './constants';
+import 'isomorphic-fetch';
 
 describe('rpc tests', () => {
   it('should check if given chain id is a safe integer and it is between 0 and 4503599627370476', () => {
@@ -35,10 +37,10 @@ describe('rpc tests', () => {
     expect(response).toStrictEqual(VALID_ETH_RPC_RESPONSE);
   });
 
-  it('should validate given trezor blockbook rpc', async () => {
-    const response = await validateSysRpc(BLOCKBOOK_RPC_URL);
+  it('should validate sys rpc', async () => {
+    const response = await validateSysRpc(SYS_RPC_URL);
 
-    expect(response).toStrictEqual(VALID_BLOCKBOOK_RPC_RESPONSE);
+    expect(response).toStrictEqual(VALID_SYS_BLOCKBOOK_RESPONSE);
   });
 
   it('should get bip44 data for given coin', () => {

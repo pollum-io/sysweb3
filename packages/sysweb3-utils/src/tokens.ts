@@ -440,8 +440,13 @@ export const getHost = (url: string) => {
 export const getToken = async (id: string): Promise<ICoingeckoToken> => {
   let token;
   try {
-    const response = await axios.get(`${COINGECKO_API}/coins/${id}`);
-    token = response.data;
+    if (fetch) {
+      const response = await fetch(`${COINGECKO_API}/coins/${id}`);
+      token = await response.json();
+    } else {
+      const response = await axios.get(`${COINGECKO_API}/coins/${id}`);
+      token = response.data;
+    }
   } catch (error) {
     throw new Error('Unable to retrieve token data');
   }
@@ -484,11 +489,18 @@ export const getFiatValueByToken = async (
   fiat: string
 ): Promise<number> => {
   try {
-    const response = await axios.get(
-      `${COINGECKO_API}/simple/price?ids=${token}&vs_currencies=${fiat}`
-    );
-
-    return response.data[token][fiat];
+    if (fetch) {
+      const response = await fetch(
+        `${COINGECKO_API}/simple/price?ids=${token}&vs_currencies=${fiat}`
+      );
+      const data = await response.json();
+      return data[token][fiat];
+    } else {
+      const response = await axios.get(
+        `${COINGECKO_API}/simple/price?ids=${token}&vs_currencies=${fiat}`
+      );
+      return response.data[token][fiat];
+    }
   } catch (error) {
     throw new Error(`Unable to retrieve ${token} price as ${fiat} `);
   }
@@ -521,9 +533,14 @@ export const getTokenBySymbol = async (
 export const getSearch = async (
   query: string
 ): Promise<ICoingeckoSearchResults> => {
-  const response = await axios.get(`${COINGECKO_API}/search?query=${query}`);
-
-  return camelcaseKeys(response.data, { deep: true });
+  if (fetch) {
+    const response = await fetch(`${COINGECKO_API}/search?query=${query}`);
+    const data = await response.json();
+    return camelcaseKeys(data, { deep: true });
+  } else {
+    const response = await axios.get(`${COINGECKO_API}/search?query=${query}`);
+    return camelcaseKeys(response.data, { deep: true });
+  }
 };
 
 /**
@@ -535,10 +552,17 @@ export const getTokenByContract = async (
 ): Promise<ICoingeckoToken> => {
   let token;
   try {
-    const response = await axios.get(
-      `${COINGECKO_API}/coins/ethereum/contract/${contractAddress}`
-    );
-    token = response.data;
+    if (fetch) {
+      const response = await fetch(
+        `${COINGECKO_API}/coins/ethereum/contract/${contractAddress}`
+      );
+      token = await response.json();
+    } else {
+      const response = await axios.get(
+        `${COINGECKO_API}/coins/ethereum/contract/${contractAddress}`
+      );
+      token = response.data;
+    }
   } catch (error) {
     throw new Error('Token not found');
   }
@@ -764,13 +788,6 @@ export interface NftMetadata {
   owner: Address;
   rawData: Record<string, unknown> | null;
 }
-
-export interface IEthereumNftDetails extends IEtherscanNFT, NftMetadata {
-  isNft: boolean;
-  id: string | number;
-  balance: number;
-}
-
 export type IErc20Token = {
   name: string;
   symbol: string;
