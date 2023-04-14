@@ -7,6 +7,7 @@ import { ethers } from 'ethers';
 import { getNetworkConfig, toDecimalFromHex, INetwork } from './networks';
 
 const hexRegEx = /^0x[0-9a-f]+$/iu;
+const syscoinSLIP = 84;
 
 export const validateChainId = (
   chainId: number | string
@@ -71,14 +72,20 @@ export const getEthRpc = async (
 ): Promise<{
   formattedNetwork: INetwork;
 }> => {
+  const endsWithSlash = /\/$/;
   const { valid, hexChainId, details } = await validateEthRpc(data.url);
 
   if (!valid) throw new Error('Invalid RPC.');
 
   const chainIdNumber = toDecimalFromHex(hexChainId);
   let explorer = '';
-  if (details) {
+  if (details && !data.explorer) {
     explorer = details.explorers ? details.explorers[0].url : explorer;
+  } else if (data.explorer) {
+    explorer = data.explorer;
+  }
+  if (!endsWithSlash.test(explorer)) {
+    explorer = explorer + '/';
   }
   if (!details && !data.symbol) throw new Error('Must define a symbol');
   const formattedNetwork = {
@@ -86,7 +93,7 @@ export const getEthRpc = async (
     default: false,
     label: data.label || String(details ? details.name : ''),
     apiUrl: data.apiUrl,
-    explorer: data.explorer ? data.explorer : String(explorer),
+    explorer: String(explorer),
     currency: details ? details.nativeCurrency.symbol : data.symbol,
     chainId: chainIdNumber,
   };
@@ -163,12 +170,24 @@ export const getBip44Chain = (coin: string, isTestnet?: boolean) => {
 export const getSysRpc = async (data: any) => {
   try {
     const { valid, coin, chain } = await validateSysRpc(data.url);
-    const { nativeCurrency, chainId } = getBip44Chain(coin, chain === 'test');
+    const { nativeCurrency, chainId: _chainID } = getBip44Chain(
+      coin,
+      chain === 'test'
+    );
     let explorer: string | undefined = data.explorer;
+    let chainId = _chainID;
 
     if (!valid) throw new Error('Invalid Trezor Blockbook Explorer URL');
-
-    const networkConfig = getNetworkConfig(chainId, coin);
+    let networkConfig = null;
+    let defaultNetwork = false;
+    if (!coin.toLowerCase().includes('syscoin')) {
+      networkConfig = getNetworkConfig(chainId, coin);
+      defaultNetwork = true;
+    }
+    if (coin.toLowerCase().includes('syscoin testnet')) {
+      //This actually not true, its just a convetion used in pali to diferentiate syscoin testnet from other utxo testnets
+      chainId = 5700;
+    }
     if (!explorer) {
       //We accept only trezor blockbook for UTXO chains, this method won't work for non trezor apis
       explorer = data.url.replace(/\/api\/v[12]/, ''); //trimming /api/v{number}/ from explorer
@@ -180,9 +199,11 @@ export const getSysRpc = async (data: any) => {
       explorer,
       currency: nativeCurrency.symbol,
       label: data.label || coin,
-      default: false,
+      default: defaultNetwork,
       chainId,
-      slip44: networkConfig.networks[networkType].slip44,
+      slip44: networkConfig
+        ? networkConfig.networks[networkType].slip44
+        : syscoinSLIP,
     };
     const rpc = {
       formattedNetwork,

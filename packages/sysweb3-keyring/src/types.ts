@@ -163,6 +163,7 @@ export interface IKeyringManager {
     wallet?: IWalletState;
     activeChain?: INetworkType;
   }>;
+  updateNetworkConfig: (network: INetwork, chainType: INetworkType) => void;
   setWalletPassword: (password: string) => void;
   isSeedValid: (seed: string) => boolean;
   setSeed: (seed: string) => void;

@@ -365,6 +365,31 @@ export class KeyringManager implements IKeyringManager {
     return this.memMnemonic;
   };
 
+  public updateNetworkConfig = async (
+    data: INetwork,
+    chainType: INetworkType
+  ) => {
+    if (
+      chainType !== INetworkType.Syscoin &&
+      chainType !== INetworkType.Ethereum
+    ) {
+      throw new Error('Invalid chain type');
+    }
+    if (!this.wallet.networks[chainType][data.chainId]) {
+      throw new Error('Network does not exist');
+    }
+    this.wallet = {
+      ...this.wallet,
+      networks: {
+        ...this.wallet.networks,
+        [chainType]: {
+          ...this.wallet.networks[chainType],
+          [data.chainId]: data,
+        },
+      },
+    };
+  };
+
   public removeNetwork = async (chain: INetworkType, chainId: number) => {
     //TODO: test failure case to validate rollback;
     if (
