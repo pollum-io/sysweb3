@@ -59,7 +59,11 @@ export const getNetworkConfig = (slip44: number, coinName: string) => {
 
     const hexPubKeyHash = ethers.utils.hexlify(addressType);
     const hexScriptHash = ethers.utils.hexlify(addressTypeP2sh);
-
+    if (bech32Prefix === null) {
+      throw new Error(
+        `We currently don't support ${coinName} as we don't have its bech32 prefix, please if you need it supported create a pr on sysweb3-network package adding it to coins.ts  `
+      );
+    }
     const baseNetwork = {
       messagePrefix: String(signedMessageHeader).replace(/[\r\n]/gm, ''),
       bech32: String(bech32Prefix),

@@ -811,7 +811,7 @@ export const coins = [
   {
     addressType: 30,
     addressTypeP2sh: 22,
-    bech32Prefix: null,
+    bech32Prefix: 'dc',
     blockchainLink: {
       type: 'blockbook',
       url: [
@@ -843,7 +843,7 @@ export const coins = [
     maxfeeKb: 1200000000000,
     minAddressLength: 27,
     minfeeKb: 100000,
-    name: 'Dogecoin Testnet',
+    name: 'Dogecoin',
     segwit: false,
     shortcut: 'DOGE',
     signedMessageHeader: '\x19Dogecoin Signed Message:\n',

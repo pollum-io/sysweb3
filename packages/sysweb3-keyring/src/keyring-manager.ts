@@ -35,7 +35,6 @@ import {
   BitcoinNetwork,
   getSysRpc,
   IPubTypes,
-  validateSysRpc,
   INetwork,
   INetworkType,
 } from '@pollum-io/sysweb3-network';
@@ -956,14 +955,6 @@ export class KeyringManager implements IKeyringManager {
   private getSignerUTXO = async (
     network: INetwork
   ): Promise<{ rpc: any; isTestnet: boolean }> => {
-    if (network.default) {
-      const { chain, valid } = await validateSysRpc(network.url);
-      if (!valid) throw new Error('Invalid network');
-      return {
-        rpc: { formattedNetwork: network, networkConfig: null },
-        isTestnet: chain === 'test',
-      };
-    }
     const { rpc, chain } = await getSysRpc(network);
 
     return {

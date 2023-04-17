@@ -170,6 +170,11 @@ export const getBip44Chain = (coin: string, isTestnet?: boolean) => {
 export const getSysRpc = async (data: any) => {
   try {
     const { valid, coin, chain } = await validateSysRpc(data.url);
+    if (coin.toLowerCase().includes('syscoin')) {
+      return {
+        rpc: { formattedNetwork: data, networkConfig: null },
+      };
+    }
     const { nativeCurrency, chainId: _chainID } = getBip44Chain(
       coin,
       chain === 'test'
