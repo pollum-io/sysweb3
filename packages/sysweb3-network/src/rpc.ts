@@ -173,6 +173,8 @@ export const getSysRpc = async (data: any) => {
     if (coin.toLowerCase().includes('syscoin')) {
       return {
         rpc: { formattedNetwork: data, networkConfig: null },
+        coin,
+        chain,
       };
     }
     const { nativeCurrency, chainId: _chainID } = getBip44Chain(
