@@ -119,7 +119,10 @@ export interface ISyscoinTransactions {
   transferAssetOwnership: (transaction: any) => Promise<ITxid>;
   confirmUpdateToken: (transaction: ITokenUpdate) => Promise<ITxid>;
   getRecommendedFee: (explorerUrl: string) => Promise<number>;
-  sendTransaction: (transaction: ITokenSend) => Promise<ITxid>;
+  sendTransaction: (
+    transaction: ITokenSend,
+    isTrezor: boolean
+  ) => Promise<ITxid>;
   signTransaction: (
     data: { psbt: string; assets: string },
     isSendOnly: boolean,
@@ -137,11 +140,12 @@ export interface IKeyringManager {
   ) => Omit<IKeyringAccountState, 'xprv'>;
   getAccountXpub: () => string;
   getEncryptedXprv: () => string;
-  // importTrezorAccount(
-  //   coin: string,
-  //   slip44: string,
-  //   index: string
-  // ): Promise<IKeyringAccountState>;
+  getState: () => IWalletState;
+  importTrezorAccount(
+    coin: string,
+    slip44: string,
+    index: string
+  ): Promise<IKeyringAccountState>;
   getNetwork: () => INetwork;
   getPrivateKeyByAccountId: (
     id: number,
