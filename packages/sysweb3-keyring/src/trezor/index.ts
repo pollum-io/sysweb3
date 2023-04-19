@@ -280,8 +280,11 @@ export class TrezorKeyring {
       case 'btc':
         this.hdPath = "m/84'/0'/0'";
         break;
-      default:
+      case 'eth':
         this.hdPath = `m/44'/${slip44}'/0'/0/0`;
+        break;
+      default:
+        this.hdPath = `m/84'/${slip44}'/0'`;
         break;
     }
 
@@ -606,8 +609,11 @@ export class TrezorKeyring {
       case 'btc':
         this.hdPath = `m/84'/0'/0'/0/${index ? index : 0}`;
         break;
+      case 'eth':
+        this.hdPath = `m/44'/60'/0'/0/${index ? index : 0}`;
+        break;
       default:
-        this.hdPath = `m/44'/${slip44}'/0'/0/${index ? index : 0}`;
+        this.hdPath = `m/84'/${slip44}'/0'/0/${index ? index : 0}`;
         break;
     }
 
@@ -777,8 +783,11 @@ export class TrezorKeyring {
       case 'btc':
         this.hdPath = "m/84'/0'/0'";
         break;
+      case 'eth':
+        this.hdPath = `m/44'/60'/0'/0`;
+        break;
       default:
-        this.hdPath = `m/44'/${slip44}'/0'/0`;
+        this.hdPath = `m/84'/${slip44}'/0'/0`;
         break;
     }
     try {
@@ -788,6 +797,46 @@ export class TrezorKeyring {
       });
       if (success) {
         return payload.address;
+      }
+    } catch (error) {
+      return error;
+    }
+  }
+
+  public async getMultipleAddress({
+    coin,
+    slip44,
+    indexArray,
+    isChangeAddress,
+  }: {
+    coin: string;
+    indexArray: string[] | number[];
+    slip44?: string;
+    isChangeAddress?: boolean;
+  }): Promise<string[] | undefined> {
+    switch (coin) {
+      case 'sys':
+        this.hdPath = `m/84'/57'/0'/${isChangeAddress ? 1 : 0}`;
+        break;
+      case 'btc':
+        this.hdPath = "m/84'/0'/0'";
+        break;
+      case 'eth':
+        this.hdPath = `m/44'/60'/0'/0`;
+        break;
+      default:
+        this.hdPath = `m/84'/${slip44}'/0'/0`;
+        break;
+    }
+    try {
+      const { payload, success } = await TrezorConnect.getAddress({
+        bundle: indexArray.map((index) => ({
+          path: `${this.hdPath}/${index}`,
+          coin,
+        })),
+      });
+      if (success) {
+        return payload.map((item) => item.address);
       }
     } catch (error) {
       return error;
