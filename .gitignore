@@ -11,4 +11,4 @@ coverage/
 yarn-error.log
 .eslintcache
 .env
-yarn.lock
+package-lock.json

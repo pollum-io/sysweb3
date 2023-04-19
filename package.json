@@ -8,21 +8,25 @@
   "main": "esm/index.js",
   "typings": "types/index.d.ts",
   "homepage": "https://github.com/Pollum-io/sysweb3#readme",
+  "engines": {
+    "yarn": ">= 1.0.0"
+  },
+
   "scripts": {
     "build": "tsc && tsc -p tsconfig.json",
-    "build-all": "npm run build && npm run build-rollup",
+    "build-all": "yarn run build && yarn run build-rollup",
     "build-rollup": "rollup -c scripts/config/rollup.config.js && rollup -c scripts/config/rollup.config.js --environment NODE_ENV:production",
     "clean": "rimraf dist/",
     "format": "prettier --write .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prebuild": "npm run clean",
+    "prebuild": "yarn clean",
     "prepare": "husky install",
-    "prerelease": "npm run build && npm version patch --no-git-tag-version",
-    "publish": "npm run prebuild && npm run build && npm run build-rollup  && npm run build-all && npm run prerelease && npm run release",
-    "release": "node ./scripts/package/copy && npm run release:npm",
+    "prerelease": "yarn build && yarn version patch --no-git-tag-version",
+    "publish": "yarn prebuild && yarn build && yarn build-rollup  && yarn build-all && yarn run prerelease && yarn release",
+    "release": "node ./scripts/package/copy && yarn release:npm",
     "release:npm": "npm publish ./dist -access public",
-    "release:preflight": "npm pack ./dist --dry-run",
+    "release:preflight": "yarn pack ./dist --dry-run",
     "test": "jest",
     "type-check": "tsc --pretty --noEmit"
   },
