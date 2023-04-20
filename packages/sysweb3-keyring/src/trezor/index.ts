@@ -81,6 +81,7 @@ export class TrezorKeyring {
       await TrezorConnect.init({
         manifest: TREZOR_CONNECT_MANIFEST,
         lazyLoad: true,
+        popup: true,
         connectSrc: 'https://connect.trezor.io/9/',
       });
       return true;
