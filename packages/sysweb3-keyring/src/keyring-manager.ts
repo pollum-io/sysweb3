@@ -680,7 +680,7 @@ export class KeyringManager implements IKeyringManager {
     index: string,
     label?: string
   ) {
-    const { accounts } = this.wallet;
+    const { accounts, activeNetwork } = this.wallet;
     const { descriptor: xpub, balance } =
       await this.trezorSigner.getAccountInfo({ coin, slip44 });
 
@@ -720,9 +720,7 @@ export class KeyringManager implements IKeyringManager {
       ...this.initialTrezorAccountState,
       ...updatedAccountInfo,
       address,
-      networksAddresses: {
-        [coin]: address,
-      },
+      originNetwork: activeNetwork,
       label: label ? label : `Trezor ${id + 1}`,
       id,
       xprv: '',
@@ -994,13 +992,7 @@ export class KeyringManager implements IKeyringManager {
     },
     isTestnet: boolean
   ) => {
-    const hdAccounts = this.wallet.accounts[KeyringAccountType.HDAccount];
-    const trezorAccountsArray = Object.values(
-      this.wallet.accounts[KeyringAccountType.Trezor]
-    );
-    const trezorAccountsIdsArray = Object.values(
-      this.wallet.accounts[KeyringAccountType.Trezor]
-    ).map((acc) => acc.id);
+    const accounts = this.wallet.accounts[KeyringAccountType.HDAccount];
     const { hd, main } = getSyscoinSigners({
       mnemonic: this.memMnemonic,
       isTestnet,
@@ -1008,48 +1000,7 @@ export class KeyringManager implements IKeyringManager {
     });
     this.hd = hd;
     this.syscoinSigner = main;
-
-    // set current network address in all trezor accounts
-    if (
-      !trezorAccountsArray.some(
-        (acc) =>
-          acc.networksAddresses &&
-          !acc.networksAddresses[`${rpc.formattedNetwork.currency}`]
-      ) &&
-      !isTestnet
-    ) {
-      const addresses = await this.trezorSigner.getMultipleAddress({
-        coin: `${rpc.formattedNetwork.currency}`,
-        indexArray: trezorAccountsIdsArray,
-        slip44: `${rpc.formattedNetwork.chainId}`,
-      });
-      if (addresses) {
-        addresses.map((address, index) => {
-          this.wallet.accounts[KeyringAccountType.Trezor][index].address =
-            address;
-
-          this.wallet.accounts[KeyringAccountType.Trezor][index][
-            'networksAddresses'
-          ] = {
-            ...this.wallet.accounts[KeyringAccountType.Trezor][index][
-              'networksAddresses'
-            ],
-            [`${rpc.formattedNetwork.currency}`]: address,
-          };
-        });
-      }
-    }
-    if (!isTestnet) {
-      trezorAccountsIdsArray.map((index) => {
-        this.wallet.accounts[KeyringAccountType.Trezor][index].address =
-          // @ts-ignore
-          this.wallet.accounts[KeyringAccountType.Trezor][index][
-            'networksAddresses'
-          ][`${rpc.formattedNetwork.currency}`];
-      });
-    }
-
-    const walletAccountsArray = Object.values(hdAccounts);
+    const walletAccountsArray = Object.values(accounts);
 
     // Create an array of promises.
     const accountPromises = walletAccountsArray.map(async ({ id }) => {

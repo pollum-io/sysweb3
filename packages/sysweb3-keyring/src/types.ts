@@ -232,7 +232,7 @@ export interface IKeyringAccountState {
   balances: IKeyringBalances;
   xpub: string;
   isImported: boolean;
-  networksAddresses?: { [network: string]: string };
+  originNetwork?: INetwork;
 }
 
 export interface ISyscoinBackendAccount {
