@@ -171,8 +171,11 @@ export class TrezorKeyring {
       case 'btc':
         this.hdPath = "m/84'/0'/0'";
         break;
+      case 'eth':
+        this.hdPath = `m/44'/60'/0'/0/${index ? index : 0}`;
+        break;
       default:
-        this.hdPath = `m/44'/${slip44}'/0'/0/${index ? index : 0}`;
+        this.hdPath = `m/84'/${slip44}'/0'/0/${index ? index : 0}`;
         break;
     }
 
@@ -269,9 +272,11 @@ export class TrezorKeyring {
     coin,
     slip44,
     hdPath,
+    index,
   }: {
     coin: string;
     slip44: string;
+    index?: number;
     hdPath?: string;
   }) {
     switch (coin) {
@@ -282,7 +287,7 @@ export class TrezorKeyring {
         this.hdPath = "m/84'/0'/0'";
         break;
       case 'eth':
-        this.hdPath = `m/44'/${slip44}'/0'/0/0`;
+        this.hdPath = `m/44'/60'/0'/0/${index ? index : 0}`;
         break;
       default:
         this.hdPath = `m/84'/${slip44}'/0'`;
@@ -578,7 +583,7 @@ export class TrezorKeyring {
       }
       return { success: false, payload };
     } catch (error) {
-      return { error };
+      return { success: false, payload: error };
     }
   }
 

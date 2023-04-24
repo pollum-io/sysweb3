@@ -98,7 +98,9 @@ export class KeyringManager implements IKeyringManager {
     );
     this.ethereumTransaction = new EthereumTransactions(
       this.getNetwork,
-      this.getDecryptedPrivateKey
+      this.getDecryptedPrivateKey,
+      this.getSigner,
+      this.getState
     );
   }
   // ===================================== AUXILIARY METHOD - FOR TRANSACTIONS CLASSES ===================================== //
@@ -682,9 +684,23 @@ export class KeyringManager implements IKeyringManager {
   ) {
     const { accounts, activeNetwork } = this.wallet;
     const { descriptor: xpub, balance } =
-      await this.trezorSigner.getAccountInfo({ coin, slip44 });
+      await this.trezorSigner.getAccountInfo({ coin, slip44, index });
+    let ethPubKey = '';
 
-    const address = await this.trezorSigner.getAddress({ coin, slip44, index });
+    const isEVM = coin === 'eth';
+
+    const address = isEVM
+      ? xpub
+      : await this.trezorSigner.getAddress({ coin, slip44, index });
+
+    if (isEVM) {
+      const response = await this.trezorSigner.getPublicKey({
+        coin,
+        slip44,
+        index: +index,
+      });
+      ethPubKey = response.publicKey;
+    }
 
     const accountAlreadyExists =
       Object.values(
@@ -720,11 +736,11 @@ export class KeyringManager implements IKeyringManager {
       ...this.initialTrezorAccountState,
       ...updatedAccountInfo,
       address,
-      originNetwork: activeNetwork,
+      originNetwork: { ...activeNetwork, isBitcoinBased: isEVM },
       label: label ? label : `Trezor ${id + 1}`,
       id,
       xprv: '',
-      xpub,
+      xpub: isEVM ? ethPubKey : xpub,
       assets: {
         syscoin: [],
         ethereum: [],
