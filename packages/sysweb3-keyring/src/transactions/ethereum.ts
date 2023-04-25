@@ -23,12 +23,16 @@ import { ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
 
+import { SyscoinHDSigner } from '../signers';
+import { TrezorKeyring } from '../trezor';
 import {
   IResponseFromSendErcSignedTransaction,
   ISendSignedErcTransactionProps,
   ISendTransaction,
   IEthereumTransactions,
   SimpleTransactionRequest,
+  IWalletState,
+  KeyringAccountType,
 } from '../types';
 import { INetwork } from '@pollum-io/sysweb3-network';
 import {
@@ -39,24 +43,38 @@ import {
 
 export class EthereumTransactions implements IEthereumTransactions {
   public web3Provider: ethers.providers.JsonRpcProvider;
+  public trezorSigner: TrezorKeyring;
   private getNetwork: () => INetwork;
   private getDecryptedPrivateKey: () => {
     address: string;
     decryptedPrivateKey: string;
   };
+  private getSigner: () => {
+    hd: SyscoinHDSigner;
+    main: any;
+  };
+  private getState: () => IWalletState;
 
   constructor(
     getNetwork: () => INetwork,
     getDecryptedPrivateKey: () => {
       address: string;
       decryptedPrivateKey: string;
-    }
+    },
+    getSigner: () => {
+      hd: SyscoinHDSigner;
+      main: any;
+    },
+    getState: () => IWalletState
   ) {
     this.getNetwork = getNetwork;
     this.getDecryptedPrivateKey = getDecryptedPrivateKey;
     this.web3Provider = new ethers.providers.JsonRpcProvider(
       this.getNetwork().url
     );
+    this.getSigner = getSigner;
+    this.getState = getState;
+    this.trezorSigner = new TrezorKeyring(this.getSigner);
   }
 
   signTypedData = (
@@ -244,6 +262,53 @@ export class EthereumTransactions implements IEthereumTransactions {
   //TODO: This function needs to be refactored
   sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
     const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
+    const { activeAccountType, activeAccountId, accounts, activeNetwork } =
+      this.getState();
+    const activeAccount = accounts[activeAccountType][activeAccountId];
+    const transactionNonce = await this.getRecommendedNonce(
+      activeAccount.address
+    );
+    const txFormattedForTrezor = {
+      ...params,
+      // @ts-ignore
+      gasLimit: `${params.gasLimit.toHexString()}`,
+      // @ts-ignore
+      maxFeePerGas: `${params.maxFeePerGas.toHexString()}`,
+      // @ts-ignore
+      maxPriorityFeePerGas: `${params.maxPriorityFeePerGas.toHexString()}`,
+      // @ts-ignore
+      value: `${params.value.toHexString()}`,
+      nonce: this.toBigNumber(transactionNonce)._hex,
+      chainId: activeNetwork.chainId,
+    };
+
+    if (activeAccountType === KeyringAccountType.Trezor) {
+      const signature = await this.trezorSigner.signEthTransaction({
+        index: `${activeAccountId}`,
+        tx: txFormattedForTrezor,
+      });
+      if (signature.success) {
+        try {
+          const txFormattedForEthers = {
+            ...params,
+            nonce: transactionNonce,
+            chainId: activeNetwork.chainId,
+            type: 2,
+          };
+          const signedTx = ethers.utils.serializeTransaction(
+            txFormattedForEthers,
+            signature.payload
+          );
+          const finalTx = await this.web3Provider.sendTransaction(signedTx);
+
+          return finalTx;
+        } catch (error) {
+          throw error;
+        }
+      } else {
+        throw new Error(`Transaction Signature Failed. Error: ${signature}`);
+      }
+    }
 
     const tx: Deferrable<ethers.providers.TransactionRequest> = params;
     const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);

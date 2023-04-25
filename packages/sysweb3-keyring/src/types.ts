@@ -47,6 +47,9 @@ export type SimpleTransactionRequest = {
 
   customData?: Record<string, any>;
   ccipReadEnabled?: boolean;
+  v?: string;
+  r?: string;
+  s?: string;
 };
 
 export declare type Version = 'V1' | 'V2' | 'V3' | 'V4';
@@ -223,6 +226,12 @@ export interface IWeb3Account extends IKeyringAccountState {
   encrypt: (password: string) => EncryptedKeystoreV3Json;
 }
 
+type IsBitcoinBased = {
+  isBitcoinBased?: boolean;
+};
+
+type IOriginNetwork = INetwork & IsBitcoinBased;
+
 export interface IKeyringAccountState {
   address: string;
   id: number;
@@ -232,7 +241,7 @@ export interface IKeyringAccountState {
   balances: IKeyringBalances;
   xpub: string;
   isImported: boolean;
-  networksAddresses?: { [network: string]: string };
+  originNetwork?: IOriginNetwork;
 }
 
 export interface ISyscoinBackendAccount {
