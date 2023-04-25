@@ -735,7 +735,9 @@ export class SyscoinTransactions implements ISyscoinTransactions {
         notaryAssets: response.assets,
       });
     } catch (error) {
-      throw new Error('Bad Request: Could not create transaction.', error);
+      throw new Error(
+        String('Bad Request: Could not create transaction. ' + error)
+      );
     }
   };
 

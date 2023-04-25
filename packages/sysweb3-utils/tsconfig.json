@@ -1,13 +1,11 @@
 {
-  "extends": "../../tsconfig-package-esm.json",
+  "extends": "../../tsconfig-package.json",
   "compilerOptions": {
     "rootDir": "src",
     "baseUrl": "src",
-    "outDir": "dist/esm",
+    "outDir": "dist/cjs",
     "declarationDir": "dist/types",
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "noImplicitReturns": false
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }

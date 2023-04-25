@@ -17,16 +17,15 @@
   "scripts": {
     "prebuild": "rimraf dist/",
     "build": "tsc && tsc -p tsconfig.json",
-    "rollup": "rollup -c ../../scripts/config/rollup.config.js",
     "prerelease": "yarn build && yarn version patch",
     "copy": "node ../../scripts/package/copy",
     "release:npm": "npm publish ./dist --access=public",
     "release:preflight": "yarn pack ./dist --dry-run",
-    "publish": "yarn prebuild && yarn build && yarn rollup && yarn prerelease && yarn copy && yarn release:npm",
+    "publish": "yarn prebuild && yarn prerelease && yarn copy && yarn release:npm",
     "type-check": "tsc --pretty --noEmit",
-    "localTest": "yarn prebuild && yarn build && yarn rollup && yarn build && yarn copy"
+    "localTest": "yarn prebuild && yarn build && yarn copy"
   },
-  "dependencies": {
+  "devDependencies": {
     "rimraf": "^3.0.2"
   }
 }
