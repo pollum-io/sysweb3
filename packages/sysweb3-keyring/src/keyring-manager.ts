@@ -397,16 +397,12 @@ export class KeyringManager implements IKeyringManager {
     ) {
       throw new Error('Cannot remove active network');
     }
-
-    console.log('test keyring', this.wallet.networks);
     // Create a new object without the specified property
     const updatedNetworks = Object.fromEntries(
       Object.entries(this.wallet.networks[chain]).filter(
         ([key]) => Number(key) !== chainId
       )
     );
-
-    console.log('test keyring2 -- updatedNetworks', updatedNetworks);
     // Replace the networks object for the chain with the updated object
     this.wallet.networks[chain] = updatedNetworks;
   };
