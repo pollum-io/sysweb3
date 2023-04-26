@@ -4,9 +4,10 @@ import { address } from '@trezor/utxo-lib';
 import bitcoinops from 'bitcoin-ops';
 import { Transaction, payments, script } from 'bitcoinjs-lib';
 import { Buffer } from 'buffer';
-import { SyscoinHDSigner } from 'signers';
-// import { ethers } from 'ethers';
 import Web3 from 'web3';
+
+import { SyscoinHDSigner } from '../signers';
+// import { ethers } from 'ethers';
 
 const { p2wsh } = payments;
 const { decompile } = script;
@@ -421,7 +422,7 @@ export class TrezorKeyring {
 
     pathArray.shift();
 
-    const addressN = [];
+    const addressN: any[] = [];
 
     for (const index in pathArray) {
       if (Number(index) <= 2 && Number(index) >= 0) {
