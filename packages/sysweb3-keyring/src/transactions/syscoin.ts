@@ -900,7 +900,11 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     }
   }
 
-  public getChangeAddress = (xpub: string, accountIndex: number) => {
+  public getAddress = (
+    xpub: string,
+    accountIndex: number,
+    isChangeAddress: boolean
+  ) => {
     const { hd } = this.getSigner();
 
     const currentAccount = new BIP84.fromZPub(
@@ -909,7 +913,11 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       hd.Signer.networks
     );
 
-    return currentAccount.getAddress(accountIndex, true, 84) as string;
+    return currentAccount.getAddress(
+      accountIndex,
+      isChangeAddress,
+      84
+    ) as string;
   };
 
   public confirmNativeTokenSend = async (
@@ -942,7 +950,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
           },
         ];
 
-        const changeAddress = this.getChangeAddress(xpub, activeAccountId);
+        const changeAddress = this.getAddress(xpub, activeAccountId, true);
 
         const txFee = await this.estimateSysTransactionFee({
           outputs,

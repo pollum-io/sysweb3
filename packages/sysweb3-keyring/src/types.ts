@@ -111,6 +111,11 @@ export interface IEthereumTransactions {
 }
 
 export interface ISyscoinTransactions {
+  getAddress: (
+    xpub: string,
+    accountIndex: number,
+    isChangeAddress: boolean
+  ) => string;
   confirmNftCreation: (tx: any) => { success: boolean };
   confirmTokenMint: (transaction: ITokenMint) => Promise<ITxid>;
   confirmTokenCreation: (transaction: any) => Promise<{
