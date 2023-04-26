@@ -3,11 +3,42 @@ import { AbiItem } from 'web3-utils';
 
 import { getErc20Abi, getErc21Abi, getErc55Abi } from './contracts';
 
+const erc20Functions = [
+  'totalSupply',
+  'balanceOf',
+  'transfer',
+  'transferFrom',
+  'approve',
+  'allowance',
+];
+
+async function isERC20Token(
+  contractAddress: string,
+  web3Provider: any,
+  abi20: AbiItem[]
+) {
+  const contract = new web3Provider.eth.Contract(abi20, contractAddress);
+
+  // check if the contract implements all the mandatory ERC-20 functions
+  const contractFunctions = contract.methods;
+  const missingFunctions = erc20Functions.filter(
+    (func) => !(func in contractFunctions)
+  );
+
+  if (missingFunctions.length === 0) {
+    return true;
+  }
+
+  return false;
+}
+
 export const getContractType = async (
   contractAddress: string,
   networkUrl: string
 ): Promise<ISupportsInterfaceProps | undefined> => {
-  const web3Provider = new Web3(new Web3.providers.HttpProvider(networkUrl));
+  const httpProvider = new Web3.providers.HttpProvider(networkUrl);
+
+  const web3Provider = new Web3(httpProvider);
 
   const [abi20, abi721, abi1155] = [
     getErc20Abi(),
@@ -17,16 +48,13 @@ export const getContractType = async (
 
   try {
     // ERC20 Here
-    const abi20Contract = new web3Provider.eth.Contract(
-      abi20 as AbiItem[],
-      contractAddress
+    const isErc20 = await isERC20Token(
+      contractAddress,
+      web3Provider,
+      abi20 as AbiItem[]
     );
 
-    const supportAbi20String = await abi20Contract.methods
-      .supportsInterface('0x36372b07')
-      .call();
-
-    if (supportAbi20String) {
+    if (isErc20) {
       return {
         type: 'ERC-20',
       };
@@ -52,7 +80,6 @@ export const getContractType = async (
           const validateMethod721 = await abi721Contract1.methods
             .supportsInterface(ids)
             .call();
-
           if (validateMethod721) return true;
 
           return false;
