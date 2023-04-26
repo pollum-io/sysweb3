@@ -404,7 +404,16 @@ export class KeyringManager implements IKeyringManager {
       )
     );
     // Replace the networks object for the chain with the updated object
-    this.wallet.networks[chain] = updatedNetworks;
+    this.wallet = {
+      ...this.wallet,
+      networks: {
+        ...this.wallet.networks,
+        [chain]: {
+          ...updatedNetworks,
+        },
+      },
+    };
+    // this.wallet.networks[chain] = updatedNetworks;
   };
 
   public setSignerNetwork = async (
