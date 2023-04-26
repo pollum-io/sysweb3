@@ -397,8 +397,25 @@ export class KeyringManager implements IKeyringManager {
     ) {
       throw new Error('Cannot remove active network');
     }
-    delete this.wallet.networks[chain][chainId];
+    // Create a new object without the specified property
+    const updatedNetworks = Object.fromEntries(
+      Object.entries(this.wallet.networks[chain]).filter(
+        ([key]) => Number(key) !== chainId
+      )
+    );
+    // Replace the networks object for the chain with the updated object
+    this.wallet = {
+      ...this.wallet,
+      networks: {
+        ...this.wallet.networks,
+        [chain]: {
+          ...updatedNetworks,
+        },
+      },
+    };
+    // this.wallet.networks[chain] = updatedNetworks;
   };
+
   public setSignerNetwork = async (
     network: INetwork,
     chain: string
