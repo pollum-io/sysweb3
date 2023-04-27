@@ -1,4 +1,5 @@
 import axios from 'axios';
+import BIP84 from 'bip84';
 import coinSelectSyscoin from 'coinselectsyscoin';
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
@@ -899,6 +900,26 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     }
   }
 
+  public getAddress = (
+    xpub: string,
+    accountIndex: number,
+    isChangeAddress: boolean
+  ) => {
+    const { hd } = this.getSigner();
+
+    const currentAccount = new BIP84.fromZPub(
+      xpub,
+      hd.Signer.pubTypes,
+      hd.Signer.networks
+    );
+
+    return currentAccount.getAddress(
+      accountIndex,
+      isChangeAddress,
+      84
+    ) as string;
+  };
+
   public confirmNativeTokenSend = async (
     temporaryTransaction: ITokenSend,
     isTrezor?: boolean
@@ -929,12 +950,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
           },
         ];
 
-        const changeAddress = await this.trezor.getAddress({
-          coin: `${coin}`,
-          slip44: `${activeNetwork.chainId}`,
-          index: activeAccountId,
-          isChangeAddress: true,
-        });
+        const changeAddress = this.getAddress(xpub, activeAccountId, true);
 
         const txFee = await this.estimateSysTransactionFee({
           outputs,

@@ -35,6 +35,7 @@
     "@trezor/connect-web": "^9.0.7",
     "@trezor/utxo-lib": "^1.0.4",
     "bip39": "^3.0.4",
+    "bip84": "^0.2.7",
     "bitcoin-ops": "^1.4.1",
     "bitcoinjs-lib": "^6.1.0",
     "coinselectsyscoin": "^1.0.77",

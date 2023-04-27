@@ -691,7 +691,7 @@ export class KeyringManager implements IKeyringManager {
 
     const address = isEVM
       ? xpub
-      : await this.trezorSigner.getAddress({ coin, slip44, index });
+      : this.syscoinTransaction.getAddress(xpub, +index, false);
 
     if (isEVM) {
       const response = await this.trezorSigner.getPublicKey({
