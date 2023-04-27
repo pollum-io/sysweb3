@@ -1,5 +1,9 @@
 /* eslint-disable camelcase */
-import TrezorConnect, { AccountInfo, DEVICE_EVENT } from '@trezor/connect-web';
+import TrezorConnect, {
+  AccountInfo,
+  DEVICE_EVENT,
+  //EthereumTransactionEIP1559, //TODO: add when updating ethTrezorSign tx
+} from '@trezor/connect-web';
 import { address } from '@trezor/utxo-lib';
 import bitcoinops from 'bitcoin-ops';
 import { Transaction, payments, script } from 'bitcoinjs-lib';
@@ -572,7 +576,13 @@ export class TrezorKeyring {
    * @param tx - ethereum tx object
    * @returns signature object
    */
-  public async signEthTransaction({ tx, index }: { tx: any; index: string }) {
+  public async signEthTransaction({
+    tx,
+    index,
+  }: {
+    tx: any; //TODO: change this to use EIP1559
+    index: string;
+  }) {
     try {
       const { success, payload } = await TrezorConnect.ethereumSignTransaction({
         path: `m/44'/60'/0'/0/${index}`,

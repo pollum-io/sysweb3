@@ -22,6 +22,7 @@ import {
 import { ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
+import omit from 'lodash/omit';
 
 import { SyscoinHDSigner } from '../signers';
 import { TrezorKeyring } from '../trezor';
@@ -268,8 +269,10 @@ export class EthereumTransactions implements IEthereumTransactions {
     const transactionNonce = await this.getRecommendedNonce(
       activeAccount.address
     );
+    //TODO: split into two separate sub functions one for trezor and other for HD and import accounts
+    const formatParams = omit(params, 'from'); //From is not needed we're already passing in the HD derivation path so it can be inferred
     const txFormattedForTrezor = {
-      ...params,
+      ...formatParams,
       // @ts-ignore
       gasLimit: `${params.gasLimit.toHexString()}`,
       // @ts-ignore
@@ -290,11 +293,12 @@ export class EthereumTransactions implements IEthereumTransactions {
       if (signature.success) {
         try {
           const txFormattedForEthers = {
-            ...params,
+            ...formatParams,
             nonce: transactionNonce,
             chainId: activeNetwork.chainId,
             type: 2,
           };
+          signature.payload.v = parseInt(signature.payload.v, 16); //v parameter must be a number by ethers standards
           const signedTx = ethers.utils.serializeTransaction(
             txFormattedForEthers,
             signature.payload
