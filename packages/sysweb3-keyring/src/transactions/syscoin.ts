@@ -6,7 +6,11 @@ import syscointx from 'syscointx-js';
 
 import { SyscoinHDSigner } from '../signers';
 import { TrezorKeyring } from '../trezor';
-import { ISyscoinTransactions, IWalletState } from '../types';
+import {
+  ISyscoinTransactions,
+  KeyringAccountType,
+  accountType,
+} from '../types';
 import { INetwork } from '@pollum-io/sysweb3-network';
 import {
   INewNFT,
@@ -36,14 +40,32 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     main: any;
   };
   private trezor: TrezorKeyring;
-  private getState: () => IWalletState;
+  private getState: () => {
+    activeAccountId: number;
+    accounts: {
+      Trezor: accountType;
+      Imported: accountType;
+      HDAccount: accountType;
+    };
+    activeAccountType: KeyringAccountType;
+    activeNetwork: INetwork;
+  };
   constructor(
     getNetwork: () => INetwork,
     getSyscoinSigner: () => {
       hd: SyscoinHDSigner;
       main: any;
     },
-    getState: () => IWalletState
+    getState: () => {
+      activeAccountId: number;
+      accounts: {
+        Trezor: accountType;
+        Imported: accountType;
+        HDAccount: accountType;
+      };
+      activeAccountType: KeyringAccountType;
+      activeNetwork: INetwork;
+    }
   ) {
     this.getNetwork = getNetwork;
     this.getSigner = getSyscoinSigner;

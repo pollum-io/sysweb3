@@ -94,13 +94,13 @@ export class KeyringManager implements IKeyringManager {
     this.syscoinTransaction = new SyscoinTransactions(
       this.getNetwork,
       this.getSigner,
-      this.getState
+      this.getAccountsState
     );
     this.ethereumTransaction = new EthereumTransactions(
       this.getNetwork,
       this.getDecryptedPrivateKey,
       this.getSigner,
-      this.getState
+      this.getAccountsState
     );
   }
   // ===================================== AUXILIARY METHOD - FOR TRANSACTIONS CLASSES ===================================== //
@@ -503,7 +503,11 @@ export class KeyringManager implements IKeyringManager {
     throw new Error('Invalid Seed');
   };
 
-  public getState = () => this.wallet;
+  private getAccountsState = () => {
+    const { activeAccountId, accounts, activeAccountType, activeNetwork } =
+      this.wallet;
+    return { activeAccountId, accounts, activeAccountType, activeNetwork };
+  };
   public getUTXOState = () => {
     if (this.activeChain !== INetworkType.Syscoin) {
       throw new Error('Cannot get state in a ethereum network');

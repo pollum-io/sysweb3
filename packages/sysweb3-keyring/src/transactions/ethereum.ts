@@ -32,8 +32,8 @@ import {
   ISendTransaction,
   IEthereumTransactions,
   SimpleTransactionRequest,
-  IWalletState,
   KeyringAccountType,
+  accountType,
 } from '../types';
 import { INetwork } from '@pollum-io/sysweb3-network';
 import {
@@ -54,7 +54,16 @@ export class EthereumTransactions implements IEthereumTransactions {
     hd: SyscoinHDSigner;
     main: any;
   };
-  private getState: () => IWalletState;
+  private getState: () => {
+    activeAccountId: number;
+    accounts: {
+      Trezor: accountType;
+      Imported: accountType;
+      HDAccount: accountType;
+    };
+    activeAccountType: KeyringAccountType;
+    activeNetwork: INetwork;
+  };
 
   constructor(
     getNetwork: () => INetwork,
@@ -66,7 +75,16 @@ export class EthereumTransactions implements IEthereumTransactions {
       hd: SyscoinHDSigner;
       main: any;
     },
-    getState: () => IWalletState
+    getState: () => {
+      activeAccountId: number;
+      accounts: {
+        Trezor: accountType;
+        Imported: accountType;
+        HDAccount: accountType;
+      };
+      activeAccountType: KeyringAccountType;
+      activeNetwork: INetwork;
+    }
   ) {
     this.getNetwork = getNetwork;
     this.getDecryptedPrivateKey = getDecryptedPrivateKey;
