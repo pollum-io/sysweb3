@@ -1,4 +1,5 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
+import { EthereumTransactionEIP1559 } from '@trezor/connect-web';
 import {
   concatSig,
   decrypt,
@@ -96,20 +97,44 @@ export class EthereumTransactions implements IEthereumTransactions {
     this.trezorSigner = new TrezorKeyring(this.getSigner);
   }
 
-  signTypedData = (
+  signTypedData = async (
     addr: string,
     typedData: TypedData | TypedMessage<any>,
     version: Version
   ) => {
     const { address, decryptedPrivateKey } = this.getDecryptedPrivateKey();
+    const { activeAccountType, accounts, activeAccountId } = this.getState();
+    const activeAccount = accounts[activeAccountType][activeAccountId];
 
-    if (addr.toLowerCase() !== address.toLowerCase())
-      throw {
-        message: 'Decrypting for wrong address, change activeAccount maybe',
-      };
+    const signTypedData = () => {
+      if (addr.toLowerCase() !== address.toLowerCase())
+        throw {
+          message: 'Decrypting for wrong address, change activeAccount maybe',
+        };
 
-    const privKey = Buffer.from(stripHexPrefix(decryptedPrivateKey), 'hex');
-    return signTypedMessage(privKey, { data: typedData }, version);
+      const privKey = Buffer.from(stripHexPrefix(decryptedPrivateKey), 'hex');
+      return signTypedMessage(privKey, { data: typedData }, version);
+    };
+
+    const signTypedDataWithTrezor = async () => {
+      if (addr.toLowerCase() !== activeAccount.address.toLowerCase())
+        throw {
+          message: 'Decrypting for wrong address, change activeAccount maybe',
+        };
+      return await this.trezorSigner.signTypedData({
+        version,
+        address: addr,
+        data: typedData,
+        index: activeAccountId,
+      });
+    };
+
+    switch (activeAccountType) {
+      case KeyringAccountType.Trezor:
+        return await signTypedDataWithTrezor();
+      default:
+        return signTypedData();
+    }
   };
 
   verifyTypedSignature = (
@@ -128,8 +153,10 @@ export class EthereumTransactions implements IEthereumTransactions {
     }
   };
 
-  ethSign = (params: string[]) => {
+  ethSign = async (params: string[]) => {
     const { address, decryptedPrivateKey } = this.getDecryptedPrivateKey();
+    const { accounts, activeAccountId, activeAccountType } = this.getState();
+    const activeAccount = accounts[activeAccountType][activeAccountId];
 
     let msg = '';
     //Comparisions do not need to care for checksum address
@@ -141,19 +168,44 @@ export class EthereumTransactions implements IEthereumTransactions {
       throw { msg: 'Signing for wrong address' };
     }
 
-    try {
-      const bufPriv = toBuffer(decryptedPrivateKey);
-      const msgHash = Buffer.from(msg, 'hex');
-      const sig = ecsign(msgHash, bufPriv);
-      const resp = concatSig(toBuffer(sig.v), sig.r, sig.s);
-      return resp;
-    } catch (error) {
-      throw error;
+    const sign = () => {
+      try {
+        const bufPriv = toBuffer(decryptedPrivateKey);
+        const msgHash = Buffer.from(msg, 'hex');
+        const sig = ecsign(msgHash, bufPriv);
+        const resp = concatSig(toBuffer(sig.v), sig.r, sig.s);
+        return resp;
+      } catch (error) {
+        throw error;
+      }
+    };
+
+    const signWithTrezor = async () => {
+      try {
+        const response: any = await this.trezorSigner.signMessage({
+          coin: 'eth',
+          address: activeAccount.address,
+          index: activeAccountId,
+          message: msg,
+        });
+        return response.signature as string;
+      } catch (error) {
+        throw error;
+      }
+    };
+
+    switch (activeAccountType) {
+      case KeyringAccountType.Trezor:
+        return await signWithTrezor();
+      default:
+        return sign();
     }
   };
 
-  signPersonalMessage = (params: string[]) => {
+  signPersonalMessage = async (params: string[]) => {
     const { address, decryptedPrivateKey } = this.getDecryptedPrivateKey();
+    const { accounts, activeAccountId, activeAccountType } = this.getState();
+    const activeAccount = accounts[activeAccountType][activeAccountId];
     let msg = '';
 
     if (params[0].toLowerCase() === address.toLowerCase()) {
@@ -164,15 +216,37 @@ export class EthereumTransactions implements IEthereumTransactions {
       throw { msg: 'Signing for wrong address' };
     }
 
-    try {
-      const privateKey = toBuffer(decryptedPrivateKey);
-      const message = toBuffer(msg);
-      const msgHash = hashPersonalMessage(message);
-      const sig = ecsign(msgHash, privateKey);
-      const serialized = concatSig(toBuffer(sig.v), sig.r, sig.s);
-      return serialized;
-    } catch (error) {
-      throw error;
+    const signPersonalMessageWithDefaultWallet = () => {
+      try {
+        const privateKey = toBuffer(decryptedPrivateKey);
+        const message = toBuffer(msg);
+        const msgHash = hashPersonalMessage(message);
+        const sig = ecsign(msgHash, privateKey);
+        const serialized = concatSig(toBuffer(sig.v), sig.r, sig.s);
+        return serialized;
+      } catch (error) {
+        throw error;
+      }
+    };
+    const signPersonalMessageWithTrezor = async () => {
+      try {
+        const response: any = await this.trezorSigner.signMessage({
+          coin: 'eth',
+          address: activeAccount.address,
+          index: activeAccountId,
+          message: msg,
+        });
+        return response.signature as string;
+      } catch (error) {
+        throw error;
+      }
+    };
+
+    switch (activeAccountType) {
+      case KeyringAccountType.Trezor:
+        return await signPersonalMessageWithTrezor();
+      default:
+        return signPersonalMessageWithDefaultWallet();
     }
   };
 
@@ -295,20 +369,33 @@ export class EthereumTransactions implements IEthereumTransactions {
       const formatParams = omit(params, 'from'); //From is not needed we're already passing in the HD derivation path so it can be inferred
       const txFormattedForTrezor = {
         ...formatParams,
-        // @ts-ignore
-        gasLimit: `${params.gasLimit.toHexString()}`,
-        // @ts-ignore
-        maxFeePerGas: `${params.maxFeePerGas.toHexString()}`,
-        // @ts-ignore
-        maxPriorityFeePerGas: `${params.maxPriorityFeePerGas.toHexString()}`,
-        // @ts-ignore
-        value: `${params.value.toHexString()}`,
+        gasLimit:
+          typeof formatParams.gasLimit === 'string'
+            ? formatParams.gasLimit
+            : // @ts-ignore
+              `${params.gasLimit.toHexString()}`,
+        maxFeePerGas:
+          typeof formatParams.maxFeePerGas === 'string'
+            ? formatParams.maxFeePerGas
+            : // @ts-ignore
+              `${params.maxFeePerGas.toHexString()}`,
+        maxPriorityFeePerGas:
+          typeof formatParams.maxPriorityFeePerGas === 'string'
+            ? formatParams.maxPriorityFeePerGas
+            : // @ts-ignore
+              `${params.maxPriorityFeePerGas.toHexString()}`,
+        value:
+          typeof formatParams.value === 'string' ||
+          typeof formatParams.value === 'number'
+            ? `${formatParams.value}`
+            : // @ts-ignore
+              `${params.value.toHexString()}`,
         nonce: this.toBigNumber(transactionNonce)._hex,
         chainId: activeNetwork.chainId,
       };
       const signature = await this.trezorSigner.signEthTransaction({
         index: `${activeAccountId}`,
-        tx: txFormattedForTrezor,
+        tx: txFormattedForTrezor as EthereumTransactionEIP1559,
       });
       if (signature.success) {
         try {

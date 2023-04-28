@@ -2,24 +2,22 @@
 import TrezorConnect, {
   AccountInfo,
   DEVICE_EVENT,
-  //EthereumTransactionEIP1559, //TODO: add when updating ethTrezorSign tx
+  EthereumTransactionEIP1559,
 } from '@trezor/connect-web';
 import { address } from '@trezor/utxo-lib';
 import bitcoinops from 'bitcoin-ops';
 import { Transaction, payments, script } from 'bitcoinjs-lib';
 import { Buffer } from 'buffer';
+import { TypedDataUtils, TypedMessage, Version } from 'eth-sig-util';
 import Web3 from 'web3';
 
 import { SyscoinHDSigner } from '../signers';
-// import { ethers } from 'ethers';
 
 const { p2wsh } = payments;
 const { decompile } = script;
 const { fromBase58Check, fromBech32 } = address;
 
 const initialHDPath = `m/44'/60'/0'/0/0`;
-// const pathBase = `m/44'/60'/0'/0`;
-// const MAX_INDEX = 1000;
 const DELAY_BETWEEN_POPUPS = 1000;
 const TREZOR_CONNECT_MANIFEST = {
   appUrl: 'https://paliwallet.com/',
@@ -31,9 +29,14 @@ export interface TrezorControllerState {
   paths: Record<string, number>;
 }
 
-// interface ISignUtxoTx extends SignTransaction {
-//   coin: string;
-// }
+interface MessageTypeProperty {
+  name: string;
+  type: string;
+}
+interface MessageTypes {
+  EIP712Domain: MessageTypeProperty[];
+  [additionalProperties: string]: MessageTypeProperty[];
+}
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -325,50 +328,6 @@ export class TrezorKeyring {
     }
   }
 
-  /**
-   * Gets account address based in index of account in path derivation.
-   *
-   * @param coin - network symbol. Example: eth, sys, btc
-   * @param slip44 - network slip44 number
-   * @param index - index of account for path derivation
-   * @returns account address
-   */
-
-  // public async getAccountAddressByIndex({
-  //   index,
-  //   coin,
-  //   slip44,
-  // }: {
-  //   index: number;
-  //   coin: string;
-  //   slip44: string;
-  // }) {
-  //   switch (coin) {
-  //     case 'sys':
-  //       this.hdPath = `m/84'/57'/0'`;
-  //       break;
-  //     case 'btc':
-  //       this.hdPath = "m/84'/0'/0'";
-  //       break;
-  //     case 'eth':
-  //       this.hdPath = pathBase;
-  //       break;
-  //     default:
-  //       this.hdPath = `m/44'/${slip44}'/0'/0`;
-  //       break;
-  //   }
-
-  //   const account = await this._addressFromIndex(
-  //     this.hdPath,
-  //     index,
-  //     coin,
-  //     slip44
-  //   );
-  //   this.paths[account] = index;
-
-  //   return account;
-  // }
-
   public range(n: number) {
     return [...Array(n).keys()];
   }
@@ -580,7 +539,7 @@ export class TrezorKeyring {
     tx,
     index,
   }: {
-    tx: any; //TODO: change this to use EIP1559
+    tx: EthereumTransactionEIP1559;
     index: string;
   }) {
     try {
@@ -613,11 +572,13 @@ export class TrezorKeyring {
     message,
     coin,
     slip44,
+    address,
   }: {
     index?: number;
     message?: string;
     coin: string;
     slip44?: string;
+    address: string;
   }) {
     switch (coin) {
       case 'sys':
@@ -635,7 +596,7 @@ export class TrezorKeyring {
     }
 
     if (coin === 'eth' && `${index ? index : 0}` && message) {
-      return this._signEthPersonalMessage(Number(index), message);
+      return this._signEthPersonalMessage(Number(index), message, address);
     }
     return this._signUtxoPersonalMessage({ coin, hdPath: this.hdPath });
   }
@@ -664,24 +625,23 @@ export class TrezorKeyring {
   }
 
   // For personal_sign, we need to prefix the message:
-  private async _signEthPersonalMessage(accountIndex: number, message: string) {
-    const accountAddress = await this.getAddress({
-      index: accountIndex,
-      coin: 'eth',
-      slip44: '60',
-    });
+  private async _signEthPersonalMessage(
+    index: number,
+    message: string,
+    address: string
+  ) {
     return new Promise((resolve, reject) => {
       setTimeout(async () => {
         TrezorConnect.ethereumSignMessage({
-          path: initialHDPath,
+          path: `m/44'/60'/0'/0/${index}`,
           message: Web3.utils.stripHexPrefix(message),
+          hex: true,
         })
           .then((response) => {
             if (response.success) {
               if (
-                accountAddress &&
-                response.payload.address.toLowerCase() !==
-                  accountAddress.toLowerCase()
+                address &&
+                response.payload.address.toLowerCase() !== address.toLowerCase()
               ) {
                 reject(new Error('signature doesnt match the right address'));
               }
@@ -702,76 +662,122 @@ export class TrezorKeyring {
       }, DELAY_BETWEEN_POPUPS);
     });
   }
+  private _sanitizeData(data: any): any {
+    switch (Object.prototype.toString.call(data)) {
+      case '[object Object]': {
+        const entries = Object.keys(data).map((k) => [
+          k,
+          this._sanitizeData(data[k]),
+        ]);
+        return Object.fromEntries(entries);
+      }
 
-  // /**
-  //  * EIP-712 Sign Typed Data
-  //  */
-  // async signTypedData({
-  //   version,
-  //   address,
-  //   data,
-  // }: {
-  //   version: 'V1' | 'V3' | 'V4';
-  //   address: string;
-  //   data: any;
-  // }) {
-  //   const dataWithHashes = transformTypedData(data, version === 'V4');
+      case '[object Array]':
+        return data.map((v: any[]) => this._sanitizeData(v));
 
-  //   // set default values for signTypedData
-  //   // Trezor is stricter than @metamask/eth-sig-util in what it accepts
-  //   const {
-  //     types,
-  //     message = {},
-  //     domain = {},
-  //     primaryType,
-  //     // snake_case since Trezor uses Protobuf naming conventions here
-  //     domain_separator_hash, // eslint-disable-line camelcase
-  //     message_hash, // eslint-disable-line camelcase
-  //   } = dataWithHashes;
+      case '[object BigInt]':
+        return data.toString();
 
-  //   // This is necessary to avoid popup collision
-  //   // between the unlock & sign trezor popups
+      default:
+        return data;
+    }
+  }
 
-  //   const response = await TrezorConnect.ethereumSignTypedData({
-  //     path: await this._pathFromAddress(address, 'eth', '60'),
-  //     data: {
-  //       types: {
-  //         ...types,
-  //         EIP712Domain: types.EIP712Domain ? types.EIP712Domain : [],
-  //       },
-  //       message,
-  //       domain,
-  //       primaryType: primaryType as any,
-  //     },
-  //     metamask_v4_compat: true,
-  //     // Trezor 1 only supports blindly signing hashes
-  //     domain_separator_hash,
-  //     message_hash: message_hash ? message_hash : '',
-  //   });
+  private _transformTypedData = <T extends MessageTypes>(
+    data: TypedMessage<T>,
+    metamask_v4_compat: boolean
+  ) => {
+    if (!metamask_v4_compat) {
+      throw new Error(
+        'Trezor: Only version 4 of typed data signing is supported'
+      );
+    }
 
-  //   if (response.success) {
-  //     if (address !== response.payload.address) {
-  //       throw new Error('signature doesnt match the right address');
-  //     }
-  //     return response.payload;
-  //   }
-  //   // @ts-ignore
-  //   throw new Error(response.payload.error || 'Unknown error');
-  // }
+    const { types, primaryType, domain, message } = this._sanitizeData(data);
 
-  // private async _addressFromIndex(
-  //   basePath: string,
-  //   i: number,
-  //   coin: string,
-  //   slip44: string
-  // ) {
-  //   this.hdPath = `${basePath}/${i}`;
-  //   await this.getPublicKey({ coin, slip44, hdPath: this.hdPath });
-  //   const address = ethers.utils.computeAddress(
-  //     `0x${this.publicKey.toString('hex')}`
-  //   );
-  //   return `${address}`;
-  // }
+    const domainSeparatorHash = TypedDataUtils.hashStruct(
+      'EIP712Domain',
+      this._sanitizeData(domain),
+      types,
+      true
+    ).toString('hex');
+
+    let messageHash = null;
+
+    if (primaryType !== 'EIP712Domain') {
+      messageHash = TypedDataUtils.hashStruct(
+        primaryType as string,
+        this._sanitizeData(message),
+        types,
+        true
+      ).toString('hex');
+    }
+
+    return {
+      domain_separator_hash: domainSeparatorHash,
+      message_hash: messageHash,
+      ...data,
+    };
+  };
+
+  /**
+   * EIP-712 Sign Typed Data
+   */
+  public async signTypedData({
+    version,
+    address,
+    data,
+    index,
+  }: {
+    version: Version;
+    address: string;
+    data: any;
+    index: number;
+  }) {
+    const derivationPath = `m/44'/60'/0'/0/${index}`;
+    const dataWithHashes = this._transformTypedData(data, version === 'V4');
+
+    // set default values for signTypedData
+    // Trezor is stricter than @metamask/eth-sig-util in what it accepts
+    const {
+      types,
+      message = {},
+      domain = {},
+      primaryType,
+      // snake_case since Trezor uses Protobuf naming conventions here
+      domain_separator_hash, // eslint-disable-line camelcase
+      message_hash, // eslint-disable-line camelcase
+    } = dataWithHashes;
+
+    // This is necessary to avoid popup collision
+    // between the unlock & sign trezor popups
+
+    const response = await TrezorConnect.ethereumSignTypedData({
+      path: derivationPath,
+      data: {
+        types: {
+          ...types,
+          EIP712Domain: types.EIP712Domain ? types.EIP712Domain : [],
+        },
+        message,
+        domain,
+        primaryType: primaryType as any,
+      },
+      metamask_v4_compat: true,
+      // Trezor 1 only supports blindly signing hashes
+      domain_separator_hash,
+      message_hash: message_hash ? message_hash : '',
+    });
+
+    if (response.success) {
+      if (address !== response.payload.address) {
+        throw new Error('signature doesnt match the right address');
+      }
+      return response.payload.signature;
+    }
+    // @ts-ignore
+    throw new Error(response.payload.error || 'Unknown error');
+  }
 
   /**
    * Gets account address based in index of account in path derivation.
@@ -859,32 +865,4 @@ export class TrezorKeyring {
       return error;
     }
   }
-
-  // private async _pathFromAddress(
-  //   address: string,
-  //   coin: string,
-  //   slip44: string
-  // ) {
-  //   if (ethers.utils.isAddress(address)) {
-  //     const checksummedAddress = address;
-  //     let index = this.paths[checksummedAddress];
-  //     if (typeof index === 'undefined') {
-  //       for (let i = 0; i < MAX_INDEX; i++) {
-  //         if (
-  //           checksummedAddress ===
-  //           (await this._addressFromIndex(pathBase, i, coin, slip44))
-  //         ) {
-  //           index = i;
-  //           break;
-  //         }
-  //       }
-  //     }
-
-  //     if (typeof index === 'undefined') {
-  //       throw new Error('Unknown address');
-  //     }
-  //     return `${pathBase}/${index}`;
-  //   }
-  //   return '';
-  // }
 }

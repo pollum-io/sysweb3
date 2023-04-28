@@ -55,9 +55,13 @@ export type SimpleTransactionRequest = {
 export declare type Version = 'V1' | 'V2' | 'V3' | 'V4';
 
 export interface IEthereumTransactions {
-  signTypedData: (addr: string, typedData: any, version: Version) => string;
-  ethSign: (params: string[]) => string;
-  signPersonalMessage: (params: string[]) => string;
+  signTypedData: (
+    addr: string,
+    typedData: TypedData | TypedMessage<any>,
+    version: Version
+  ) => Promise<string>;
+  ethSign: (params: string[]) => Promise<string>;
+  signPersonalMessage: (params: string[]) => Promise<string>;
   parsePersonalMessage: (hexMsg: string) => string;
   decryptMessage: (msgParams: string[]) => string;
   verifyPersonalMessage: (msg: string, sign: string) => string;
