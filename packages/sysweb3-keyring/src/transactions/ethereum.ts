@@ -430,41 +430,129 @@ export class EthereumTransactions implements IEthereumTransactions {
     maxPriorityFeePerGas,
     maxFeePerGas,
     gasLimit,
+    saveTrezorTx,
   }: ISendSignedErcTransactionProps): Promise<IResponseFromSendErcSignedTransaction> => {
     const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
+    const { accounts, activeAccountType, activeAccountId, activeNetwork } =
+      this.getState();
+    const { address: activeAccountAddress } =
+      accounts[activeAccountType][activeAccountId];
 
-    const currentWallet = new ethers.Wallet(decryptedPrivateKey);
+    const sendERC20Token = async () => {
+      const currentWallet = new ethers.Wallet(decryptedPrivateKey);
 
-    const walletSigned = currentWallet.connect(this.web3Provider);
+      const walletSigned = currentWallet.connect(this.web3Provider);
 
-    try {
-      const _contract = new ethers.Contract(
-        tokenAddress,
-        getErc20Abi(),
-        walletSigned
+      try {
+        const _contract = new ethers.Contract(
+          tokenAddress,
+          getErc20Abi(),
+          walletSigned
+        );
+
+        const calculatedTokenAmount = ethers.BigNumber.from(
+          ethers.utils.parseEther(tokenAmount as string)
+        );
+
+        const transferMethod = await _contract.transfer(
+          receiver,
+          calculatedTokenAmount,
+          {
+            nonce: await this.web3Provider.getTransactionCount(
+              walletSigned.address,
+              'pending'
+            ),
+            maxPriorityFeePerGas,
+            maxFeePerGas,
+            gasLimit,
+          }
+        );
+
+        return transferMethod;
+      } catch (error) {
+        throw error;
+      }
+    };
+
+    const sendERC20TokenOnTrezor = async () => {
+      const signer = this.web3Provider.getSigner(activeAccountAddress);
+      const transactionNonce = await this.getRecommendedNonce(
+        activeAccountAddress
       );
+      try {
+        const _contract = new ethers.Contract(
+          tokenAddress,
+          getErc20Abi(),
+          signer
+        );
 
-      const calculatedTokenAmount = ethers.BigNumber.from(
-        ethers.utils.parseEther(tokenAmount as string)
-      );
+        const calculatedTokenAmount = ethers.BigNumber.from(
+          ethers.utils.parseEther(tokenAmount as string)
+        );
 
-      const transferMethod = await _contract.transfer(
-        receiver,
-        calculatedTokenAmount,
-        {
-          nonce: await this.web3Provider.getTransactionCount(
-            walletSigned.address,
-            'pending'
-          ),
-          maxPriorityFeePerGas,
-          maxFeePerGas,
-          gasLimit,
+        const txData = _contract.interface.encodeFunctionData('transfer', [
+          receiver,
+          calculatedTokenAmount,
+        ]);
+
+        const txToBeSignedByTrezor = {
+          to: tokenAddress,
+          value: '0x0',
+          // @ts-ignore
+          gasLimit: `${gasLimit.toHexString()}`,
+          // @ts-ignore
+          maxFeePerGas: `${maxFeePerGas.toHexString()}`,
+          // @ts-ignore
+          maxPriorityFeePerGas: `${maxPriorityFeePerGas.toHexString()}`,
+          nonce: this.toBigNumber(transactionNonce)._hex,
+          chainId: activeNetwork.chainId,
+          data: txData,
+        };
+
+        const signature = await this.trezorSigner.signEthTransaction({
+          index: `${activeAccountId}`,
+          tx: txToBeSignedByTrezor,
+        });
+
+        if (signature.success) {
+          try {
+            const txFormattedForEthers = {
+              to: tokenAddress,
+              value: '0x0',
+              gasLimit,
+              maxFeePerGas,
+              maxPriorityFeePerGas,
+              data: txData,
+              nonce: transactionNonce,
+              chainId: activeNetwork.chainId,
+              type: 2,
+            };
+            signature.payload.v = parseInt(signature.payload.v, 16); //v parameter must be a number by ethers standards
+            const signedTx = ethers.utils.serializeTransaction(
+              txFormattedForEthers,
+              signature.payload
+            );
+            const finalTx = await this.web3Provider.sendTransaction(signedTx);
+
+            saveTrezorTx && saveTrezorTx(finalTx);
+
+            return finalTx as any;
+          } catch (error) {
+            throw error;
+          }
+        } else {
+          throw new Error(`Transaction Signature Failed. Error: ${signature}`);
         }
-      );
+      } catch (error) {
+        throw error;
+      }
+    };
 
-      return transferMethod;
-    } catch (error) {
-      throw error;
+    switch (activeAccountType) {
+      case KeyringAccountType.Trezor:
+        return await sendERC20TokenOnTrezor();
+      default:
+        return await sendERC20Token();
     }
   };
 

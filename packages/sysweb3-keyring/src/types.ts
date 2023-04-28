@@ -275,6 +275,7 @@ export interface ISendSignedErcTransactionProps {
   gasLimit?: BigNumberish;
   tokenAmount?: string;
   tokenId?: number;
+  saveTrezorTx?: (tx: any) => void;
 }
 
 export interface IResponseFromSendErcSignedTransaction {
