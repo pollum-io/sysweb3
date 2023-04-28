@@ -38,6 +38,7 @@ export const initialNetworksState = {
       currency: 'sys',
       apiUrl: '',
       explorer: 'https://blockbook.elint.services/',
+      slip44: 57,
     },
     5700: {
       chainId: 5700,
@@ -47,6 +48,7 @@ export const initialNetworksState = {
       currency: 'tsys',
       apiUrl: '',
       explorer: '',
+      slip44: 5700,
     },
   },
   ethereum: {

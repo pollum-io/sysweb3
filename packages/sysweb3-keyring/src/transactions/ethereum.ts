@@ -284,26 +284,25 @@ export class EthereumTransactions implements IEthereumTransactions {
     const { activeAccountType, activeAccountId, accounts, activeNetwork } =
       this.getState();
     const activeAccount = accounts[activeAccountType][activeAccountId];
-    const transactionNonce = await this.getRecommendedNonce(
-      activeAccount.address
-    );
-    //TODO: split into two separate sub functions one for trezor and other for HD and import accounts
-    const formatParams = omit(params, 'from'); //From is not needed we're already passing in the HD derivation path so it can be inferred
-    const txFormattedForTrezor = {
-      ...formatParams,
-      // @ts-ignore
-      gasLimit: `${params.gasLimit.toHexString()}`,
-      // @ts-ignore
-      maxFeePerGas: `${params.maxFeePerGas.toHexString()}`,
-      // @ts-ignore
-      maxPriorityFeePerGas: `${params.maxPriorityFeePerGas.toHexString()}`,
-      // @ts-ignore
-      value: `${params.value.toHexString()}`,
-      nonce: this.toBigNumber(transactionNonce)._hex,
-      chainId: activeNetwork.chainId,
-    };
 
-    if (activeAccountType === KeyringAccountType.Trezor) {
+    const sendEVMTrezorTransaction = async () => {
+      const transactionNonce = await this.getRecommendedNonce(
+        activeAccount.address
+      );
+      const formatParams = omit(params, 'from'); //From is not needed we're already passing in the HD derivation path so it can be inferred
+      const txFormattedForTrezor = {
+        ...formatParams,
+        // @ts-ignore
+        gasLimit: `${params.gasLimit.toHexString()}`,
+        // @ts-ignore
+        maxFeePerGas: `${params.maxFeePerGas.toHexString()}`,
+        // @ts-ignore
+        maxPriorityFeePerGas: `${params.maxPriorityFeePerGas.toHexString()}`,
+        // @ts-ignore
+        value: `${params.value.toHexString()}`,
+        nonce: this.toBigNumber(transactionNonce)._hex,
+        chainId: activeNetwork.chainId,
+      };
       const signature = await this.trezorSigner.signEthTransaction({
         index: `${activeAccountId}`,
         tx: txFormattedForTrezor,
@@ -330,21 +329,31 @@ export class EthereumTransactions implements IEthereumTransactions {
       } else {
         throw new Error(`Transaction Signature Failed. Error: ${signature}`);
       }
-    }
+    };
 
-    const tx: Deferrable<ethers.providers.TransactionRequest> = params;
-    const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
-    try {
-      const transaction = await wallet.sendTransaction(tx);
-      const response = await this.web3Provider.getTransaction(transaction.hash);
-      //TODO: more precisely on this lines
-      if (!response) {
-        return await this.getTransactionTimestamp(transaction);
-      } else {
-        return await this.getTransactionTimestamp(response);
+    const sendEVMTransaction = async () => {
+      const tx: Deferrable<ethers.providers.TransactionRequest> = params;
+      const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
+      try {
+        const transaction = await wallet.sendTransaction(tx);
+        const response = await this.web3Provider.getTransaction(
+          transaction.hash
+        );
+        //TODO: more precisely on this lines
+        if (!response) {
+          return await this.getTransactionTimestamp(transaction);
+        } else {
+          return await this.getTransactionTimestamp(response);
+        }
+      } catch (error) {
+        throw error;
       }
-    } catch (error) {
-      throw error;
+    };
+    switch (activeAccountType) {
+      case KeyringAccountType.Trezor:
+        return await sendEVMTrezorTransaction();
+      default:
+        return await sendEVMTransaction();
     }
   };
   // TODO: refactor this function

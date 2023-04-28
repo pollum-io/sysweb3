@@ -797,11 +797,19 @@ export class KeyringManager implements IKeyringManager {
 
     this.trezorAccounts.push(currentAccount);
 
-    return this.trezorAccounts[index].getAddress(
-      isChangeAddress ? changeIndex : receivingIndex,
-      isChangeAddress,
-      84
-    ) as string;
+    const address = this.trezorAccounts[index]
+      ? (this.trezorAccounts[index].getAddress(
+          isChangeAddress ? changeIndex : receivingIndex,
+          isChangeAddress,
+          84
+        ) as string)
+      : (this.trezorAccounts[this.trezorAccounts.length - 1].getAddress(
+          isChangeAddress ? changeIndex : receivingIndex,
+          isChangeAddress,
+          84
+        ) as string);
+
+    return address;
   };
 
   private getFormattedBackendAccount = async ({
