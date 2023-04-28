@@ -2,35 +2,7 @@ import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 
 import { getErc20Abi, getErc21Abi, getErc55Abi } from './contracts';
-
-const erc20Functions = [
-  'totalSupply',
-  'balanceOf',
-  'transfer',
-  'transferFrom',
-  'approve',
-  'allowance',
-];
-
-async function isERC20Token(
-  contractAddress: string,
-  web3Provider: any,
-  abi20: AbiItem[]
-) {
-  const contract = new web3Provider.eth.Contract(abi20, contractAddress);
-
-  // check if the contract implements all the mandatory ERC-20 functions
-  const contractFunctions = contract.methods;
-  const missingFunctions = erc20Functions.filter(
-    (func) => !(func in contractFunctions)
-  );
-
-  if (missingFunctions.length === 0) {
-    return true;
-  }
-
-  return false;
-}
+import { isERC20Token, isERC721Token } from './utils';
 
 export const getContractType = async (
   contractAddress: string,
@@ -48,13 +20,13 @@ export const getContractType = async (
 
   try {
     // ERC20 Here
-    const isErc20 = await isERC20Token(
+    const erc20 = await isERC20Token(
       contractAddress,
       web3Provider,
       abi20 as AbiItem[]
     );
 
-    if (isErc20) {
+    if (erc20.isERC20) {
       return {
         type: 'ERC-20',
       };
@@ -62,31 +34,13 @@ export const getContractType = async (
   } catch (_error20) {
     // As the ERC20 fails, so proceed to ERC721 validation
     try {
-      // ERC721 Here
-      const abi721Contract1 = new web3Provider.eth.Contract(
-        abi721 as AbiItem[],
-        contractAddress
+      const erc721 = await isERC721Token(
+        contractAddress,
+        web3Provider,
+        abi721 as AbiItem[]
       );
 
-      const erc721InterfaceIds = [
-        '0x80ac58cd',
-        '0xc87b56dd',
-        '0x79f154c4',
-        '0x42966c68',
-      ];
-
-      const validateInterfaces721 = await Promise.all(
-        erc721InterfaceIds.map(async (ids: string) => {
-          const validateMethod721 = await abi721Contract1.methods
-            .supportsInterface(ids)
-            .call();
-          if (validateMethod721) return true;
-
-          return false;
-        })
-      );
-
-      if (validateInterfaces721.some((validate) => validate === true)) {
+      if (erc721.isERC721) {
         return {
           type: 'ERC-721',
         };
