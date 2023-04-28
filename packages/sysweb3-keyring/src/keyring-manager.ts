@@ -749,11 +749,14 @@ export class KeyringManager implements IKeyringManager {
         ? 0
         : Object.values(accounts[KeyringAccountType.Trezor]).length;
 
-    const updatedAccountInfo = this.getFormattedBackendAccount({
-      url: this.wallet.activeNetwork.url,
-      xpub,
-      id,
-    });
+    const updatedAccountInfo = isEVM
+      ? {}
+      : this.getFormattedBackendAccount({
+          url: this.wallet.activeNetwork.url,
+          xpub,
+          id,
+        });
+
     const trezorAccount = {
       ...this.initialTrezorAccountState,
       ...updatedAccountInfo,
