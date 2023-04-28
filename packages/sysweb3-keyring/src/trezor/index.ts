@@ -171,10 +171,10 @@ export class TrezorKeyring {
   }): Promise<AccountInfo> {
     switch (coin) {
       case 'sys':
-        this.hdPath = `m/84'/57'/0'`;
+        this.hdPath = `m/84'/57'/${index}'`;
         break;
       case 'btc':
-        this.hdPath = "m/84'/0'/0'";
+        this.hdPath = `m/84'/0'/${index}'`;
         break;
       case 'eth':
         this.hdPath = `m/44'/60'/0'/0/${index ? index : 0}`;

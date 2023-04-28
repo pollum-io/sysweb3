@@ -1,5 +1,4 @@
 import axios from 'axios';
-import BIP84 from 'bip84';
 import coinSelectSyscoin from 'coinselectsyscoin';
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
@@ -50,6 +49,11 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     activeAccountType: KeyringAccountType;
     activeNetwork: INetwork;
   };
+  private getAddress: (
+    xpub: string,
+    isChangeAddress: boolean,
+    index: number
+  ) => Promise<string>;
   constructor(
     getNetwork: () => INetwork,
     getSyscoinSigner: () => {
@@ -65,11 +69,17 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       };
       activeAccountType: KeyringAccountType;
       activeNetwork: INetwork;
-    }
+    },
+    getAddress: (
+      xpub: string,
+      isChangeAddress: boolean,
+      index: number
+    ) => Promise<string>
   ) {
     this.getNetwork = getNetwork;
     this.getSigner = getSyscoinSigner;
     this.getState = getState;
+    this.getAddress = getAddress;
     this.trezor = new TrezorKeyring(this.getSigner);
   }
 
@@ -922,26 +932,6 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     }
   }
 
-  public getAddress = (
-    xpub: string,
-    accountIndex: number,
-    isChangeAddress: boolean
-  ) => {
-    const { hd } = this.getSigner();
-
-    const currentAccount = new BIP84.fromZPub(
-      xpub,
-      hd.Signer.pubTypes,
-      hd.Signer.networks
-    );
-
-    return currentAccount.getAddress(
-      accountIndex,
-      isChangeAddress,
-      84
-    ) as string;
-  };
-
   public confirmNativeTokenSend = async (
     temporaryTransaction: ITokenSend,
     isTrezor?: boolean
@@ -972,7 +962,11 @@ export class SyscoinTransactions implements ISyscoinTransactions {
           },
         ];
 
-        const changeAddress = this.getAddress(xpub, activeAccountId, true);
+        const changeAddress = await this.getAddress(
+          xpub,
+          true,
+          activeAccountId
+        );
 
         const txFee = await this.estimateSysTransactionFee({
           outputs,

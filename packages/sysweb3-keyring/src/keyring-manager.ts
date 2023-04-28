@@ -1,5 +1,5 @@
 import { generateMnemonic, validateMnemonic, mnemonicToSeed } from 'bip39';
-import { fromZPrv } from 'bip84';
+import BIP84, { fromZPrv } from 'bip84';
 import crypto from 'crypto';
 import CryptoJS from 'crypto-js';
 import { hdkey } from 'ethereumjs-wallet';
@@ -68,12 +68,14 @@ export class KeyringManager implements IKeyringManager {
   private memPassword: string;
   public activeChain: INetworkType;
   public initialTrezorAccountState: IKeyringAccountState;
+  private trezorAccounts: any[];
 
   //transactions objects
   public ethereumTransaction: IEthereumTransactions;
   public syscoinTransaction: ISyscoinTransactions;
   constructor(opts?: IkeyringManagerOpts | null) {
     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
+    this.trezorAccounts = [];
     if (opts) {
       this.wallet = opts.wallet;
       this.activeChain = opts.activeChain;
@@ -94,7 +96,8 @@ export class KeyringManager implements IKeyringManager {
     this.syscoinTransaction = new SyscoinTransactions(
       this.getNetwork,
       this.getSigner,
-      this.getAccountsState
+      this.getAccountsState,
+      this.getAddress
     );
     this.ethereumTransaction = new EthereumTransactions(
       this.getNetwork,
@@ -693,9 +696,7 @@ export class KeyringManager implements IKeyringManager {
 
     const isEVM = coin === 'eth';
 
-    const address = isEVM
-      ? xpub
-      : this.syscoinTransaction.getAddress(xpub, +index, false);
+    const address = isEVM ? xpub : await this.getAddress(xpub, false, +index);
 
     if (isEVM) {
       const response = await this.trezorSigner.getPublicKey({
@@ -753,6 +754,38 @@ export class KeyringManager implements IKeyringManager {
 
     return trezorAccount;
   }
+
+  public getAddress = async (
+    xpub: string,
+    isChangeAddress: boolean,
+    index: number
+  ) => {
+    const { hd, main } = this.getSigner();
+    const options = 'tokens=used&details=tokens';
+
+    const { tokens } = await sys.utils.fetchBackendAccount(
+      main.blockbookURL,
+      xpub,
+      options,
+      true
+    );
+    const { receivingIndex, changeIndex } =
+      this.setLatestIndexesFromXPubTokens(tokens);
+
+    const currentAccount = new BIP84.fromZPub(
+      xpub,
+      hd.Signer.pubTypes,
+      hd.Signer.networks
+    );
+
+    this.trezorAccounts.push(currentAccount);
+
+    return this.trezorAccounts[index].getAddress(
+      isChangeAddress ? changeIndex : receivingIndex,
+      isChangeAddress,
+      84
+    ) as string;
+  };
 
   private getFormattedBackendAccount = async ({
     url,
