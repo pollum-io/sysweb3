@@ -353,10 +353,7 @@ export class EthereumTransactions implements IEthereumTransactions {
     }
   };
   //TODO: This function needs to be refactored
-  sendFormattedTransaction = async (
-    params: SimpleTransactionRequest,
-    saveTrezorTx?: (tx: any) => void
-  ) => {
+  sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
     const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
     const { activeAccountType, activeAccountId, accounts, activeNetwork } =
       this.getState();
@@ -411,8 +408,6 @@ export class EthereumTransactions implements IEthereumTransactions {
             signature.payload
           );
           const finalTx = await this.web3Provider.sendTransaction(signedTx);
-
-          saveTrezorTx && saveTrezorTx(finalTx);
 
           return finalTx;
         } catch (error) {

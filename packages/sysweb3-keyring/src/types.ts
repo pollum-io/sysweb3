@@ -72,8 +72,7 @@ export interface IEthereumTransactions {
   ) => string;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
   sendFormattedTransaction: (
-    params: SimpleTransactionRequest,
-    saveTrezorTx?: (tx: any) => void
+    params: SimpleTransactionRequest
   ) => Promise<TransactionResponse>;
   getRecommendedNonce: (address: string) => Promise<number>;
   getFeeByType: (type: string) => Promise<string>;
