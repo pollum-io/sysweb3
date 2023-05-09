@@ -1,147 +1,60 @@
-import Web3 from 'web3';
-import { AbiItem } from 'web3-utils';
+import * as ethers from 'ethers';
 
-import { getErc20Abi, getErc21Abi, getErc55Abi } from './contracts';
-
-const erc20Functions = [
-  'totalSupply',
-  'balanceOf',
-  'transfer',
-  'transferFrom',
-  'approve',
-  'allowance',
-];
-
-async function isERC20Token(
-  contractAddress: string,
-  web3Provider: any,
-  abi20: AbiItem[]
-) {
-  const contract = new web3Provider.eth.Contract(abi20, contractAddress);
-
-  // check if the contract implements all the mandatory ERC-20 functions
-  const contractFunctions = contract.methods;
-  const missingFunctions = erc20Functions.filter(
-    (func) => !(func in contractFunctions)
-  );
-
-  if (missingFunctions.length === 0) {
-    return true;
-  }
-
-  return false;
-}
+import erc1155Abi from './abi/erc1155.json';
+import erc20Abi from './abi/erc20.json';
+import erc721Abi from './abi/erc721.json';
 
 export const getContractType = async (
   contractAddress: string,
   networkUrl: string
 ): Promise<ISupportsInterfaceProps | undefined> => {
-  const httpProvider = new Web3.providers.HttpProvider(networkUrl);
-
-  const web3Provider = new Web3(httpProvider);
-
-  const [abi20, abi721, abi1155] = [
-    getErc20Abi(),
-    getErc21Abi(),
-    getErc55Abi(),
-  ];
+  const provider = new ethers.providers.JsonRpcProvider(networkUrl);
 
   try {
-    // ERC20 Here
-    const isErc20 = await isERC20Token(
+    const contractERC721 = new ethers.Contract(
       contractAddress,
-      web3Provider,
-      abi20 as AbiItem[]
+      erc721Abi,
+      provider
     );
 
-    if (isErc20) {
-      return {
-        type: 'ERC-20',
-      };
+    const supportsInterface = await contractERC721.supportsInterface(
+      '0x80ac58cd'
+    ); // ERC721
+
+    if (supportsInterface) {
+      return { type: 'ERC-721' };
     }
-  } catch (_error20) {
-    // As the ERC20 fails, so proceed to ERC721 validation
+    throw new Error('ERC-721');
+  } catch (e) {
     try {
-      // ERC721 Here
-      const abi721Contract1 = new web3Provider.eth.Contract(
-        abi721 as AbiItem[],
-        contractAddress
+      const contractERC1155 = new ethers.Contract(
+        contractAddress,
+        erc1155Abi,
+        provider
       );
-
-      const erc721InterfaceIds = [
-        '0x80ac58cd',
-        '0xc87b56dd',
-        '0x79f154c4',
-        '0x42966c68',
-      ];
-
-      const validateInterfaces721 = await Promise.all(
-        erc721InterfaceIds.map(async (ids: string) => {
-          const validateMethod721 = await abi721Contract1.methods
-            .supportsInterface(ids)
-            .call();
-          if (validateMethod721) return true;
-
-          return false;
-        })
-      );
-
-      if (validateInterfaces721.some((validate) => validate === true)) {
-        return {
-          type: 'ERC-721',
-        };
-      } else {
-        // As the validation for the interface 721 Fails we need to do the ERC1155 validation step here, because the ERC721 error
-        //does not go to catch step, is only a false statement in ERC721 validation
-        try {
-          //ERC1155 Here
-
-          const abi1155Contract = new web3Provider.eth.Contract(
-            abi1155 as AbiItem[],
-            contractAddress
-          );
-
-          const erc1155InterfaceIds = [
-            '0xd9b67a26',
-            '0x63759d50',
-            '0x9e094e9e',
-            '0xf2d03e40',
-          ];
-
-          const validateInterfaces1155 = await Promise.all(
-            erc1155InterfaceIds.map(async (ids: string) => {
-              const validateMethod1155 = await abi1155Contract.methods
-                .supportsInterface(ids)
-                .call();
-
-              if (validateMethod1155) return true;
-
-              return false;
-            })
-          );
-
-          if (validateInterfaces1155.some((validate) => validate === true)) {
-            return {
-              type: 'ERC-1155',
-              message:
-                'Pali does not support ERC1155 contract for the time being, we are working to implement this as soon as possible.',
-            };
-          }
-        } catch (_error1155) {
-          // Display that ERC1155 validation fails
-          return {
-            type: 'Undefined',
-            message:
-              'No validation worked for this contract, please verify it.',
-          };
-        }
+      const supportsInterface = await contractERC1155.supportsInterface(
+        '0xd9b67a26'
+      ); // ERC1155
+      if (supportsInterface) {
+        return { type: 'ERC-1155' };
       }
-    } catch (_error721) {
-      // If the validation of ERC721 fails and don't go to ERC1155 the catch response has to be the same as the ERC 1155 catch.
-      return {
-        type: 'Undefined',
-        message: 'No validation worked for this contract, please verify it.',
-      };
+      throw new Error('ERC-1155');
+    } catch (e) {
+      try {
+        const contractERC20 = new ethers.Contract(
+          contractAddress,
+          erc20Abi,
+          provider
+        );
+        const balanceOf = await contractERC20.balanceOf(contractAddress);
+
+        if (typeof balanceOf === 'object') {
+          return { type: 'ERC-20' };
+        }
+        throw new Error('ERC-20');
+      } catch (e) {
+        return { type: 'Unknown', message: 'Standard not recognized' };
+      }
     }
   }
 };
