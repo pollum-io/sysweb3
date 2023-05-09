@@ -1,9 +1,15 @@
+import axios from 'axios';
 import coinSelectSyscoin from 'coinselectsyscoin';
 import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
 
 import { SyscoinHDSigner } from '../signers';
-import { ISyscoinTransactions } from '../types';
+import { TrezorKeyring } from '../trezor';
+import {
+  ISyscoinTransactions,
+  KeyringAccountType,
+  accountType,
+} from '../types';
 import { INetwork } from '@pollum-io/sysweb3-network';
 import {
   INewNFT,
@@ -32,15 +38,49 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     hd: SyscoinHDSigner;
     main: any;
   };
+  private trezor: TrezorKeyring;
+  private getState: () => {
+    activeAccountId: number;
+    accounts: {
+      Trezor: accountType;
+      Imported: accountType;
+      HDAccount: accountType;
+    };
+    activeAccountType: KeyringAccountType;
+    activeNetwork: INetwork;
+  };
+  private getAddress: (
+    xpub: string,
+    isChangeAddress: boolean,
+    index: number
+  ) => Promise<string>;
   constructor(
     getNetwork: () => INetwork,
     getSyscoinSigner: () => {
       hd: SyscoinHDSigner;
       main: any;
-    }
+    },
+    getState: () => {
+      activeAccountId: number;
+      accounts: {
+        Trezor: accountType;
+        Imported: accountType;
+        HDAccount: accountType;
+      };
+      activeAccountType: KeyringAccountType;
+      activeNetwork: INetwork;
+    },
+    getAddress: (
+      xpub: string,
+      isChangeAddress: boolean,
+      index: number
+    ) => Promise<string>
   ) {
     this.getNetwork = getNetwork;
     this.getSigner = getSyscoinSigner;
+    this.getState = getState;
+    this.getAddress = getAddress;
+    this.trezor = new TrezorKeyring(this.getSigner);
   }
 
   public estimateSysTransactionFee = async ({
@@ -76,6 +116,37 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     const txFee = feeRateBN.mul(new sys.utils.BN(bytes));
 
     return txFee;
+  };
+
+  public getTransactionPSBT = async ({
+    outputs,
+    changeAddress,
+    xpub,
+    explorerUrl,
+    feeRateBN,
+  }: EstimateFeeParams) => {
+    const { hd, main } = this.getSigner();
+
+    const txOpts = { rbf: true };
+
+    const utxos = await sys.utils.fetchBackendUTXOS(explorerUrl, xpub);
+    const utxosSanitized = sys.utils.sanitizeBlockbookUTXOs(
+      null,
+      utxos,
+      hd.Signer.network
+    );
+
+    const tx = await syscointx.createTransaction(
+      txOpts,
+      utxosSanitized,
+      changeAddress,
+      outputs,
+      feeRateBN
+    );
+
+    const psbt = await main.createPSBTFromRes(tx);
+    if (psbt) return psbt;
+    throw new Error('psbt not found');
   };
 
   public getRecommendedFee = async (explorerUrl: string): Promise<number> => {
@@ -697,7 +768,9 @@ export class SyscoinTransactions implements ISyscoinTransactions {
         notaryAssets: response.assets,
       });
     } catch (error) {
-      throw new Error('Bad Request: Could not create transaction.', error);
+      throw new Error(
+        String('Bad Request: Could not create transaction. ' + error)
+      );
     }
   };
 
@@ -795,12 +868,149 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     }
   };
 
+  public async sendRawTransaction(txHex: string, xpub: string, psbt: any) {
+    const { main } = this.getSigner();
+    const axiosConfig = {
+      headers: {
+        'X-User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+      },
+      withCredentials: true,
+    };
+    try {
+      let blockbookURL = main.blockbookURL.slice();
+      if (blockbookURL) {
+        blockbookURL = blockbookURL.replace(/\/$/, '');
+      }
+      // eslint-disable-next-line no-undef
+      if (fetch) {
+        const requestOptions = {
+          method: 'POST',
+          body: txHex,
+        };
+        // eslint-disable-next-line no-undef
+        const response = await fetch(
+          blockbookURL + '/api/v2/sendtx/',
+          requestOptions
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+
+          await sys.utils.fetchBackendAccount(
+            blockbookURL,
+            xpub,
+            'tokens=used&details=tokens',
+            true
+          );
+
+          return data;
+        }
+      } else {
+        const request = await axios.post(
+          blockbookURL + '/api/v2/sendtx/',
+          txHex,
+          axiosConfig
+        );
+        if (request && request.data) {
+          await sys.utils.fetchBackendAccount(
+            blockbookURL,
+            xpub,
+            'tokens=used&details=tokens',
+            true
+          );
+          console.log(
+            'tx send successfully',
+            psbt.extractTransaction().getId()
+          );
+          return psbt;
+        }
+      }
+      return null;
+    } catch (e) {
+      return e;
+    }
+  }
+
   public confirmNativeTokenSend = async (
-    temporaryTransaction: ITokenSend
+    temporaryTransaction: ITokenSend,
+    isTrezor?: boolean
   ): Promise<ITxid> => {
     const { hd, main } = this.getSigner();
 
     const { receivingAddress, amount, fee } = temporaryTransaction;
+
+    if (isTrezor) {
+      try {
+        const { activeAccountId, accounts, activeAccountType, activeNetwork } =
+          this.getState();
+        const coin =
+          activeNetwork.currency && activeNetwork.currency.toLocaleLowerCase();
+        const {
+          xpub,
+          balances: { syscoin },
+        } = accounts[activeAccountType][activeAccountId];
+
+        const feeRate = new sys.utils.BN(fee * 1e8);
+
+        const value = new sys.utils.BN(amount * 1e8);
+
+        let outputs = [
+          {
+            address: receivingAddress,
+            value,
+          },
+        ];
+
+        const changeAddress = await this.getAddress(
+          xpub,
+          true,
+          activeAccountId
+        );
+
+        const txFee = await this.estimateSysTransactionFee({
+          outputs,
+          changeAddress: `${changeAddress}`,
+          feeRateBN: feeRate,
+          xpub,
+          explorerUrl: main.blockbookURL,
+        });
+
+        if (value.add(txFee).gte(syscoin)) {
+          outputs = [
+            {
+              address: receivingAddress,
+              value: value.sub(txFee),
+            },
+          ];
+        }
+
+        const psbt = await this.getTransactionPSBT({
+          outputs,
+          changeAddress: `${changeAddress}`,
+          feeRateBN: feeRate,
+          xpub,
+          explorerUrl: main.blockbookURL,
+        });
+
+        const trezorTx = this.trezor.convertToTrezorFormat({
+          psbt,
+          coin: `${coin ? coin : 'sys'}`,
+        });
+        const response = await this.trezor.signUtxoTransaction(trezorTx, psbt);
+        const tx = await this.sendRawTransaction(
+          response.extractTransaction().toHex(),
+          xpub,
+          response
+        );
+        const txid = tx.extractTransaction().getId();
+        return { txid };
+      } catch (error) {
+        throw new Error(
+          `Bad Request: Could not create transaction. Error: ${error}`
+        );
+      }
+    }
 
     const feeRate = new sys.utils.BN(fee * 1e8);
 
@@ -862,7 +1072,8 @@ export class SyscoinTransactions implements ISyscoinTransactions {
   };
 
   public sendTransaction = async (
-    temporaryTransaction: ITokenSend
+    temporaryTransaction: ITokenSend,
+    isTrezor?: boolean
   ): Promise<ITxid> => {
     const { isToken, token } = temporaryTransaction;
 
@@ -870,6 +1081,6 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       return await this.confirmCustomTokenSend(temporaryTransaction);
     }
 
-    return await this.confirmNativeTokenSend(temporaryTransaction);
+    return await this.confirmNativeTokenSend(temporaryTransaction, isTrezor);
   };
 }

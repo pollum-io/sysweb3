@@ -47,14 +47,21 @@ export type SimpleTransactionRequest = {
 
   customData?: Record<string, any>;
   ccipReadEnabled?: boolean;
+  v?: string;
+  r?: string;
+  s?: string;
 };
 
 export declare type Version = 'V1' | 'V2' | 'V3' | 'V4';
 
 export interface IEthereumTransactions {
-  signTypedData: (addr: string, typedData: any, version: Version) => string;
-  ethSign: (params: string[]) => string;
-  signPersonalMessage: (params: string[]) => string;
+  signTypedData: (
+    addr: string,
+    typedData: TypedData | TypedMessage<any>,
+    version: Version
+  ) => Promise<string>;
+  ethSign: (params: string[]) => Promise<string>;
+  signPersonalMessage: (params: string[]) => Promise<string>;
   parsePersonalMessage: (hexMsg: string) => string;
   decryptMessage: (msgParams: string[]) => string;
   verifyPersonalMessage: (msg: string, sign: string) => string;
@@ -65,7 +72,7 @@ export interface IEthereumTransactions {
   ) => string;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
   sendFormattedTransaction: (
-    data: SimpleTransactionRequest
+    params: SimpleTransactionRequest
   ) => Promise<TransactionResponse>;
   getRecommendedNonce: (address: string) => Promise<number>;
   getFeeByType: (type: string) => Promise<string>;
@@ -119,7 +126,10 @@ export interface ISyscoinTransactions {
   transferAssetOwnership: (transaction: any) => Promise<ITxid>;
   confirmUpdateToken: (transaction: ITokenUpdate) => Promise<ITxid>;
   getRecommendedFee: (explorerUrl: string) => Promise<number>;
-  sendTransaction: (transaction: ITokenSend) => Promise<ITxid>;
+  sendTransaction: (
+    transaction: ITokenSend,
+    isTrezor: boolean
+  ) => Promise<ITxid>;
   signTransaction: (
     data: { psbt: string; assets: string },
     isSendOnly: boolean,
@@ -137,11 +147,11 @@ export interface IKeyringManager {
   ) => Omit<IKeyringAccountState, 'xprv'>;
   getAccountXpub: () => string;
   getEncryptedXprv: () => string;
-  // importTrezorAccount(
-  //   coin: string,
-  //   slip44: string,
-  //   index: string
-  // ): Promise<IKeyringAccountState>;
+  importTrezorAccount(
+    coin: string,
+    slip44: string,
+    index: string
+  ): Promise<IKeyringAccountState>;
   getNetwork: () => INetwork;
   getPrivateKeyByAccountId: (
     id: number,
@@ -219,6 +229,12 @@ export interface IWeb3Account extends IKeyringAccountState {
   encrypt: (password: string) => EncryptedKeystoreV3Json;
 }
 
+type IsBitcoinBased = {
+  isBitcoinBased?: boolean;
+};
+
+type IOriginNetwork = INetwork & IsBitcoinBased;
+
 export interface IKeyringAccountState {
   address: string;
   id: number;
@@ -228,6 +244,7 @@ export interface IKeyringAccountState {
   balances: IKeyringBalances;
   xpub: string;
   isImported: boolean;
+  originNetwork?: IOriginNetwork;
 }
 
 export interface ISyscoinBackendAccount {
@@ -261,6 +278,7 @@ export interface ISendSignedErcTransactionProps {
   gasLimit?: BigNumberish;
   tokenAmount?: string;
   tokenId?: number;
+  saveTrezorTx?: (tx: any) => void;
 }
 
 export interface IResponseFromSendErcSignedTransaction {

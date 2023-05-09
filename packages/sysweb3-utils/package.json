@@ -2,7 +2,7 @@
   "name": "@pollum-io/sysweb3-utils",
   "version": "1.1.222",
   "description": "A helper for multi-chain accounts.",
-  "main": "esm/index.js",
+  "main": "cjs/index.js",
   "types": "types/index.d.ts",
   "repository": {
     "type": "git",
@@ -11,18 +11,20 @@
   "author": "Pali Wallet",
   "license": "MIT",
   "private": false,
+  "engines": {
+    "yarn": ">= 1.0.0"
+  },
   "scripts": {
     "prebuild": "rimraf dist/",
     "build": "tsc && tsc -p tsconfig.json",
-    "rollup": "rollup -c ../../scripts/config/rollup.config.js",
-    "prerelease": "npm run build && npm version patch",
+    "prerelease": "yarn build && yarn version patch",
     "copy": "node ../../scripts/package/copy",
     "release:npm": "npm publish ./dist --access=public",
-    "release:preflight": "npm pack ./dist --dry-run",
-    "publish": "npm run prebuild && npm run prerelease && npm run copy && npm run release:npm",
+    "release:preflight": "yarn pack ./dist --dry-run",
+    "publish": "yarn prebuild && yarn prerelease && yarn copy && yarn release:npm",
     "test": "jest",
     "type-check": "tsc --pretty --noEmit",
-    "localTest": "npm run prebuild && npm run build && npm run rollup && npm run build && npm run copy"
+    "localTest": "yarn prebuild && yarn build && yarn build && yarn copy"
   },
   "dependencies": {
     "@ethersproject/contracts": "^5.6.2",

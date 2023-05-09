@@ -1,5 +1,5 @@
 import { generateMnemonic, validateMnemonic, mnemonicToSeed } from 'bip39';
-import { fromZPrv } from 'bip84';
+import BIP84, { fromZPrv } from 'bip84';
 import crypto from 'crypto';
 import CryptoJS from 'crypto-js';
 import { hdkey } from 'ethereumjs-wallet';
@@ -20,7 +20,7 @@ import {
 } from './signers';
 import { getDecryptedVault, setEncryptedVault } from './storage';
 import { EthereumTransactions, SyscoinTransactions } from './transactions';
-// import { TrezorKeyring } from './trezor';
+import { TrezorKeyring } from './trezor';
 import {
   IKeyringAccountState,
   IKeyringBalances,
@@ -63,17 +63,19 @@ export class KeyringManager implements IKeyringManager {
   //local variables
   private hd: SyscoinHDSigner | null;
   private syscoinSigner: SyscoinMainSigner | undefined;
-  // private trezorSigner: TrezorKeyring;
+  private trezorSigner: TrezorKeyring;
   private memMnemonic: string;
   private memPassword: string;
   public activeChain: INetworkType;
   public initialTrezorAccountState: IKeyringAccountState;
+  private trezorAccounts: any[];
 
   //transactions objects
   public ethereumTransaction: IEthereumTransactions;
   public syscoinTransaction: ISyscoinTransactions;
   constructor(opts?: IkeyringManagerOpts | null) {
     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
+    this.trezorAccounts = [];
     if (opts) {
       this.wallet = opts.wallet;
       this.activeChain = opts.activeChain;
@@ -88,16 +90,20 @@ export class KeyringManager implements IKeyringManager {
     this.memPassword = ''; //Lock wallet in case opts.password has been provided
     this.initialTrezorAccountState = initialActiveTrezorAccountState;
 
-    // this.trezorSigner = new TrezorKeyring();
+    this.trezorSigner = new TrezorKeyring(this.getSigner);
 
     // this.syscoinTransaction = SyscoinTransactions();
     this.syscoinTransaction = new SyscoinTransactions(
       this.getNetwork,
-      this.getSigner
+      this.getSigner,
+      this.getAccountsState,
+      this.getAddress
     );
     this.ethereumTransaction = new EthereumTransactions(
       this.getNetwork,
-      this.getDecryptedPrivateKey
+      this.getDecryptedPrivateKey,
+      this.getSigner,
+      this.getAccountsState
     );
   }
   // ===================================== AUXILIARY METHOD - FOR TRANSACTIONS CLASSES ===================================== //
@@ -517,7 +523,11 @@ export class KeyringManager implements IKeyringManager {
     throw new Error('Invalid Seed');
   };
 
-  // public getState = () => this.wallet;
+  private getAccountsState = () => {
+    const { activeAccountId, accounts, activeAccountType, activeNetwork } =
+      this.wallet;
+    return { activeAccountId, accounts, activeAccountType, activeNetwork };
+  };
   public getUTXOState = () => {
     if (this.activeChain !== INetworkType.Syscoin) {
       throw new Error('Cannot get state in a ethereum network');
@@ -536,21 +546,21 @@ export class KeyringManager implements IKeyringManager {
       },
     };
   };
-  // public async importTrezorAccount(
-  //   coin: string,
-  //   slip44: string,
-  //   index: string
-  // ) {
-  //   const importedAccount = await this._createTrezorAccount(
-  //     coin,
-  //     slip44,
-  //     index
-  //   );
-  //   this.wallet.accounts[KeyringAccountType.Trezor][importedAccount.id] =
-  //     importedAccount;
+  public async importTrezorAccount(
+    coin: string,
+    slip44: string,
+    index: string
+  ) {
+    const importedAccount = await this._createTrezorAccount(
+      coin,
+      slip44,
+      index
+    );
+    this.wallet.accounts[KeyringAccountType.Trezor][importedAccount.id] =
+      importedAccount;
 
-  //   return importedAccount;
-  // }
+    return importedAccount;
+  }
   public getActiveUTXOAccountState = () => {
     return {
       ...this.wallet.accounts.HDAccount[this.wallet.activeAccountId],
@@ -690,62 +700,120 @@ export class KeyringManager implements IKeyringManager {
     };
   };
 
-  // private async _createTrezorAccount(
-  //   coin: string,
-  //   slip44: string,
-  //   index: string,
-  //   label?: string
-  // ) {
-  //   const { accounts } = this.wallet;
-  //   const { descriptor: xpub, balance } =
-  //     await this.trezorSigner.getAccountInfo({ coin, slip44 });
+  private async _createTrezorAccount(
+    coin: string,
+    slip44: string,
+    index: string,
+    label?: string
+  ) {
+    const { accounts, activeNetwork } = this.wallet;
+    const { descriptor: xpub, balance } =
+      await this.trezorSigner.getAccountInfo({ coin, slip44, index });
+    let ethPubKey = '';
 
-  //   const address = await this.trezorSigner.getAddress({ coin, slip44, index });
+    const isEVM = coin === 'eth';
 
-  //   const accountAlreadyExists =
-  //     Object.values(
-  //       accounts[KeyringAccountType.Trezor] as IKeyringAccountState[]
-  //     ).some((account) => account.address === address) ||
-  //     Object.values(
-  //       accounts[KeyringAccountType.HDAccount] as IKeyringAccountState[]
-  //     ).some((account) => account.address === address) ||
-  //     Object.values(
-  //       accounts[KeyringAccountType.Imported] as IKeyringAccountState[]
-  //     ).some((account) => account.address === address);
+    const address = isEVM ? xpub : await this.getAddress(xpub, false, +index);
 
-  //   if (accountAlreadyExists)
-  //     throw new Error(
-  //       'Account already exists, try again with another Private Key.'
-  //     );
-  //   if (!xpub || !balance || !address)
-  //     throw new Error(
-  //       'Something wrong happened. Please, try again or report it'
-  //     );
+    if (isEVM) {
+      const response = await this.trezorSigner.getPublicKey({
+        coin,
+        slip44,
+        index: +index,
+      });
+      ethPubKey = response.publicKey;
+    }
 
-  //   const id =
-  //     Object.values(accounts[KeyringAccountType.Trezor]).length < 1
-  //       ? 0
-  //       : Object.values(accounts[KeyringAccountType.Trezor]).length;
+    const accountAlreadyExists =
+      Object.values(
+        accounts[KeyringAccountType.Trezor] as IKeyringAccountState[]
+      ).some((account) => account.address === address) ||
+      Object.values(
+        accounts[KeyringAccountType.HDAccount] as IKeyringAccountState[]
+      ).some((account) => account.address === address) ||
+      Object.values(
+        accounts[KeyringAccountType.Imported] as IKeyringAccountState[]
+      ).some((account) => account.address === address);
 
-  //   const trezorAccount = {
-  //     ...this.initialTrezorAccountState,
-  //     address,
-  //     label: label ? label : `Trezor ${id + 1}`,
-  //     id: id,
-  //     balances: {
-  //       syscoin: +balance,
-  //       ethereum: 0,
-  //     },
-  //     xprv: '',
-  //     xpub,
-  //     assets: {
-  //       syscoin: [],
-  //       ethereum: [],
-  //     },
-  //   } as IKeyringAccountState;
+    if (accountAlreadyExists)
+      throw new Error(
+        'Account already exists, try again with another Private Key.'
+      );
+    if (!xpub || !balance || !address)
+      throw new Error(
+        'Something wrong happened. Please, try again or report it'
+      );
 
-  //   return trezorAccount;
-  // }
+    const id =
+      Object.values(accounts[KeyringAccountType.Trezor]).length < 1
+        ? 0
+        : Object.values(accounts[KeyringAccountType.Trezor]).length;
+
+    const updatedAccountInfo = isEVM
+      ? {}
+      : this.getFormattedBackendAccount({
+          url: this.wallet.activeNetwork.url,
+          xpub,
+          id,
+        });
+
+    const trezorAccount = {
+      ...this.initialTrezorAccountState,
+      ...updatedAccountInfo,
+      address,
+      originNetwork: { ...activeNetwork, isBitcoinBased: isEVM },
+      label: label ? label : `Trezor ${id + 1}`,
+      id,
+      xprv: '',
+      xpub: isEVM ? ethPubKey : xpub,
+      assets: {
+        syscoin: [],
+        ethereum: [],
+      },
+    } as IKeyringAccountState;
+
+    return trezorAccount;
+  }
+
+  public getAddress = async (
+    xpub: string,
+    isChangeAddress: boolean,
+    index: number
+  ) => {
+    const { hd, main } = this.getSigner();
+    const options = 'tokens=used&details=tokens';
+
+    const { tokens } = await sys.utils.fetchBackendAccount(
+      main.blockbookURL,
+      xpub,
+      options,
+      true
+    );
+    const { receivingIndex, changeIndex } =
+      this.setLatestIndexesFromXPubTokens(tokens);
+
+    const currentAccount = new BIP84.fromZPub(
+      xpub,
+      hd.Signer.pubTypes,
+      hd.Signer.networks
+    );
+
+    this.trezorAccounts.push(currentAccount);
+
+    const address = this.trezorAccounts[index]
+      ? (this.trezorAccounts[index].getAddress(
+          isChangeAddress ? changeIndex : receivingIndex,
+          isChangeAddress,
+          84
+        ) as string)
+      : (this.trezorAccounts[this.trezorAccounts.length - 1].getAddress(
+          isChangeAddress ? changeIndex : receivingIndex,
+          isChangeAddress,
+          84
+        ) as string);
+
+    return address;
+  };
 
   private getFormattedBackendAccount = async ({
     url,
