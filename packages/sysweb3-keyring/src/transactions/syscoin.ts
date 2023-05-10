@@ -824,8 +824,8 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     const { getTokenMap } = this.txUtilsFunctions();
 
     const { amount, rbf, receivingAddress, fee, token } = temporaryTransaction;
-
-    const asset = await getAsset(main.blockbookURL, token);
+    const { guid } = token;
+    const asset = await getAsset(main.blockbookURL, guid);
 
     if (!asset)
       throw new Error(
@@ -847,7 +847,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
 
     try {
       const tokenOptions = getTokenMap({
-        guid: token,
+        guid,
         changeAddress: '',
         amount: value,
         receivingAddress,
