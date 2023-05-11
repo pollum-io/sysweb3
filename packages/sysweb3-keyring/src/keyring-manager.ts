@@ -707,8 +707,19 @@ export class KeyringManager implements IKeyringManager {
     label?: string
   ) {
     const { accounts, activeNetwork } = this.wallet;
-    const { descriptor: xpub, balance } =
-      await this.trezorSigner.getAccountInfo({ coin, slip44, index });
+    let xpub, balance;
+    try {
+      const { descriptor, balance: _balance } =
+        await this.trezorSigner.getAccountInfo({
+          coin,
+          slip44,
+          index,
+        });
+      xpub = descriptor;
+      balance = _balance;
+    } catch (e) {
+      throw new Error(e);
+    }
     let ethPubKey = '';
 
     const isEVM = coin === 'eth';
@@ -736,9 +747,7 @@ export class KeyringManager implements IKeyringManager {
       ).some((account) => account.address === address);
 
     if (accountAlreadyExists)
-      throw new Error(
-        'Account already exists, try again with another Private Key.'
-      );
+      throw new Error('Account already exists on your Wallet.');
     if (!xpub || !balance || !address)
       throw new Error(
         'Something wrong happened. Please, try again or report it'
