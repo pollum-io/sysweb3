@@ -140,7 +140,7 @@ export type ITokenSend = {
   rbf?: boolean;
   receivingAddress: string;
   sender: string;
-  token: string;
+  token: { symbol: string; guid: string };
 };
 
 export type ITokenMint = {
