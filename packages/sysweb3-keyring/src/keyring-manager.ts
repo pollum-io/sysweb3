@@ -234,12 +234,23 @@ export class KeyringManager implements IKeyringManager {
     return address;
   };
   public updateReceivingAddress = async (): Promise<string> => {
+    const { activeAccountType, accounts, activeAccountId } = this.wallet;
+    const { xpub } = accounts[activeAccountType][activeAccountId];
+    let address = '';
     if (this.hd === null)
       throw new Error('HD not created yet, unlock or initialize wallet first');
-    const address = await this.hd.getNewReceivingAddress(true, 84);
-    this.wallet.accounts[KeyringAccountType.HDAccount][
-      this.wallet.activeAccountId
-    ].address = address;
+    switch (activeAccountType) {
+      case KeyringAccountType.HDAccount:
+        address = await this.hd.getNewReceivingAddress(true, 84);
+        break;
+      case KeyringAccountType.Trezor:
+        address = await this.getAddress(xpub, false, activeAccountId);
+        break;
+      default:
+        break;
+    }
+
+    this.wallet.accounts[activeAccountType][activeAccountId].address = address;
     return address;
   };
 
