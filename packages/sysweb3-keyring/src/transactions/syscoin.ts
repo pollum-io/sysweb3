@@ -1003,6 +1003,9 @@ export class SyscoinTransactions implements ISyscoinTransactions {
           xpub,
           response
         );
+        if (tx.result) {
+          return { txid: tx.result };
+        }
         const txid = tx.extractTransaction().getId();
         return { txid };
       } catch (error) {

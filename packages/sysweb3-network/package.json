@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-network",
-  "version": "1.0.91",
+  "version": "1.0.92",
   "description": "A network management tool for multi-chain accounts.",
   "main": "cjs/index.js",
   "types": "types/index.d.ts",
@@ -21,11 +21,11 @@
   "scripts": {
     "prebuild": "rimraf dist/",
     "build": "tsc && tsc -p tsconfig.json",
-    "prerelease": "yarn build && yarn version patch",
+    "prerelease": "yarn build",
     "copy": "node ../../scripts/package/copy",
-    "release:npm": "npm publish ./dist --access=public",
+    "release:npm": "yarn publish ./dist --access=public --no-git-tag-version",
     "release:preflight": "yarn pack ./dist --dry-run",
-    "publish": "yarn prebuild && yarn prerelease && yarn copy && yarn release:npm",
+    "publishCode": "yarn prebuild && yarn prerelease && yarn copy && yarn release:npm",
     "type-check": "tsc --pretty --noEmit",
     "localTest": "yarn prebuild && yarn build && yarn copy"
   },

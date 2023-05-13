@@ -11,7 +11,7 @@
   },
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*/dist/*"
   ],
 
   "scripts": {
