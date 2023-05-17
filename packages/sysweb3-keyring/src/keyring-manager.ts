@@ -769,19 +769,14 @@ export class KeyringManager implements IKeyringManager {
         ? 0
         : Object.values(accounts[KeyringAccountType.Trezor]).length;
 
-    const updatedAccountInfo = isEVM
-      ? {}
-      : this.getFormattedBackendAccount({
-          url: this.wallet.activeNetwork.url,
-          xpub,
-          id,
-        });
-
     const trezorAccount = {
       ...this.initialTrezorAccountState,
-      ...updatedAccountInfo,
+      balances: {
+        syscoin: +balance / 1e8,
+        ethereum: 0,
+      },
       address,
-      originNetwork: { ...activeNetwork, isBitcoinBased: isEVM },
+      originNetwork: { ...activeNetwork, isBitcoinBased: !isEVM },
       label: label ? label : `Trezor ${id + 1}`,
       id,
       xprv: '',
