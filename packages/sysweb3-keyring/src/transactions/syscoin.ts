@@ -730,9 +730,11 @@ export class SyscoinTransactions implements ISyscoinTransactions {
   }): Promise<JSON> => {
     const { main } = this.getSigner();
     if (notaryAssets.size === 0) {
-      return await main.signAndSend(psbt);
+      return sys.utils.exportPsbtToJson(await main.signAndSend(psbt));
     } else {
-      return await main.signAndSend(psbt, notaryAssets);
+      return sys.utils.exportPsbtToJson(
+        await main.signAndSend(psbt, notaryAssets)
+      );
     }
   };
 
