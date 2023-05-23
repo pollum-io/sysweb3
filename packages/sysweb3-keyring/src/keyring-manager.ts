@@ -255,9 +255,6 @@ export class KeyringManager implements IKeyringManager {
   };
 
   public createKeyringVault = async (): Promise<IKeyringAccountState> => {
-    if (this.syscoinSigner) {
-      throw new Error('Wallet is already initialised');
-    }
     if (!this.memPassword) {
       throw new Error('Create a password first');
     }
