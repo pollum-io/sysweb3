@@ -399,11 +399,6 @@ export class KeyringManager implements IKeyringManager {
         chainType === INetworkType.Syscoin &&
         this.syscoinSigner?.blockbookURL
       ) {
-        console.log(
-          'Check blockbook url',
-          this.syscoinSigner.blockbookURL,
-          data.url
-        );
         this.syscoinSigner.blockbookURL = data.url;
       } else {
         this.ethereumTransaction.setWeb3Provider(data);
