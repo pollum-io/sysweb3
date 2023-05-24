@@ -391,6 +391,24 @@ export class KeyringManager implements IKeyringManager {
     if (!this.wallet.networks[chainType][data.chainId]) {
       throw new Error('Network does not exist');
     }
+    if (
+      this.wallet.activeNetwork.chainId === data.chainId &&
+      this.activeChain === chainType
+    ) {
+      if (
+        chainType === INetworkType.Syscoin &&
+        this.syscoinSigner?.blockbookURL
+      ) {
+        console.log(
+          'Check blockbook url',
+          this.syscoinSigner.blockbookURL,
+          data.url
+        );
+        this.syscoinSigner.blockbookURL = data.url;
+      } else {
+        this.ethereumTransaction.setWeb3Provider(data);
+      }
+    }
     this.wallet = {
       ...this.wallet,
       networks: {
