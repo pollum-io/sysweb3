@@ -13,6 +13,7 @@ import {
   initialActiveTrezorAccountState,
   initialWalletState,
 } from './initial-state';
+import { CustomJsonRpcProvider } from './providers';
 import {
   getSyscoinSigners,
   SyscoinHDSigner,
@@ -1075,7 +1076,7 @@ export class KeyringManager implements IKeyringManager {
 
   private setSignerEVM = async (network: INetwork): Promise<void> => {
     try {
-      const web3Provider = new ethers.providers.JsonRpcProvider(network.url);
+      const web3Provider = new CustomJsonRpcProvider(network.url);
       const { chainId } = await web3Provider.getNetwork();
       if (network.chainId !== chainId) {
         throw new Error(

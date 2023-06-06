@@ -25,6 +25,7 @@ import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
 import omit from 'lodash/omit';
 
+import { CustomJsonRpcProvider } from '../providers';
 import { SyscoinHDSigner } from '../signers';
 import { TrezorKeyring } from '../trezor';
 import {
@@ -44,7 +45,7 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export class EthereumTransactions implements IEthereumTransactions {
-  public web3Provider: ethers.providers.JsonRpcProvider;
+  public web3Provider: CustomJsonRpcProvider;
   public trezorSigner: TrezorKeyring;
   private getNetwork: () => INetwork;
   private getDecryptedPrivateKey: () => {
@@ -89,9 +90,7 @@ export class EthereumTransactions implements IEthereumTransactions {
   ) {
     this.getNetwork = getNetwork;
     this.getDecryptedPrivateKey = getDecryptedPrivateKey;
-    this.web3Provider = new ethers.providers.JsonRpcProvider(
-      this.getNetwork().url
-    );
+    this.web3Provider = new CustomJsonRpcProvider(this.getNetwork().url);
     this.getSigner = getSigner;
     this.getState = getState;
     this.trezorSigner = new TrezorKeyring(this.getSigner);
@@ -765,7 +764,7 @@ export class EthereumTransactions implements IEthereumTransactions {
   };
 
   public setWeb3Provider(network: INetwork) {
-    this.web3Provider = new ethers.providers.JsonRpcProvider(network.url);
+    this.web3Provider = new CustomJsonRpcProvider(network.url);
   }
 
   public importAccount = (mnemonicOrPrivKey: string) => {
