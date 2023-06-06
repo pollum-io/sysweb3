@@ -40,9 +40,9 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
       return result;
     } catch (error) {
       if (error.status === 429) {
-        throw new Error('Rate limit reached: ' + error.message + error.status); // Se pa adicionar aqui algum codigo que identificamos facil, o statusCode mesmo mensagem é meio merda
+        throw new Error('Rate limit reached: ' + error.message + error.status);
       }
-      throw error; //Talvez throw error dependendo do caso so retorna resposta, n sei bem o que fazer nesse cao
+      throw error;
     }
   }
 }
