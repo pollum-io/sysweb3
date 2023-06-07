@@ -1,14 +1,15 @@
 import { ethers } from 'ethers';
 
 export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
-  private _delay = (ms: number) =>
+  private delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
-  private rateLimit = 30;
-  private cooldownTime = 40 * 1000;
+  private rateLimit = 10;
+  private cooldownTime = 85 * 1000;
   private requestCount = 0;
   private lastRequestTime = 0;
+  private serverHasAnError = false;
 
-  private _canMakeRequest = () => {
+  private canMakeRequest = () => {
     const now = Date.now();
     const elapsedTime = now - this.lastRequestTime;
 
@@ -16,34 +17,58 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
       this.requestCount = 0;
     }
 
-    if (this.requestCount < this.rateLimit) {
+    if (this.serverHasAnError) {
+      return false;
+    }
+
+    if (this.requestCount < this.rateLimit || !this.serverHasAnError) {
       this.requestCount++;
       this.lastRequestTime = now;
       return true;
     }
-
-    return false;
   };
 
-  private _throttledRequest = async <T>(requestFn: () => Promise<T>) => {
-    while (!this._canMakeRequest()) {
-      await this._delay(500);
+  private throttledRequest = async <T>(requestFn: () => Promise<T>) => {
+    while (!this.canMakeRequest()) {
+      await this.delay(2000);
     }
     return requestFn();
   };
 
   async send(method: string, params: any[]) {
     try {
-      const result = await this._throttledRequest(() =>
-        super.send(method, params)
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      const options: RequestInit = {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method,
+          params,
+          id: 1,
+        }),
+      };
+
+      const result = await this.throttledRequest(() =>
+        fetch(this.connection.url, options)
+          .then((response) => response.json())
+          .then((json) => {
+            if (json.error) {
+              this.serverHasAnError = true;
+              throw new Error('Rate limit reached: ' + json.error.message);
+            }
+            this.serverHasAnError = false;
+            return json.result;
+          })
       );
+
       return result;
     } catch (error) {
-      if (error.statusCode === 429) {
-        throw new Error(
-          'Rate limit reached: ' + error.message + error.statusCode
-        );
-      }
+      this.serverHasAnError = true;
+
       throw error;
     }
   }
