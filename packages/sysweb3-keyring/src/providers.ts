@@ -3,8 +3,8 @@ import { ethers } from 'ethers';
 export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   private _delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
-  private rateLimit = 10;
-  private timeFrame = 60 * 1000;
+  private rateLimit = 30;
+  private cooldownTime = 40 * 1000;
   private requestCount = 0;
   private lastRequestTime = 0;
 
@@ -12,7 +12,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
     const now = Date.now();
     const elapsedTime = now - this.lastRequestTime;
 
-    if (elapsedTime >= this.timeFrame) {
+    if (elapsedTime >= this.cooldownTime) {
       this.requestCount = 0;
     }
 
@@ -39,8 +39,10 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
       );
       return result;
     } catch (error) {
-      if (error.status === 429) {
-        throw new Error('Rate limit reached: ' + error.message + error.status);
+      if (error.statusCode === 429) {
+        throw new Error(
+          'Rate limit reached: ' + error.message + error.statusCode
+        );
       }
       throw error;
     }
