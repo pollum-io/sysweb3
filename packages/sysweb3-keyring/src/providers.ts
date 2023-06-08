@@ -1,4 +1,7 @@
-import { ethers } from 'ethers';
+import { BigNumber, ethers, logger } from 'ethers';
+import { Logger, shallowCopy } from 'ethers/lib/utils';
+
+import { checkError } from './utils';
 
 export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   private delay = (ms: number) =>
@@ -7,7 +10,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   private cooldownTime = 85 * 1000;
   private requestCount = 0;
   private lastRequestTime = 0;
-  private serverHasAnError = false;
+  public serverHasAnError = false;
 
   private canMakeRequest = () => {
     const now = Date.now();
@@ -34,6 +37,44 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
     }
     return requestFn();
   };
+
+  async perform(method: string, params: any): Promise<any> {
+    // Legacy networks do not like the type field being passed along (which
+    // is fair), so we delete type if it is 0 and a non-EIP-1559 network
+    if (method === 'call' || method === 'estimateGas') {
+      const tx = params.transaction;
+      if (tx && tx.type != null && BigNumber.from(tx.type).isZero()) {
+        // If there are no EIP-1559 properties, it might be non-EIP-1559
+        if (tx.maxFeePerGas == null && tx.maxPriorityFeePerGas == null) {
+          const feeData = await this.getFeeData();
+          if (
+            feeData.maxFeePerGas == null &&
+            feeData.maxPriorityFeePerGas == null
+          ) {
+            // Network doesn't know about EIP-1559 (and hence type)
+            params = shallowCopy(params);
+            params.transaction = shallowCopy(tx);
+            delete params.transaction.type;
+          }
+        }
+      }
+    }
+
+    const args = this.prepareRequest(method, params);
+
+    if (args == null) {
+      logger.throwError(
+        method + ' not implemented',
+        Logger.errors.NOT_IMPLEMENTED,
+        { operation: method }
+      );
+    }
+    try {
+      return await this.send(args[0], args[1]);
+    } catch (error) {
+      return checkError(method, error, params);
+    }
+  }
 
   async send(method: string, params: any[]) {
     try {
