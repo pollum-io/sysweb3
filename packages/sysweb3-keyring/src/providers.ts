@@ -110,6 +110,12 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
     } catch (error) {
       this.serverHasAnError = true;
 
+      console.error({
+        error,
+        message:
+          'The current RPC provider has an error. Pali performance may be affected. Modify the RPC URL in the network settings to resolve this issue.',
+      });
+
       throw {
         error,
         message:
