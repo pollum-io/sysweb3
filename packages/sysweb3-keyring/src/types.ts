@@ -182,6 +182,11 @@ export interface IKeyringManager {
   ethereumTransaction: IEthereumTransactions;
   syscoinTransaction: ISyscoinTransactions;
   verifyIfIsTestnet: () => boolean | undefined;
+  updateAccountLabel: (
+    label: string,
+    accountId: number,
+    accountType: KeyringAccountType
+  ) => void;
 }
 
 export enum KeyringAccountType {

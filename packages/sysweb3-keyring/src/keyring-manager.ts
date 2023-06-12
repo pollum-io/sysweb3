@@ -1251,4 +1251,12 @@ export class KeyringManager implements IKeyringManager {
 
     this.wallet.accounts[KeyringAccountType.Imported] = updatedWallets;
   }
+
+  public updateAccountLabel = (
+    label: string,
+    accountId: number,
+    accountType: KeyringAccountType
+  ) => {
+    this.wallet.accounts[accountType][accountId].label = label;
+  };
 }
