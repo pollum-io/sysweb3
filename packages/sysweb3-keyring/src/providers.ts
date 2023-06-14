@@ -12,6 +12,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   private lastRequestTime = 0;
   private isPossibleGetChainId = true;
   private currentChainId = '';
+  private currentId = 1;
   public serverHasAnError = false;
 
   private canMakeRequest = () => {
@@ -95,7 +96,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
           jsonrpc: '2.0',
           method,
           params,
-          id: 1,
+          id: this.currentId,
         }),
       };
 
@@ -111,6 +112,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
               this.currentChainId = json.result;
               this.isPossibleGetChainId = false;
             }
+            this.currentId++;
             this.serverHasAnError = false;
             return json.result;
           })
