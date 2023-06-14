@@ -10,6 +10,8 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   private cooldownTime = 85 * 1000;
   private requestCount = 0;
   private lastRequestTime = 0;
+  private isPossibleGetChainId = true;
+  private currentChainId = '';
   public serverHasAnError = false;
 
   private canMakeRequest = () => {
@@ -78,6 +80,10 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
 
   async send(method: string, params: any[]) {
     try {
+      if (!this.isPossibleGetChainId && method === 'eth_chainId') {
+        return this.currentChainId;
+      }
+
       const headers = {
         'Content-Type': 'application/json',
       };
@@ -101,6 +107,10 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
               this.serverHasAnError = true;
               throw new Error('Rate limit reached: ' + json.error.message);
             }
+            if (method === 'eth_chainId') {
+              this.currentChainId = json.result;
+              this.isPossibleGetChainId = false;
+            }
             this.serverHasAnError = false;
             return json.result;
           })
@@ -123,4 +133,8 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
       };
     }
   }
+
+  public canGetChainId = (isPossible: boolean) => {
+    this.isPossibleGetChainId = isPossible;
+  };
 }
