@@ -13,6 +13,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   private isPossibleGetChainId = true;
   private currentChainId = '';
   private currentId = 1;
+  public errorMessage = '';
   public serverHasAnError = false;
 
   private canMakeRequest = () => {
@@ -105,8 +106,13 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
           .then((response) => response.json())
           .then((json) => {
             if (json.error) {
+              if (json.error.message.includes('insufficient funds')) {
+                this.errorMessage = json.error.message;
+                throw new Error(json.error.message);
+              }
               this.serverHasAnError = true;
-              throw new Error('Rate limit reached: ' + json.error.message);
+              this.errorMessage = json.error.message;
+              throw new Error(json.error.message);
             }
             if (method === 'eth_chainId') {
               this.currentChainId = json.result;
