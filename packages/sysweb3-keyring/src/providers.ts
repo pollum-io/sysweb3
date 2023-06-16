@@ -4,64 +4,22 @@ import { Logger, shallowCopy } from 'ethers/lib/utils';
 import { checkError } from './utils';
 
 export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
-  //If the if implementation be kept we need to remove this delay
-  // private delay = (ms: number) =>
-  //   new Promise((resolve) => setTimeout(resolve, ms));
-  private rateLimit = 30; //This rateLimit is per second ? What is the logic behind this number?
-  private cooldownTime = 85 * 1000;
-  private requestCount = 0;
-  private lastRequestTime = 0;
+  private timeoutCounter = 0;
   private isPossibleGetChainId = true;
   private currentChainId = '';
   private currentId = 1;
+  private rpcUrlWithError = '';
   public errorMessage: any = '';
   public serverHasAnError = false;
 
-  private canMakeRequest = () => {
-    const now = Date.now();
-    let elapsedTime = 0;
-    if (this.lastRequestTime > 0) {
-      elapsedTime = now - this.lastRequestTime;
-    }
-
-    if (elapsedTime >= this.cooldownTime) {
-      this.requestCount = 0;
-      return false; //One last blocked request before cooldown ends
-    }
-
-    if (this.requestCount < this.rateLimit || !this.serverHasAnError) {
-      this.requestCount++;
-      this.lastRequestTime = now;
-      return true;
-    }
-
-    if (this.serverHasAnError) {
-      return false;
-    } // Validate this
-  };
-
-  private throttledRequest = async <T>(requestFn: () => Promise<T>) => {
-    //Why is this a while loop? If might make the provider unresponsive for dApps causing failures on Pali and third party dApps
-    // while (!this.canMakeRequest()) {
-    // await this.delay(2000);
-
-    // }
-    //TODO: validate if the below implementation is better, we should test it on Pali and third party dApps
-    if (!this.canMakeRequest()) {
-      const now = Date.now();
-      const elapsedTime = now - this.lastRequestTime;
-      console.error(
-        'Cant make request, rpc cooldown is active for the next: ',
-        (this.cooldownTime - elapsedTime) / 1000,
-        ' seconds'
-      );
-      throw {
-        message: `Cant make request, rpc cooldown is active for the next: ${
-          (this.cooldownTime - elapsedTime) / 1000
-        } seconds`,
-      };
-    }
-    return requestFn();
+  private throttledRequest = <T>(requestFn: () => Promise<T>): Promise<T> => {
+    return new Promise<T>((resolve, reject) => {
+      setTimeout(() => {
+        requestFn()
+          .then((result) => resolve(result))
+          .catch((error) => reject(error));
+      }, this.timeoutCounter);
+    });
   };
 
   async perform(method: string, params: any): Promise<any> {
@@ -104,8 +62,15 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
 
   async send(method: string, params: any[]) {
     if (!this.isPossibleGetChainId && method === 'eth_chainId') {
-      console.log('this.currentChainId', this.currentChainId);
       return this.currentChainId;
+    }
+
+    const canResetValidationValues =
+      !this.serverHasAnError && this.connection.url !== this.rpcUrlWithError;
+
+    if (canResetValidationValues) {
+      this.rpcUrlWithError = '';
+      this.timeoutCounter = 0;
     }
 
     const headers = {
@@ -133,6 +98,9 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
           }
           switch (response.status) {
             case 200:
+              if (this.rpcUrlWithError === this.connection.url) {
+                if (this.timeoutCounter > 0) this.timeoutCounter -= 100;
+              }
               return response.json();
             case 400:
               errorMessage = this.errorMessage;
@@ -194,12 +162,17 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
               break;
             case 429:
               this.serverHasAnError = true;
+              this.rpcUrlWithError = this.connection.url;
               errorMessage = this.errorMessage;
               console.error({
                 errorMessage,
                 message:
                   'The current RPC provider has a low rate-limit. We are applying a cooldown that will affect Pali performance. Modify the RPC URL in the network settings to resolve this issue.',
               });
+
+              if (this.timeoutCounter <= 3000) {
+                this.timeoutCounter += 500;
+              }
 
               throw {
                 errorMessage: errorMessage,
@@ -217,11 +190,17 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
             case 503:
               this.serverHasAnError = true;
               errorMessage = this.errorMessage;
+              this.rpcUrlWithError = this.connection.url;
               console.error({
                 errorMessage: errorMessage,
                 message:
                   'Service Unavailable: The current provider(RPC) is not ready to handle the request, possibly due to being down for maintenance or overloaded.',
               });
+
+              if (this.timeoutCounter <= 3000) {
+                this.timeoutCounter += 500;
+              }
+
               throw {
                 errorMessage: errorMessage,
                 message:
@@ -243,7 +222,6 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
               this.errorMessage = json.error.message;
               throw new Error(json.error.message);
             }
-            // this.serverHasAnError = true;
             this.errorMessage = json.error.message;
             console.error({
               errorMessage: json.error.message,
@@ -255,7 +233,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
             this.isPossibleGetChainId = false;
           }
           this.currentId++;
-          this.serverHasAnError = false; //We probably want to keep rateLimit on if server had error just adjust it better
+          this.serverHasAnError = false;
           return json.result;
         })
     );
