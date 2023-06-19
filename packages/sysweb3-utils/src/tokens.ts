@@ -575,10 +575,11 @@ export const getTokenByContract = async (
  * @param address Contract address of the token to validate
  */
 export const validateToken = async (
-  address: string
+  address: string,
+  web3Provider: any
 ): Promise<IErc20Token | any> => {
   try {
-    const contract = createContractUsingAbi(abi20, address);
+    const contract = createContractUsingAbi(abi20, address, web3Provider);
 
     const [decimals, name, symbol]: IErc20Token[] = await Promise.all([
       contract.methods.decimals().call(),

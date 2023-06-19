@@ -6,15 +6,13 @@ import erc721Abi from './abi/erc721.json';
 
 export const getContractType = async (
   contractAddress: string,
-  networkUrl: string
+  web3Provider: any
 ): Promise<ISupportsInterfaceProps | undefined> => {
-  const provider = new ethers.providers.JsonRpcProvider(networkUrl);
-
   try {
     const contractERC721 = new ethers.Contract(
       contractAddress,
       erc721Abi,
-      provider
+      web3Provider
     );
 
     const supportsInterface = await contractERC721.supportsInterface(
@@ -30,7 +28,7 @@ export const getContractType = async (
       const contractERC1155 = new ethers.Contract(
         contractAddress,
         erc1155Abi,
-        provider
+        web3Provider
       );
       const supportsInterface = await contractERC1155.supportsInterface(
         '0xd9b67a26'
@@ -44,7 +42,7 @@ export const getContractType = async (
         const contractERC20 = new ethers.Contract(
           contractAddress,
           erc20Abi,
-          provider
+          web3Provider
         );
         const balanceOf = await contractERC20.balanceOf(contractAddress);
 
