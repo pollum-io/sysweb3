@@ -420,8 +420,10 @@
     ethers "^5.6.9"
     web3 "^1.7.1"
 
-"@pollum-io/sysweb3-utils@file:../sysweb3-utils/dist":
-  version "1.1.223"
+"@pollum-io/sysweb3-utils@1.1.224":
+  version "1.1.224"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.1.224.tgz#c913ede897a25fa939b846d778d9366dcd859b7b"
+  integrity sha512-kmT4TJM/pXYXz53PKiccioDlUZtKhHVeWx/Uun82rFy25KkprL61jqpRIXUx0CcWb78QNvE7vz3ADoYv6nL/MQ==
   dependencies:
     "@ethersproject/contracts" "^5.6.2"
     axios "^0.26.1"
@@ -1678,16 +1680,9 @@ eth-lib@^0.1.26:
     ws "^3.0.0"
     xhr-request-promise "^0.1.2"
 
-eth-object@^1.0.3:
+eth-object@^1.0.3, "eth-object@https://github.com/syscoin/eth-object.git":
   version "1.0.3"
   resolved "https://github.com/syscoin/eth-object.git#b5ff300f57c136138b31d6e570c816a147e0f1c9"
-  dependencies:
-    eth-util-lite "^1.0.1"
-
-"eth-object@git+https://github.com/syscoin/eth-object.git":
-  version "1.0.3"
-  uid b5ff300f57c136138b31d6e570c816a147e0f1c9
-  resolved "git+https://github.com/syscoin/eth-object.git#b5ff300f57c136138b31d6e570c816a147e0f1c9"
   dependencies:
     eth-util-lite "^1.0.1"
 
