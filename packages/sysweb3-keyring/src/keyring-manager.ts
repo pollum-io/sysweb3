@@ -13,6 +13,7 @@ import {
   initialActiveTrezorAccountState,
   initialWalletState,
 } from './initial-state';
+import { CustomJsonRpcProvider } from './providers';
 import {
   getSyscoinSigners,
   SyscoinHDSigner,
@@ -1074,8 +1075,12 @@ export class KeyringManager implements IKeyringManager {
   };
 
   private setSignerEVM = async (network: INetwork): Promise<void> => {
+    const abortController = new AbortController();
     try {
-      const web3Provider = new ethers.providers.JsonRpcProvider(network.url);
+      const web3Provider = new CustomJsonRpcProvider(
+        abortController.signal,
+        network.url
+      );
       const { chainId } = await web3Provider.getNetwork();
       if (network.chainId !== chainId) {
         throw new Error(
@@ -1083,7 +1088,9 @@ export class KeyringManager implements IKeyringManager {
         );
       }
       this.ethereumTransaction.setWeb3Provider(network);
+      abortController.abort();
     } catch (error) {
+      abortController.abort();
       throw new Error(`SetSignerEVM: Failed with ${error}`);
     }
   };
