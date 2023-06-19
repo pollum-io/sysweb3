@@ -48,6 +48,7 @@ export class EthereumTransactions implements IEthereumTransactions {
   public web3Provider: CustomJsonRpcProvider;
   public trezorSigner: TrezorKeyring;
   private getNetwork: () => INetwork;
+  private abortController: AbortController;
   private getDecryptedPrivateKey: () => {
     address: string;
     decryptedPrivateKey: string;
@@ -90,7 +91,11 @@ export class EthereumTransactions implements IEthereumTransactions {
   ) {
     this.getNetwork = getNetwork;
     this.getDecryptedPrivateKey = getDecryptedPrivateKey;
-    this.web3Provider = new CustomJsonRpcProvider(this.getNetwork().url);
+    this.abortController = new AbortController();
+    this.web3Provider = new CustomJsonRpcProvider(
+      this.abortController.signal,
+      this.getNetwork().url
+    );
     this.getSigner = getSigner;
     this.getState = getState;
     this.trezorSigner = new TrezorKeyring(this.getSigner);
@@ -764,7 +769,12 @@ export class EthereumTransactions implements IEthereumTransactions {
   };
 
   public setWeb3Provider(network: INetwork) {
-    this.web3Provider = new CustomJsonRpcProvider(network.url);
+    this.abortController.abort();
+    this.abortController = new AbortController();
+    this.web3Provider = new CustomJsonRpcProvider(
+      this.abortController.signal,
+      network.url
+    );
   }
 
   public importAccount = (mnemonicOrPrivKey: string) => {

@@ -1,25 +1,93 @@
+import { Networkish } from '@ethersproject/networks';
 import { BigNumber, ethers, logger } from 'ethers';
-import { Logger, shallowCopy } from 'ethers/lib/utils';
+import { ConnectionInfo, Logger, shallowCopy } from 'ethers/lib/utils';
 
 import { checkError } from './utils';
-
 export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   private timeoutCounter = 0;
   private isPossibleGetChainId = true;
+  private cooldownTime = 65 * 1000;
+  private rateLimit = 30;
+  private requestCount = 0;
+  private lastRequestTime = 0;
   private currentChainId = '';
   private currentId = 1;
-  private rpcUrlWithError = '';
   public errorMessage: any = '';
   public serverHasAnError = false;
+  signal: AbortSignal;
+
+  constructor(
+    signal: AbortSignal,
+    url?: ConnectionInfo | string,
+    network?: Networkish
+  ) {
+    super(url, network);
+    this.signal = signal;
+  }
 
   private throttledRequest = <T>(requestFn: () => Promise<T>): Promise<T> => {
+    if (!this.canMakeRequest()) {
+      return this.cooldown();
+    }
     return new Promise<T>((resolve, reject) => {
       setTimeout(() => {
         requestFn()
           .then((result) => resolve(result))
-          .catch((error) => reject(error));
+          .catch((error) => {
+            if (error.name === 'AbortError') {
+              console.log('Aborted request', error);
+              return;
+            }
+            reject(error);
+          });
       }, this.timeoutCounter);
     });
+  };
+  private canMakeRequest = () => {
+    const now = Date.now();
+    let elapsedTime = 0;
+    if (this.lastRequestTime > 0) {
+      elapsedTime = now - this.lastRequestTime;
+    }
+    if (elapsedTime <= this.cooldownTime && this.serverHasAnError) {
+      return false;
+    }
+
+    if (elapsedTime >= this.cooldownTime && this.serverHasAnError) {
+      this.requestCount = 0;
+      this.serverHasAnError = false;
+      return false; //One last blocked request before cooldown ends
+    }
+
+    if (this.requestCount < this.rateLimit || !this.serverHasAnError) {
+      this.requestCount++;
+      if (elapsedTime > 1000) {
+        //Uncomment the console.log to see the request per second
+        // console.log(
+        //   `Request/sec to Provider(${this.connection.url}): ${this.requestCount}`
+        // );
+        this.requestCount = 1;
+        this.lastRequestTime = now;
+      } else if (this.lastRequestTime === 0) {
+        this.lastRequestTime = now;
+      }
+      return true;
+    }
+  };
+
+  private cooldown = async () => {
+    const now = Date.now();
+    const elapsedTime = now - this.lastRequestTime;
+    console.error(
+      'Cant make request, rpc cooldown is active for the next: ',
+      (this.cooldownTime - elapsedTime) / 1000,
+      ' seconds'
+    );
+    throw {
+      message: `Cant make request, rpc cooldown is active for the next: ${
+        (this.cooldownTime - elapsedTime) / 1000
+      } seconds`,
+    };
   };
 
   async perform(method: string, params: any): Promise<any> {
@@ -64,12 +132,9 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
     if (!this.isPossibleGetChainId && method === 'eth_chainId') {
       return this.currentChainId;
     }
-
-    const canResetValidationValues =
-      !this.serverHasAnError && this.connection.url !== this.rpcUrlWithError;
+    const canResetValidationValues = !this.serverHasAnError;
 
     if (canResetValidationValues) {
-      this.rpcUrlWithError = '';
       this.timeoutCounter = 0;
     }
 
@@ -98,9 +163,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
           }
           switch (response.status) {
             case 200:
-              if (this.rpcUrlWithError === this.connection.url) {
-                if (this.timeoutCounter > 0) this.timeoutCounter -= 100;
-              }
+              if (this.timeoutCounter > 3000) this.timeoutCounter -= 100;
               return response.json();
             case 400:
               errorMessage = this.errorMessage;
@@ -162,7 +225,6 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
               break;
             case 429:
               this.serverHasAnError = true;
-              this.rpcUrlWithError = this.connection.url;
               errorMessage = this.errorMessage;
               console.error({
                 errorMessage,
@@ -170,9 +232,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
                   'The current RPC provider has a low rate-limit. We are applying a cooldown that will affect Pali performance. Modify the RPC URL in the network settings to resolve this issue.',
               });
 
-              if (this.timeoutCounter <= 3000) {
-                this.timeoutCounter += 500;
-              }
+              this.timeoutCounter += 1000;
 
               throw {
                 errorMessage: errorMessage,
@@ -190,16 +250,13 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
             case 503:
               this.serverHasAnError = true;
               errorMessage = this.errorMessage;
-              this.rpcUrlWithError = this.connection.url;
               console.error({
                 errorMessage: errorMessage,
                 message:
                   'Service Unavailable: The current provider(RPC) is not ready to handle the request, possibly due to being down for maintenance or overloaded.',
               });
 
-              if (this.timeoutCounter <= 3000) {
-                this.timeoutCounter += 500;
-              }
+              this.timeoutCounter += 500; //Lower throttle limit as this is an malfunction on the server and not extrapolated rateLimit
 
               throw {
                 errorMessage: errorMessage,
@@ -239,8 +296,4 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
     );
     return result;
   }
-
-  public canGetChainId = (isPossible: boolean) => {
-    this.isPossibleGetChainId = isPossible;
-  };
 }
