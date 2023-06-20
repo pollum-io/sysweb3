@@ -23,7 +23,7 @@ export const validateChainId = (
   };
 };
 //TODO: add returns types for getEthChainId
-const getEthChainId = async (url: string) => {
+const getEthChainId = async (url: string): Promise<{ chainId: number }> => {
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -63,7 +63,7 @@ const getEthChainId = async (url: string) => {
     throw new Error(`Error getting chain ID: ${data.error.message}`);
   }
 
-  return data.result;
+  return { chainId: Number(data.result) };
 };
 
 /** eth rpc */
@@ -82,7 +82,6 @@ export const validateEthRpc = async (
   chain: string;
 }> => {
   try {
-    console.log('validate response', await getEthChainId(url));
     const { chainId } = await getEthChainId(url);
     if (!chainId) {
       throw new Error('Invalid RPC URL. Could not get chain ID for network.');
