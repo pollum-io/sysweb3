@@ -6,7 +6,7 @@ import { checkError } from './utils';
 export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   private timeoutCounter = 0;
   private isPossibleGetChainId = true;
-  private cooldownTime = 65 * 1000;
+  private cooldownTime = 120 * 1000;
   private rateLimit = 30;
   private requestCount = 0;
   private lastRequestTime = 0;
