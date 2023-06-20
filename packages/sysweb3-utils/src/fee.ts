@@ -50,34 +50,12 @@ export const feeUtils = () => {
   const getRecommendedFee = async (explorerUrl: string): Promise<number> =>
     (await sys.utils.fetchEstimateFee(explorerUrl, 1)) / 10 ** 8;
 
-  const estimateTokenTransferGasLimit = async (
-    recipient: string,
-    contractAddress: string,
-    txAmount: ethers.BigNumber,
-    defaultValue?: number
-  ) => {
-    try {
-      const contract = new ethers.Contract(contractAddress, '');
-
-      const gasLimit: ethers.BigNumber = await contract.estimateGas.transfer(
-        recipient,
-        txAmount,
-        { from: '' }
-      );
-
-      return gasLimit.toNumber();
-    } catch (error) {
-      return defaultValue;
-    }
-  };
-
   const convertGasFee = (value: string) =>
     ethers.utils.formatEther(String(value));
 
   return {
     estimateSysTransactionFee,
     getRecommendedFee,
-    estimateTokenTransferGasLimit,
     convertGasFee,
   };
 };
