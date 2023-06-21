@@ -322,7 +322,11 @@ export class EthereumTransactions implements IEthereumTransactions {
   }) => {
     const abi = getErc20Abi() as any;
     try {
-      const contract = createContractUsingAbi(abi, contractAddress);
+      const contract = createContractUsingAbi(
+        abi,
+        contractAddress,
+        this.web3Provider
+      );
       const data = contract.methods
         .transfer(receivingAddress, value)
         .encodeABI();

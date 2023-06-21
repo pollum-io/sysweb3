@@ -6,7 +6,7 @@ import { checkError } from './utils';
 export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   private timeoutCounter = 0;
   private isPossibleGetChainId = true;
-  private cooldownTime = 65 * 1000;
+  private cooldownTime = 120 * 1000;
   private rateLimit = 30;
   private requestCount = 0;
   private lastRequestTime = 0;
@@ -158,8 +158,19 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
         .then(async (response) => {
           let errorMessage;
           if (!response.ok) {
-            const errorBody = await response.json();
-            this.errorMessage = errorBody.error || errorBody.message || '';
+            let errorBody = {
+              error: undefined,
+              message: undefined,
+            };
+            try {
+              errorBody = await response.json();
+            } catch (error) {
+              console.warn('No body in request', error);
+            }
+            this.errorMessage =
+              errorBody.error ||
+              errorBody.message ||
+              'No message from Provider';
           }
           switch (response.status) {
             case 200:
