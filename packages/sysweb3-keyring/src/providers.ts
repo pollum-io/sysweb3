@@ -12,6 +12,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   private lastRequestTime = 0;
   private currentChainId = '';
   private currentId = 1;
+  public isInCooldown = false;
   public errorMessage: any = '';
   public serverHasAnError = false;
   signal: AbortSignal;
@@ -50,12 +51,14 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
       elapsedTime = now - this.lastRequestTime;
     }
     if (elapsedTime <= this.cooldownTime && this.serverHasAnError) {
+      this.isInCooldown = true;
       return false;
     }
 
     if (elapsedTime >= this.cooldownTime && this.serverHasAnError) {
       this.requestCount = 0;
       this.serverHasAnError = false;
+      this.isInCooldown = true;
       return false; //One last blocked request before cooldown ends
     }
 
@@ -71,6 +74,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
       } else if (this.lastRequestTime === 0) {
         this.lastRequestTime = now;
       }
+      this.isInCooldown = false;
       return true;
     }
   };
