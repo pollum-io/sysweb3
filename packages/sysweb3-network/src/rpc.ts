@@ -23,7 +23,13 @@ export const validateChainId = (
   };
 };
 //TODO: add returns types for getEthChainId
-const getEthChainId = async (url: string): Promise<{ chainId: number }> => {
+const getEthChainId = async (
+  url: string,
+  isInCooldown: boolean
+): Promise<{ chainId: number }> => {
+  if (isInCooldown) {
+    throw new Error('Cant make request, rpc cooldown is active');
+  }
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -73,7 +79,8 @@ export const isValidChainIdForEthNetworks = (chainId: number | string) =>
   Number(chainId) <= 4503599627370476;
 
 export const validateEthRpc = async (
-  url: string
+  url: string,
+  isInCooldown: boolean
 ): Promise<{
   chainId: number;
   valid: boolean;
@@ -82,7 +89,7 @@ export const validateEthRpc = async (
   chain: string;
 }> => {
   try {
-    const { chainId } = await getEthChainId(url);
+    const { chainId } = await getEthChainId(url, isInCooldown);
     if (!chainId) {
       throw new Error('Invalid RPC URL. Could not get chain ID for network.');
     }
@@ -110,12 +117,16 @@ export const validateEthRpc = async (
 };
 
 export const getEthRpc = async (
-  data: any
+  data: any,
+  isInCooldown: boolean
 ): Promise<{
   formattedNetwork: INetwork;
 }> => {
   const endsWithSlash = /\/$/;
-  const { valid, hexChainId, details } = await validateEthRpc(data.url);
+  const { valid, hexChainId, details } = await validateEthRpc(
+    data.url,
+    isInCooldown
+  );
 
   if (!valid) throw new Error('Invalid RPC.');
 
