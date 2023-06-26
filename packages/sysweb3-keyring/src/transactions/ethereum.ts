@@ -342,18 +342,23 @@ export class EthereumTransactions implements IEthereumTransactions {
     let maxPriorityFeePerGas = this.toBigNumber(0);
 
     try {
-      const [block, ethMaxPriorityFee] = await Promise.all([
-        await this.web3Provider.getBlock('latest'),
-        await this.web3Provider.send('eth_maxPriorityFeePerGas', []),
-      ]);
-
+      const block = await this.web3Provider.getBlock('latest');
       if (block && block.baseFeePerGas) {
-        maxPriorityFeePerGas = ethers.BigNumber.from(ethMaxPriorityFee);
-
-        if (maxPriorityFeePerGas) {
+        try {
+          const ethMaxPriorityFee = await this.web3Provider.send(
+            'eth_maxPriorityFeePerGas',
+            []
+          );
+          maxPriorityFeePerGas = ethers.BigNumber.from(ethMaxPriorityFee);
+          maxFeePerGas = block.baseFeePerGas.mul(2).add(maxPriorityFeePerGas);
+        } catch (e) {
+          maxPriorityFeePerGas = ethers.BigNumber.from('1500000000');
           maxFeePerGas = block.baseFeePerGas.mul(2).add(maxPriorityFeePerGas);
         }
-      }
+        return { maxFeePerGas, maxPriorityFeePerGas };
+      } else if (!block) throw { msg: 'Block not found' };
+      else if (!block.baseFeePerGas)
+        throw { msg: 'Chain doesnt support EIP1559' };
 
       return { maxFeePerGas, maxPriorityFeePerGas };
     } catch (error) {
@@ -517,8 +522,10 @@ export class EthereumTransactions implements IEthereumTransactions {
     receiver,
     tokenAddress,
     tokenAmount,
+    isLegacy = false,
     maxPriorityFeePerGas,
     maxFeePerGas,
+    gasPrice,
     gasLimit,
     saveTrezorTx,
   }: ISendSignedErcTransactionProps): Promise<IResponseFromSendErcSignedTransaction> => {
@@ -543,20 +550,35 @@ export class EthereumTransactions implements IEthereumTransactions {
         const calculatedTokenAmount = ethers.BigNumber.from(
           ethers.utils.parseEther(tokenAmount as string)
         );
-
-        const transferMethod = await _contract.transfer(
-          receiver,
-          calculatedTokenAmount,
-          {
-            nonce: await this.web3Provider.getTransactionCount(
-              walletSigned.address,
-              'pending'
-            ),
-            maxPriorityFeePerGas,
-            maxFeePerGas,
-            gasLimit,
-          }
-        );
+        let transferMethod;
+        if (isLegacy) {
+          transferMethod = await _contract.transfer(
+            receiver,
+            calculatedTokenAmount,
+            {
+              nonce: await this.web3Provider.getTransactionCount(
+                walletSigned.address,
+                'pending'
+              ),
+              gasPrice,
+              gasLimit,
+            }
+          );
+        } else {
+          transferMethod = await _contract.transfer(
+            receiver,
+            calculatedTokenAmount,
+            {
+              nonce: await this.web3Provider.getTransactionCount(
+                walletSigned.address,
+                'pending'
+              ),
+              maxPriorityFeePerGas,
+              maxFeePerGas,
+              gasLimit,
+            }
+          );
+        }
 
         return transferMethod;
       } catch (error) {
@@ -584,20 +606,34 @@ export class EthereumTransactions implements IEthereumTransactions {
           receiver,
           calculatedTokenAmount,
         ]);
-
-        const txToBeSignedByTrezor = {
-          to: tokenAddress,
-          value: '0x0',
-          // @ts-ignore
-          gasLimit: `${gasLimit.toHexString()}`,
-          // @ts-ignore
-          maxFeePerGas: `${maxFeePerGas.toHexString()}`,
-          // @ts-ignore
-          maxPriorityFeePerGas: `${maxPriorityFeePerGas.toHexString()}`,
-          nonce: this.toBigNumber(transactionNonce)._hex,
-          chainId: activeNetwork.chainId,
-          data: txData,
-        };
+        let txToBeSignedByTrezor;
+        if (isLegacy) {
+          txToBeSignedByTrezor = {
+            to: tokenAddress,
+            value: '0x0',
+            // @ts-ignore
+            gasLimit: `${gasLimit.toHexString()}`,
+            // @ts-ignore
+            gasPrice: `${gasPrice.toHexString()}`,
+            nonce: this.toBigNumber(transactionNonce)._hex,
+            chainId: activeNetwork.chainId,
+            data: txData,
+          };
+        } else {
+          txToBeSignedByTrezor = {
+            to: tokenAddress,
+            value: '0x0',
+            // @ts-ignore
+            gasLimit: `${gasLimit.toHexString()}`,
+            // @ts-ignore
+            maxFeePerGas: `${maxFeePerGas.toHexString()}`,
+            // @ts-ignore
+            maxPriorityFeePerGas: `${maxPriorityFeePerGas.toHexString()}`,
+            nonce: this.toBigNumber(transactionNonce)._hex,
+            chainId: activeNetwork.chainId,
+            data: txData,
+          };
+        }
 
         const signature = await this.trezorSigner.signEthTransaction({
           index: `${activeAccountId}`,
@@ -606,17 +642,31 @@ export class EthereumTransactions implements IEthereumTransactions {
 
         if (signature.success) {
           try {
-            const txFormattedForEthers = {
-              to: tokenAddress,
-              value: '0x0',
-              gasLimit,
-              maxFeePerGas,
-              maxPriorityFeePerGas,
-              data: txData,
-              nonce: transactionNonce,
-              chainId: activeNetwork.chainId,
-              type: 2,
-            };
+            let txFormattedForEthers;
+            if (isLegacy) {
+              txFormattedForEthers = {
+                to: tokenAddress,
+                value: '0x0',
+                gasLimit,
+                gasPrice,
+                data: txData,
+                nonce: transactionNonce,
+                chainId: activeNetwork.chainId,
+                type: 0,
+              };
+            } else {
+              txFormattedForEthers = {
+                to: tokenAddress,
+                value: '0x0',
+                gasLimit,
+                maxFeePerGas,
+                maxPriorityFeePerGas,
+                data: txData,
+                nonce: transactionNonce,
+                chainId: activeNetwork.chainId,
+                type: 2,
+              };
+            }
             signature.payload.v = parseInt(signature.payload.v, 16); //v parameter must be a number by ethers standards
             const signedTx = ethers.utils.serializeTransaction(
               txFormattedForEthers,
