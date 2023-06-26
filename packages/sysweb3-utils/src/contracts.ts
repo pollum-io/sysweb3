@@ -7,21 +7,16 @@ import { getContractType, ISupportsInterfaceProps } from './getContract';
 
 export const createContractUsingAbi = (
   AbiContract: ContractInterface,
-  address?: string
+  address: string,
+  web3Provider: any
 ): Contract => {
-  return new ethers.Contract(String(address), AbiContract);
+  return new ethers.Contract(String(address), AbiContract, web3Provider);
 };
 
-const HttpProvider = ethers.providers.JsonRpcProvider;
-
-export const isContractAddress = async (
-  address: string,
-  networkUrl: string
-) => {
+export const isContractAddress = async (address: string, web3Provider: any) => {
   if (!address) return false;
   try {
-    const provider = new HttpProvider(networkUrl);
-    const code = await provider.getCode(address);
+    const code = await web3Provider.getCode(address);
 
     return Boolean(code !== '0x');
   } catch (error) {
@@ -31,12 +26,12 @@ export const isContractAddress = async (
 
 export const contractChecker = async (
   contractAddress: string,
-  networkUrl: string
+  web3Provider: any
 ): Promise<ISupportsInterfaceProps | ErrorConstructor> => {
   try {
     const validateContractAddress = await isContractAddress(
       contractAddress,
-      networkUrl
+      web3Provider
     );
 
     if (!validateContractAddress)
@@ -44,7 +39,7 @@ export const contractChecker = async (
 
     const contractData = (await getContractType(
       contractAddress,
-      networkUrl
+      web3Provider
     )) as ISupportsInterfaceProps;
 
     return contractData;

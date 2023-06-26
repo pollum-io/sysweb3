@@ -25,6 +25,7 @@ import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
 import omit from 'lodash/omit';
 
+import { CustomJsonRpcProvider } from '../providers';
 import { SyscoinHDSigner } from '../signers';
 import { TrezorKeyring } from '../trezor';
 import {
@@ -44,9 +45,10 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export class EthereumTransactions implements IEthereumTransactions {
-  public web3Provider: ethers.providers.JsonRpcProvider;
+  public web3Provider: CustomJsonRpcProvider;
   public trezorSigner: TrezorKeyring;
   private getNetwork: () => INetwork;
+  private abortController: AbortController;
   private getDecryptedPrivateKey: () => {
     address: string;
     decryptedPrivateKey: string;
@@ -89,7 +91,9 @@ export class EthereumTransactions implements IEthereumTransactions {
   ) {
     this.getNetwork = getNetwork;
     this.getDecryptedPrivateKey = getDecryptedPrivateKey;
-    this.web3Provider = new ethers.providers.JsonRpcProvider(
+    this.abortController = new AbortController();
+    this.web3Provider = new CustomJsonRpcProvider(
+      this.abortController.signal,
       this.getNetwork().url
     );
     this.getSigner = getSigner;
@@ -318,7 +322,11 @@ export class EthereumTransactions implements IEthereumTransactions {
   }) => {
     const abi = getErc20Abi() as any;
     try {
-      const contract = createContractUsingAbi(abi, contractAddress);
+      const contract = createContractUsingAbi(
+        abi,
+        contractAddress,
+        this.web3Provider
+      );
       const data = contract.methods
         .transfer(receivingAddress, value)
         .encodeABI();
@@ -765,7 +773,12 @@ export class EthereumTransactions implements IEthereumTransactions {
   };
 
   public setWeb3Provider(network: INetwork) {
-    this.web3Provider = new ethers.providers.JsonRpcProvider(network.url);
+    this.abortController.abort();
+    this.abortController = new AbortController();
+    this.web3Provider = new CustomJsonRpcProvider(
+      this.abortController.signal,
+      network.url
+    );
   }
 
   public importAccount = (mnemonicOrPrivKey: string) => {

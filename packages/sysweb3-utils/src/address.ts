@@ -38,9 +38,9 @@ export const isValidSYSAddress = (
 
 export const validateEOAAddress = async (
   address: string,
-  networkUrl: string
+  web3Provider: any
 ): Promise<IValidateEOAAddressResponse> => {
-  const validateContract = await isContractAddress(address, networkUrl);
+  const validateContract = await isContractAddress(address, web3Provider);
 
   if (validateContract) {
     return {

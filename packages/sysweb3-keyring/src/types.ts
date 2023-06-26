@@ -1,6 +1,7 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { TypedData, TypedMessage } from 'eth-sig-util';
 import { ethers, BigNumber, BigNumberish } from 'ethers';
+import { CustomJsonRpcProvider } from 'providers';
 import {
   EncryptedKeystoreV3Json,
   Sign,
@@ -111,7 +112,7 @@ export interface IEthereumTransactions {
   ) => Promise<any[]>;
   setWeb3Provider: (network: INetwork) => void;
   importAccount: (mnemonicOrPrivKey: string) => ethers.Wallet;
-  web3Provider: ethers.providers.JsonRpcProvider;
+  web3Provider: CustomJsonRpcProvider;
 }
 
 export interface ISyscoinTransactions {
