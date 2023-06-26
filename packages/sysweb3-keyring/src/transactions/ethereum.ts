@@ -356,9 +356,10 @@ export class EthereumTransactions implements IEthereumTransactions {
           maxFeePerGas = block.baseFeePerGas.mul(2).add(maxPriorityFeePerGas);
         }
         return { maxFeePerGas, maxPriorityFeePerGas };
+      } else if (block && !block.baseFeePerGas) {
+        console.error('Chain doesnt support EIP1559');
+        return { maxFeePerGas, maxPriorityFeePerGas };
       } else if (!block) throw { msg: 'Block not found' };
-      else if (!block.baseFeePerGas)
-        throw { msg: 'Chain doesnt support EIP1559' };
 
       return { maxFeePerGas, maxPriorityFeePerGas };
     } catch (error) {
@@ -366,7 +367,10 @@ export class EthereumTransactions implements IEthereumTransactions {
     }
   };
   //TODO: This function needs to be refactored
-  sendFormattedTransaction = async (params: SimpleTransactionRequest) => {
+  sendFormattedTransaction = async (
+    params: SimpleTransactionRequest,
+    isLegacy?: boolean
+  ) => {
     const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
     const { activeAccountType, activeAccountId, accounts, activeNetwork } =
       this.getState();
@@ -376,45 +380,103 @@ export class EthereumTransactions implements IEthereumTransactions {
       const transactionNonce = await this.getRecommendedNonce(
         activeAccount.address
       );
+      let txFormattedForTrezor = {};
       const formatParams = omit(params, 'from'); //From is not needed we're already passing in the HD derivation path so it can be inferred
-      const txFormattedForTrezor = {
-        ...formatParams,
-        gasLimit:
-          typeof formatParams.gasLimit === 'string'
-            ? formatParams.gasLimit
-            : // @ts-ignore
-              `${params.gasLimit.toHexString()}`,
-        maxFeePerGas:
-          typeof formatParams.maxFeePerGas === 'string'
-            ? formatParams.maxFeePerGas
-            : // @ts-ignore
-              `${params.maxFeePerGas.toHexString()}`,
-        maxPriorityFeePerGas:
-          typeof formatParams.maxPriorityFeePerGas === 'string'
-            ? formatParams.maxPriorityFeePerGas
-            : // @ts-ignore
-              `${params.maxPriorityFeePerGas.toHexString()}`,
-        value:
-          typeof formatParams.value === 'string' ||
-          typeof formatParams.value === 'number'
-            ? `${formatParams.value}`
-            : // @ts-ignore
-              `${params.value.toHexString()}`,
-        nonce: this.toBigNumber(transactionNonce)._hex,
-        chainId: activeNetwork.chainId,
-      };
+      switch (isLegacy) {
+        case true:
+          txFormattedForTrezor = {
+            ...formatParams,
+            gasLimit:
+              typeof formatParams.gasLimit === 'string'
+                ? formatParams.gasLimit
+                : // @ts-ignore
+                  `${params.gasLimit.toHexString()}`,
+            value:
+              typeof formatParams.value === 'string' ||
+              typeof formatParams.value === 'number'
+                ? `${formatParams.value}`
+                : // @ts-ignore
+                  `${params.value.toHexString()}`,
+            nonce: this.toBigNumber(transactionNonce)._hex,
+            chainId: activeNetwork.chainId,
+          };
+          break;
+        case false:
+          txFormattedForTrezor = {
+            ...formatParams,
+            gasLimit:
+              typeof formatParams.gasLimit === 'string'
+                ? formatParams.gasLimit
+                : // @ts-ignore
+                  `${params.gasLimit.toHexString()}`,
+            maxFeePerGas:
+              typeof formatParams.maxFeePerGas === 'string'
+                ? formatParams.maxFeePerGas
+                : // @ts-ignore
+                  `${params.maxFeePerGas.toHexString()}`,
+            maxPriorityFeePerGas:
+              typeof formatParams.maxPriorityFeePerGas === 'string'
+                ? formatParams.maxPriorityFeePerGas
+                : // @ts-ignore
+                  `${params.maxPriorityFeePerGas.toHexString()}`,
+            value:
+              typeof formatParams.value === 'string' ||
+              typeof formatParams.value === 'number'
+                ? `${formatParams.value}`
+                : // @ts-ignore
+                  `${params.value.toHexString()}`,
+            nonce: this.toBigNumber(transactionNonce)._hex,
+            chainId: activeNetwork.chainId,
+          };
+          break;
+        default:
+          txFormattedForTrezor = {
+            ...formatParams,
+            gasLimit:
+              typeof formatParams.gasLimit === 'string'
+                ? formatParams.gasLimit
+                : // @ts-ignore
+                  `${params.gasLimit.toHexString()}`,
+            maxFeePerGas:
+              typeof formatParams.maxFeePerGas === 'string'
+                ? formatParams.maxFeePerGas
+                : // @ts-ignore
+                  `${params.maxFeePerGas.toHexString()}`,
+            maxPriorityFeePerGas:
+              typeof formatParams.maxPriorityFeePerGas === 'string'
+                ? formatParams.maxPriorityFeePerGas
+                : // @ts-ignore
+                  `${params.maxPriorityFeePerGas.toHexString()}`,
+            value:
+              typeof formatParams.value === 'string' ||
+              typeof formatParams.value === 'number'
+                ? `${formatParams.value}`
+                : // @ts-ignore
+                  `${params.value.toHexString()}`,
+            nonce: this.toBigNumber(transactionNonce)._hex,
+            chainId: activeNetwork.chainId,
+          };
+          break;
+      }
+
       const signature = await this.trezorSigner.signEthTransaction({
         index: `${activeAccountId}`,
         tx: txFormattedForTrezor as EthereumTransactionEIP1559,
       });
       if (signature.success) {
         try {
-          const txFormattedForEthers = {
-            ...formatParams,
-            nonce: transactionNonce,
-            chainId: activeNetwork.chainId,
-            type: 2,
-          };
+          const txFormattedForEthers = isLegacy
+            ? {
+                ...formatParams,
+                nonce: transactionNonce,
+                chainId: activeNetwork.chainId,
+              }
+            : {
+                ...formatParams,
+                nonce: transactionNonce,
+                chainId: activeNetwork.chainId,
+                type: 2,
+              };
           signature.payload.v = parseInt(signature.payload.v, 16); //v parameter must be a number by ethers standards
           const signedTx = ethers.utils.serializeTransaction(
             txFormattedForEthers,
@@ -614,7 +676,7 @@ export class EthereumTransactions implements IEthereumTransactions {
             // @ts-ignore
             gasLimit: `${gasLimit.toHexString()}`,
             // @ts-ignore
-            gasPrice: `${gasPrice.toHexString()}`,
+            gasPrice: `${gasPrice}`,
             nonce: this.toBigNumber(transactionNonce)._hex,
             chainId: activeNetwork.chainId,
             data: txData,
