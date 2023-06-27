@@ -295,6 +295,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
               throw new Error(json.error.message);
             }
             this.errorMessage = json.error.message;
+            console.log({ requestData: { method, params }, error: json.error });
             console.error({
               errorMessage: json.error.message,
             });
