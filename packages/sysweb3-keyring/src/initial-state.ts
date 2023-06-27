@@ -88,6 +88,15 @@ export const initialNetworksState = {
       apiUrl: 'https://explorer.syscoin.org/api',
       explorer: 'https://explorer.syscoin.org/',
     },
+    570: {
+      chainId: 570,
+      currency: 'sys',
+      default: true,
+      label: 'Rollux',
+      url: 'https://rpc.rollux.com',
+      apiUrl: 'https://explorer.rollux.com/api',
+      explorer: 'https://explorer.rollux.com/',
+    },
     5700: {
       chainId: 5700,
       currency: 'tsys',

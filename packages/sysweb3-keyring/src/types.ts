@@ -73,7 +73,8 @@ export interface IEthereumTransactions {
   ) => string;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
   sendFormattedTransaction: (
-    params: SimpleTransactionRequest
+    params: SimpleTransactionRequest,
+    isLegacy?: boolean
   ) => Promise<TransactionResponse>;
   getRecommendedNonce: (address: string) => Promise<number>;
   getFeeByType: (type: string) => Promise<string>;
@@ -274,8 +275,10 @@ export interface ISendSignedErcTransactionProps {
   networkUrl: string;
   receiver: string;
   tokenAddress: string;
+  isLegacy?: boolean;
   maxPriorityFeePerGas?: BigNumberish;
   maxFeePerGas?: BigNumberish;
+  gasPrice?: BigNumberish;
   gasLimit?: BigNumberish;
   tokenAmount?: string;
   tokenId?: number;

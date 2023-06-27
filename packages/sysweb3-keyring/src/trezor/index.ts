@@ -2,6 +2,7 @@
 import TrezorConnect, {
   AccountInfo,
   DEVICE_EVENT,
+  EthereumTransaction,
   EthereumTransactionEIP1559,
 } from '@trezor/connect-web';
 import { address } from '@trezor/utxo-lib';
@@ -539,7 +540,7 @@ export class TrezorKeyring {
     tx,
     index,
   }: {
-    tx: EthereumTransactionEIP1559;
+    tx: EthereumTransaction | EthereumTransactionEIP1559;
     index: string;
   }) {
     try {
