@@ -420,7 +420,7 @@
     ethers "^5.6.9"
     web3 "^1.7.1"
 
-"@pollum-io/sysweb3-utils@1.1.227":
+"@pollum-io/sysweb3-utils@^1.1.227":
   version "1.1.227"
   resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.1.227.tgz#3af986bc48f633018e60013d1926b62100477ba7"
   integrity sha512-5zBc9GvWGc5m8tNa1oWg1FHqAA6j+yCXIC5mpw+63flUZ5vAkboPezEytiW2TWGCXat+H8OYpjTWr5TyKvdPmA==
