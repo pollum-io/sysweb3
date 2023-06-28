@@ -363,7 +363,8 @@ export class EthereumTransactions implements IEthereumTransactions {
 
       return { maxFeePerGas, maxPriorityFeePerGas };
     } catch (error) {
-      throw error;
+      console.error(error);
+      return { maxFeePerGas, maxPriorityFeePerGas };
     }
   };
   //TODO: This function needs to be refactored
