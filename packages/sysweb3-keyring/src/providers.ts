@@ -396,7 +396,7 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
             });
           }
         );
-      }, 10);
+      }, 50);
     }
 
     return promise;
