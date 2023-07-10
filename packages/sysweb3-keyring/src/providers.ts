@@ -4,6 +4,7 @@ import { fetchJson } from '@ethersproject/web';
 import { BigNumber, ethers, logger } from 'ethers';
 import { ConnectionInfo, Logger, shallowCopy } from 'ethers/lib/utils';
 
+import { handleStatusCodeError } from './errorUtils';
 import { checkError } from './utils';
 export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   private timeoutCounter = 0;
@@ -168,7 +169,6 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
     const result = await this.throttledRequest(() =>
       fetch(this.connection.url, options)
         .then(async (response) => {
-          let errorMessage;
           if (!response.ok) {
             let errorBody = {
               error: undefined,
@@ -183,109 +183,12 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
               errorBody.error ||
               errorBody.message ||
               'No message from Provider';
+            handleStatusCodeError(response.status, this.errorMessage);
           }
           switch (response.status) {
             case 200:
               if (this.timeoutCounter > 3000) this.timeoutCounter -= 100;
               return response.json();
-            case 400:
-              errorMessage = this.errorMessage;
-              console.error({
-                errorMessage,
-                message:
-                  'Bad Request: The current provider(RPC) could not understand the request due to invalid syntax.',
-              });
-              break;
-            case 401:
-              errorMessage = this.errorMessage;
-              console.error({
-                errorMessage,
-                message:
-                  'Unauthorized: The request requires user authentication.',
-              });
-              break;
-            case 403:
-              errorMessage = this.errorMessage;
-              console.error({
-                errorMessage,
-                message:
-                  'Forbidden: You do not have the necessary permissions for the resource.',
-              });
-              break;
-            case 404:
-              errorMessage = this.errorMessage;
-              console.error({
-                errorMessage,
-                message:
-                  'Not Found: The requested RPC method could not be found.',
-              });
-              break;
-            case 405:
-              errorMessage = this.errorMessage;
-              console.error({
-                errorMessage,
-                message:
-                  'Method Not Allowed: The request method is known by the current provider but is not supported by the target resource.',
-              });
-              break;
-            case 408:
-              //TODO: add a counter here if more than 4 request of a network timeout we should apply cooldown and add message for user
-              errorMessage = this.errorMessage;
-              console.error({
-                errorMessage,
-                message:
-                  'Request Timeout: The current provider(RPC) would like to shut down the unused connection.',
-              });
-              break;
-            case 413:
-              //We shouldn't get this error apart for creation of a contract thats too large
-              errorMessage = this.errorMessage;
-              console.error({
-                errorMessage,
-                message:
-                  'Payload Too Large: The request entity is larger than limits defined by the server.',
-              });
-              break;
-            case 429:
-              this.serverHasAnError = true;
-              errorMessage = this.errorMessage;
-              console.error({
-                errorMessage,
-                message:
-                  'The current RPC provider has a low rate-limit. We are applying a cooldown that will affect Pali performance. Modify the RPC URL in the network settings to resolve this issue.',
-              });
-
-              this.timeoutCounter += 1000;
-
-              throw {
-                errorMessage: errorMessage,
-                message:
-                  'The current RPC provider has a low rate-limit. We are applying a cooldown that will affect Pali performance. Modify the RPC URL in the network settings to resolve this issue.',
-              };
-            case 500:
-              errorMessage = this.errorMessage;
-              console.error({
-                errorMessage,
-                message:
-                  'Internal Server Error: The current provider(RPC) encountered an unexpected condition that prevented it from fulfilling the request.',
-              });
-              break;
-            case 503:
-              this.serverHasAnError = true;
-              errorMessage = this.errorMessage;
-              console.error({
-                errorMessage: errorMessage,
-                message:
-                  'Service Unavailable: The current provider(RPC) is not ready to handle the request, possibly due to being down for maintenance or overloaded.',
-              });
-
-              this.timeoutCounter += 500; //Lower throttle limit as this is an malfunction on the server and not extrapolated rateLimit
-
-              throw {
-                errorMessage: errorMessage,
-                message:
-                  'Service Unavailable: The current provider(RPC) is not ready to handle the request, possibly due to being down for maintenance or overloaded.',
-              };
             default:
               throw {
                 message: `Unexpected HTTP status code: ${response.status}`,
@@ -293,7 +196,6 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
           }
         })
         .then((json) => {
-          //Having json.error its needed because providers sometime won't return a proper HTTP status code (as 400) and will return a 200 with an error
           if (json.error) {
             if (json.error.message.includes('insufficient funds')) {
               console.error({
@@ -344,58 +246,62 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
 
     if (!this._pendingBatchAggregator) {
       // Schedule batch for next event loop + short duration
-      this._pendingBatchAggregator = setTimeout(() => {
-        // Get teh current batch and clear it, so new requests
-        // go into the next batch
+      this._pendingBatchAggregator = setTimeout(async () => {
         const batch = this._pendingBatch;
         this._pendingBatch = null;
         this._pendingBatchAggregator = null;
 
-        // Get the request as an array of requests
-        const request = batch?.map((inflight) => inflight.request);
+        const requests = batch?.map((inflight) => inflight.request);
 
-        this.emit('debug', {
-          action: 'requestBatch',
-          request: deepCopy(request),
-          provider: this,
-        });
+        try {
+          await this.throttledRequest(async () => {
+            this.emit('debug', {
+              action: 'requestBatch',
+              request: deepCopy(requests),
+              provider: this,
+            });
 
-        return fetchJson(this.connection, JSON.stringify(request)).then(
-          (result) => {
+            const response = await fetch(this.connection.url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(requests),
+            });
+
+            if (!response.ok) {
+              let errorBody = {
+                error: undefined,
+                message: undefined,
+              };
+              try {
+                errorBody = await response.json();
+              } catch (error) {
+                console.warn('No body in request', error);
+              }
+              this.errorMessage =
+                errorBody.error ||
+                errorBody.message ||
+                'No message from Provider';
+              handleStatusCodeError(response.status, this.errorMessage);
+            }
+
+            const result = await response.json();
+
             this.emit('debug', {
               action: 'response',
-              request: request,
+              request: requests,
               response: result,
               provider: this,
             });
 
-            // For each result, feed it to the correct Promise, depending
-            // on whether it was a success or error
-            batch?.forEach((inflightRequest, index) => {
-              const payload = result[index];
-              if (payload.error) {
-                const error = new Error(payload.error.message);
-                (<any>error).code = payload.error.code;
-                (<any>error).data = payload.error.data;
-                inflightRequest.reject(error);
-              } else {
-                inflightRequest.resolve(payload.result);
-              }
-            });
-          },
-          (error) => {
-            this.emit('debug', {
-              action: 'response',
-              error: error,
-              request: request,
-              provider: this,
-            });
-
-            batch?.forEach((inflightRequest) => {
-              inflightRequest.reject(error);
-            });
-          }
-        );
+            return result;
+          });
+        } catch (error) {
+          batch?.forEach((inflightRequest) => {
+            inflightRequest.reject(error);
+          });
+        }
       }, 50);
     }
 
