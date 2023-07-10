@@ -261,13 +261,10 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
               provider: this,
             });
 
-            const response = await fetch(this.connection.url, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(requests),
-            });
+            const response = await fetchJson(
+              this.connection,
+              JSON.stringify(request)
+            );
 
             if (!response.ok) {
               let errorBody = {
