@@ -230,78 +230,171 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
       id: this._nextId++,
       jsonrpc: '2.0',
     };
-
+  
     if (this._pendingBatch == null) {
       this._pendingBatch = [];
     }
-
+  
     const inflightRequest: any = { request, resolve: null, reject: null };
-
+  
     const promise = new Promise((resolve, reject) => {
       inflightRequest.resolve = resolve;
       inflightRequest.reject = reject;
     });
-
+  
     this._pendingBatch.push(inflightRequest);
-
+  
     if (!this._pendingBatchAggregator) {
       // Schedule batch for next event loop + short duration
-      this._pendingBatchAggregator = setTimeout(async () => {
+      this._pendingBatchAggregator = setTimeout(() => {
         const batch = this._pendingBatch;
         this._pendingBatch = null;
         this._pendingBatchAggregator = null;
-
+  
         const requests = batch?.map((inflight) => inflight.request);
-
-        try {
-          await this.throttledRequest(async () => {
-            this.emit('debug', {
-              action: 'requestBatch',
-              request: deepCopy(requests),
-              provider: this,
-            });
-
-            const response = await fetchJson(
-              this.connection,
-              JSON.stringify(request)
-            );
-
-            if (!response.ok) {
-              let errorBody = {
-                error: undefined,
-                message: undefined,
-              };
-              try {
-                errorBody = await response.json();
-              } catch (error) {
-                console.warn('No body in request', error);
-              }
-              this.errorMessage =
-                errorBody.error ||
-                errorBody.message ||
-                'No message from Provider';
-              handleStatusCodeError(response.status, this.errorMessage);
-            }
-
-            const result = await response.json();
-
+  
+        this.emit('debug', {
+          action: 'requestBatch',
+          request: deepCopy(requests),
+          provider: this,
+        });
+  
+        const fetchRequests = requests?.map((req) =>
+          this.throttledRequest(() =>
+            fetchJson(this.connection, JSON.stringify(req))
+          )
+        );
+  
+        let index = 0;
+        const results: any[] = [];
+  
+        const processNextRequest = () => {
+          if (index < fetchRequests!.length) {
+            fetchRequests![index]
+              .then((result) => {
+                results.push(result);
+                index++;
+                processNextRequest();
+              })
+              .catch((error) => {
+                const inflightRequest = batch![index];
+                inflightRequest.reject(error);
+                index++;
+                processNextRequest();
+              });
+          } else {
             this.emit('debug', {
               action: 'response',
               request: requests,
-              response: result,
+              response: results,
               provider: this,
             });
-
-            return result;
-          });
-        } catch (error) {
-          batch?.forEach((inflightRequest) => {
-            inflightRequest.reject(error);
-          });
-        }
+  
+            if (Array.isArray(results)) {
+              results.forEach((result, i) => {
+                const inflightRequest = batch![i];
+                if (result.error) {
+                  const error = new Error(result.error.message);
+                  (error as any).code = result.error.code;
+                  (error as any).data = result.error.data;
+                  inflightRequest.reject(error);
+                } else {
+                  inflightRequest.resolve(result.result);
+                }
+              });
+            } else {
+              const error = new Error('Invalid batch response');
+              batch?.forEach((inflightRequest) => inflightRequest.reject(error));
+            }
+          }
+        };
+  
+        processNextRequest();
       }, 50);
     }
-
+  
     return promise;
   }
+  }
+
+  // public oldSendBatch(method: string, params: Array<any>) {
+  //   const request = {
+  //     method: method,
+  //     params: params,
+  //     id: this._nextId++,
+  //     jsonrpc: '2.0',
+  //   };
+
+  //   if (this._pendingBatch == null) {
+  //     this._pendingBatch = [];
+  //   }
+
+  //   const inflightRequest: any = { request, resolve: null, reject: null };
+
+  //   const promise = new Promise((resolve, reject) => {
+  //     inflightRequest.resolve = resolve;
+  //     inflightRequest.reject = reject;
+  //   });
+
+  //   this._pendingBatch.push(inflightRequest);
+
+  //   if (!this._pendingBatchAggregator) {
+  //     // Schedule batch for next event loop + short duration
+  //     this._pendingBatchAggregator = setTimeout(() => {
+  //       // Get teh current batch and clear it, so new requests
+  //       // go into the next batch
+  //       const batch = this._pendingBatch;
+  //       this._pendingBatch = null;
+  //       this._pendingBatchAggregator = null;
+
+  //       // Get the request as an array of requests
+  //       const request = batch?.map((inflight) => inflight.request);
+
+  //       this.emit('debug', {
+  //         action: 'requestBatch',
+  //         request: deepCopy(request),
+  //         provider: this,
+  //       });
+
+  //       return fetchJson(this.connection, JSON.stringify(request)).then(
+  //         (result) => {
+  //           this.emit('debug', {
+  //             action: 'response',
+  //             request: request,
+  //             response: result,
+  //             provider: this,
+  //           });
+
+  //           // For each result, feed it to the correct Promise, depending
+  //           // on whether it was a success or error
+  //           batch?.forEach((inflightRequest, index) => {
+  //             const payload = result[index];
+  //             if (payload.error) {
+  //               const error = new Error(payload.error.message);
+  //               (<any>error).code = payload.error.code;
+  //               (<any>error).data = payload.error.data;
+  //               inflightRequest.reject(error);
+  //             } else {
+  //               inflightRequest.resolve(payload.result);
+  //             }
+  //           });
+  //         },
+  //         (error) => {
+  //           this.emit('debug', {
+  //             action: 'response',
+  //             error: error,
+  //             request: request,
+  //             provider: this,
+  //           });
+
+  //           batch?.forEach((inflightRequest) => {
+  //             inflightRequest.reject(error);
+  //           });
+  //         }
+  //       );
+  //     }, 50);
+  //   }
+
+  //   return promise;
+  // }
 }
