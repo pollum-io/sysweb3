@@ -392,7 +392,12 @@ export class KeyringManager implements IKeyringManager {
     if (!this.wallet.networks[chainType][data.chainId]) {
       throw new Error('Network does not exist');
     }
+
+    const networkIdentifier = data.key ? data.key : data.chainId;
+
     if (
+      this.wallet.activeNetwork.label === data.label &&
+      this.wallet.activeNetwork.url === data.url &&
       this.wallet.activeNetwork.chainId === data.chainId &&
       this.activeChain === chainType
     ) {
@@ -411,7 +416,7 @@ export class KeyringManager implements IKeyringManager {
         ...this.wallet.networks,
         [chainType]: {
           ...this.wallet.networks[chainType],
-          [data.chainId]: data,
+          [networkIdentifier]: data,
         },
       },
     };
