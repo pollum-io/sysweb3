@@ -176,6 +176,14 @@ export interface IKeyringManager {
     wallet?: IWalletState;
     activeChain?: INetworkType;
   }>;
+  addCustomNetwork: (chain: INetworkType, network: INetwork) => void;
+  removeNetwork: (
+    chain: INetworkType,
+    chainId: number,
+    rpcUrl: string,
+    label: string,
+    key?: string
+  ) => void;
   updateNetworkConfig: (network: INetwork, chainType: INetworkType) => void;
   setWalletPassword: (password: string) => void;
   isSeedValid: (seed: string) => boolean;
