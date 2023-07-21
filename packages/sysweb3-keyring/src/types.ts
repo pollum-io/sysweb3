@@ -114,6 +114,7 @@ export interface IEthereumTransactions {
   setWeb3Provider: (network: INetwork) => void;
   importAccount: (mnemonicOrPrivKey: string) => ethers.Wallet;
   web3Provider: CustomJsonRpcProvider;
+  contentScriptWeb3Provider: CustomJsonRpcProvider;
 }
 
 export interface ISyscoinTransactions {

@@ -46,6 +46,7 @@ import {
 
 export class EthereumTransactions implements IEthereumTransactions {
   public web3Provider: CustomJsonRpcProvider;
+  public contentScriptWeb3Provider: CustomJsonRpcProvider;
   public trezorSigner: TrezorKeyring;
   private getNetwork: () => INetwork;
   private abortController: AbortController;
@@ -93,6 +94,10 @@ export class EthereumTransactions implements IEthereumTransactions {
     this.getDecryptedPrivateKey = getDecryptedPrivateKey;
     this.abortController = new AbortController();
     this.web3Provider = new CustomJsonRpcProvider(
+      this.abortController.signal,
+      this.getNetwork().url
+    );
+    this.contentScriptWeb3Provider = new CustomJsonRpcProvider(
       this.abortController.signal,
       this.getNetwork().url
     );
@@ -1021,6 +1026,10 @@ export class EthereumTransactions implements IEthereumTransactions {
     this.abortController.abort();
     this.abortController = new AbortController();
     this.web3Provider = new CustomJsonRpcProvider(
+      this.abortController.signal,
+      network.url
+    );
+    this.contentScriptWeb3Provider = new CustomJsonRpcProvider(
       this.abortController.signal,
       network.url
     );
