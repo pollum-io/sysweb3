@@ -392,7 +392,12 @@ export class KeyringManager implements IKeyringManager {
     if (!this.wallet.networks[chainType][data.chainId]) {
       throw new Error('Network does not exist');
     }
+
+    const networkIdentifier = data.key ? data.key : data.chainId;
+
     if (
+      this.wallet.activeNetwork.label === data.label &&
+      this.wallet.activeNetwork.url === data.url &&
       this.wallet.activeNetwork.chainId === data.chainId &&
       this.activeChain === chainType
     ) {
@@ -411,26 +416,71 @@ export class KeyringManager implements IKeyringManager {
         ...this.wallet.networks,
         [chainType]: {
           ...this.wallet.networks[chainType],
-          [data.chainId]: data,
+          [networkIdentifier]: data,
         },
       },
     };
   };
 
-  public removeNetwork = async (chain: INetworkType, chainId: number) => {
+  public addCustomNetwork = (chain: INetworkType, network: INetwork) => {
+    const networkIdentifier = network.key ? network.key : network.chainId;
+
+    this.wallet = {
+      ...this.wallet,
+      networks: {
+        ...this.wallet.networks,
+        [chain]: {
+          ...this.wallet.networks[chain],
+          [networkIdentifier]: network,
+        },
+      },
+    };
+  };
+
+  public removeNetwork = (
+    chain: INetworkType,
+    chainId: number,
+    rpcUrl: string,
+    label: string,
+    key?: string
+  ) => {
+    const validateIfKeyExists =
+      key &&
+      this.wallet.activeNetwork.key &&
+      this.wallet.activeNetwork.key === key;
+
     //TODO: test failure case to validate rollback;
     if (
       this.activeChain === chain &&
-      this.wallet.activeNetwork.chainId === chainId
+      this.wallet.activeNetwork.chainId === chainId &&
+      this.wallet.activeNetwork.url === rpcUrl &&
+      this.wallet.activeNetwork.label === label &&
+      validateIfKeyExists
     ) {
       throw new Error('Cannot remove active network');
     }
-    // Create a new object without the specified property
-    const updatedNetworks = Object.fromEntries(
-      Object.entries(this.wallet.networks[chain]).filter(
-        ([key]) => Number(key) !== chainId
-      )
+
+    const updatedNetworks = Object.entries(this.wallet.networks[chain]).reduce(
+      (result, [index, networkValue]) => {
+        const networkTyped = networkValue as INetwork;
+
+        if (key && networkTyped.key === key) {
+          return result; // Skip the network with the provided key
+        }
+
+        if (
+          networkTyped.url === rpcUrl &&
+          networkTyped.chainId === chainId &&
+          networkTyped.label === label
+        ) {
+          return result; // Skip the network that matches the criteria
+        }
+
+        return { ...result, [index]: networkValue }; // Keep the network in the updated object
+      },
+      {}
     );
+
     // Replace the networks object for the chain with the updated object
     this.wallet = {
       ...this.wallet,
@@ -474,13 +524,17 @@ export class KeyringManager implements IKeyringManager {
         await this.updateWeb3Accounts();
       }
 
+      const networkIdentifierValue = network.key
+        ? network.key
+        : network.chainId;
+
       this.wallet = {
         ...this.wallet,
         networks: {
           ...this.wallet.networks,
           [networkChain]: {
             ...this.wallet.networks[networkChain],
-            [network.chainId]: network,
+            [networkIdentifierValue]: network,
           },
         },
         activeNetwork: network,
