@@ -56,7 +56,7 @@ export const initialNetworksState = {
       chainId: 1,
       url: 'https://rpc.ankr.com/eth',
       label: 'Ethereum Mainnet',
-      default: true,
+      default: false,
       currency: 'eth',
       explorer: 'https://etherscan.io/',
       apiUrl: 'https://api.etherscan.io/api',
@@ -64,7 +64,7 @@ export const initialNetworksState = {
     137: {
       chainId: 137,
       currency: 'matic',
-      default: true,
+      default: false,
       label: 'Polygon Mainnet',
       url: 'https://polygon-rpc.com',
       apiUrl: 'https://api.polygonscan.com/api',
@@ -73,7 +73,7 @@ export const initialNetworksState = {
     80001: {
       chainId: 80001,
       currency: 'matic',
-      default: true,
+      default: false,
       label: 'Mumbai Testnet',
       url: 'https://endpoints.omniatech.io/v1/matic/mumbai/public',
       apiUrl: 'https://api-testnet.polygonscan.com/api',
@@ -100,7 +100,7 @@ export const initialNetworksState = {
     5700: {
       chainId: 5700,
       currency: 'tsys',
-      default: true,
+      default: false,
       label: 'Tanenbaum Testnet',
       url: 'https://rpc.tanenbaum.io',
       apiUrl: 'https://tanenbaum.io/api',

@@ -114,6 +114,7 @@ export interface IEthereumTransactions {
   setWeb3Provider: (network: INetwork) => void;
   importAccount: (mnemonicOrPrivKey: string) => ethers.Wallet;
   web3Provider: CustomJsonRpcProvider;
+  contentScriptWeb3Provider: CustomJsonRpcProvider;
 }
 
 export interface ISyscoinTransactions {
@@ -175,6 +176,14 @@ export interface IKeyringManager {
     wallet?: IWalletState;
     activeChain?: INetworkType;
   }>;
+  addCustomNetwork: (chain: INetworkType, network: INetwork) => void;
+  removeNetwork: (
+    chain: INetworkType,
+    chainId: number,
+    rpcUrl: string,
+    label: string,
+    key?: string
+  ) => void;
   updateNetworkConfig: (network: INetwork, chainType: INetworkType) => void;
   setWalletPassword: (password: string) => void;
   isSeedValid: (seed: string) => boolean;
