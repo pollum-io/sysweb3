@@ -20,7 +20,7 @@ import {
   hashPersonalMessage,
   toAscii,
 } from 'ethereumjs-util';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
 import omit from 'lodash/omit';
@@ -372,6 +372,60 @@ export class EthereumTransactions implements IEthereumTransactions {
       return { maxFeePerGas, maxPriorityFeePerGas };
     }
   };
+  cancelSentTransaction = async (txHash: string, isLegacy?: boolean) => {
+    const tx = (await this.web3Provider.getTransaction(
+      txHash
+    )) as Deferrable<ethers.providers.TransactionRequest>;
+
+    if (!tx) {
+      throw new Error('Transaction not found or already confirmed!');
+    }
+
+    let changedTxToCancel: Deferrable<ethers.providers.TransactionRequest>;
+
+    if (!isLegacy) {
+      const feeValue = tx.maxFeePerGas as BigNumber;
+
+      const calculatedFee = feeValue.toNumber() * 1.2;
+
+      changedTxToCancel = {
+        ...tx,
+        value: 0, //Need 0 as value to cancel it
+        maxFeePerGas: this.toBigNumber(calculatedFee), //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+      };
+    } else {
+      const feeValue = tx.gasPrice as BigNumber;
+
+      const calculatedFee = feeValue.toNumber() * 1.2;
+
+      changedTxToCancel = {
+        ...tx,
+        value: 0, //Need 0 as value to cancel it
+        gasPrice: this.toBigNumber(calculatedFee), //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+      };
+    }
+
+    const cancelTransaction = async () => {
+      const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
+      const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
+      try {
+        const transaction = await wallet.sendTransaction(changedTxToCancel);
+        const response = await this.web3Provider.getTransaction(
+          transaction.hash
+        );
+        //TODO: more precisely on this lines
+        if (!response) {
+          return await this.getTransactionTimestamp(transaction);
+        } else {
+          return await this.getTransactionTimestamp(response);
+        }
+      } catch (error) {
+        throw error;
+      }
+    };
+
+    return await cancelTransaction();
+  };
   //TODO: This function needs to be refactored
   sendFormattedTransaction = async (
     params: SimpleTransactionRequest,
@@ -523,6 +577,58 @@ export class EthereumTransactions implements IEthereumTransactions {
       default:
         return await sendEVMTransaction();
     }
+  };
+  sendTransactionWithEditedFee = async (txHash: string, isLegacy?: boolean) => {
+    const tx = (await this.web3Provider.getTransaction(
+      txHash
+    )) as Deferrable<ethers.providers.TransactionRequest>;
+
+    if (!tx) {
+      throw new Error('Transaction not found or already confirmed!');
+    }
+
+    let txWithEditedFee: Deferrable<ethers.providers.TransactionRequest>;
+
+    if (!isLegacy) {
+      const feeValue = tx.maxFeePerGas as BigNumber;
+
+      const calculatedFee = feeValue.toNumber() * 1.2;
+
+      txWithEditedFee = {
+        ...tx,
+        maxFeePerGas: this.toBigNumber(calculatedFee), //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+      };
+    } else {
+      const feeValue = tx.gasPrice as BigNumber;
+
+      const calculatedFee = feeValue.toNumber() * 1.2;
+
+      txWithEditedFee = {
+        ...tx,
+        gasPrice: this.toBigNumber(calculatedFee), //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+      };
+    }
+
+    const sendEditedTransaction = async () => {
+      const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
+      const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
+      try {
+        const transaction = await wallet.sendTransaction(txWithEditedFee);
+        const response = await this.web3Provider.getTransaction(
+          transaction.hash
+        );
+        //TODO: more precisely on this lines
+        if (!response) {
+          return await this.getTransactionTimestamp(transaction);
+        } else {
+          return await this.getTransactionTimestamp(response);
+        }
+      } catch (error) {
+        throw error;
+      }
+    };
+
+    return await sendEditedTransaction();
   };
   // TODO: refactor this function
   sendTransaction = async ({

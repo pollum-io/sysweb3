@@ -71,9 +71,17 @@ export interface IEthereumTransactions {
     signature: string,
     version: Version
   ) => string;
+  cancelSentTransaction: (
+    txHash: string,
+    isLegacy?: boolean
+  ) => Promise<TransactionResponse>;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
   sendFormattedTransaction: (
     params: SimpleTransactionRequest,
+    isLegacy?: boolean
+  ) => Promise<TransactionResponse>;
+  sendTransactionWithEditedFee: (
+    txHash: string,
     isLegacy?: boolean
   ) => Promise<TransactionResponse>;
   getRecommendedNonce: (address: string) => Promise<number>;
