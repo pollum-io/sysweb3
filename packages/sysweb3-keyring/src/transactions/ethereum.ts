@@ -24,6 +24,7 @@ import { BigNumber, ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
 import omit from 'lodash/omit';
+import { TransactionReceipt } from 'web3-core';
 
 import { CustomJsonRpcProvider } from '../providers';
 import { SyscoinHDSigner } from '../signers';
@@ -381,41 +382,56 @@ export class EthereumTransactions implements IEthereumTransactions {
       throw new Error('Transaction not found or already confirmed!');
     }
 
+    const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
+    const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
+
     let changedTxToCancel: Deferrable<ethers.providers.TransactionRequest>;
 
     if (!isLegacy) {
-      const feeValue = tx.maxFeePerGas as BigNumber;
+      const maxFeePerGas = tx.maxFeePerGas as BigNumber;
+      const maxPriorityFeePerGas = tx.maxPriorityFeePerGas as BigNumber;
 
-      const calculatedFee = feeValue.toNumber() * 1.2;
+      const multiplier = ethers.utils.parseUnits('1.2', 'ether');
+      const newMaxFeePerGas = maxFeePerGas.mul(multiplier);
+      const newmaxPriorityFeePerGas = maxPriorityFeePerGas.mul(multiplier);
 
       changedTxToCancel = {
-        ...tx,
-        value: 0, //Need 0 as value to cancel it
-        maxFeePerGas: this.toBigNumber(calculatedFee), //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+        nonce: tx.nonce,
+        to: wallet.address,
+        value: ethers.constants.Zero,
+        gasLimit: ethers.BigNumber.from(tx.gasLimit).toHexString(),
+        maxFeePerGas: newMaxFeePerGas.toHexString(), //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+        maxPriorityFeePerGas: newmaxPriorityFeePerGas.toHexString(),
       };
     } else {
-      const feeValue = tx.gasPrice as BigNumber;
+      const gasPrice = tx.gasPrice as BigNumber;
 
-      const calculatedFee = feeValue.toNumber() * 1.2;
+      const multiplier = ethers.utils.parseUnits('1.2', 'ether');
+      const newGasPrice = gasPrice.mul(multiplier);
 
       changedTxToCancel = {
-        ...tx,
-        value: 0, //Need 0 as value to cancel it
-        gasPrice: this.toBigNumber(calculatedFee), //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+        nonce: tx.nonce,
+        to: wallet.address,
+        value: ethers.constants.Zero,
+        gasPrice: newGasPrice.toHexString(), //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+        gasLimit: 21000,
       };
     }
 
     const cancelTransaction = async () => {
-      const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
-      const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
       try {
-        const transaction = await wallet.sendTransaction(changedTxToCancel);
+        const signedTransaction = await wallet.signTransaction(
+          changedTxToCancel as ethers.providers.TransactionRequest
+        );
+        const transactionResponse = await this.web3Provider.sendTransaction(
+          signedTransaction
+        );
         const response = await this.web3Provider.getTransaction(
-          transaction.hash
+          transactionResponse.hash
         );
         //TODO: more precisely on this lines
         if (!response) {
-          return await this.getTransactionTimestamp(transaction);
+          return await this.getTransactionTimestamp(transactionResponse);
         } else {
           return await this.getTransactionTimestamp(response);
         }
