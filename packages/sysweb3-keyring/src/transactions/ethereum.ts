@@ -24,7 +24,6 @@ import { BigNumber, ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
 import omit from 'lodash/omit';
-import { TransactionReceipt } from 'web3-core';
 
 import { CustomJsonRpcProvider } from '../providers';
 import { SyscoinHDSigner } from '../signers';
@@ -37,6 +36,7 @@ import {
   SimpleTransactionRequest,
   KeyringAccountType,
   accountType,
+  IGasParams,
 } from '../types';
 import { INetwork } from '@pollum-io/sysweb3-network';
 import {
@@ -373,7 +373,76 @@ export class EthereumTransactions implements IEthereumTransactions {
       return { maxFeePerGas, maxPriorityFeePerGas };
     }
   };
-  cancelSentTransaction = async (txHash: string, isLegacy?: boolean) => {
+  calculateNewGasValues = (
+    oldTxsParams: IGasParams,
+    isForCancel: boolean,
+    isLegacy: boolean
+  ): IGasParams => {
+    const newGasValues: IGasParams = {
+      maxFeePerGas: undefined,
+      maxPriorityFeePerGas: undefined,
+      gasPrice: undefined,
+      gasLimit: undefined,
+    };
+
+    const { maxFeePerGas, maxPriorityFeePerGas, gasLimit, gasPrice } =
+      oldTxsParams;
+
+    const calculateAndConvertNewValue = (feeValue: number) => {
+      const calculateValue = String(feeValue * multiplierToUse);
+
+      const convertValueToHex =
+        '0x' + parseInt(calculateValue, 10).toString(16);
+
+      return ethers.BigNumber.from(convertValueToHex);
+    };
+
+    const maxFeePerGasToNumber = maxFeePerGas?.toNumber();
+    const maxPriorityFeePerGasToNumber = maxPriorityFeePerGas?.toNumber();
+    const gasLimitToNumber = gasLimit?.toNumber();
+    const gasPriceToNumber = gasPrice?.toNumber();
+
+    const multiplierToUse = 1.2; //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+
+    if (!isLegacy) {
+      newGasValues.maxFeePerGas = calculateAndConvertNewValue(
+        maxFeePerGasToNumber as number
+      );
+      newGasValues.maxPriorityFeePerGas = calculateAndConvertNewValue(
+        maxPriorityFeePerGasToNumber as number
+      );
+    }
+
+    if (isLegacy) {
+      newGasValues.gasPrice = calculateAndConvertNewValue(
+        gasPriceToNumber as number
+      );
+    }
+
+    if (isForCancel) {
+      const DEFAULT_GAS_LIMIT_VALUE = '21000';
+
+      const convertToHex =
+        '0x' + parseInt(DEFAULT_GAS_LIMIT_VALUE, 10).toString(16);
+
+      newGasValues.gasLimit = ethers.BigNumber.from(convertToHex);
+    }
+
+    if (!isForCancel) {
+      newGasValues.gasLimit = calculateAndConvertNewValue(
+        gasLimitToNumber as number
+      );
+    }
+
+    return newGasValues;
+  };
+  cancelSentTransaction = async (
+    txHash: string,
+    isLegacy?: boolean
+  ): Promise<{
+    isCanceled: boolean;
+    transaction?: TransactionResponse;
+  }> => {
     const tx = (await this.web3Provider.getTransaction(
       txHash
     )) as Deferrable<ethers.providers.TransactionRequest>;
@@ -387,53 +456,65 @@ export class EthereumTransactions implements IEthereumTransactions {
 
     let changedTxToCancel: Deferrable<ethers.providers.TransactionRequest>;
 
-    if (!isLegacy) {
-      const maxFeePerGas = tx.maxFeePerGas as BigNumber;
-      const maxPriorityFeePerGas = tx.maxPriorityFeePerGas as BigNumber;
+    const oldTxsGasValues: IGasParams = {
+      maxFeePerGas: tx.maxFeePerGas as BigNumber,
+      maxPriorityFeePerGas: tx.maxPriorityFeePerGas as BigNumber,
+      gasPrice: tx.gasPrice as BigNumber,
+      gasLimit: tx.gasLimit as BigNumber,
+    };
 
-      const multiplier = ethers.utils.parseUnits('1.2', 'ether');
-      const newMaxFeePerGas = maxFeePerGas.mul(multiplier);
-      const newmaxPriorityFeePerGas = maxPriorityFeePerGas.mul(multiplier);
+    if (!isLegacy) {
+      const newGasValues = this.calculateNewGasValues(
+        oldTxsGasValues,
+        true,
+        false
+      );
+
+      console.log('CANCEL NOT LEGACY', newGasValues);
 
       changedTxToCancel = {
         nonce: tx.nonce,
+        from: wallet.address,
         to: wallet.address,
-        value: ethers.constants.Zero,
-        gasLimit: ethers.BigNumber.from(tx.gasLimit).toHexString(),
-        maxFeePerGas: newMaxFeePerGas.toHexString(), //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
-        maxPriorityFeePerGas: newmaxPriorityFeePerGas.toHexString(),
+        value: '0x0',
+        ...newGasValues,
       };
     } else {
-      const gasPrice = tx.gasPrice as BigNumber;
+      const newGasValues = this.calculateNewGasValues(
+        oldTxsGasValues,
+        true,
+        true
+      );
 
-      const multiplier = ethers.utils.parseUnits('1.2', 'ether');
-      const newGasPrice = gasPrice.mul(multiplier);
+      console.log('CANCEL LEGACY', newGasValues);
 
       changedTxToCancel = {
         nonce: tx.nonce,
+        from: wallet.address,
         to: wallet.address,
-        value: ethers.constants.Zero,
-        gasPrice: newGasPrice.toHexString(), //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
-        gasLimit: 21000,
+        value: '0x0',
+        ...newGasValues,
       };
     }
 
     const cancelTransaction = async () => {
       try {
-        const signedTransaction = await wallet.signTransaction(
-          changedTxToCancel as ethers.providers.TransactionRequest
-        );
-        const transactionResponse = await this.web3Provider.sendTransaction(
-          signedTransaction
+        const transactionResponse = await wallet.sendTransaction(
+          changedTxToCancel
         );
         const response = await this.web3Provider.getTransaction(
           transactionResponse.hash
         );
-        //TODO: more precisely on this lines
-        if (!response) {
-          return await this.getTransactionTimestamp(transactionResponse);
+
+        if (response) {
+          return {
+            isCanceled: true,
+            transaction: response,
+          };
         } else {
-          return await this.getTransactionTimestamp(response);
+          return {
+            isCanceled: false,
+          };
         }
       } catch (error) {
         throw error;

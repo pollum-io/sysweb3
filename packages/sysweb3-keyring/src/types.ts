@@ -74,7 +74,10 @@ export interface IEthereumTransactions {
   cancelSentTransaction: (
     txHash: string,
     isLegacy?: boolean
-  ) => Promise<TransactionResponse>;
+  ) => Promise<{
+    isCanceled: boolean;
+    transaction?: TransactionResponse;
+  }>;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
   sendFormattedTransaction: (
     params: SimpleTransactionRequest,
@@ -326,4 +329,11 @@ export interface IResponseFromSendErcSignedTransaction {
   from: string;
   confirmations: number | null;
   wait: any;
+}
+
+export interface IGasParams {
+  maxFeePerGas?: BigNumber;
+  maxPriorityFeePerGas?: BigNumber;
+  gasPrice?: BigNumber;
+  gasLimit?: BigNumber;
 }
