@@ -470,13 +470,11 @@ export class EthereumTransactions implements IEthereumTransactions {
         false
       );
 
-      console.log('CANCEL NOT LEGACY', newGasValues);
-
       changedTxToCancel = {
         nonce: tx.nonce,
         from: wallet.address,
         to: wallet.address,
-        value: '0x0',
+        value: ethers.constants.Zero,
         ...newGasValues,
       };
     } else {
@@ -486,13 +484,11 @@ export class EthereumTransactions implements IEthereumTransactions {
         true
       );
 
-      console.log('CANCEL LEGACY', newGasValues);
-
       changedTxToCancel = {
         nonce: tx.nonce,
         from: wallet.address,
         to: wallet.address,
-        value: '0x0',
+        value: ethers.constants.Zero,
         ...newGasValues,
       };
     }
