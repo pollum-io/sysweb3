@@ -4,9 +4,9 @@ import { ethers as ethersModule } from 'ethers';
 import sys from 'syscoinjs-lib';
 
 import { createContractUsingAbi } from '.';
+import ABI1155 from './abi/erc1155.json';
 import abi20 from './abi/erc20.json';
 import ABI721 from './abi/erc721.json';
-// import ABI1155 from './abi/erc1155.json'
 import tokens from './tokens.json';
 
 import type {
@@ -171,6 +171,46 @@ export const fetchBalanceOfERC721Contract = async (
   const fetchBalanceOfValue = await contract.balanceOf(address);
 
   return fetchBalanceOfValue;
+};
+
+export const fetchBalanceOfERC1155Contract = async (
+  contractAddress: string,
+  address: string,
+  config: EthersFetcherConfigEthersLoaded,
+  tokenId: number
+): Promise<number | undefined> => {
+  const contract = new config.ethers.Contract(
+    contractAddress,
+    ABI1155,
+    config.provider
+  ) as NftContract;
+
+  const fetchBalanceOfValue = await contract.balanceOf(address, tokenId);
+
+  return fetchBalanceOfValue;
+};
+
+export const getERC1155StandardBalance = async (
+  contractAddress: string,
+  address: string,
+  provider: JsonRpcProvider,
+  tokenId: number
+) => {
+  try {
+    const config = { provider, ethers: ethersModule };
+    const loaded = await loadEthers(config);
+
+    return await fetchBalanceOfERC1155Contract(
+      contractAddress,
+      address,
+      loaded,
+      tokenId
+    );
+  } catch (error) {
+    throw new Error(
+      `Verify current network or the contract address. Set the same network of token contract. Error: ${error}`
+    );
+  }
 };
 
 export const getERC721StandardBalance = async (

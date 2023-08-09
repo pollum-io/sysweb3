@@ -105,6 +105,17 @@ export interface IEthereumTransactions {
     tokenId,
   }: ISendSignedErcTransactionProps) => Promise<IResponseFromSendErcSignedTransaction>;
 
+  sendSignedErc1155Transaction: ({
+    receiver,
+    tokenAddress,
+    tokenId,
+    isLegacy,
+    gasPrice,
+    gasLimit,
+    maxFeePerGas,
+    maxPriorityFeePerGas,
+  }: ISendSignedErcTransactionProps) => Promise<IResponseFromSendErcSignedTransaction>;
+
   getBalance: (address: string) => Promise<number>;
   getErc20TokensByAddress?: (
     address: string,
