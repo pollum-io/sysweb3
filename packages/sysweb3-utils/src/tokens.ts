@@ -232,28 +232,22 @@ export const getERC721StandardBalance = async (
 
 export const fetchStandardNftContractData = async (
   contractAddress: Address,
-  tokenId: string,
   config: EthersFetcherConfigEthersLoaded
 ): Promise<NftMetadata> => {
   const contract = new config.ethers.Contract(
     contractAddress,
-    ABI,
+    ABI1155,
     config.provider
   ) as NftContract;
 
-  const [metadataUrl, owner] = await Promise.all([
-    url(contract, tokenId),
-    contract.ownerOf(tokenId).catch(() => ''),
+  const [name, symbol] = await Promise.all([
+    contract.name(),
+    contract.symbol(),
   ]);
 
-  const metadata = await fetchMetadata(metadataUrl);
-  const imageType = urlExtensionType(metadata.image);
-
   return {
-    ...metadata,
-    imageType,
-    metadataUrl,
-    owner,
+    name,
+    symbol,
   };
 };
 
@@ -390,49 +384,6 @@ export const reversePromise = (promise: Promise<unknown>): Promise<unknown> =>
 export const IMAGE_EXT_RE = /\.(?:png|svg|jpg|jepg|gif|webp|jxl|avif)$/;
 export const VIDEO_EXT_RE = /\.(?:mp4|mov|webm|ogv)$/;
 
-// Guess a file type from the extension used in a URL
-export const urlExtensionType = (url: string): NftMetadata['imageType'] => {
-  if (IMAGE_EXT_RE.test(url)) return 'image';
-  if (VIDEO_EXT_RE.test(url)) return 'video';
-
-  return 'unknown';
-};
-
-export const fetchMetadata = async (url: string): Promise<NftJsonMetadata> => {
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`Error when trying to request ${url}`);
-  }
-
-  let rawData;
-
-  try {
-    rawData = (await response.json()) as Record<string, unknown>;
-  } catch (error) {
-    rawData = { name: '', description: '', image: url };
-  }
-
-  let data = { ...rawData };
-
-  if (isNftMetadataMixedInJsonSchema(data)) {
-    data = fixNftMetadataMixedInJsonSchema(data);
-  }
-
-  data = fixIncorrectImageField(data);
-
-  if (!isNftMetadata(data)) {
-    throw new Error('Invalid data received');
-  }
-
-  return {
-    description: data.description || '',
-    image: data.image || '',
-    name: data.name || '',
-    rawData,
-  };
-};
-
 export const getTokenIconBySymbol = async (symbol: string): Promise<string> => {
   symbol = symbol.toUpperCase();
   const searchResults = await getSearch(symbol);
@@ -494,6 +445,22 @@ export const getTokenStandardMetadata = async (
   } catch (error) {
     throw new Error(
       `Verify current network. Set the same network of token contract. Error: ${error}`
+    );
+  }
+};
+
+export const getNftStandardMetadata = async (
+  contractAddress: string,
+  provider: JsonRpcProvider
+) => {
+  try {
+    const config = { provider, ethers: ethersModule };
+    const loaded = await loadEthers(config);
+
+    return await fetchStandardNftContractData(contractAddress, loaded);
+  } catch (error) {
+    throw new Error(
+      `Verify current network. Set the same network of NFT token contract. Error: ${error}`
     );
   }
 };
@@ -804,13 +771,8 @@ export interface IEtherscanNFT {
 }
 
 export interface NftMetadata {
-  description: string;
-  image: string;
-  imageType: 'image' | 'video' | 'unknown';
-  metadataUrl: string;
   name: string;
-  owner: Address;
-  rawData: Record<string, unknown> | null;
+  symbol: string;
 }
 export type IErc20Token = {
   name: string;
