@@ -442,13 +442,17 @@ export class EthereumTransactions implements IEthereumTransactions {
   ): Promise<{
     isCanceled: boolean;
     transaction?: TransactionResponse;
+    error?: boolean;
   }> => {
     const tx = (await this.web3Provider.getTransaction(
       txHash
     )) as Deferrable<ethers.providers.TransactionRequest>;
 
     if (!tx) {
-      throw new Error('Transaction not found or already confirmed!');
+      return {
+        isCanceled: false,
+        error: true,
+      };
     }
 
     const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
@@ -513,7 +517,10 @@ export class EthereumTransactions implements IEthereumTransactions {
           };
         }
       } catch (error) {
-        throw error;
+        return {
+          isCanceled: false,
+          error: true,
+        };
       }
     };
 

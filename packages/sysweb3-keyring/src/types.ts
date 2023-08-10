@@ -77,6 +77,7 @@ export interface IEthereumTransactions {
   ) => Promise<{
     isCanceled: boolean;
     transaction?: TransactionResponse;
+    error?: boolean;
   }>;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
   sendFormattedTransaction: (
