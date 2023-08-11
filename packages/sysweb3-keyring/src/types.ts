@@ -87,7 +87,11 @@ export interface IEthereumTransactions {
   sendTransactionWithEditedFee: (
     txHash: string,
     isLegacy?: boolean
-  ) => Promise<TransactionResponse>;
+  ) => Promise<{
+    isSpeedUp: boolean;
+    transaction?: TransactionResponse;
+    error?: boolean;
+  }>;
   getRecommendedNonce: (address: string) => Promise<number>;
   getFeeByType: (type: string) => Promise<string>;
   getFeeDataWithDynamicMaxPriorityFeePerGas: () => Promise<any>;

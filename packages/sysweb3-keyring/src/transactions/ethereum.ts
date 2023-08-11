@@ -446,9 +446,11 @@ export class EthereumTransactions implements IEthereumTransactions {
   }> => {
     const tx = (await this.web3Provider.getTransaction(
       txHash
-    )) as Deferrable<ethers.providers.TransactionRequest>;
+    )) as Deferrable<ethers.providers.TransactionResponse>;
 
     if (!tx) {
+      //If we don't find the TX or is already confirmed we send as error true to show this message
+      //in the alert at Pali
       return {
         isCanceled: false,
         error: true,
@@ -474,12 +476,16 @@ export class EthereumTransactions implements IEthereumTransactions {
         false
       );
 
+      //We have to send another TX using the same nonce but we can use the From and To for the same address and also
+      //the value as 0
       changedTxToCancel = {
         nonce: tx.nonce,
         from: wallet.address,
         to: wallet.address,
         value: ethers.constants.Zero,
-        ...newGasValues,
+        maxFeePerGas: newGasValues.maxFeePerGas,
+        maxPriorityFeePerGas: newGasValues.maxPriorityFeePerGas,
+        gasLimit: newGasValues.gasLimit,
       };
     } else {
       const newGasValues = this.calculateNewGasValues(
@@ -487,13 +493,15 @@ export class EthereumTransactions implements IEthereumTransactions {
         true,
         true
       );
-
+      //We have to send another TX using the same nonce but we can use the From and To for the same address and also
+      //the value as 0
       changedTxToCancel = {
         nonce: tx.nonce,
         from: wallet.address,
         to: wallet.address,
         value: ethers.constants.Zero,
-        ...newGasValues,
+        gasLimit: newGasValues.gasLimit,
+        gasPrice: newGasValues.gasPrice,
       };
     }
 
@@ -502,14 +510,11 @@ export class EthereumTransactions implements IEthereumTransactions {
         const transactionResponse = await wallet.sendTransaction(
           changedTxToCancel
         );
-        const response = await this.web3Provider.getTransaction(
-          transactionResponse.hash
-        );
 
-        if (response) {
+        if (transactionResponse) {
           return {
             isCanceled: true,
-            transaction: response,
+            transaction: transactionResponse,
           };
         } else {
           return {
@@ -517,6 +522,8 @@ export class EthereumTransactions implements IEthereumTransactions {
           };
         }
       } catch (error) {
+        //If we don't find the TX or is already confirmed we send as error true to show this message
+        //in the alert at Pali
         return {
           isCanceled: false,
           error: true,
@@ -678,53 +685,93 @@ export class EthereumTransactions implements IEthereumTransactions {
         return await sendEVMTransaction();
     }
   };
-  sendTransactionWithEditedFee = async (txHash: string, isLegacy?: boolean) => {
+  sendTransactionWithEditedFee = async (
+    txHash: string,
+    isLegacy?: boolean
+  ): Promise<{
+    isSpeedUp: boolean;
+    transaction?: TransactionResponse;
+    error?: boolean;
+  }> => {
     const tx = (await this.web3Provider.getTransaction(
       txHash
-    )) as Deferrable<ethers.providers.TransactionRequest>;
+    )) as Deferrable<ethers.providers.TransactionResponse>;
 
     if (!tx) {
-      throw new Error('Transaction not found or already confirmed!');
+      return {
+        isSpeedUp: false,
+        error: true,
+      };
     }
+
+    const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
+    const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
 
     let txWithEditedFee: Deferrable<ethers.providers.TransactionRequest>;
 
-    if (!isLegacy) {
-      const feeValue = tx.maxFeePerGas as BigNumber;
+    const oldTxsGasValues: IGasParams = {
+      maxFeePerGas: tx.maxFeePerGas as BigNumber,
+      maxPriorityFeePerGas: tx.maxPriorityFeePerGas as BigNumber,
+      gasPrice: tx.gasPrice as BigNumber,
+      gasLimit: tx.gasLimit as BigNumber,
+    };
 
-      const calculatedFee = feeValue.toNumber() * 1.2;
+    if (!isLegacy) {
+      const newGasValues = this.calculateNewGasValues(
+        oldTxsGasValues,
+        false,
+        false
+      );
 
       txWithEditedFee = {
-        ...tx,
-        maxFeePerGas: this.toBigNumber(calculatedFee), //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+        from: tx.from,
+        to: tx.to,
+        nonce: tx.nonce,
+        value: tx.value,
+        maxFeePerGas: newGasValues.maxFeePerGas,
+        maxPriorityFeePerGas: newGasValues.maxPriorityFeePerGas,
+        gasLimit: newGasValues.gasLimit,
       };
     } else {
-      const feeValue = tx.gasPrice as BigNumber;
-
-      const calculatedFee = feeValue.toNumber() * 1.2;
+      const newGasValues = this.calculateNewGasValues(
+        oldTxsGasValues,
+        false,
+        true
+      );
 
       txWithEditedFee = {
-        ...tx,
-        gasPrice: this.toBigNumber(calculatedFee), //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+        from: tx.from,
+        to: tx.to,
+        nonce: tx.nonce,
+        value: tx.value,
+        gasLimit: newGasValues.gasLimit,
+        gasPrice: newGasValues.gasPrice,
       };
     }
 
     const sendEditedTransaction = async () => {
-      const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
-      const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
       try {
-        const transaction = await wallet.sendTransaction(txWithEditedFee);
-        const response = await this.web3Provider.getTransaction(
-          transaction.hash
+        const transactionResponse = await wallet.sendTransaction(
+          txWithEditedFee
         );
-        //TODO: more precisely on this lines
-        if (!response) {
-          return await this.getTransactionTimestamp(transaction);
+
+        if (transactionResponse) {
+          return {
+            isSpeedUp: true,
+            transaction: transactionResponse,
+          };
         } else {
-          return await this.getTransactionTimestamp(response);
+          return {
+            isSpeedUp: false,
+          };
         }
       } catch (error) {
-        throw error;
+        //If we don't find the TX or is already confirmed we send as error true to show this message
+        //in the alert at Pali
+        return {
+          isSpeedUp: false,
+          error: true,
+        };
       }
     };
 
