@@ -1,6 +1,6 @@
 import bip44Constants from 'bip44-constants';
 import { Chain, chains } from 'eth-chains';
-import { ethers } from 'ethers';
+import { hexlify } from 'ethers/lib/utils';
 
 // import fetch from "node-fetch";
 
@@ -12,7 +12,7 @@ const syscoinSLIP = 84;
 export const validateChainId = (
   chainId: number | string
 ): { valid: boolean; hexChainId: string } => {
-  const hexChainId = ethers.utils.hexlify(chainId);
+  const hexChainId = hexlify(chainId);
 
   const isHexChainIdValid =
     typeof hexChainId === 'string' && hexRegEx.test(hexChainId);
@@ -22,6 +22,55 @@ export const validateChainId = (
     hexChainId,
   };
 };
+//TODO: add returns types for getEthChainId
+const getEthChainId = async (
+  url: string,
+  isInCooldown: boolean
+): Promise<{ chainId: number }> => {
+  if (isInCooldown) {
+    throw new Error('Cant make request, rpc cooldown is active');
+  }
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      method: 'eth_chainId',
+      params: [],
+      id: 1,
+    }),
+  });
+
+  // Check the status code of the HTTP response
+  if (!response.ok) {
+    switch (response.status) {
+      case 429:
+        throw new Error(
+          'Error 429: Too many requests. Please slow down your request rate.'
+        );
+      case 503:
+        throw new Error(
+          'Error 503: Service Unavailable. The server is currently unable to handle the request.'
+        );
+      default:
+        throw new Error(
+          `Error ${response.status}: An error occurred while fetching the chain ID.`
+        );
+    }
+  }
+
+  const data = await response.json();
+
+  // If the request was successful, the chain ID will be in data.result.
+  // Otherwise, there will be an error message in data.error.
+  if (data.error) {
+    throw new Error(`Error getting chain ID: ${data.error.message}`);
+  }
+
+  return { chainId: Number(data.result) };
+};
 
 /** eth rpc */
 export const isValidChainIdForEthNetworks = (chainId: number | string) =>
@@ -30,7 +79,8 @@ export const isValidChainIdForEthNetworks = (chainId: number | string) =>
   Number(chainId) <= 4503599627370476;
 
 export const validateEthRpc = async (
-  url: string
+  url: string,
+  isInCooldown: boolean
 ): Promise<{
   chainId: number;
   valid: boolean;
@@ -39,8 +89,7 @@ export const validateEthRpc = async (
   chain: string;
 }> => {
   try {
-    const web3Provider = new ethers.providers.JsonRpcProvider(url);
-    const { chainId } = await web3Provider.getNetwork();
+    const { chainId } = await getEthChainId(url, isInCooldown);
     if (!chainId) {
       throw new Error('Invalid RPC URL. Could not get chain ID for network.');
     }
@@ -68,12 +117,16 @@ export const validateEthRpc = async (
 };
 
 export const getEthRpc = async (
-  data: any
+  data: any,
+  isInCooldown: boolean
 ): Promise<{
   formattedNetwork: INetwork;
 }> => {
   const endsWithSlash = /\/$/;
-  const { valid, hexChainId, details } = await validateEthRpc(data.url);
+  const { valid, hexChainId, details } = await validateEthRpc(
+    data.url,
+    isInCooldown
+  );
 
   if (!valid) throw new Error('Invalid RPC.');
 

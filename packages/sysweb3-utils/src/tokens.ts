@@ -393,23 +393,6 @@ export const fetchMetadata = async (url: string): Promise<NftJsonMetadata> => {
   };
 };
 
-export const getNftStandardMetadata = async (
-  contractAddress: string,
-  tokenId: string,
-  provider: JsonRpcProvider
-) => {
-  try {
-    const config = { provider, ethers: ethersModule };
-    const loaded = await loadEthers(config);
-
-    return await fetchStandardNftContractData(contractAddress, tokenId, loaded);
-  } catch (error) {
-    throw new Error(
-      `Verify current network. Set the same network of NFT contract. Error: ${error}`
-    );
-  }
-};
-
 export const getTokenIconBySymbol = async (symbol: string): Promise<string> => {
   symbol = symbol.toUpperCase();
   const searchResults = await getSearch(symbol);
@@ -575,10 +558,11 @@ export const getTokenByContract = async (
  * @param address Contract address of the token to validate
  */
 export const validateToken = async (
-  address: string
+  address: string,
+  web3Provider: any
 ): Promise<IErc20Token | any> => {
   try {
-    const contract = createContractUsingAbi(abi20, address);
+    const contract = createContractUsingAbi(abi20, address, web3Provider);
 
     const [decimals, name, symbol]: IErc20Token[] = await Promise.all([
       contract.methods.decimals().call(),

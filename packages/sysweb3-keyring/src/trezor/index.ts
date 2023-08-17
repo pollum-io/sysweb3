@@ -2,6 +2,7 @@
 import TrezorConnect, {
   AccountInfo,
   DEVICE_EVENT,
+  EthereumTransaction,
   EthereumTransactionEIP1559,
 } from '@trezor/connect-web';
 import { address } from '@trezor/utxo-lib';
@@ -342,7 +343,7 @@ export class TrezorKeyring {
    */
 
   public async signUtxoTransaction(utxoTransaction: any, psbt: any) {
-    console.log({ utxoTransaction, psbt });
+    // console.log({ utxoTransaction, psbt });
     try {
       const { payload, success } = await TrezorConnect.signTransaction(
         utxoTransaction
@@ -398,7 +399,7 @@ export class TrezorKeyring {
     return addressN;
   }
   public isScriptHash(address: string, networkInfo: any) {
-    console.log({ address, networkInfo });
+    // console.log({ address, networkInfo });
     if (!this.isBech32(address)) {
       const decoded = fromBase58Check(address);
       if (decoded.version === networkInfo.pubKeyHash) {
@@ -494,7 +495,7 @@ export class TrezorKeyring {
 
     for (let i = 0; i < psbt.txOutputs.length; i++) {
       const output = psbt.txOutputs[i];
-      console.log({ output });
+      // console.log({ output });
       const outputItem: any = {};
       const chunks = decompile(output.script);
       outputItem.amount = output.value.toString();
@@ -539,7 +540,7 @@ export class TrezorKeyring {
     tx,
     index,
   }: {
-    tx: EthereumTransactionEIP1559;
+    tx: EthereumTransaction | EthereumTransactionEIP1559;
     index: string;
   }) {
     try {

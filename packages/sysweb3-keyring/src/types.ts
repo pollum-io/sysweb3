@@ -1,6 +1,7 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { TypedData, TypedMessage } from 'eth-sig-util';
 import { ethers, BigNumber, BigNumberish } from 'ethers';
+import { CustomJsonRpcProvider } from 'providers';
 import {
   EncryptedKeystoreV3Json,
   Sign,
@@ -72,7 +73,8 @@ export interface IEthereumTransactions {
   ) => string;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
   sendFormattedTransaction: (
-    params: SimpleTransactionRequest
+    params: SimpleTransactionRequest,
+    isLegacy?: boolean
   ) => Promise<TransactionResponse>;
   getRecommendedNonce: (address: string) => Promise<number>;
   getFeeByType: (type: string) => Promise<string>;
@@ -111,7 +113,8 @@ export interface IEthereumTransactions {
   ) => Promise<any[]>;
   setWeb3Provider: (network: INetwork) => void;
   importAccount: (mnemonicOrPrivKey: string) => ethers.Wallet;
-  web3Provider: ethers.providers.JsonRpcProvider;
+  web3Provider: CustomJsonRpcProvider;
+  contentScriptWeb3Provider: CustomJsonRpcProvider;
 }
 
 export interface ISyscoinTransactions {
@@ -173,6 +176,14 @@ export interface IKeyringManager {
     wallet?: IWalletState;
     activeChain?: INetworkType;
   }>;
+  addCustomNetwork: (chain: INetworkType, network: INetwork) => void;
+  removeNetwork: (
+    chain: INetworkType,
+    chainId: number,
+    rpcUrl: string,
+    label: string,
+    key?: string
+  ) => void;
   updateNetworkConfig: (network: INetwork, chainType: INetworkType) => void;
   setWalletPassword: (password: string) => void;
   isSeedValid: (seed: string) => boolean;
@@ -182,6 +193,11 @@ export interface IKeyringManager {
   ethereumTransaction: IEthereumTransactions;
   syscoinTransaction: ISyscoinTransactions;
   verifyIfIsTestnet: () => boolean | undefined;
+  updateAccountLabel: (
+    label: string,
+    accountId: number,
+    accountType: KeyringAccountType
+  ) => void;
 }
 
 export enum KeyringAccountType {
@@ -273,8 +289,10 @@ export interface ISendSignedErcTransactionProps {
   networkUrl: string;
   receiver: string;
   tokenAddress: string;
+  isLegacy?: boolean;
   maxPriorityFeePerGas?: BigNumberish;
   maxFeePerGas?: BigNumberish;
+  gasPrice?: BigNumberish;
   gasLimit?: BigNumberish;
   tokenAmount?: string;
   tokenId?: number;
