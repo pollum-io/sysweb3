@@ -71,11 +71,27 @@ export interface IEthereumTransactions {
     signature: string,
     version: Version
   ) => string;
+  cancelSentTransaction: (
+    txHash: string,
+    isLegacy?: boolean
+  ) => Promise<{
+    isCanceled: boolean;
+    transaction?: TransactionResponse;
+    error?: boolean;
+  }>;
   sendTransaction: (data: ISendTransaction) => Promise<TransactionResponse>;
   sendFormattedTransaction: (
     params: SimpleTransactionRequest,
     isLegacy?: boolean
   ) => Promise<TransactionResponse>;
+  sendTransactionWithEditedFee: (
+    txHash: string,
+    isLegacy?: boolean
+  ) => Promise<{
+    isSpeedUp: boolean;
+    transaction?: TransactionResponse;
+    error?: boolean;
+  }>;
   getRecommendedNonce: (address: string) => Promise<number>;
   getFeeByType: (type: string) => Promise<string>;
   getFeeDataWithDynamicMaxPriorityFeePerGas: () => Promise<any>;
@@ -329,4 +345,11 @@ export interface IResponseFromSendErcSignedTransaction {
   from: string;
   confirmations: number | null;
   wait: any;
+}
+
+export interface IGasParams {
+  maxFeePerGas?: BigNumber;
+  maxPriorityFeePerGas?: BigNumber;
+  gasPrice?: BigNumber;
+  gasLimit?: BigNumber;
 }

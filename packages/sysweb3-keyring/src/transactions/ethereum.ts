@@ -20,7 +20,7 @@ import {
   hashPersonalMessage,
   toAscii,
 } from 'ethereumjs-util';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
 import omit from 'lodash/omit';
@@ -36,6 +36,7 @@ import {
   SimpleTransactionRequest,
   KeyringAccountType,
   accountType,
+  IGasParams,
 } from '../types';
 import { INetwork } from '@pollum-io/sysweb3-network';
 import {
@@ -373,6 +374,166 @@ export class EthereumTransactions implements IEthereumTransactions {
       return { maxFeePerGas, maxPriorityFeePerGas };
     }
   };
+  calculateNewGasValues = (
+    oldTxsParams: IGasParams,
+    isForCancel: boolean,
+    isLegacy: boolean
+  ): IGasParams => {
+    const newGasValues: IGasParams = {
+      maxFeePerGas: undefined,
+      maxPriorityFeePerGas: undefined,
+      gasPrice: undefined,
+      gasLimit: undefined,
+    };
+
+    const { maxFeePerGas, maxPriorityFeePerGas, gasLimit, gasPrice } =
+      oldTxsParams;
+
+    const calculateAndConvertNewValue = (feeValue: number) => {
+      const calculateValue = String(feeValue * multiplierToUse);
+
+      const convertValueToHex =
+        '0x' + parseInt(calculateValue, 10).toString(16);
+
+      return ethers.BigNumber.from(convertValueToHex);
+    };
+
+    const maxFeePerGasToNumber = maxFeePerGas?.toNumber();
+    const maxPriorityFeePerGasToNumber = maxPriorityFeePerGas?.toNumber();
+    const gasLimitToNumber = gasLimit?.toNumber();
+    const gasPriceToNumber = gasPrice?.toNumber();
+
+    const multiplierToUse = 1.2; //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+
+    if (!isLegacy) {
+      newGasValues.maxFeePerGas = calculateAndConvertNewValue(
+        maxFeePerGasToNumber as number
+      );
+      newGasValues.maxPriorityFeePerGas = calculateAndConvertNewValue(
+        maxPriorityFeePerGasToNumber as number
+      );
+    }
+
+    if (isLegacy) {
+      newGasValues.gasPrice = calculateAndConvertNewValue(
+        gasPriceToNumber as number
+      );
+    }
+
+    if (isForCancel) {
+      const DEFAULT_GAS_LIMIT_VALUE = '21000';
+
+      const convertToHex =
+        '0x' + parseInt(DEFAULT_GAS_LIMIT_VALUE, 10).toString(16);
+
+      newGasValues.gasLimit = ethers.BigNumber.from(convertToHex);
+    }
+
+    if (!isForCancel) {
+      newGasValues.gasLimit = calculateAndConvertNewValue(
+        gasLimitToNumber as number
+      );
+    }
+
+    return newGasValues;
+  };
+  cancelSentTransaction = async (
+    txHash: string,
+    isLegacy?: boolean
+  ): Promise<{
+    isCanceled: boolean;
+    transaction?: TransactionResponse;
+    error?: boolean;
+  }> => {
+    const tx = (await this.web3Provider.getTransaction(
+      txHash
+    )) as Deferrable<ethers.providers.TransactionResponse>;
+
+    if (!tx) {
+      //If we don't find the TX or is already confirmed we send as error true to show this message
+      //in the alert at Pali
+      return {
+        isCanceled: false,
+        error: true,
+      };
+    }
+
+    const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
+    const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
+
+    let changedTxToCancel: Deferrable<ethers.providers.TransactionRequest>;
+
+    const oldTxsGasValues: IGasParams = {
+      maxFeePerGas: tx.maxFeePerGas as BigNumber,
+      maxPriorityFeePerGas: tx.maxPriorityFeePerGas as BigNumber,
+      gasPrice: tx.gasPrice as BigNumber,
+      gasLimit: tx.gasLimit as BigNumber,
+    };
+
+    if (!isLegacy) {
+      const newGasValues = this.calculateNewGasValues(
+        oldTxsGasValues,
+        true,
+        false
+      );
+
+      //We have to send another TX using the same nonce but we can use the From and To for the same address and also
+      //the value as 0
+      changedTxToCancel = {
+        nonce: tx.nonce,
+        from: wallet.address,
+        to: wallet.address,
+        value: ethers.constants.Zero,
+        maxFeePerGas: newGasValues.maxFeePerGas,
+        maxPriorityFeePerGas: newGasValues.maxPriorityFeePerGas,
+        gasLimit: newGasValues.gasLimit,
+      };
+    } else {
+      const newGasValues = this.calculateNewGasValues(
+        oldTxsGasValues,
+        true,
+        true
+      );
+      //We have to send another TX using the same nonce but we can use the From and To for the same address and also
+      //the value as 0
+      changedTxToCancel = {
+        nonce: tx.nonce,
+        from: wallet.address,
+        to: wallet.address,
+        value: ethers.constants.Zero,
+        gasLimit: newGasValues.gasLimit,
+        gasPrice: newGasValues.gasPrice,
+      };
+    }
+
+    const cancelTransaction = async () => {
+      try {
+        const transactionResponse = await wallet.sendTransaction(
+          changedTxToCancel
+        );
+
+        if (transactionResponse) {
+          return {
+            isCanceled: true,
+            transaction: transactionResponse,
+          };
+        } else {
+          return {
+            isCanceled: false,
+          };
+        }
+      } catch (error) {
+        //If we don't find the TX or is already confirmed we send as error true to show this message
+        //in the alert at Pali
+        return {
+          isCanceled: false,
+          error: true,
+        };
+      }
+    };
+
+    return await cancelTransaction();
+  };
   //TODO: This function needs to be refactored
   sendFormattedTransaction = async (
     params: SimpleTransactionRequest,
@@ -524,6 +685,98 @@ export class EthereumTransactions implements IEthereumTransactions {
       default:
         return await sendEVMTransaction();
     }
+  };
+  sendTransactionWithEditedFee = async (
+    txHash: string,
+    isLegacy?: boolean
+  ): Promise<{
+    isSpeedUp: boolean;
+    transaction?: TransactionResponse;
+    error?: boolean;
+  }> => {
+    const tx = (await this.web3Provider.getTransaction(
+      txHash
+    )) as Deferrable<ethers.providers.TransactionResponse>;
+
+    if (!tx) {
+      return {
+        isSpeedUp: false,
+        error: true,
+      };
+    }
+
+    const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
+    const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
+
+    let txWithEditedFee: Deferrable<ethers.providers.TransactionRequest>;
+
+    const oldTxsGasValues: IGasParams = {
+      maxFeePerGas: tx.maxFeePerGas as BigNumber,
+      maxPriorityFeePerGas: tx.maxPriorityFeePerGas as BigNumber,
+      gasPrice: tx.gasPrice as BigNumber,
+      gasLimit: tx.gasLimit as BigNumber,
+    };
+
+    if (!isLegacy) {
+      const newGasValues = this.calculateNewGasValues(
+        oldTxsGasValues,
+        false,
+        false
+      );
+
+      txWithEditedFee = {
+        from: tx.from,
+        to: tx.to,
+        nonce: tx.nonce,
+        value: tx.value,
+        maxFeePerGas: newGasValues.maxFeePerGas,
+        maxPriorityFeePerGas: newGasValues.maxPriorityFeePerGas,
+        gasLimit: newGasValues.gasLimit,
+      };
+    } else {
+      const newGasValues = this.calculateNewGasValues(
+        oldTxsGasValues,
+        false,
+        true
+      );
+
+      txWithEditedFee = {
+        from: tx.from,
+        to: tx.to,
+        nonce: tx.nonce,
+        value: tx.value,
+        gasLimit: newGasValues.gasLimit,
+        gasPrice: newGasValues.gasPrice,
+      };
+    }
+
+    const sendEditedTransaction = async () => {
+      try {
+        const transactionResponse = await wallet.sendTransaction(
+          txWithEditedFee
+        );
+
+        if (transactionResponse) {
+          return {
+            isSpeedUp: true,
+            transaction: transactionResponse,
+          };
+        } else {
+          return {
+            isSpeedUp: false,
+          };
+        }
+      } catch (error) {
+        //If we don't find the TX or is already confirmed we send as error true to show this message
+        //in the alert at Pali
+        return {
+          isSpeedUp: false,
+          error: true,
+        };
+      }
+    };
+
+    return await sendEditedTransaction();
   };
   // TODO: refactor this function
   sendTransaction = async ({
