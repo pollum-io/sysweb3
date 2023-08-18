@@ -33,6 +33,8 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   ) {
     super(url, network);
     this.signal = signal;
+    this._pendingBatchAggregator = null;
+    this._pendingBatch = null;
   }
 
   private throttledRequest = <T>(requestFn: () => Promise<T>): Promise<T> => {
