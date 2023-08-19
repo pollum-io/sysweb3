@@ -5,7 +5,8 @@
     "baseUrl": "src",
     "outDir": "dist/cjs",
     "declarationDir": "dist/types",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "strictPropertyInitialization": false
   },
   "include": ["src"]
 }

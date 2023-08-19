@@ -20,7 +20,7 @@ import {
   hashPersonalMessage,
   toAscii,
 } from 'ethereumjs-util';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
 import omit from 'lodash/omit';
@@ -36,12 +36,14 @@ import {
   SimpleTransactionRequest,
   KeyringAccountType,
   accountType,
+  IGasParams,
 } from '../types';
 import { INetwork } from '@pollum-io/sysweb3-network';
 import {
   createContractUsingAbi,
   getErc20Abi,
   getErc21Abi,
+  getErc55Abi,
 } from '@pollum-io/sysweb3-utils';
 
 export class EthereumTransactions implements IEthereumTransactions {
@@ -372,6 +374,166 @@ export class EthereumTransactions implements IEthereumTransactions {
       return { maxFeePerGas, maxPriorityFeePerGas };
     }
   };
+  calculateNewGasValues = (
+    oldTxsParams: IGasParams,
+    isForCancel: boolean,
+    isLegacy: boolean
+  ): IGasParams => {
+    const newGasValues: IGasParams = {
+      maxFeePerGas: undefined,
+      maxPriorityFeePerGas: undefined,
+      gasPrice: undefined,
+      gasLimit: undefined,
+    };
+
+    const { maxFeePerGas, maxPriorityFeePerGas, gasLimit, gasPrice } =
+      oldTxsParams;
+
+    const calculateAndConvertNewValue = (feeValue: number) => {
+      const calculateValue = String(feeValue * multiplierToUse);
+
+      const convertValueToHex =
+        '0x' + parseInt(calculateValue, 10).toString(16);
+
+      return ethers.BigNumber.from(convertValueToHex);
+    };
+
+    const maxFeePerGasToNumber = maxFeePerGas?.toNumber();
+    const maxPriorityFeePerGasToNumber = maxPriorityFeePerGas?.toNumber();
+    const gasLimitToNumber = gasLimit?.toNumber();
+    const gasPriceToNumber = gasPrice?.toNumber();
+
+    const multiplierToUse = 1.2; //The same calculation we used in the edit fee modal, always using the 0.2 multiplier
+
+    if (!isLegacy) {
+      newGasValues.maxFeePerGas = calculateAndConvertNewValue(
+        maxFeePerGasToNumber as number
+      );
+      newGasValues.maxPriorityFeePerGas = calculateAndConvertNewValue(
+        maxPriorityFeePerGasToNumber as number
+      );
+    }
+
+    if (isLegacy) {
+      newGasValues.gasPrice = calculateAndConvertNewValue(
+        gasPriceToNumber as number
+      );
+    }
+
+    if (isForCancel) {
+      const DEFAULT_GAS_LIMIT_VALUE = '21000';
+
+      const convertToHex =
+        '0x' + parseInt(DEFAULT_GAS_LIMIT_VALUE, 10).toString(16);
+
+      newGasValues.gasLimit = ethers.BigNumber.from(convertToHex);
+    }
+
+    if (!isForCancel) {
+      newGasValues.gasLimit = calculateAndConvertNewValue(
+        gasLimitToNumber as number
+      );
+    }
+
+    return newGasValues;
+  };
+  cancelSentTransaction = async (
+    txHash: string,
+    isLegacy?: boolean
+  ): Promise<{
+    isCanceled: boolean;
+    transaction?: TransactionResponse;
+    error?: boolean;
+  }> => {
+    const tx = (await this.web3Provider.getTransaction(
+      txHash
+    )) as Deferrable<ethers.providers.TransactionResponse>;
+
+    if (!tx) {
+      //If we don't find the TX or is already confirmed we send as error true to show this message
+      //in the alert at Pali
+      return {
+        isCanceled: false,
+        error: true,
+      };
+    }
+
+    const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
+    const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
+
+    let changedTxToCancel: Deferrable<ethers.providers.TransactionRequest>;
+
+    const oldTxsGasValues: IGasParams = {
+      maxFeePerGas: tx.maxFeePerGas as BigNumber,
+      maxPriorityFeePerGas: tx.maxPriorityFeePerGas as BigNumber,
+      gasPrice: tx.gasPrice as BigNumber,
+      gasLimit: tx.gasLimit as BigNumber,
+    };
+
+    if (!isLegacy) {
+      const newGasValues = this.calculateNewGasValues(
+        oldTxsGasValues,
+        true,
+        false
+      );
+
+      //We have to send another TX using the same nonce but we can use the From and To for the same address and also
+      //the value as 0
+      changedTxToCancel = {
+        nonce: tx.nonce,
+        from: wallet.address,
+        to: wallet.address,
+        value: ethers.constants.Zero,
+        maxFeePerGas: newGasValues.maxFeePerGas,
+        maxPriorityFeePerGas: newGasValues.maxPriorityFeePerGas,
+        gasLimit: newGasValues.gasLimit,
+      };
+    } else {
+      const newGasValues = this.calculateNewGasValues(
+        oldTxsGasValues,
+        true,
+        true
+      );
+      //We have to send another TX using the same nonce but we can use the From and To for the same address and also
+      //the value as 0
+      changedTxToCancel = {
+        nonce: tx.nonce,
+        from: wallet.address,
+        to: wallet.address,
+        value: ethers.constants.Zero,
+        gasLimit: newGasValues.gasLimit,
+        gasPrice: newGasValues.gasPrice,
+      };
+    }
+
+    const cancelTransaction = async () => {
+      try {
+        const transactionResponse = await wallet.sendTransaction(
+          changedTxToCancel
+        );
+
+        if (transactionResponse) {
+          return {
+            isCanceled: true,
+            transaction: transactionResponse,
+          };
+        } else {
+          return {
+            isCanceled: false,
+          };
+        }
+      } catch (error) {
+        //If we don't find the TX or is already confirmed we send as error true to show this message
+        //in the alert at Pali
+        return {
+          isCanceled: false,
+          error: true,
+        };
+      }
+    };
+
+    return await cancelTransaction();
+  };
   //TODO: This function needs to be refactored
   sendFormattedTransaction = async (
     params: SimpleTransactionRequest,
@@ -523,6 +685,98 @@ export class EthereumTransactions implements IEthereumTransactions {
       default:
         return await sendEVMTransaction();
     }
+  };
+  sendTransactionWithEditedFee = async (
+    txHash: string,
+    isLegacy?: boolean
+  ): Promise<{
+    isSpeedUp: boolean;
+    transaction?: TransactionResponse;
+    error?: boolean;
+  }> => {
+    const tx = (await this.web3Provider.getTransaction(
+      txHash
+    )) as Deferrable<ethers.providers.TransactionResponse>;
+
+    if (!tx) {
+      return {
+        isSpeedUp: false,
+        error: true,
+      };
+    }
+
+    const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
+    const wallet = new ethers.Wallet(decryptedPrivateKey, this.web3Provider);
+
+    let txWithEditedFee: Deferrable<ethers.providers.TransactionRequest>;
+
+    const oldTxsGasValues: IGasParams = {
+      maxFeePerGas: tx.maxFeePerGas as BigNumber,
+      maxPriorityFeePerGas: tx.maxPriorityFeePerGas as BigNumber,
+      gasPrice: tx.gasPrice as BigNumber,
+      gasLimit: tx.gasLimit as BigNumber,
+    };
+
+    if (!isLegacy) {
+      const newGasValues = this.calculateNewGasValues(
+        oldTxsGasValues,
+        false,
+        false
+      );
+
+      txWithEditedFee = {
+        from: tx.from,
+        to: tx.to,
+        nonce: tx.nonce,
+        value: tx.value,
+        maxFeePerGas: newGasValues.maxFeePerGas,
+        maxPriorityFeePerGas: newGasValues.maxPriorityFeePerGas,
+        gasLimit: newGasValues.gasLimit,
+      };
+    } else {
+      const newGasValues = this.calculateNewGasValues(
+        oldTxsGasValues,
+        false,
+        true
+      );
+
+      txWithEditedFee = {
+        from: tx.from,
+        to: tx.to,
+        nonce: tx.nonce,
+        value: tx.value,
+        gasLimit: newGasValues.gasLimit,
+        gasPrice: newGasValues.gasPrice,
+      };
+    }
+
+    const sendEditedTransaction = async () => {
+      try {
+        const transactionResponse = await wallet.sendTransaction(
+          txWithEditedFee
+        );
+
+        if (transactionResponse) {
+          return {
+            isSpeedUp: true,
+            transaction: transactionResponse,
+          };
+        } else {
+          return {
+            isSpeedUp: false,
+          };
+        }
+      } catch (error) {
+        //If we don't find the TX or is already confirmed we send as error true to show this message
+        //in the alert at Pali
+        return {
+          isSpeedUp: false,
+          error: true,
+        };
+      }
+    };
+
+    return await sendEditedTransaction();
   };
   // TODO: refactor this function
   sendTransaction = async ({
@@ -929,6 +1183,162 @@ export class EthereumTransactions implements IEthereumTransactions {
         return await sendERC721TokenOnTrezor();
       default:
         return await sendERC721Token();
+    }
+  };
+
+  sendSignedErc1155Transaction = async ({
+    receiver,
+    tokenAddress,
+    tokenId,
+    isLegacy,
+    maxPriorityFeePerGas,
+    maxFeePerGas,
+    gasPrice,
+    gasLimit,
+  }: ISendSignedErcTransactionProps): Promise<IResponseFromSendErcSignedTransaction> => {
+    const { decryptedPrivateKey } = this.getDecryptedPrivateKey();
+    const { accounts, activeAccountType, activeAccountId, activeNetwork } =
+      this.getState();
+    const { address: activeAccountAddress } =
+      accounts[activeAccountType][activeAccountId];
+
+    const sendERC1155Token = async () => {
+      const currentWallet = new ethers.Wallet(decryptedPrivateKey);
+      const walletSigned = currentWallet.connect(this.web3Provider);
+      let transferMethod;
+      try {
+        const _contract = new ethers.Contract(
+          tokenAddress,
+          getErc55Abi(),
+          walletSigned
+        );
+
+        if (isLegacy) {
+          transferMethod = await _contract.safeTransferFrom(
+            walletSigned.address,
+            receiver,
+            tokenId as number,
+            1,
+            []
+          );
+        } else {
+          transferMethod = await _contract.safeTransferFrom(
+            walletSigned.address,
+            receiver,
+            tokenId as number,
+            1,
+            []
+          );
+        }
+
+        return transferMethod;
+      } catch (error) {
+        throw error;
+      }
+    };
+
+    const sendERC1155TokenOnTrezor = async () => {
+      const signer = this.web3Provider.getSigner(activeAccountAddress);
+      const transactionNonce = await this.getRecommendedNonce(
+        activeAccountAddress
+      );
+      try {
+        const _contract = new ethers.Contract(
+          tokenAddress,
+          getErc55Abi(),
+          signer
+        );
+        const txData = _contract.interface.encodeFunctionData(
+          'safeTransferFrom',
+          [activeAccountAddress, receiver, tokenId, 1, []]
+        );
+        let txToBeSignedByTrezor;
+        if (isLegacy) {
+          txToBeSignedByTrezor = {
+            to: tokenAddress,
+            value: '0x0',
+            // @ts-ignore
+            gasLimit: `${gasLimit.toHexString()}`,
+            // @ts-ignore
+            gasPrice: `${gasPrice}`,
+            nonce: this.toBigNumber(transactionNonce)._hex,
+            chainId: activeNetwork.chainId,
+            data: txData,
+          };
+        } else {
+          txToBeSignedByTrezor = {
+            to: tokenAddress,
+            value: '0x0',
+            // @ts-ignore
+            gasLimit: `${gasLimit.toHexString()}`,
+            // @ts-ignore
+            maxFeePerGas: `${maxFeePerGas.toHexString()}`,
+            // @ts-ignore
+            maxPriorityFeePerGas: `${maxPriorityFeePerGas.toHexString()}`,
+            nonce: this.toBigNumber(transactionNonce)._hex,
+            chainId: activeNetwork.chainId,
+            data: txData,
+          };
+        }
+
+        const signature = await this.trezorSigner.signEthTransaction({
+          index: `${activeAccountId}`,
+          tx: txToBeSignedByTrezor,
+        });
+
+        if (signature.success) {
+          try {
+            let txFormattedForEthers;
+            if (isLegacy) {
+              txFormattedForEthers = {
+                to: tokenAddress,
+                value: '0x0',
+                gasLimit,
+                gasPrice,
+                data: txData,
+                nonce: transactionNonce,
+                chainId: activeNetwork.chainId,
+                type: 0,
+              };
+            } else {
+              txFormattedForEthers = {
+                to: tokenAddress,
+                value: '0x0',
+                gasLimit,
+                maxFeePerGas,
+                maxPriorityFeePerGas,
+                data: txData,
+                nonce: transactionNonce,
+                chainId: activeNetwork.chainId,
+                type: 2,
+              };
+            }
+            signature.payload.v = parseInt(signature.payload.v, 16); //v parameter must be a number by ethers standards
+            const signedTx = ethers.utils.serializeTransaction(
+              txFormattedForEthers,
+              signature.payload
+            );
+            const finalTx = await this.web3Provider.sendTransaction(signedTx);
+
+            return finalTx as any;
+          } catch (error) {
+            console.log({ error });
+            throw error;
+          }
+        } else {
+          throw new Error(`Transaction Signature Failed. Error: ${signature}`);
+        }
+      } catch (error) {
+        console.log({ error });
+        throw error;
+      }
+    };
+
+    switch (activeAccountType) {
+      case KeyringAccountType.Trezor:
+        return await sendERC1155TokenOnTrezor();
+      default:
+        return await sendERC1155Token();
     }
   };
 
