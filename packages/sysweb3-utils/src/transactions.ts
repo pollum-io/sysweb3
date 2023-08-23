@@ -1,6 +1,5 @@
-import sys from 'syscoinjs-lib';
-
 import { ITokenMap, ISyscoinToken } from '.';
+import sys from './syscoinjs';
 // import { web3Provider } from '@pollum-io/sysweb3-network';
 
 export const txUtils = () => {
@@ -8,6 +7,7 @@ export const txUtils = () => {
     sys.utils.fetchBackendRawTx(explorerUrl, txid);
 
   const getPsbtFromJson = (psbt: JSON): string =>
+    //@ts-ignore
     sys.utils.importPsbtFromJson(psbt);
 
   const getTokenMap = ({
@@ -36,7 +36,7 @@ export const txUtils = () => {
       ],
     ]);
   };
-
+  //@ts-ignore
   const getFeeRate = (fee: number): bigint => new sys.utils.BN(fee * 1e8);
 
   return {
