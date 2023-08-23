@@ -227,6 +227,8 @@ export class KeyringManager implements IKeyringManager {
   };
 
   private recoverLastSessionPassword(pwd: string): string {
+    //As before locking the wallet we always keep the value of the last currentSessionSalt correctly stored in vault,
+    //we use the value in vault instead of the one present in the class to get the last correct value for sessionPassword
     const { currentSessionSalt } = this.storage.get('vault-keys');
 
     return this.encryptSHA512(pwd, currentSessionSalt);
