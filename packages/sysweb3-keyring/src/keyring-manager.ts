@@ -226,23 +226,31 @@ export class KeyringManager implements IKeyringManager {
     });
   };
 
+  private recoverLastSessionPassword(pwd: string): string {
+    const { currentSessionSalt } = this.storage.get('vault-keys');
+
+    return this.encryptSHA512(pwd, currentSessionSalt);
+  }
+
   public unlock = async (password: string): Promise<boolean> => {
     const { hash, salt } = this.storage.get('vault-keys');
 
     const hashPassword = this.encryptSHA512(password, salt);
 
     if (hashPassword === hash) {
-      this.currentSessionSalt = this.generateSalt();
-      this.sessionPassword = this.encryptSHA512(
-        password,
-        this.currentSessionSalt
-      );
+      //Get last sessionPassword value before lock when we unlock to use it at the updateWalletKeys
+      this.sessionPassword = this.recoverLastSessionPassword(password);
+
       const hdCreated = this.hd ? true : false;
       if (!hdCreated || !this.sessionMnemonic) {
+        //When the wallet is locked will get into here and we need the sessionPassword value correctly to encrypt
+        //the sessionSeed again with the same value as before the wallet was locked
         await this.restoreWallet(hdCreated, password);
       }
+
       this.updateWalletKeys(password);
     }
+
     return hashPassword === hash;
   };
 
@@ -1299,15 +1307,40 @@ export class KeyringManager implements IKeyringManager {
     }
   }
 
+  private updateValuesToUpdateWalletKeys(pwd: string) {
+    //Here we need to decrypt the sessionSeed with the sessionPassword value before it changes and get updated
+    const decryptSessionSeed = CryptoJS.AES.decrypt(
+      this.sessionSeed,
+      this.sessionPassword
+    ).toString(CryptoJS.enc.Utf8);
+
+    //Generate a new salt
+    this.currentSessionSalt = this.generateSalt();
+
+    //Encrypt and generate a new sessionPassword to keep the values safe
+    this.sessionPassword = this.encryptSHA512(pwd, this.currentSessionSalt);
+
+    //Encrypt again the sessionSeed after decrypt to keep it safe with the new sessionPassword value
+    this.sessionSeed = CryptoJS.AES.encrypt(
+      decryptSessionSeed,
+      this.sessionPassword
+    ).toString();
+  }
+
   private async updateWalletKeys(pwd: string) {
     const vaultKeys = this.storage.get('vault-keys');
     let oldSessionPassword = pwd; //Default to the password to keep compatibility with older sysweb3 packages
+
     if (vaultKeys.currentSessionSalt) {
       oldSessionPassword = this.encryptSHA512(
         pwd,
         vaultKeys.currentSessionSalt
       );
     }
+
+    //Update values
+    this.updateValuesToUpdateWalletKeys(pwd);
+
     const { accounts } = this.wallet;
     for (const accountTypeKey in accounts) {
       // Exclude 'Trezor' accounts
@@ -1317,18 +1350,23 @@ export class KeyringManager implements IKeyringManager {
           // Update xprv
           const encryptedxprv =
             accounts[accountTypeKey as KeyringAccountType][id].xprv;
+
           const decryptedxprv = CryptoJS.AES.decrypt(
             encryptedxprv,
             oldSessionPassword
           ).toString(CryptoJS.enc.Utf8);
+
+          const encryptNewXprv = CryptoJS.AES.encrypt(
+            decryptedxprv,
+            this.sessionPassword
+          ).toString();
+
           accounts[accountTypeKey as KeyringAccountType][id].xprv =
-            CryptoJS.AES.encrypt(
-              decryptedxprv,
-              this.sessionPassword
-            ).toString();
+            encryptNewXprv;
         }
       }
     }
+    //Update new currentSessionSalt value to state to keep it equal as the created at the updateValuesToUpdateWalletKeys function
     this.storage.set('vault-keys', {
       ...vaultKeys,
       currentSessionSalt: this.currentSessionSalt,
