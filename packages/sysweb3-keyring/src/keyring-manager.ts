@@ -211,10 +211,12 @@ export class KeyringManager implements IKeyringManager {
         },
         this.memPassword
       );
+
       this.sessionMnemonic = CryptoJS.AES.encrypt(
         this.memMnemonic,
-        pwd
+        this.sessionPassword
       ).toString();
+
       this.memMnemonic = '';
     }
     if (prvPwd) this.updateWalletKeys(prvPwd);
@@ -244,6 +246,7 @@ export class KeyringManager implements IKeyringManager {
       this.sessionPassword = this.recoverLastSessionPassword(password);
 
       const hdCreated = this.hd ? true : false;
+
       if (!hdCreated || !this.sessionMnemonic) {
         //When the wallet is locked will get into here and we need the sessionPassword value correctly to encrypt
         //the sessionSeed again with the same value as before the wallet was locked
@@ -639,6 +642,7 @@ export class KeyringManager implements IKeyringManager {
           seedPhrase,
           this.sessionPassword
         ).toString();
+
         this.memMnemonic = '';
       }
       return seedPhrase;
@@ -1225,6 +1229,7 @@ export class KeyringManager implements IKeyringManager {
       this.sessionMnemonic,
       this.sessionPassword
     ).toString(CryptoJS.enc.Utf8);
+
     const accounts = this.wallet.accounts[KeyringAccountType.HDAccount];
     const { hd, main } = getSyscoinSigners({
       mnemonic: mnemonic,
@@ -1239,6 +1244,9 @@ export class KeyringManager implements IKeyringManager {
     const accountPromises = walletAccountsArray.map(async ({ id }) => {
       await this.addUTXOAccount(Number(id));
     });
+
+    const account = await Promise.all(accountPromises);
+
     await Promise.all(accountPromises);
   };
 
@@ -1293,6 +1301,7 @@ export class KeyringManager implements IKeyringManager {
         mnemonic,
         this.sessionPassword
       ).toString();
+
       const seed = (await mnemonicToSeed(mnemonic)).toString('hex');
       this.sessionSeed = CryptoJS.AES.encrypt(
         seed,
@@ -1309,8 +1318,13 @@ export class KeyringManager implements IKeyringManager {
     }
   }
 
-  private updateValuesToUpdateWalletKeys(pwd: string) {
-    //Here we need to decrypt the sessionSeed with the sessionPassword value before it changes and get updated
+  private guaranteeUpdatedPrivateValues(pwd: string) {
+    //Here we need to decrypt the sessionMnemonic and sessionSeed values with the sessionPassword value before it changes and get updated
+    const decryptedSessionMnemonic = CryptoJS.AES.decrypt(
+      this.sessionMnemonic,
+      this.sessionPassword
+    ).toString(CryptoJS.enc.Utf8);
+
     const decryptSessionSeed = CryptoJS.AES.decrypt(
       this.sessionSeed,
       this.sessionPassword
@@ -1322,9 +1336,14 @@ export class KeyringManager implements IKeyringManager {
     //Encrypt and generate a new sessionPassword to keep the values safe
     this.sessionPassword = this.encryptSHA512(pwd, this.currentSessionSalt);
 
-    //Encrypt again the sessionSeed after decrypt to keep it safe with the new sessionPassword value
+    //Encrypt again the sessionSeed and sessionMnemonic after decrypt to keep it safe with the new sessionPassword value
     this.sessionSeed = CryptoJS.AES.encrypt(
       decryptSessionSeed,
+      this.sessionPassword
+    ).toString();
+
+    this.sessionMnemonic = CryptoJS.AES.encrypt(
+      decryptedSessionMnemonic,
       this.sessionPassword
     ).toString();
   }
@@ -1341,7 +1360,7 @@ export class KeyringManager implements IKeyringManager {
     }
 
     //Update values
-    this.updateValuesToUpdateWalletKeys(pwd);
+    this.guaranteeUpdatedPrivateValues(pwd);
 
     const { accounts } = this.wallet;
     for (const accountTypeKey in accounts) {
