@@ -1245,8 +1245,6 @@ export class KeyringManager implements IKeyringManager {
       await this.addUTXOAccount(Number(id));
     });
 
-    const account = await Promise.all(accountPromises);
-
     await Promise.all(accountPromises);
   };
 
