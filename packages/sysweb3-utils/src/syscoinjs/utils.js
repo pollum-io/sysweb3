@@ -1252,7 +1252,6 @@ HDSigner.prototype.signPSBT = async function (psbt, pathIn) {
   return psbt;
 };
 
-
 /* sign
 Purpose: Create signing information based on HDSigner (if set) and call signPSBT() to actually sign, as well as detect notarization and apply it as required.
 Param psbt: Required. PSBT object from bitcoinjs-lib
@@ -1277,40 +1276,6 @@ Param index: Required. Account number to derive
 Param bipNum: Optional. BIP number to use for derivation
 Returns: bip32 node for derived account
 */
-TrezorSigner.prototype.deriveAccount = async function (index, bipNum) {
-  if (bipNum === undefined) {
-    bipNum = 44;
-  }
-  if (
-    this.Signer.pubTypes === syscoinZPubTypes ||
-    this.Signer.pubTypes === bitcoinZPubTypes
-  ) {
-    bipNum = 84;
-  }
-  const coin = this.Signer.SLIP44 === syscoinSLIP44 ? 'sys' : 'btc';
-  const keypath =
-    'm/' + bipNum + "'/" + this.Signer.SLIP44 + "'/" + index + "'";
-  if (this.Signer.isTestnet) {
-    throw new Error('Cant use TrezorSigner on testnet .');
-  }
-
-  return new Promise((resolve, reject) => {
-    TrezorConnect.getAccountInfo({
-      path: keypath,
-      coin: coin,
-    })
-      .then((response) => {
-        if (response.success) {
-          resolve(response.payload);
-        }
-        reject(response.payload.error);
-      })
-      .catch((error) => {
-        console.error('TrezorConnectError', error);
-        reject(error);
-      });
-  });
-};
 
 HDSigner.prototype.deriveAccount = function (index, bipNum) {
   if (bipNum === undefined) {
@@ -1556,6 +1521,10 @@ Signer.prototype.setLatestIndexesFromXPubTokens = function (tokens) {
   if (this.setIndexFlag > 1 && this.setIndexFlag < 100) {
     return;
   }
+
+  let minIndexForChange = Infinity;
+  let minIndexForReceiving = Infinity;
+
   if (tokens) {
     tokens.forEach((token) => {
       if (!token.transfers || !token.path) {
@@ -1567,17 +1536,30 @@ Signer.prototype.setLatestIndexesFromXPubTokens = function (tokens) {
         if (splitPath.length >= 6) {
           const change = parseInt(splitPath[4], 10);
           const index = parseInt(splitPath[5], 10);
-          if (change === 1) {
-            if (index > this.changeIndex) {
-              this.changeIndex = index;
-            }
-          } else if (index > this.receivingIndex) {
-            this.receivingIndex = index;
+          if (change === 1 && index < minIndexForChange) {
+            minIndexForChange = index;
+          } else if (change === 0 && index < minIndexForReceiving) {
+            minIndexForReceiving = index;
           }
         }
       }
     });
+
+    if (
+      minIndexForChange !== Infinity &&
+      minIndexForChange > this.changeIndex
+    ) {
+      this.changeIndex = minIndexForChange;
+    }
+
+    if (
+      minIndexForReceiving !== Infinity &&
+      minIndexForReceiving > this.receivingIndex
+    ) {
+      this.receivingIndex = minIndexForReceiving;
+    }
   }
+
   this.setIndexFlag = 0;
 };
 HDSigner.prototype.setLatestIndexesFromXPubTokens = function (tokens) {
@@ -1944,7 +1926,6 @@ module.exports = {
   syscoinSLIP44: syscoinSLIP44,
   bitcoinSLIP44: bitcoinSLIP44,
   HDSigner: HDSigner,
-  TrezorSigner: TrezorSigner,
   fetchBackendUTXOS: fetchBackendUTXOS,
   fetchBackendUTXOs: fetchBackendUTXOS,
   fetchBackendSPVProof: fetchBackendSPVProof,
