@@ -231,9 +231,21 @@ export class KeyringManager implements IKeyringManager {
   private recoverLastSessionPassword(pwd: string): string {
     //As before locking the wallet we always keep the value of the last currentSessionSalt correctly stored in vault,
     //we use the value in vault instead of the one present in the class to get the last correct value for sessionPassword
-    const { currentSessionSalt } = this.storage.get('vault-keys');
+    const initialVaultKeys = this.storage.get('vault-keys');
 
-    return this.encryptSHA512(pwd, currentSessionSalt);
+    //Here we need to validate if user has the currentSessionSalt in the vault-keys, because for Pali Users that
+    //already has accounts created in some old version this value will not be in the storage. So we need to check it
+    //and if user doesn't have we set it and if has we use the storage value
+    if (typeof initialVaultKeys.currentSessionSalt === 'undefined') {
+      this.storage.set('vault-keys', {
+        ...initialVaultKeys,
+        currentSessionSalt: this.currentSessionSalt,
+      });
+
+      return this.encryptSHA512(pwd, this.currentSessionSalt);
+    }
+
+    return this.encryptSHA512(pwd, initialVaultKeys.currentSessionSalt);
   }
 
   public unlock = async (password: string): Promise<boolean> => {
