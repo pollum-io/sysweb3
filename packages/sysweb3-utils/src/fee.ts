@@ -1,7 +1,9 @@
 import coinSelectSyscoin from 'coinselectsyscoin';
 import { ethers } from 'ethers';
-import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
+
+// @ts-ignore
+import sys from './syscoinjs';
 
 type EstimateFeeParams = {
   outputs: { value: number; address: string }[];
