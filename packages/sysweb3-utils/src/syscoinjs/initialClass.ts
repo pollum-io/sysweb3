@@ -1126,3 +1126,7 @@ export class Syscoin {
     );
   };
 }
+const SyscoinJSLib = Syscoin;
+const syscoin = Syscoin;
+
+export { SyscoinJSLib, syscoin, utils };
