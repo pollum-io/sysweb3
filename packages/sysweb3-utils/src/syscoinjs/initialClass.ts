@@ -1,7 +1,7 @@
 import BN from 'bn.js';
 import syscointx from 'syscointx-js';
 
-import utils from './utils';
+import * as utils from './initialUtils';
 
 export class Syscoin {
   public Signer;
