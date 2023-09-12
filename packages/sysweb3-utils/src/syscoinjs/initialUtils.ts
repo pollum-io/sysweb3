@@ -1,7 +1,6 @@
 import axios from 'axios';
 import BIP84 from 'bip84';
 import bitcoinops from 'bitcoin-ops';
-import bjs from 'bitcoinjs-lib';
 import BN from 'bn.js';
 import CryptoJS from 'crypto-js';
 import { Log } from 'eth-object';
@@ -10,11 +9,14 @@ import { encode } from 'eth-util-lite';
 import syscointx from 'syscointx-js';
 import varuint from 'varuint-bitcoin';
 import Web3 from 'web3';
+
+const bjs = require('bitcoinjs-lib');
 const web3 = new Web3();
 const bitcoinjs = bjs;
+const { networks } = bjs;
 const bitcoinNetworks = {
-  mainnet: bjs.networks.bitcoin,
-  testnet: bjs.networks.testnet,
+  mainnet: networks.bitcoin,
+  testnet: networks.testnet,
 };
 /* global localStorage */
 const syscoinNetworks = {
@@ -505,7 +507,7 @@ Param blocks: Required. How many blocks to estimate fee for.
 Param options: Optional. possible value conservative=true or false for conservative fee. Default is true.
 Returns: Returns fee response in integer. Fee rate in satoshi per kilobytes.
 */
-async function fetchEstimateFee(backendURL: any, blocks: any, options: any) {
+async function fetchEstimateFee(backendURL: any, blocks: any, options?: any) {
   try {
     let blockbookURL = backendURL.slice();
     if (blockbookURL) {
@@ -848,7 +850,7 @@ function sanitizeBlockbookUTXOs(
   sysFromXpubOrAddress: any,
   utxoObj: any,
   network: any,
-  txOpts: any,
+  txOpts?: any,
   assetMap?: any,
   excludeZeroConf?: any
 ) {
@@ -1130,11 +1132,11 @@ class Signer {
   public setIndexFlag: number;
   public blockbookURL: any;
   constructor(
-    password: any,
-    isTestnet: boolean,
-    networks: any,
-    SLIP44: any,
-    pubTypes: any
+    password?: any,
+    isTestnet?: boolean,
+    networks?: any,
+    SLIP44?: any,
+    pubTypes?: any
   ) {
     this.isTestnet = isTestnet || false;
     this.networks = networks || syscoinNetworks;
@@ -1388,12 +1390,12 @@ class HDSigner {
   public receivingIndex: number;
   constructor(
     mnemonic: string,
-    password: string,
-    isTestnet: boolean,
-    networks: any,
-    SLIP44: any,
-    pubTypes: any,
-    bipNum: any
+    password?: any,
+    isTestnet?: boolean,
+    networks?: any,
+    SLIP44?: any,
+    pubTypes?: any,
+    bipNum?: any
   ) {
     this.changeIndex = -1;
     this.receivingIndex = -1;
@@ -1585,7 +1587,11 @@ Returns: psbt from bitcoinjs-lib
       const child = this.deriveAccount(i, bipNum);
       /* eslint new-cap: ["error", { "newIsCap": false }] */
       this.Signer.accounts.push(
-        new BIP84.fromZPrv(child, this.Signer.pubTypes, this.Signer.networks)
+        new BIP84.fromZPrv(
+          child,
+          this.Signer.pubTypes,
+          this.Signer.networks ? this.Signer.networks : syscoinNetworks
+        )
       );
     }
 
@@ -1641,7 +1647,11 @@ Returns: psbt from bitcoinjs-lib
     this.Signer.accountIndex = this.Signer.accounts.length;
     /* eslint new-cap: ["error", { "newIsCap": false }] */
     this.Signer.accounts.push(
-      new BIP84.fromZPrv(child, this.Signer.pubTypes, this.Signer.networks)
+      new BIP84.fromZPrv(
+        child,
+        this.Signer.pubTypes,
+        this.Signer.networks ? this.Signer.networks : syscoinNetworks
+      )
     );
     this.backup();
     return this.Signer.accountIndex;

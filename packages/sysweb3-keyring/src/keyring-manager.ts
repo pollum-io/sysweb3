@@ -38,7 +38,7 @@ import {
   INetwork,
   INetworkType,
 } from '@pollum-io/sysweb3-network';
-import { sys } from '@pollum-io/sysweb3-utils';
+import { sysTs } from '@pollum-io/sysweb3-utils';
 
 export interface ISysAccount {
   xprv?: string;
@@ -86,7 +86,7 @@ export class KeyringManager implements IKeyringManager {
       this.wallet = initialWalletState;
       this.activeChain = INetworkType.Syscoin;
       // @ts-ignore
-      this.hd = new sys.utils.HDSigner('');
+      this.hd = new sysTs.utils.HDSigner('');
     }
     this.memMnemonic = '';
     this.memPassword = ''; //Lock wallet in case opts.password has been provided
@@ -670,7 +670,7 @@ export class KeyringManager implements IKeyringManager {
 
   private createMainWallet = async (): Promise<IKeyringAccountState> => {
     //@ts-ignore
-    this.hd = new sys.utils.HDSigner(
+    this.hd = new sysTs.utils.HDSigner(
       this.memMnemonic,
       null,
       false,
@@ -679,7 +679,7 @@ export class KeyringManager implements IKeyringManager {
       undefined,
       84
     ) as SyscoinHDSigner; //To understand better this look at: https://github.com/syscoin/syscoinjs-lib/blob/298fda26b26d7007f0c915a6f77626fb2d3c852f/utils.js#L894
-    this.syscoinSigner = new sys.SyscoinJSLib(
+    this.syscoinSigner = new sysTs.SyscoinJSLib(
       this.hd,
       this.wallet.activeNetwork.url,
       undefined
@@ -866,7 +866,7 @@ export class KeyringManager implements IKeyringManager {
     const { hd, main } = this.getSigner();
     const options = 'tokens=used&details=tokens';
 
-    const { tokens } = await sys.utils.fetchBackendAccount(
+    const { tokens } = await sysTs.utils.fetchBackendAccount(
       main.blockbookURL,
       xpub,
       options,
@@ -914,13 +914,14 @@ export class KeyringManager implements IKeyringManager {
     let balance = 0,
       stealthAddr = '';
     try {
-      const { balance: _balance, tokens } = await sys.utils.fetchBackendAccount(
-        url,
-        xpub,
-        options,
-        true,
-        undefined
-      );
+      const { balance: _balance, tokens } =
+        await sysTs.utils.fetchBackendAccount(
+          url,
+          xpub,
+          options,
+          true,
+          undefined
+        );
       const { receivingIndex } = this.setLatestIndexesFromXPubTokens(tokens);
       balance = _balance;
       stealthAddr = this.hd.Signer.accounts[id].getAddress(
