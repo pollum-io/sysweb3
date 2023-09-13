@@ -1,5 +1,5 @@
 import { ITokenMap, ISyscoinToken } from '.';
-import * as sys from './syscoinjs/initialClass';
+import * as sys from './syscoints';
 // import { web3Provider } from '@pollum-io/sysweb3-network';
 
 export const txUtils = () => {

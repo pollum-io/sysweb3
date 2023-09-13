@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import syscointx from 'syscointx-js';
 
 // @ts-ignore
-import * as sys from './syscoinjs/initialClass';
+import * as sys from './syscoints';
 
 type EstimateFeeParams = {
   outputs: { value: number; address: string }[];
