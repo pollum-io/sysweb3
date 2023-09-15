@@ -1,7 +1,7 @@
 import BN from 'bn.js';
 import syscointx from 'syscointx-js';
 
-import utils from './utils';
+import * as utils from './utils';
 
 export class Syscoin {
   public Signer;
@@ -1126,3 +1126,7 @@ export class Syscoin {
     );
   };
 }
+const SyscoinJSLib = Syscoin;
+const syscoin = Syscoin;
+
+export { SyscoinJSLib, syscoin, utils };

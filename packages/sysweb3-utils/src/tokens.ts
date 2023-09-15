@@ -6,7 +6,7 @@ import { createContractUsingAbi } from '.';
 import ABI1155 from './abi/erc1155.json';
 import abi20 from './abi/erc20.json';
 import ABI721 from './abi/erc721.json';
-import sys from './syscoinjs';
+import * as sys from './syscoints';
 import tokens from './tokens.json';
 
 import type {

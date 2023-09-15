@@ -1,22 +1,22 @@
-/* eslint-disable */
-const axios = require('axios');
-const BN = require('bn.js');
-const BIP84 = require('bip84');
-const CryptoJS = require('crypto-js');
+import axios from 'axios';
+import BIP84 from 'bip84';
+import bitcoinops from 'bitcoin-ops';
+import BN from 'bn.js';
+import CryptoJS from 'crypto-js';
+import { Log } from 'eth-object';
+import { VerifyProof, GetProof } from 'eth-proof';
+import { encode } from 'eth-util-lite';
+import syscointx from 'syscointx-js';
+import varuint from 'varuint-bitcoin';
+import Web3 from 'web3';
+
 const bjs = require('bitcoinjs-lib');
-const bitcoinops = require('bitcoin-ops');
-const varuint = require('varuint-bitcoin');
-const { VerifyProof, GetProof } = require('eth-proof');
-const { encode } = require('eth-util-lite');
-const { Log } = require('eth-object');
-const Web3 = require('web3');
-const syscointx = require('syscointx-js');
-const utxoLib = require('@trezor/utxo-lib');
-const TrezorConnect = require('trezor-connect').default;
 const web3 = new Web3();
+const bitcoinjs = bjs;
+const { networks } = bjs;
 const bitcoinNetworks = {
-  mainnet: bjs.networks.bitcoin,
-  testnet: bjs.networks.testnet,
+  mainnet: networks.bitcoin,
+  testnet: networks.testnet,
 };
 /* global localStorage */
 const syscoinNetworks = {
@@ -73,8 +73,6 @@ const syscoinXPubTypes = {
 };
 const syscoinSLIP44 = 57;
 const bitcoinSLIP44 = 0;
-let trezorInitialized = false;
-const DEFAULT_TREZOR_DOMAIN = 'https://connect.trezor.io/8/';
 const ERC20Manager = '0xA738a563F9ecb55e0b2245D1e9E380f0fE455ea1';
 const tokenFreezeFunction =
   '7ca654cf9212e4c3cf0164a529dd6159fc71113f867d0b09fdeb10aa65780732'; // token freeze function signature
@@ -87,7 +85,7 @@ Param endPoint: Required. Fully qualified URL which will take transaction inform
 Param txHex: Required. Raw transaction hex
 Returns: Returns JSON object in response, signature on success and error on denial of notarization
 */
-async function fetchNotarizationFromEndPoint(endPoint, txHex) {
+async function fetchNotarizationFromEndPoint(endPoint: any, txHex: any) {
   try {
     // Use fetch if on browser environment
     // eslint-disable-next-line no-undef
@@ -124,7 +122,7 @@ Param backendURL: Required. Fully qualified URL for blockbook
 Param assetGuid: Required. Asset to fetch
 Returns: Returns JSON object in response, asset information object in JSON
 */
-async function fetchBackendAsset(backendURL, assetGuid) {
+async function fetchBackendAsset(backendURL: any, assetGuid: any) {
   try {
     let blockbookURL = backendURL.slice();
     if (blockbookURL) {
@@ -163,7 +161,7 @@ Param backendURL: Required. Fully qualified URL for blockbook
 Param filter: Required. Asset to fetch via filter, will filter contract or symbol fields
 Returns: Returns JSON array in response, asset information objects in JSON
 */
-async function fetchBackendListAssets(backendURL, filter) {
+async function fetchBackendListAssets(backendURL: any, filter: any) {
   try {
     let blockbookURL = backendURL.slice();
     if (blockbookURL) {
@@ -199,7 +197,7 @@ Param addressOrXpub: Required. An address or XPUB to fetch UTXO's for
 Param options: Optional. Optional queries based on https://github.com/syscoin/blockbook/blob/master/docs/api.md#get-utxo
 Returns: Returns JSON object in response, UTXO object array in JSON
 */
-async function fetchBackendSPVProof(backendURL, txid) {
+async function fetchBackendSPVProof(backendURL: any, txid: any) {
   try {
     let blockbookURL = backendURL.slice();
     if (blockbookURL) {
@@ -233,7 +231,11 @@ Param addressOrXpub: Required. An address or XPUB to fetch UTXO's for
 Param options: Optional. Optional queries based on https://github.com/syscoin/blockbook/blob/master/docs/api.md#get-utxo
 Returns: Returns JSON object in response, UTXO object array in JSON
 */
-async function fetchBackendUTXOS(backendURL, addressOrXpub, options) {
+async function fetchBackendUTXOS(
+  backendURL: any,
+  addressOrXpub: any,
+  options?: any
+) {
   try {
     let blockbookURL = backendURL.slice();
     if (blockbookURL) {
@@ -277,11 +279,11 @@ Param mySignerObj: Optional. Signer object if you wish to update change/receivin
 Returns: Returns JSON object in response, account object in JSON
 */
 async function fetchBackendAccount(
-  backendURL,
-  addressOrXpub,
-  options,
-  xpub,
-  mySignerObj
+  backendURL: any,
+  addressOrXpub: any,
+  options: any,
+  xpub: any,
+  mySignerObj: any
 ) {
   try {
     let blockbookURL = backendURL.slice();
@@ -334,7 +336,11 @@ Param txHex: Required. Raw transaction hex
 Param mySignerObj: Optional. Signer object if you wish to update change/receiving indexes from backend provider through fetchBackendAccount()
 Returns: Returns txid in response or error
 */
-async function sendRawTransaction(backendURL, txHex, mySignerObj) {
+async function sendRawTransaction(
+  backendURL: any,
+  txHex: any,
+  mySignerObj?: any
+) {
   try {
     let blockbookURL = backendURL.slice();
     if (blockbookURL) {
@@ -396,7 +402,7 @@ Param backendURL: Required. Fully qualified URL for blockbook
 Param txid: Required. Transaction ID to get information for
 Returns: Returns JSON object in response, transaction object in JSON
 */
-async function fetchBackendRawTx(backendURL, txid) {
+async function fetchBackendRawTx(backendURL: any, txid: any) {
   try {
     let blockbookURL = backendURL.slice();
     if (blockbookURL) {
@@ -431,7 +437,7 @@ async function fetchBackendRawTx(backendURL, txid) {
 Purpose: Get prover info including blockbook and backend data
 Returns: Returns JSON object in response, provider object in JSON
 */
-async function fetchProviderInfo(backendURL) {
+async function fetchProviderInfo(backendURL: any) {
   try {
     let blockbookURL = backendURL.slice();
     if (blockbookURL) {
@@ -463,7 +469,7 @@ async function fetchProviderInfo(backendURL) {
 Purpose: Get block from backend
 Returns: Returns JSON object in response, block object in JSON
 */
-async function fetchBackendBlock(backendURL, blockhash) {
+async function fetchBackendBlock(backendURL: any, blockhash: any) {
   try {
     let blockbookURL = backendURL.slice();
     if (blockbookURL) {
@@ -501,7 +507,7 @@ Param blocks: Required. How many blocks to estimate fee for.
 Param options: Optional. possible value conservative=true or false for conservative fee. Default is true.
 Returns: Returns fee response in integer. Fee rate in satoshi per kilobytes.
 */
-async function fetchEstimateFee(backendURL, blocks, options) {
+async function fetchEstimateFee(backendURL: any, blocks: any, options?: any) {
   try {
     let blockbookURL = backendURL.slice();
     if (blockbookURL) {
@@ -549,7 +555,7 @@ Param notaryAssets: Required. Asset objects that require notarization, fetch sig
 Param txHex: Required. Signed transaction hex created from syscointx.createTransaction()/syscointx.createAssetTransaction()
 Returns: boolean representing if notarization was done by acquiring a witness signature from notary.
 */
-async function getNotarizationSignatures(notaryAssets, txHex) {
+async function getNotarizationSignatures(notaryAssets: any, txHex: any) {
   let notarizationDone = false;
   if (!notaryAssets) {
     return notarizationDone;
@@ -602,7 +608,7 @@ Param psbt: Required. The resulting PSBT object passed in which is assigned from
 Param notaryAssets: Required. Asset objects require notarization, fetch signatures via fetchNotarizationFromEndPoint()
 Returns: new result PSBT output notarized along with index
 */
-async function notarizePSBT(psbt, notaryAssets, rawTx) {
+async function notarizePSBT(psbt: any, notaryAssets: any, rawTx: any) {
   const notarizationDone = await getNotarizationSignatures(notaryAssets, rawTx);
   if (notarizationDone) {
     return syscointx.addNotarizationSignatures(
@@ -619,14 +625,14 @@ Purpose: Get assets from Result object assigned from syscointx.createTransaction
 Param assets: Required. Asset objects that are evaluated for notarization, and if they do require notarization then fetch signatures via fetchNotarizationFromEndPoint()
 Returns: Asset map of objects requiring notarization or null if no notarization is required
 */
-function getAssetsRequiringNotarization(psbt, assets) {
+function getAssetsRequiringNotarization(psbt: any, assets: any) {
   if (!assets || !syscointx.utils.isAssetAllocationTx(psbt.version)) {
     return new Map();
   }
   const assetsInTx = syscointx.getAssetsFromOutputs(psbt.txOutputs);
   let foundNotary = false;
   const assetsUsedInTxNeedingNotarization = new Map();
-  assetsInTx.forEach((value, baseAssetID) => {
+  assetsInTx.forEach((_: any, baseAssetID: any) => {
     if (assetsUsedInTxNeedingNotarization.has(baseAssetID)) {
       return new Map();
     }
@@ -654,7 +660,7 @@ Param wif: Required. Private key in WIF format to sign inputs with
 Param network: Required. bitcoinjs-lib Network object
 Returns: psbt from bitcoinjs-lib
 */
-async function signPSBTWithWIF(psbt, wif, network) {
+async function signPSBTWithWIF(psbt: any, wif: any, network: any) {
   const wifObject = bjs.ECPair.fromWIF(wif, network);
   // sign inputs with wif
   await psbt.signAllInputsAsync(wifObject);
@@ -662,7 +668,9 @@ async function signPSBTWithWIF(psbt, wif, network) {
     if (psbt.validateSignaturesOfAllInputs()) {
       psbt.finalizeAllInputs();
     }
-  } catch (err) {}
+  } catch (err) {
+    console.log({ err });
+  }
   return psbt;
 }
 
@@ -673,7 +681,7 @@ Param wif: Required. Private key in WIF format to sign inputs with, can be array
 Param network: Required. bitcoinjs-lib Network object
 Returns: psbt from bitcoinjs-lib
 */
-async function signWithWIF(psbt, wif, network) {
+async function signWithWIF(psbt: any, wif: any, network: any) {
   if (Array.isArray(wif)) {
     for (const wifKey of wif) {
       psbt = await signPSBTWithWIF(psbt, wifKey, network);
@@ -688,7 +696,7 @@ Purpose: Build Ethereum SPV proof using eth-proof library
 Param assetOpts: Required. Object containing web3url and ethtxid fields populated
 Returns: Returns JSON object in response, SPV proof object in JSON
 */
-async function buildEthProof(assetOpts) {
+async function buildEthProof(assetOpts: any) {
   const ethProof = new GetProof(assetOpts.web3url);
   const web3Provider = new Web3(assetOpts.web3url);
   try {
@@ -748,7 +756,7 @@ async function buildEthProof(assetOpts) {
       throw new Error('BlockHash mismatch');
     }
     const receiptvalue = txReceipt.hex.substring(2); // remove hex prefix
-    let amount = new web3.utils.BN(0);
+    let amount = web3.utils.toBN(0);
     for (let i = 0; i < txReceipt.setOfLogs.length; i++) {
       const log = Log.fromRaw(txReceipt.setOfLogs[i]).toObject();
       if (log.topics && log.topics.length !== 1) {
@@ -781,8 +789,8 @@ async function buildEthProof(assetOpts) {
           ],
           log.data
         );
-        const precisions = new web3.utils.BN(paramResults.precisions);
-        const value = new web3.utils.BN(paramResults.value);
+        const precisions = web3.utils.toBN(paramResults.precisions);
+        const value = web3.utils.toBN(paramResults.value);
 
         // get precision
         const erc20precision = precisions.maskn(32);
@@ -791,12 +799,12 @@ async function buildEthProof(assetOpts) {
         // we pad zero's if erc20's precision is less than ours so we can accurately get the whole value of the amount transferred
         if (sptprecision.gt(erc20precision)) {
           amount = value.mul(
-            new web3.utils.BN(10).pow(sptprecision.sub(erc20precision))
+            web3.utils.toBN(10).pow(sptprecision.sub(erc20precision))
           );
           // ensure we truncate decimals to fit within int64 if erc20's precision is more than our asset precision
         } else if (sptprecision.lt(erc20precision)) {
           amount = value.div(
-            new web3.utils.BN(10).pow(erc20precision.sub(sptprecision))
+            web3.utils.toBN(10).pow(erc20precision.sub(sptprecision))
           );
         } else {
           amount = value;
@@ -804,7 +812,9 @@ async function buildEthProof(assetOpts) {
         break;
       }
     }
-    const ethtxid = web3.utils.sha3(Buffer.from(txvalue, 'hex')).substring(2); // not txid but txhash of the tx object used for calculating tx commitment without requiring transaction deserialization
+    const ethtxid = (
+      web3.utils.sha3(Buffer.from(txvalue, 'hex') as any) as string
+    ).substring(2); // not txid but txhash of the tx object used for calculating tx commitment without requiring transaction deserialization
     return {
       ethtxid,
       blockhash,
@@ -837,24 +847,25 @@ Param excludeZeroConf: Optional. False by default. Filtering out 0 conf UTXO, ne
 Returns: Returns sanitized UTXO object for use internally in this library
 */
 function sanitizeBlockbookUTXOs(
-  sysFromXpubOrAddress,
-  utxoObj,
-  network,
-  txOpts,
-  assetMap,
-  excludeZeroConf
+  sysFromXpubOrAddress: any,
+  utxoObj: any,
+  network: any,
+  txOpts?: any,
+  assetMap?: any,
+  excludeZeroConf?: any
 ) {
   if (!txOpts) {
     txOpts = { rbf: false };
   }
-  const sanitizedUtxos = { utxos: [] };
+  const sanitizedUtxos = { utxos: [] } as { [k: string]: any };
   if (Array.isArray(utxoObj)) {
+    // @ts-ignore
     utxoObj.utxos = utxoObj;
   }
   if (utxoObj.assets) {
     sanitizedUtxos.assets = new Map();
-    utxoObj.assets.forEach((asset) => {
-      const assetObj = {};
+    utxoObj.assets.forEach((asset: any) => {
+      const assetObj = {} as { [k: string]: any };
       if (asset.contract) {
         asset.contract = asset.contract.replace(/^0x/, '');
         assetObj.contract = Buffer.from(asset.contract, 'hex');
@@ -918,7 +929,7 @@ function sanitizeBlockbookUTXOs(
     });
   }
   if (utxoObj.utxos) {
-    utxoObj.utxos.forEach((utxo) => {
+    utxoObj.utxos.forEach((utxo: any) => {
       // xpub queries will return utxo.address and address queries should use sysFromXpubOrAddress as address is not provided
       utxo.address = utxo.address || sysFromXpubOrAddress;
       if (excludeZeroConf && utxo.confirmations <= 0) {
@@ -932,7 +943,7 @@ function sanitizeBlockbookUTXOs(
         vout: utxo.vout,
         value: new BN(utxo.value),
         locktime: utxo.locktime,
-      };
+      } as { [k: string]: any };
       if (newUtxo.address.startsWith(network.bech32)) {
         newUtxo.type = 'BECH32';
       }
@@ -970,7 +981,7 @@ Purpose: Return memo from a script, null otherwise
 Param script: Required. OP_RETURN script output
 Param memoHeader: Required. Memo prefix, application specific
 */
-function getMemoFromScript(script, memoHeader) {
+function getMemoFromScript(script: any, memoHeader: any) {
   const pos = script.indexOf(memoHeader);
   if (pos >= 0) {
     return script.slice(pos + memoHeader.length);
@@ -983,12 +994,12 @@ Purpose: Return memo from an array of outputs by finding the OP_RETURN output an
 Param outputs: Required. Tx output array
 Param memoHeader: Optional. Memo prefix, application specific. If not passed in just return the raw opreturn script if found.
 */
-function getMemoFromOpReturn(outputs, memoHeader) {
+function getMemoFromOpReturn(outputs: any, memoHeader: any) {
   for (let i = 0; i < outputs.length; i++) {
     const output = outputs[i];
     if (output.script) {
       // find opreturn
-      const chunks = bjs.script.decompile(output.script);
+      const chunks = bjs.script.decompile(output.script) as any;
       if (chunks[0] === bitcoinops.OP_RETURN) {
         if (memoHeader) {
           return getMemoFromScript(chunks[1], memoHeader);
@@ -1005,69 +1016,8 @@ function getMemoFromOpReturn(outputs, memoHeader) {
 Purpose: Return allocation information for an asset transaction. Pass through to syscointx-js
 Param tx: Required. bitcoinjs transaction
 */
-function getAllocationsFromTx(tx) {
+function getAllocationsFromTx(tx: any) {
   return syscointx.getAllocationsFromTx(tx) || [];
-}
-
-/* isBech32
-Purpose: Return a boolean if a given sys address is a bech32 address
-Param address: Required. Address to check
-*/
-function isBech32(address) {
-  try {
-    utxoLib.address.fromBech32(address);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-/* isScriptHash
-Purpose: Return  a boolean if a given sys address is a script hash accordingly to the syscoinNetwork selected
-Param address: Required. Address to verify
-Param networkInfo: Required. Network information to verify
-*/
-function isScriptHash(address, networkInfo) {
-  if (!isBech32(address)) {
-    const decoded = utxoLib.address.fromBase58Check(address);
-    if (decoded.version === networkInfo.pubKeyHash) {
-      return false;
-    }
-    if (decoded.version === networkInfo.scriptHash) {
-      return true;
-    }
-  } else {
-    const decoded = utxoLib.address.fromBech32(address);
-    if (decoded.data.length === 20) {
-      return false;
-    }
-    if (decoded.data.length === 32) {
-      return true;
-    }
-  }
-  throw new Error('isScriptHash: Unknown address type');
-}
-
-/* convertToAddressNFormat
-Purpose: Return path in addressN format
-Param path: Required derivation path
-*/
-function convertToAddressNFormat(path) {
-  const pathArray = path.replace(/'/g, '').split('/');
-
-  pathArray.shift();
-
-  const addressN = [];
-
-  for (const index in pathArray) {
-    if (Number(index) <= 2 && Number(index) >= 0) {
-      addressN[Number(index)] = Number(pathArray[index]) | 0x80000000;
-    } else {
-      addressN[Number(index)] = Number(pathArray[index]);
-    }
-  }
-
-  return addressN;
 }
 
 /* setTransactionMemo
@@ -1076,7 +1026,7 @@ Param rawHex: Required. Raw transaction hex
 Param memoHeader: Required. Memo prefix, application specific
 Param buffMemo: Required. Buffer memo to put into the transaction
 */
-function setTransactionMemo(rawHex, memoHeader, buffMemo) {
+function setTransactionMemo(rawHex: any, memoHeader: any, buffMemo: any) {
   const txn = bjs.Transaction.fromHex(rawHex);
   let processed = false;
   if (!buffMemo) {
@@ -1084,14 +1034,14 @@ function setTransactionMemo(rawHex, memoHeader, buffMemo) {
   }
   for (let key = 0; key < txn.outs.length; key++) {
     const out = txn.outs[key];
-    const chunksIn = bjs.script.decompile(out.script);
+    const chunksIn = bjs.script.decompile(out.script) as any;
     if (chunksIn[0] !== bjs.opcodes.OP_RETURN) {
       continue;
     }
     txn.outs.splice(key, 1);
     const updatedData = [chunksIn[1], memoHeader, buffMemo];
     txn.addOutput(
-      bjs.payments.embed({ data: [Buffer.concat(updatedData)] }).output,
+      bjs.payments.embed({ data: [Buffer.concat(updatedData)] }).output as any,
       0
     );
     processed = true;
@@ -1106,7 +1056,7 @@ function setTransactionMemo(rawHex, memoHeader, buffMemo) {
   }
   const updatedData = [memoHeader, buffMemo];
   txn.addOutput(
-    bjs.payments.embed({ data: [Buffer.concat(updatedData)] }).output,
+    bjs.payments.embed({ data: [Buffer.concat(updatedData)] }).output as any,
     0
   );
   const memoRet = getMemoFromOpReturn(txn.outs, memoHeader);
@@ -1115,7 +1065,12 @@ function setTransactionMemo(rawHex, memoHeader, buffMemo) {
   }
   return txn;
 }
-function copyPSBT(psbt, networkIn, outputIndexToModify, outputScript) {
+function copyPSBT(
+  psbt: any,
+  networkIn: any,
+  outputIndexToModify: any,
+  outputScript?: any
+) {
   const psbtNew = new bjs.Psbt({ network: networkIn });
   psbtNew.setVersion(psbt.version);
   const txInputs = psbt.txInputs;
@@ -1127,14 +1082,14 @@ function copyPSBT(psbt, networkIn, outputIndexToModify, outputScript) {
       index: input.index,
       sequence: input.sequence,
       bip32Derivation: dataInput.bip32Derivation || [],
-    };
+    } as { [k: string]: any };
     if (dataInput.nonWitnessUtxo) {
       inputObj.nonWitnessUtxo = dataInput.nonWitnessUtxo;
     } else if (dataInput.witnessUtxo) {
       inputObj.witnessUtxo = dataInput.witnessUtxo;
     }
-    psbtNew.addInput(inputObj);
-    dataInput.unknownKeyVals.forEach((unknownKeyVal) => {
+    psbtNew.addInput(inputObj as any);
+    dataInput.unknownKeyVals.forEach((unknownKeyVal: any) => {
       psbtNew.addUnknownKeyValToInput(i, unknownKeyVal);
     });
   }
@@ -1163,552 +1118,594 @@ Param networks: Optional. Defaults to Syscoin network. bitcoinjs-lib network set
 Param SLIP44: Optional. SLIP44 value for the coin, see: https://github.com/satoshilabs/slips/blob/master/slip-0044.md
 Param pubTypes: Optional. Defaults to Syscoin ZPub/VPub types. Specific ZPub for bip84 and VPub for testnet
 */
-function Signer(password, isTestnet, networks, SLIP44, pubTypes) {
-  this.isTestnet = isTestnet || false;
-  this.networks = networks || syscoinNetworks;
-  this.password = password;
-  this.SLIP44 = this.isTestnet ? 1 : SLIP44 || syscoinSLIP44; // 1 is testnet for all coins,
-  if (!this.isTestnet) {
-    this.network = this.networks.mainnet || syscoinNetworks.mainnet;
-  } else {
-    this.network = this.networks.testnet || syscoinNetworks.testnet;
+class Signer {
+  public isTestnet: boolean;
+  public networks: any;
+  public password: any;
+  public SLIP44: any;
+  public network: any;
+  public pubTypes: any;
+  public accounts: any[];
+  public changeIndex: number;
+  public receivingIndex: number;
+  public accountIndex: number;
+  public setIndexFlag: number;
+  public blockbookURL: any;
+  constructor(
+    password?: any,
+    isTestnet?: boolean,
+    networks?: any,
+    SLIP44?: any,
+    pubTypes?: any
+  ) {
+    this.isTestnet = isTestnet || false;
+    this.networks = networks || syscoinNetworks;
+    this.password = password;
+    this.SLIP44 = this.isTestnet ? 1 : SLIP44 || syscoinSLIP44; // 1 is testnet for all coins,
+    if (!this.isTestnet) {
+      this.network = this.networks.mainnet || syscoinNetworks.mainnet;
+    } else {
+      this.network = this.networks.testnet || syscoinNetworks.testnet;
+    }
+
+    this.pubTypes = pubTypes || syscoinZPubTypes;
+    this.accounts = []; // length serialized
+    this.changeIndex = -1;
+    this.receivingIndex = -1;
+    this.accountIndex = 0;
+    this.setIndexFlag = 0;
   }
 
-  this.pubTypes = pubTypes || syscoinZPubTypes;
-  this.accounts = []; // length serialized
-  this.changeIndex = -1;
-  this.receivingIndex = -1;
-  this.accountIndex = 0;
-  this.setIndexFlag = 0;
-}
-function HDSigner(
-  mnemonic,
-  password,
-  isTestnet,
-  networks,
-  SLIP44,
-  pubTypes,
-  bipNum
-) {
-  this.Signer = new Signer(password, isTestnet, networks, SLIP44, pubTypes);
-  this.mnemonic = mnemonic; // serialized
+  /* setAccountIndex
+Purpose: Set HD account based on accountIndex number passed in so HD indexes (change/receiving) will be updated accordingly to this account
+Param accountIndex: Required. Account number to use
+*/
+  setAccountIndex = (accountIndex: number) => {
+    if (accountIndex > this.accounts.length) {
+      console.log(
+        'Account does not exist, use createAccount to create it first...'
+      );
+      return;
+    }
+    if (this.accountIndex !== accountIndex) {
+      this.changeIndex = -1;
+      this.receivingIndex = -1;
+      this.accountIndex = accountIndex;
+    }
+  };
 
-  /* eslint new-cap: ["error", { "newIsCap": false }] */
-  this.fromMnemonic = new BIP84.fromMnemonic(
-    mnemonic,
-    this.Signer.password,
-    this.Signer.isTestnet,
-    this.Signer.SLIP44,
-    this.Signer.pubTypes,
-    this.Signer.network
-  );
-  // try to restore, if it does not succeed then initialize from scratch
-  if (!this.Signer.password || !this.restore(this.Signer.password, bipNum)) {
-    this.createAccount(bipNum);
+  /* getNewChangeAddress
+  Purpose: Get new address for sending change to
+  Param skipIncrement: Optional. If we should not count the internal change index counter (if you want to get the same change address in the future)
+  Param bipNum: Optional. If you want the address derivated in regard of an specific bip number
+  Returns: string address used for change outputs
+  */
+  getNewChangeAddress = async (skipIncrement: any, bipNum: any) => {
+    if (this.changeIndex === -1 && this.blockbookURL) {
+      let res = await fetchBackendAccount(
+        this.blockbookURL,
+        this.getAccountXpub(),
+        'tokens=used&details=tokens',
+        true,
+        this
+      );
+      if (res === null) {
+        // try once more in case it fails for some reason
+        res = await fetchBackendAccount(
+          this.blockbookURL,
+          this.getAccountXpub(),
+          'tokens=used&details=tokens',
+          true,
+          this
+        );
+        if (res === null) {
+          throw new Error('Could not update XPUB change index');
+        }
+      }
+    }
+    const address = this.createAddress(this.changeIndex + 1, true, bipNum);
+    if (address) {
+      if (!skipIncrement) {
+        this.changeIndex++;
+      }
+      return address;
+    }
+
+    return null;
+  };
+
+  /* getNewReceivingAddress
+  Purpose: Get new address for sending coins to
+  Param skipIncrement: Optional. If we should not count the internal receiving index counter (if you want to get the same address in the future)
+  Param bipNum: Optional. If you want the address derivated in regard of an specific bip number
+  Returns: string address used for receiving outputs
+  */
+  getNewReceivingAddress = async (skipIncrement: any, bipNum: any) => {
+    if (this.receivingIndex === -1 && this.blockbookURL) {
+      let res = await fetchBackendAccount(
+        this.blockbookURL,
+        this.getAccountXpub(),
+        'tokens=used&details=tokens',
+        true,
+        this
+      );
+      if (res === null) {
+        // try once more in case it fails for some reason
+        res = await fetchBackendAccount(
+          this.blockbookURL,
+          this.getAccountXpub(),
+          'tokens=used&details=tokens',
+          true,
+          this
+        );
+        if (res === null) {
+          throw new Error('Could not update XPUB receiving index');
+        }
+      }
+    }
+    const address = this.createAddress(this.receivingIndex + 1, false, bipNum);
+    if (address) {
+      if (!skipIncrement) {
+        this.receivingIndex++;
+      }
+      return address;
+    }
+
+    return null;
+  };
+
+  /* getAccountXpub
+  Purpose: Get XPUB for account, useful for public provider lookups based on XPUB accounts
+  Returns: string representing hex XPUB
+  */
+  getAccountXpub = () => {
+    return this.accounts[this.accountIndex].getAccountPublicKey();
+  };
+
+  /* setLatestIndexesFromXPubTokens
+  Purpose: Sets the change and receiving indexes from XPUB tokens passed in, from a backend provider response
+  Param tokens: Required. XPUB tokens from provider response to XPUB account details.
+  */
+  setLatestIndexesFromXPubTokens = (tokens: any) => {
+    this.setIndexFlag++;
+    // concurrency check make sure you don't execute this logic while it is already running as signer state is updated here
+    // also in case there is some bug in the code that prevents it ever from being called because this.setIndexFlag = 0 doesn't happen we
+    // stop worrying about the flag after it reached 100 attempts
+    if (this.setIndexFlag > 1 && this.setIndexFlag < 100) {
+      return;
+    }
+
+    let minIndexForChange = Infinity;
+    let minIndexForReceiving = Infinity;
+
+    if (tokens) {
+      tokens.forEach((token: any) => {
+        if (!token.transfers || !token.path) {
+          return;
+        }
+        const transfers = parseInt(token.transfers, 10);
+        if (token.path && transfers > 0) {
+          const splitPath = token.path.split('/');
+          if (splitPath.length >= 6) {
+            const change = parseInt(splitPath[4], 10);
+            const index = parseInt(splitPath[5], 10);
+            if (change === 1 && index < minIndexForChange) {
+              minIndexForChange = index;
+            } else if (change === 0 && index < minIndexForReceiving) {
+              minIndexForReceiving = index;
+            }
+          }
+        }
+      });
+
+      if (
+        minIndexForChange !== Infinity &&
+        minIndexForChange > this.changeIndex
+      ) {
+        this.changeIndex = minIndexForChange;
+      }
+
+      if (
+        minIndexForReceiving !== Infinity &&
+        minIndexForReceiving > this.receivingIndex
+      ) {
+        this.receivingIndex = minIndexForReceiving;
+      }
+    }
+
+    this.setIndexFlag = 0;
+  };
+
+  createAddress = (addressIndex: any, isChange: any, bipNum: any) => {
+    if (bipNum === undefined) {
+      bipNum = 44;
+    }
+    if (
+      this.pubTypes === syscoinZPubTypes ||
+      this.pubTypes === bitcoinZPubTypes
+    ) {
+      bipNum = 84;
+    }
+    return this.accounts[this.accountIndex].getAddress(
+      addressIndex,
+      isChange,
+      bipNum
+    );
+  };
+
+  /* getHDPath
+  Purpose: Gets current HDPath from signer context
+  Param addressIndex: Optional. HD path address index. If not provided uses the stored change/recv indexes for the last path prefix
+  Param isChange: Optional. HD path change marker
+  Param bipNum: Optional. BIP number to use for HD path. Defaults to 44
+  Returns: bip32 path string
+  */
+  getHDPath = (addressIndex: any, isChange: boolean, bipNum: any) => {
+    const changeNum = isChange ? '1' : '0';
+    if (bipNum === undefined) {
+      bipNum = 44;
+    }
+    if (
+      this.pubTypes === syscoinZPubTypes ||
+      this.pubTypes === bitcoinZPubTypes
+    ) {
+      bipNum = 84;
+    }
+    let recvIndex = isChange ? this.changeIndex : this.receivingIndex;
+    if (addressIndex) {
+      recvIndex = addressIndex;
+    }
+    const keypath =
+      'm/' +
+      bipNum +
+      "'/" +
+      this.SLIP44 +
+      "'/" +
+      this.accountIndex +
+      "'/" +
+      changeNum +
+      '/' +
+      recvIndex;
+    return keypath;
+  };
+
+  /* getAddressFromPubKey
+  Purpose: Takes pubkey and gives back a p2wpkh address
+  Param pubkey: Required. bitcoinjs-lib public key
+  Returns: string p2wpkh address
+  */
+  getAddressFromPubKey = (pubkey: any) => {
+    const payment = bjs.payments.p2wpkh({
+      pubkey: pubkey,
+      network: this.network,
+    });
+    return payment.address;
+  };
+}
+class HDSigner {
+  public Signer: Signer;
+  public mnemonic: string;
+  public fromMnemonic: any;
+  public changeIndex: number;
+  public receivingIndex: number;
+  constructor(
+    mnemonic: string,
+    password?: any,
+    isTestnet?: boolean,
+    networks?: any,
+    SLIP44?: any,
+    pubTypes?: any,
+    bipNum?: any
+  ) {
+    this.changeIndex = -1;
+    this.receivingIndex = -1;
+    this.Signer = new Signer(password, isTestnet, networks, SLIP44, pubTypes);
+    this.mnemonic = mnemonic; // serialized
+
+    /* eslint new-cap: ["error", { "newIsCap": false }] */
+    this.fromMnemonic = new BIP84.fromMnemonic(
+      mnemonic,
+      this.Signer.password,
+      this.Signer.isTestnet,
+      this.Signer.SLIP44,
+      this.Signer.pubTypes,
+      this.Signer.network
+    );
+    // try to restore, if it does not succeed then initialize from scratch
+    if (!this.Signer.password || !this.restore(this.Signer.password, bipNum)) {
+      this.createAccount(bipNum);
+    }
   }
-}
 
-/* signPSBT
+  getAddressFromPubKey = (pubkey: any) => {
+    return this.Signer.getAddressFromPubKey(pubkey);
+  };
+
+  /* deriveKeypair
+  Purpose: Takes an HD path and derives keypair from it
+  Param keypath: Required. HD BIP32 path of key desired based on internal seed and network
+  Returns: bitcoinjs-lib keypair
+  */
+  deriveKeypair = (keypath: any) => {
+    const keyPair = bjs.bip32
+      .fromSeed(this.fromMnemonic.seed, this.Signer.network)
+      .derivePath(keypath);
+    if (!keyPair) {
+      return null;
+    }
+    return keyPair;
+  };
+
+  /* derivePubKey
+  Purpose: Takes an HD path and derives keypair from it, returns pubkey
+  Param keypath: Required. HD BIP32 path of key desired based on internal seed and network
+  Returns: bitcoinjs-lib pubkey
+  */
+  derivePubKey = (keypath: any) => {
+    const keyPair = bjs.bip32
+      .fromSeed(this.fromMnemonic.seed, this.Signer.network)
+      .derivePath(keypath);
+    if (!keyPair) {
+      return null;
+    }
+    return keyPair.publicKey;
+  };
+
+  /* getRootNode
+  Purpose: Returns HDSigner's BIP32 root node
+  Returns: BIP32 root node representing the seed
+  */
+  getRootNode = () => {
+    return bjs.bip32.fromSeed(this.fromMnemonic.seed, this.Signer.network);
+  };
+
+  /* sign
+Purpose: Create signing information based on HDSigner (if set) and call signPSBT() to actually sign, as well as detect notarization and apply it as required.
+Param psbt: Required. PSBT object from bitcoinjs-lib
+Returns: psbt from bitcoinjs-lib
+*/
+  sign = async (psbt: any, pathIn: any) => {
+    return await this.signPSBT(psbt, pathIn);
+  };
+
+  /* getMasterFingerprint
+  Purpose: Get master seed fingerprint used for signing with bitcoinjs-lib PSBT's
+  Returns: bip32 root master fingerprint
+  */
+  getMasterFingerprint = () => {
+    return bjs.bip32.fromSeed(this.fromMnemonic.seed, this.Signer.network)
+      .fingerprint;
+  };
+
+  /* deriveAccount
+  Purpose: Derive HD account based on index number passed in
+  Param index: Required. Account number to derive
+  Param bipNum: Optional. BIP number to use for derivation
+  Returns: bip32 node for derived account
+  */
+
+  deriveAccount = (index: number, bipNum?: number) => {
+    if (bipNum === undefined) {
+      bipNum = 44;
+    }
+    if (
+      this.Signer.pubTypes === syscoinZPubTypes ||
+      this.Signer.pubTypes === bitcoinZPubTypes
+    ) {
+      bipNum = 84;
+    }
+    return this.fromMnemonic.deriveAccount(index, bipNum);
+  };
+
+  /* signPSBT
 Purpose: Sign PSBT with XPUB information from HDSigner
 Param psbt: Required. Partially signed transaction object
 Param pathIn: Optional. Custom HD Bip32 path useful if signing from a specific address like a multisig
 Returns: psbt from bitcoinjs-lib
 */
-HDSigner.prototype.signPSBT = async function (psbt, pathIn) {
-  const txInputs = psbt.txInputs;
-  const fp = this.getMasterFingerprint();
-  for (let i = 0; i < txInputs.length; i++) {
-    const dataInput = psbt.data.inputs[i];
-    if (
-      pathIn ||
-      (dataInput.unknownKeyVals &&
-        dataInput.unknownKeyVals.length > 1 &&
-        dataInput.unknownKeyVals[1].key.equals(Buffer.from('path')) &&
-        (!dataInput.bip32Derivation || dataInput.bip32Derivation.length === 0))
-    ) {
-      const path = pathIn || dataInput.unknownKeyVals[1].value.toString();
-      const pubkey = this.derivePubKey(path);
-      const address = this.getAddressFromPubKey(pubkey);
+  signPSBT = async (psbt: any, pathIn: any) => {
+    const txInputs = psbt.txInputs;
+    const fp = this.getMasterFingerprint();
+    for (let i = 0; i < txInputs.length; i++) {
+      const dataInput = psbt.data.inputs[i];
       if (
-        pubkey &&
-        (pathIn || dataInput.unknownKeyVals[0].value.toString() === address)
+        pathIn ||
+        (dataInput.unknownKeyVals &&
+          dataInput.unknownKeyVals.length > 1 &&
+          dataInput.unknownKeyVals[1].key.equals(Buffer.from('path')) &&
+          (!dataInput.bip32Derivation ||
+            dataInput.bip32Derivation.length === 0))
       ) {
-        dataInput.bip32Derivation = [
-          {
-            masterFingerprint: fp,
-            path: path,
-            pubkey: pubkey,
-          },
-        ];
-      }
-    }
-  }
-  await psbt.signAllInputsHDAsync(this.getRootNode());
-  try {
-    if (psbt.validateSignaturesOfAllInputs()) {
-      psbt.finalizeAllInputs();
-    }
-  } catch (err) {}
-  return psbt;
-};
-
-/* sign
-Purpose: Create signing information based on HDSigner (if set) and call signPSBT() to actually sign, as well as detect notarization and apply it as required.
-Param psbt: Required. PSBT object from bitcoinjs-lib
-Returns: psbt from bitcoinjs-lib
-*/
-HDSigner.prototype.sign = async function (psbt, pathIn) {
-  return await this.signPSBT(psbt, pathIn);
-};
-
-/* getMasterFingerprint
-Purpose: Get master seed fingerprint used for signing with bitcoinjs-lib PSBT's
-Returns: bip32 root master fingerprint
-*/
-HDSigner.prototype.getMasterFingerprint = function () {
-  return bjs.bip32.fromSeed(this.fromMnemonic.seed, this.Signer.network)
-    .fingerprint;
-};
-
-/* deriveAccount
-Purpose: Derive HD account based on index number passed in
-Param index: Required. Account number to derive
-Param bipNum: Optional. BIP number to use for derivation
-Returns: bip32 node for derived account
-*/
-
-HDSigner.prototype.deriveAccount = function (index, bipNum) {
-  if (bipNum === undefined) {
-    bipNum = 44;
-  }
-  if (
-    this.Signer.pubTypes === syscoinZPubTypes ||
-    this.Signer.pubTypes === bitcoinZPubTypes
-  ) {
-    bipNum = 84;
-  }
-  return this.fromMnemonic.deriveAccount(index, bipNum);
-};
-
-/* setAccountIndex
-Purpose: Set HD account based on accountIndex number passed in so HD indexes (change/receiving) will be updated accordingly to this account
-Param accountIndex: Required. Account number to use
-*/
-Signer.prototype.setAccountIndex = function (accountIndex) {
-  if (accountIndex > this.accounts.length) {
-    console.log(
-      'Account does not exist, use createAccount to create it first...'
-    );
-    return;
-  }
-  if (this.accountIndex !== accountIndex) {
-    this.changeIndex = -1;
-    this.receivingIndex = -1;
-    this.accountIndex = accountIndex;
-  }
-};
-HDSigner.prototype.setAccountIndex = function (accountIndex) {
-  this.Signer.setAccountIndex(accountIndex);
-};
-
-/* restore
-Purpose: Restore on load from local storage and decrypt data to de-serialize objects
-Param password: Required. Decryption password to unlock seed phrase
-Returns: boolean on success for fail of restore
-*/
-HDSigner.prototype.restore = function (password, bipNum) {
-  let browserStorage =
-    typeof localStorage === 'undefined' || localStorage === null
-      ? null
-      : localStorage;
-  if (!browserStorage) {
-    const LocalStorage = require('node-localstorage').LocalStorage;
-    browserStorage = new LocalStorage('./scratch');
-  }
-  const key = this.Signer.network.bech32 + '_hdsigner';
-  const ciphertext = browserStorage.getItem(key);
-  if (ciphertext === null) {
-    return false;
-  }
-  const bytes = CryptoJS.AES.decrypt(ciphertext, password);
-  if (!bytes || bytes.length === 0) {
-    return false;
-  }
-  const decryptedData = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-  this.mnemonic = decryptedData.mnemonic;
-  const numAccounts = decryptedData.numAccounts;
-  // sanity checks
-  if (this.Signer.accountIndex > 1000) {
-    return false;
-  }
-  this.Signer.accounts = [];
-  this.Signer.changeIndex = -1;
-  this.Signer.receivingIndex = -1;
-  this.Signer.accountIndex = 0;
-  for (let i = 0; i < numAccounts; i++) {
-    const child = this.deriveAccount(i, bipNum);
-    /* eslint new-cap: ["error", { "newIsCap": false }] */
-    this.Signer.accounts.push(
-      new BIP84.fromZPrv(child, this.Signer.pubTypes, this.Signer.networks)
-    );
-  }
-
-  return this;
-};
-
-/* backup
-Purpose: Encrypt to password and backup to local storage for persistence
-*/
-HDSigner.prototype.backup = function () {
-  let browserStorage =
-    typeof localStorage === 'undefined' || localStorage === null
-      ? null
-      : localStorage;
-  if (!this.Signer.password) {
-    return;
-  }
-  if (!browserStorage) {
-    const LocalStorage = require('node-localstorage').LocalStorage;
-    browserStorage = new LocalStorage('./scratch');
-  }
-  const key = this.Signer.network.bech32 + '_hdsigner';
-  const obj = {
-    mnemonic: this.mnemonic,
-    numAccounts: this.Signer.accounts.length,
-  };
-  const ciphertext = CryptoJS.AES.encrypt(
-    JSON.stringify(obj),
-    this.Signer.password
-  ).toString();
-  browserStorage.setItem(key, ciphertext);
-};
-
-/* getNewChangeAddress
-Purpose: Get new address for sending change to
-Param skipIncrement: Optional. If we should not count the internal change index counter (if you want to get the same change address in the future)
-Param bipNum: Optional. If you want the address derivated in regard of an specific bip number
-Returns: string address used for change outputs
-*/
-Signer.prototype.getNewChangeAddress = async function (skipIncrement, bipNum) {
-  if (this.changeIndex === -1 && this.blockbookURL) {
-    let res = await fetchBackendAccount(
-      this.blockbookURL,
-      this.getAccountXpub(),
-      'tokens=used&details=tokens',
-      true,
-      this
-    );
-    if (res === null) {
-      // try once more in case it fails for some reason
-      res = await fetchBackendAccount(
-        this.blockbookURL,
-        this.getAccountXpub(),
-        'tokens=used&details=tokens',
-        true,
-        this
-      );
-      if (res === null) {
-        throw new Error('Could not update XPUB change index');
-      }
-    }
-  }
-  const address = this.createAddress(this.changeIndex + 1, true, bipNum);
-  if (address) {
-    if (!skipIncrement) {
-      this.changeIndex++;
-    }
-    return address;
-  }
-
-  return null;
-};
-
-HDSigner.prototype.getNewChangeAddress = async function (
-  skipIncrement,
-  bipNum
-) {
-  return this.Signer.getNewChangeAddress(skipIncrement, bipNum);
-};
-
-/* getNewReceivingAddress
-Purpose: Get new address for sending coins to
-Param skipIncrement: Optional. If we should not count the internal receiving index counter (if you want to get the same address in the future)
-Param bipNum: Optional. If you want the address derivated in regard of an specific bip number
-Returns: string address used for receiving outputs
-*/
-Signer.prototype.getNewReceivingAddress = async function (
-  skipIncrement,
-  bipNum
-) {
-  if (this.receivingIndex === -1 && this.blockbookURL) {
-    let res = await fetchBackendAccount(
-      this.blockbookURL,
-      this.getAccountXpub(),
-      'tokens=used&details=tokens',
-      true,
-      this
-    );
-    if (res === null) {
-      // try once more in case it fails for some reason
-      res = await fetchBackendAccount(
-        this.blockbookURL,
-        this.getAccountXpub(),
-        'tokens=used&details=tokens',
-        true,
-        this
-      );
-      if (res === null) {
-        throw new Error('Could not update XPUB receiving index');
-      }
-    }
-  }
-  const address = this.createAddress(this.receivingIndex + 1, false, bipNum);
-  if (address) {
-    if (!skipIncrement) {
-      this.receivingIndex++;
-    }
-    return address;
-  }
-
-  return null;
-};
-HDSigner.prototype.getNewReceivingAddress = async function (
-  skipIncrement,
-  bipNum
-) {
-  return this.Signer.getNewReceivingAddress(skipIncrement, bipNum);
-};
-
-/* createAccount
-Purpose: Create and derive a new account
-Param bipNum: Optional. If you want the address derivated in regard of an specific bip number
-Returns: Account index of new account
-*/
-
-HDSigner.prototype.createAccount = function (bipNum) {
-  this.Signer.changeIndex = -1;
-  this.Signer.receivingIndex = -1;
-  const child = this.deriveAccount(this.Signer.accounts.length, bipNum);
-  this.Signer.accountIndex = this.Signer.accounts.length;
-  /* eslint new-cap: ["error", { "newIsCap": false }] */
-  this.Signer.accounts.push(
-    new BIP84.fromZPrv(child, this.Signer.pubTypes, this.Signer.networks)
-  );
-  this.backup();
-  return this.Signer.accountIndex;
-};
-
-/* getAccountXpub
-Purpose: Get XPUB for account, useful for public provider lookups based on XPUB accounts
-Returns: string representing hex XPUB
-*/
-Signer.prototype.getAccountXpub = function () {
-  return this.accounts[this.accountIndex].getAccountPublicKey();
-};
-HDSigner.prototype.getAccountXpub = function () {
-  return this.Signer.getAccountXpub();
-};
-
-/* setLatestIndexesFromXPubTokens
-Purpose: Sets the change and receiving indexes from XPUB tokens passed in, from a backend provider response
-Param tokens: Required. XPUB tokens from provider response to XPUB account details.
-*/
-Signer.prototype.setLatestIndexesFromXPubTokens = function (tokens) {
-  this.setIndexFlag++;
-  // concurrency check make sure you don't execute this logic while it is already running as signer state is updated here
-  // also in case there is some bug in the code that prevents it ever from being called because this.setIndexFlag = 0 doesn't happen we
-  // stop worrying about the flag after it reached 100 attempts
-  if (this.setIndexFlag > 1 && this.setIndexFlag < 100) {
-    return;
-  }
-
-  let minIndexForChange = Infinity;
-  let minIndexForReceiving = Infinity;
-
-  if (tokens) {
-    tokens.forEach((token) => {
-      if (!token.transfers || !token.path) {
-        return;
-      }
-      const transfers = parseInt(token.transfers, 10);
-      if (token.path && transfers > 0) {
-        const splitPath = token.path.split('/');
-        if (splitPath.length >= 6) {
-          const change = parseInt(splitPath[4], 10);
-          const index = parseInt(splitPath[5], 10);
-          if (change === 1 && index < minIndexForChange) {
-            minIndexForChange = index;
-          } else if (change === 0 && index < minIndexForReceiving) {
-            minIndexForReceiving = index;
-          }
+        const path = pathIn || dataInput.unknownKeyVals[1].value.toString();
+        const pubkey = this.derivePubKey(path);
+        const address = this.getAddressFromPubKey(pubkey);
+        if (
+          pubkey &&
+          (pathIn || dataInput.unknownKeyVals[0].value.toString() === address)
+        ) {
+          dataInput.bip32Derivation = [
+            {
+              masterFingerprint: fp,
+              path: path,
+              pubkey: pubkey,
+            },
+          ];
         }
       }
+    }
+    await psbt.signAllInputsHDAsync(this.getRootNode());
+    try {
+      if (psbt.validateSignaturesOfAllInputs()) {
+        psbt.finalizeAllInputs();
+      }
+    } catch (err) {
+      console.log({ err });
+    }
+    return psbt;
+  };
+
+  setAccountIndex = (accountIndex: number) => {
+    this.Signer.setAccountIndex(accountIndex);
+  };
+
+  /* restore
+  Purpose: Restore on load from local storage and decrypt data to de-serialize objects
+  Param password: Required. Decryption password to unlock seed phrase
+  Returns: boolean on success for fail of restore
+  */
+  restore = (password: string, bipNum: any) => {
+    let browserStorage =
+      typeof localStorage === 'undefined' || localStorage === null
+        ? null
+        : localStorage;
+    if (!browserStorage) {
+      const LocalStorage = require('node-localstorage').LocalStorage;
+      browserStorage = new LocalStorage('./scratch');
+    }
+    const key = this.Signer.network.bech32 + '_hdsigner';
+    // @ts-ignore
+    const ciphertext = browserStorage.getItem(key);
+    if (ciphertext === null) {
+      return false;
+    }
+    const bytes = CryptoJS.AES.decrypt(ciphertext, password) as any;
+    if (!bytes || bytes.length === 0) {
+      return false;
+    }
+    const decryptedData = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+    this.mnemonic = decryptedData.mnemonic;
+    const numAccounts = decryptedData.numAccounts;
+    // sanity checks
+    if (this.Signer.accountIndex > 1000) {
+      return false;
+    }
+    this.Signer.accounts = [];
+    this.Signer.changeIndex = -1;
+    this.Signer.receivingIndex = -1;
+    this.Signer.accountIndex = 0;
+    for (let i = 0; i < numAccounts; i++) {
+      const child = this.deriveAccount(i, bipNum);
+      /* eslint new-cap: ["error", { "newIsCap": false }] */
+      this.Signer.accounts.push(
+        new BIP84.fromZPrv(
+          child,
+          this.Signer.pubTypes,
+          this.Signer.networks ? this.Signer.networks : syscoinNetworks
+        )
+      );
+    }
+
+    return this;
+  };
+
+  /* backup
+  Purpose: Encrypt to password and backup to local storage for persistence
+  */
+  backup = () => {
+    let browserStorage =
+      typeof localStorage === 'undefined' || localStorage === null
+        ? null
+        : localStorage;
+    if (!this.Signer.password) {
+      return;
+    }
+    if (!browserStorage) {
+      const LocalStorage = require('node-localstorage').LocalStorage;
+      browserStorage = new LocalStorage('./scratch');
+    }
+    const key = this.Signer.network.bech32 + '_hdsigner';
+    const obj = {
+      mnemonic: this.mnemonic,
+      numAccounts: this.Signer.accounts.length,
+    };
+    const ciphertext = CryptoJS.AES.encrypt(
+      JSON.stringify(obj),
+      this.Signer.password
+    ).toString();
+    // @ts-ignore
+    browserStorage.setItem(key, ciphertext);
+  };
+
+  getNewChangeAddress = async (skipIncrement: any, bipNum: any) => {
+    return this.Signer.getNewChangeAddress(skipIncrement, bipNum);
+  };
+
+  getNewReceivingAddress = async (skipIncrement: any, bipNum: any) => {
+    return this.Signer.getNewReceivingAddress(skipIncrement, bipNum);
+  };
+
+  /* createAccount
+  Purpose: Create and derive a new account
+  Param bipNum: Optional. If you want the address derivated in regard of an specific bip number
+  Returns: Account index of new account
+  */
+
+  createAccount = (bipNum: any) => {
+    this.Signer.changeIndex = -1;
+    this.Signer.receivingIndex = -1;
+    const child = this.deriveAccount(this.Signer.accounts.length, bipNum);
+    this.Signer.accountIndex = this.Signer.accounts.length;
+    /* eslint new-cap: ["error", { "newIsCap": false }] */
+    this.Signer.accounts.push(
+      new BIP84.fromZPrv(
+        child,
+        this.Signer.pubTypes,
+        this.Signer.networks ? this.Signer.networks : syscoinNetworks
+      )
+    );
+    this.backup();
+    return this.Signer.accountIndex;
+  };
+
+  getAccountXpub = () => {
+    return this.Signer.getAccountXpub();
+  };
+
+  setLatestIndexesFromXPubTokens = (tokens: any) => {
+    this.Signer.setLatestIndexesFromXPubTokens(tokens);
+  };
+
+  createAddress = (addressIndex: any, isChange: boolean, bipNum: any) => {
+    return this.Signer.createAddress(addressIndex, isChange, bipNum);
+  };
+  /* createKeypair
+  Purpose: Sets the change and receiving indexes from XPUB tokens passed in, from a backend provider response
+  Param addressIndex: Optional. HD path address index. If not provided uses the stored change/recv indexes for the last path prefix
+  Param isChange: Optional. HD path change marker
+  Returns: bitcoinjs-lib keypair derived from address index and change market
+  */
+  createKeypair = (addressIndex: any, isChange: boolean) => {
+    let recvIndex = isChange ? this.changeIndex : this.receivingIndex;
+    if (addressIndex) {
+      recvIndex = addressIndex;
+    }
+    return this.Signer.accounts[this.Signer.accountIndex].getKeypair(
+      recvIndex,
+      isChange
+    );
+  };
+
+  getHDPath = (addressIndex: any, isChange: boolean, bipNum: any) => {
+    return this.Signer.getHDPath(addressIndex, isChange, bipNum);
+  };
+  /* getAddressFromKeypair
+  Purpose: Takes keypair and gives back a p2wpkh address
+  Param keyPair: Required. bitcoinjs-lib keypair
+  Returns: string p2wpkh address
+  */
+  getAddressFromKeypair = (keyPair: any) => {
+    const payment = bjs.payments.p2wpkh({
+      pubkey: keyPair.publicKey,
+      network: this.Signer.network,
     });
-
-    if (
-      minIndexForChange !== Infinity &&
-      minIndexForChange > this.changeIndex
-    ) {
-      this.changeIndex = minIndexForChange;
-    }
-
-    if (
-      minIndexForReceiving !== Infinity &&
-      minIndexForReceiving > this.receivingIndex
-    ) {
-      this.receivingIndex = minIndexForReceiving;
-    }
-  }
-
-  this.setIndexFlag = 0;
-};
-HDSigner.prototype.setLatestIndexesFromXPubTokens = function (tokens) {
-  this.Signer.setLatestIndexesFromXPubTokens(tokens);
-};
-Signer.prototype.createAddress = function (addressIndex, isChange, bipNum) {
-  if (bipNum === undefined) {
-    bipNum = 44;
-  }
-  if (
-    this.pubTypes === syscoinZPubTypes ||
-    this.pubTypes === bitcoinZPubTypes
-  ) {
-    bipNum = 84;
-  }
-  return this.accounts[this.accountIndex].getAddress(
-    addressIndex,
-    isChange,
-    bipNum
-  );
-};
-HDSigner.prototype.createAddress = function (addressIndex, isChange, bipNum) {
-  return this.Signer.createAddress(addressIndex, isChange, bipNum);
-};
-/* createKeypair
-Purpose: Sets the change and receiving indexes from XPUB tokens passed in, from a backend provider response
-Param addressIndex: Optional. HD path address index. If not provided uses the stored change/recv indexes for the last path prefix
-Param isChange: Optional. HD path change marker
-Returns: bitcoinjs-lib keypair derived from address index and change market
-*/
-HDSigner.prototype.createKeypair = function (addressIndex, isChange) {
-  let recvIndex = isChange ? this.changeIndex : this.receivingIndex;
-  if (addressIndex) {
-    recvIndex = addressIndex;
-  }
-  return this.Signer.accounts[this.Signer.accountIndex].getKeypair(
-    recvIndex,
-    isChange
-  );
-};
-
-/* getHDPath
-Purpose: Gets current HDPath from signer context
-Param addressIndex: Optional. HD path address index. If not provided uses the stored change/recv indexes for the last path prefix
-Param isChange: Optional. HD path change marker
-Param bipNum: Optional. BIP number to use for HD path. Defaults to 44
-Returns: bip32 path string
-*/
-Signer.prototype.getHDPath = function (addressIndex, isChange, bipNum) {
-  const changeNum = isChange ? '1' : '0';
-  if (bipNum === undefined) {
-    bipNum = 44;
-  }
-  if (
-    this.pubTypes === syscoinZPubTypes ||
-    this.pubTypes === bitcoinZPubTypes
-  ) {
-    bipNum = 84;
-  }
-  let recvIndex = isChange ? this.changeIndex : this.receivingIndex;
-  if (addressIndex) {
-    recvIndex = addressIndex;
-  }
-  const keypath =
-    'm/' +
-    bipNum +
-    "'/" +
-    this.SLIP44 +
-    "'/" +
-    this.accountIndex +
-    "'/" +
-    changeNum +
-    '/' +
-    recvIndex;
-  return keypath;
-};
-HDSigner.prototype.getHDPath = function (addressIndex, isChange, bipNum) {
-  return this.Signer.getHDPath(addressIndex, isChange, bipNum);
-};
-/* getAddressFromKeypair
-Purpose: Takes keypair and gives back a p2wpkh address
-Param keyPair: Required. bitcoinjs-lib keypair
-Returns: string p2wpkh address
-*/
-HDSigner.prototype.getAddressFromKeypair = function (keyPair) {
-  const payment = bjs.payments.p2wpkh({
-    pubkey: keyPair.publicKey,
-    network: this.Signer.network,
-  });
-  return payment.address;
-};
-/* getAddressFromPubKey
-Purpose: Takes pubkey and gives back a p2wpkh address
-Param pubkey: Required. bitcoinjs-lib public key
-Returns: string p2wpkh address
-*/
-Signer.prototype.getAddressFromPubKey = function (pubkey) {
-  const payment = bjs.payments.p2wpkh({
-    pubkey: pubkey,
-    network: this.network,
-  });
-  return payment.address;
-};
-HDSigner.prototype.getAddressFromPubKey = function (pubkey) {
-  return this.Signer.getAddressFromPubKey(pubkey);
-};
-
-/* deriveKeypair
-Purpose: Takes an HD path and derives keypair from it
-Param keypath: Required. HD BIP32 path of key desired based on internal seed and network
-Returns: bitcoinjs-lib keypair
-*/
-HDSigner.prototype.deriveKeypair = function (keypath) {
-  const keyPair = bjs.bip32
-    .fromSeed(this.fromMnemonic.seed, this.Signer.network)
-    .derivePath(keypath);
-  if (!keyPair) {
-    return null;
-  }
-  return keyPair;
-};
-
-/* derivePubKey
-Purpose: Takes an HD path and derives keypair from it, returns pubkey
-Param keypath: Required. HD BIP32 path of key desired based on internal seed and network
-Returns: bitcoinjs-lib pubkey
-*/
-HDSigner.prototype.derivePubKey = function (keypath) {
-  const keyPair = bjs.bip32
-    .fromSeed(this.fromMnemonic.seed, this.Signer.network)
-    .derivePath(keypath);
-  if (!keyPair) {
-    return null;
-  }
-  return keyPair.publicKey;
-};
-
-/* getRootNode
-Purpose: Returns HDSigner's BIP32 root node
-Returns: BIP32 root node representing the seed
-*/
-HDSigner.prototype.getRootNode = function () {
-  return bjs.bip32.fromSeed(this.fromMnemonic.seed, this.Signer.network);
-};
+    return payment.address;
+  };
+}
 
 /* Override PSBT stuff so fee check isn't done as Syscoin Allocation burns outputs > inputs */
-function scriptWitnessToWitnessStack(buffer) {
+function scriptWitnessToWitnessStack(buffer: any) {
   let offset = 0;
-  function readSlice(n) {
+  function readSlice(n: any) {
     offset += n;
     return buffer.slice(offset - n, offset);
   }
@@ -1729,7 +1726,7 @@ function scriptWitnessToWitnessStack(buffer) {
   return readVector();
 }
 
-function addNonWitnessTxCache(cache, input, inputIndex) {
+function addNonWitnessTxCache(cache: any, input: any, inputIndex: any) {
   cache.__NON_WITNESS_UTXO_BUF_CACHE[inputIndex] = input.nonWitnessUtxo;
   const tx = bjs.Transaction.fromBuffer(input.nonWitnessUtxo);
   cache.__NON_WITNESS_UTXO_TX_CACHE[inputIndex] = tx;
@@ -1755,7 +1752,7 @@ function addNonWitnessTxCache(cache, input, inputIndex) {
   });
 }
 
-function nonWitnessUtxoTxFromCache(cache, input, inputIndex) {
+function nonWitnessUtxoTxFromCache(cache: any, input: any, inputIndex: any) {
   const c = cache.__NON_WITNESS_UTXO_TX_CACHE;
   if (!c[inputIndex]) {
     addNonWitnessTxCache(cache, input, inputIndex);
@@ -1763,22 +1760,15 @@ function nonWitnessUtxoTxFromCache(cache, input, inputIndex) {
   return c[inputIndex];
 }
 
-function isPaymentFactory(payment) {
-  return (script) => {
-    try {
-      payment({ output: script });
-      return true;
-    } catch (err) {
-      return false;
-    }
-  };
-}
-const isP2WSHScript = isPaymentFactory(bjs.payments.p2wsh);
-
 // override of psbt.js inputFinalizeGetAmts without fee < 0 check
-function inputFinalizeGetAmts(inputs, tx, cache, mustFinalize) {
+function inputFinalizeGetAmts(
+  inputs: any,
+  tx: any,
+  cache: any,
+  mustFinalize: any
+) {
   let inputAmount = 0;
-  inputs.forEach((input, idx) => {
+  inputs.forEach((input: any, idx: number) => {
     if (mustFinalize && input.finalScriptSig) {
       tx.ins[idx].script = input.finalScriptSig;
     }
@@ -1796,7 +1786,10 @@ function inputFinalizeGetAmts(inputs, tx, cache, mustFinalize) {
       inputAmount += out.value;
     }
   });
-  const outputAmount = tx.outs.reduce((total, o) => total + o.value, 0);
+  const outputAmount = tx.outs.reduce(
+    (total: any, o: any) => total + o.value,
+    0
+  );
   const fee = inputAmount - outputAmount;
   // SYSCOIN for burn allocations, this will be negative
   // if (fee < 0) {
@@ -1808,11 +1801,11 @@ function inputFinalizeGetAmts(inputs, tx, cache, mustFinalize) {
   cache.__FEE_RATE = Math.floor(fee / bytes);
 }
 
-function isFinalized(input) {
+function isFinalized(input: any) {
   return !!input.finalScriptSig || !!input.finalScriptWitness;
 }
 
-function checkFees(psbt, cache, opts) {
+function checkFees(psbt: any, cache: any, opts: any) {
   const feeRate = cache.__FEE_RATE || psbt.getFeeRate();
   const vsize = cache.__EXTRACTED_TX.virtualSize();
   const satoshis = feeRate * vsize;
@@ -1827,7 +1820,7 @@ function checkFees(psbt, cache, opts) {
   }
 }
 
-function getTxCacheValue(key, name, inputs, c) {
+function getTxCacheValue(key: any, name: any, inputs: any, c: any) {
   if (!inputs.every(isFinalized)) {
     throw new Error(`PSBT must be finalized to calculate ${name}`);
   }
@@ -1852,18 +1845,22 @@ class SPSBT extends bjs.Psbt {
       '__FEE_RATE',
       'fee rate',
       this.data.inputs,
+      // @ts-ignore
       this.__CACHE
     );
   }
 
   getFee() {
+    // @ts-ignore
     return getTxCacheValue('__FEE', 'fee', this.data.inputs, this.__CACHE);
   }
 
-  extractTransaction(disableFeeCheck) {
+  extractTransaction(disableFeeCheck: any) {
     if (!this.data.inputs.every(isFinalized)) throw new Error('Not finalized');
+    // @ts-ignore
     const c = this.__CACHE;
     if (!disableFeeCheck) {
+      // @ts-ignore
       checkFees(this, c, this.opts);
     }
     if (c.__EXTRACTED_TX) return c.__EXTRACTED_TX;
@@ -1872,7 +1869,7 @@ class SPSBT extends bjs.Psbt {
     return tx;
   }
 
-  static fromBase64(data, opts = {}) {
+  static fromBase64(data: any, opts = {}) {
     const buffer = Buffer.from(data, 'base64');
     const psbt = this.fromBuffer(buffer, opts);
     psbt.getFeeRate = SPSBT.prototype.getFeeRate;
@@ -1882,7 +1879,7 @@ class SPSBT extends bjs.Psbt {
   }
 }
 
-function exportPsbtToJson(psbt, assetsMap) {
+function exportPsbtToJson(psbt: any, assetsMap: any) {
   const assetsMapToStringify = assetsMap || new Map();
   return {
     psbt: psbt.toBase64(),
@@ -1890,7 +1887,7 @@ function exportPsbtToJson(psbt, assetsMap) {
   };
 }
 
-function importPsbtFromJson(jsonData, network) {
+function importPsbtFromJson(jsonData: any, network: any) {
   return {
     psbt: SPSBT.fromBase64(jsonData.psbt, {
       network: network || syscoinNetworks.mainnet,
@@ -1899,61 +1896,58 @@ function importPsbtFromJson(jsonData, network) {
   };
 }
 
-function createAssetID(NFTID, assetGuid) {
+function createAssetID(NFTID: any, assetGuid: any) {
   const BN_ASSET = new BN(NFTID || 0).shln(32).or(new BN(assetGuid));
   return BN_ASSET.toString(10);
 }
 
-function getBaseAssetID(assetGuid) {
+function getBaseAssetID(assetGuid: any) {
   return new BN(assetGuid).and(new BN(0xffffffff)).toString(10);
 }
-function range(n) {
-  return [...Array(n).keys()];
-}
 
-function getAssetIDs(assetGuid) {
+function getAssetIDs(assetGuid: any) {
   const BN_NFT = new BN(assetGuid).shrn(32);
   return { baseAssetID: getBaseAssetID(assetGuid), NFTID: BN_NFT.toString(10) };
 }
+const Psbt = SPSBT;
 
-module.exports = {
-  bitcoinXPubTypes: bitcoinXPubTypes,
-  bitcoinZPubTypes: bitcoinZPubTypes,
-  bitcoinNetworks: bitcoinNetworks,
-  syscoinXPubTypes: syscoinXPubTypes,
-  syscoinZPubTypes: syscoinZPubTypes,
-  syscoinNetworks: syscoinNetworks,
-  syscoinSLIP44: syscoinSLIP44,
-  bitcoinSLIP44: bitcoinSLIP44,
-  HDSigner: HDSigner,
-  fetchBackendUTXOS: fetchBackendUTXOS,
-  fetchBackendUTXOs: fetchBackendUTXOS,
-  fetchBackendSPVProof: fetchBackendSPVProof,
-  sanitizeBlockbookUTXOs: sanitizeBlockbookUTXOs,
-  fetchBackendAccount: fetchBackendAccount,
-  fetchBackendAsset: fetchBackendAsset,
-  fetchBackendListAssets: fetchBackendListAssets,
-  fetchBackendRawTx: fetchBackendRawTx,
-  fetchNotarizationFromEndPoint: fetchNotarizationFromEndPoint,
-  fetchProviderInfo: fetchProviderInfo,
-  fetchBackendBlock: fetchBackendBlock,
-  fetchEstimateFee: fetchEstimateFee,
-  sendRawTransaction: sendRawTransaction,
-  buildEthProof: buildEthProof,
-  getAssetsRequiringNotarization: getAssetsRequiringNotarization,
-  notarizePSBT: notarizePSBT,
-  signWithWIF: signWithWIF,
-  getMemoFromScript: getMemoFromScript,
-  getMemoFromOpReturn: getMemoFromOpReturn,
-  getAllocationsFromTx: getAllocationsFromTx,
-  bitcoinjs: bjs,
-  Psbt: SPSBT,
-  BN: BN,
-  createAssetID: createAssetID,
-  getBaseAssetID: getBaseAssetID,
-  getAssetIDs: getAssetIDs,
-  setTransactionMemo: setTransactionMemo,
-  copyPSBT: copyPSBT,
-  importPsbtFromJson: importPsbtFromJson,
-  exportPsbtToJson: exportPsbtToJson,
+export {
+  bitcoinXPubTypes,
+  bitcoinZPubTypes,
+  bitcoinNetworks,
+  syscoinXPubTypes,
+  syscoinZPubTypes,
+  syscoinNetworks,
+  syscoinSLIP44,
+  bitcoinSLIP44,
+  HDSigner,
+  fetchBackendUTXOS,
+  fetchBackendSPVProof,
+  sanitizeBlockbookUTXOs,
+  fetchBackendAccount,
+  fetchBackendAsset,
+  fetchBackendListAssets,
+  fetchBackendRawTx,
+  fetchNotarizationFromEndPoint,
+  fetchProviderInfo,
+  fetchBackendBlock,
+  fetchEstimateFee,
+  sendRawTransaction,
+  buildEthProof,
+  getAssetsRequiringNotarization,
+  notarizePSBT,
+  signWithWIF,
+  getMemoFromScript,
+  getMemoFromOpReturn,
+  getAllocationsFromTx,
+  bitcoinjs,
+  Psbt,
+  BN,
+  createAssetID,
+  getBaseAssetID,
+  getAssetIDs,
+  setTransactionMemo,
+  copyPSBT,
+  importPsbtFromJson,
+  exportPsbtToJson,
 };
