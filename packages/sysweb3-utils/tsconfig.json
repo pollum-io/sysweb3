@@ -2,6 +2,7 @@
   "extends": "../../tsconfig-package.json",
   "compilerOptions": {
     "rootDir": "src",
+    "allowJs": true,
     "baseUrl": "src",
     "outDir": "dist/cjs",
     "declarationDir": "dist/types",

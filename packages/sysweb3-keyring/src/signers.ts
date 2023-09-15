@@ -1,12 +1,12 @@
 import { BIP32Interface } from 'bip32';
 import { Psbt } from 'bitcoinjs-lib';
-import sys from 'syscoinjs-lib';
 
 import {
   BitcoinNetwork,
   IPubTypes,
   INetwork,
 } from '@pollum-io/sysweb3-network';
+import { sys } from '@pollum-io/sysweb3-utils';
 
 export const getSyscoinSigners = ({
   mnemonic,
@@ -30,6 +30,7 @@ export const getSyscoinSigners = ({
     slip44 = formattedNetwork.chainId;
     pubTypes = types.zPubType;
   }
+  // @ts-ignore
   const hd: SyscoinHDSigner = new sys.utils.HDSigner(
     mnemonic,
     null,

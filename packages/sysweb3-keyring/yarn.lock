@@ -420,10 +420,10 @@
     ethers "^5.6.9"
     web3 "^1.7.1"
 
-"@pollum-io/sysweb3-utils@^1.1.228":
-  version "1.1.228"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.1.228.tgz#dff1f813e31d7a0ea0ffa6a613fde7d37a2e4af9"
-  integrity sha512-Wz7OGdf+w+3Uh9FmF/yQYQU6Tei/KvF60bybkEzN670OFtdw0WAxjh3l+mSb4g4/nkbuBVg9BmvEBy3UQZa/WQ==
+"@pollum-io/sysweb3-utils@^1.1.229":
+  version "1.1.229"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.1.229.tgz#aa795fcff9c58881b40e14526b6207427a3ec8eb"
+  integrity sha512-QmvL2+/TsyZV/51TyYFipKxX78iTdIK0wiogrtbrAUW9Lth8CuHdj5EKXa4zv3KcG0w0UGFZameBGgCEW5hrVQ==
   dependencies:
     "@ethersproject/contracts" "^5.6.2"
     axios "^0.26.1"
@@ -431,10 +431,13 @@
     bip32 "^3.0.1"
     bip44-constants "^114.0.0"
     bip84 "^0.2.7"
-    bitcoinjs-lib "^6.0.1"
+    bitcoinjs-lib "^5.2.0"
     camelcase-keys "^7.0.2"
     coinselectsyscoin "^1.0.77"
     crypto-js "^4.1.1"
+    eth-object "^1.0.3"
+    eth-proof "^2.1.6"
+    eth-util-lite "^1.0.1"
     ethers "^5.6.4"
     syscoinjs-lib "^1.0.218"
     syscointx-js "^1.0.106"
@@ -1040,7 +1043,7 @@ bitcoinjs-lib@^5.0.3, bitcoinjs-lib@^5.2.0:
     varuint-bitcoin "^1.0.4"
     wif "^2.0.1"
 
-bitcoinjs-lib@^6.0.1, bitcoinjs-lib@^6.1.0:
+bitcoinjs-lib@^6.1.0:
   version "6.1.0"
   resolved "https://registry.yarnpkg.com/bitcoinjs-lib/-/bitcoinjs-lib-6.1.0.tgz#2e3123d63eab5e8e752fd7e2f237314f35ed738f"
   integrity sha512-eupi1FBTJmPuAZdChnzTXLv2HBqFW2AICpzXZQLniP0V9FWWeeUQSMKES6sP8isy/xO0ijDexbgkdEyFVrsuJw==

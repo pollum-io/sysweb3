@@ -6,7 +6,6 @@ import { hdkey } from 'ethereumjs-wallet';
 import { ethers } from 'ethers';
 import mapValues from 'lodash/mapValues';
 import omit from 'lodash/omit';
-import sys from 'syscoinjs-lib';
 
 import {
   initialActiveImportedAccountState,
@@ -39,6 +38,7 @@ import {
   INetwork,
   INetworkType,
 } from '@pollum-io/sysweb3-network';
+import { sys } from '@pollum-io/sysweb3-utils';
 
 export interface ISysAccount {
   xprv?: string;
@@ -90,6 +90,7 @@ export class KeyringManager implements IKeyringManager {
     } else {
       this.wallet = initialWalletState;
       this.activeChain = INetworkType.Syscoin;
+      // @ts-ignore
       this.hd = new sys.utils.HDSigner('');
     }
     this.memMnemonic = '';
@@ -733,6 +734,7 @@ export class KeyringManager implements IKeyringManager {
   private createMainWallet = async (
     mnemonic: string
   ): Promise<IKeyringAccountState> => {
+    //@ts-ignore
     this.hd = new sys.utils.HDSigner(
       mnemonic,
       null,
@@ -744,7 +746,8 @@ export class KeyringManager implements IKeyringManager {
     ) as SyscoinHDSigner; //To understand better this look at: https://github.com/syscoin/syscoinjs-lib/blob/298fda26b26d7007f0c915a6f77626fb2d3c852f/utils.js#L894
     this.syscoinSigner = new sys.SyscoinJSLib(
       this.hd,
-      this.wallet.activeNetwork.url
+      this.wallet.activeNetwork.url,
+      undefined
     );
 
     const xpub = this.hd.getAccountXpub();
@@ -932,7 +935,8 @@ export class KeyringManager implements IKeyringManager {
       main.blockbookURL,
       xpub,
       options,
-      true
+      true,
+      undefined
     );
     const { receivingIndex, changeIndex } =
       this.setLatestIndexesFromXPubTokens(tokens);
@@ -979,7 +983,8 @@ export class KeyringManager implements IKeyringManager {
         url,
         xpub,
         options,
-        true
+        true,
+        undefined
       );
       const { receivingIndex } = this.setLatestIndexesFromXPubTokens(tokens);
       balance = _balance;
