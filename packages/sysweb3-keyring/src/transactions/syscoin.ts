@@ -959,6 +959,42 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     }
   }
 
+  public getEstimateSysTransactionFee = async ({
+    amount,
+    receivingAddress,
+  }: {
+    amount: number;
+    receivingAddress: string;
+  }) => {
+    const { hd, main } = this.getSigner();
+    const value = new sys.utils.BN(amount * 1e8);
+    const feeRate = new sys.utils.BN(0.00001 * 1e8);
+    const xpub = hd.getAccountXpub();
+    const outputs = [
+      {
+        address: receivingAddress,
+        value,
+      },
+    ] as any;
+
+    const changeAddress = await hd.getNewChangeAddress(true, 84);
+
+    try {
+      const txFee = await this.estimateSysTransactionFee({
+        outputs,
+        changeAddress,
+        feeRateBN: feeRate,
+        xpub,
+        explorerUrl: main.blockbookURL,
+      });
+
+      return +`${txFee.toNumber() / 1e8}`;
+    } catch (error) {
+      console.log(error);
+      return 0.00001;
+    }
+  };
+
   public confirmNativeTokenSend = async (
     temporaryTransaction: ITokenSend,
     isTrezor?: boolean
@@ -1007,7 +1043,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
           outputs = [
             {
               address: receivingAddress,
-              value: value.sub(txFee),
+              value: value,
             },
           ];
         }
@@ -1080,7 +1116,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
         outputs = [
           {
             address: receivingAddress,
-            value: value.sub(txFee),
+            value: value,
           },
         ];
       }

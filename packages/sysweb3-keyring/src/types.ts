@@ -145,6 +145,13 @@ export interface IEthereumTransactions {
 }
 
 export interface ISyscoinTransactions {
+  getEstimateSysTransactionFee: ({
+    amount,
+    receivingAddress,
+  }: {
+    amount: number;
+    receivingAddress: string;
+  }) => Promise<number>;
   confirmNftCreation: (tx: any) => { success: boolean };
   confirmTokenMint: (transaction: ITokenMint) => Promise<ITxid>;
   confirmTokenCreation: (transaction: any) => Promise<{
