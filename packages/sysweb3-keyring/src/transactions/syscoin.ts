@@ -1,6 +1,7 @@
 import axios from 'axios';
 import coinSelectSyscoin from 'coinselectsyscoin';
 import syscointx from 'syscointx-js';
+import { BIP_84, ONE_HUNDRED_MILLION, SYSCOIN_BASIC_FEE } from 'utils';
 
 import { SyscoinHDSigner } from '../signers';
 import { TrezorKeyring } from '../trezor';
@@ -959,6 +960,42 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     }
   }
 
+  public getEstimateSysTransactionFee = async ({
+    amount,
+    receivingAddress,
+  }: {
+    amount: number;
+    receivingAddress: string;
+  }) => {
+    const { hd, main } = this.getSigner();
+    const value = new sys.utils.BN(amount * ONE_HUNDRED_MILLION);
+    const feeRate = new sys.utils.BN(SYSCOIN_BASIC_FEE * ONE_HUNDRED_MILLION);
+    const xpub = hd.getAccountXpub();
+    const outputs = [
+      {
+        address: receivingAddress,
+        value,
+      },
+    ] as any;
+
+    const changeAddress = await hd.getNewChangeAddress(true, BIP_84);
+
+    try {
+      const txFee = await this.estimateSysTransactionFee({
+        outputs,
+        changeAddress,
+        feeRateBN: feeRate,
+        xpub,
+        explorerUrl: main.blockbookURL,
+      });
+
+      return +`${txFee.toNumber() / ONE_HUNDRED_MILLION}`;
+    } catch (error) {
+      console.log(error);
+      return SYSCOIN_BASIC_FEE;
+    }
+  };
+
   public confirmNativeTokenSend = async (
     temporaryTransaction: ITokenSend,
     isTrezor?: boolean
@@ -1007,7 +1044,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
           outputs = [
             {
               address: receivingAddress,
-              value: value.sub(txFee),
+              value: value,
             },
           ];
         }
@@ -1080,7 +1117,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
         outputs = [
           {
             address: receivingAddress,
-            value: value.sub(txFee),
+            value: value,
           },
         ];
       }
