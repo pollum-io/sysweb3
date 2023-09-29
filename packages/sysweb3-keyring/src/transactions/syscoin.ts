@@ -1,7 +1,7 @@
 import axios from 'axios';
 import coinSelectSyscoin from 'coinselectsyscoin';
 import syscointx from 'syscointx-js';
-import { BIP_84, ONE_HUNDRED_MILLION, SYSCOIN_BASIC_FEE } from 'utils';
+// import { BIP_84, ONE_HUNDRED_MILLION, SYSCOIN_BASIC_FEE } from 'utils';
 
 import { SyscoinHDSigner } from '../signers';
 import { TrezorKeyring } from '../trezor';
@@ -968,8 +968,8 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     receivingAddress: string;
   }) => {
     const { hd, main } = this.getSigner();
-    const value = new sys.utils.BN(amount * ONE_HUNDRED_MILLION);
-    const feeRate = new sys.utils.BN(SYSCOIN_BASIC_FEE * ONE_HUNDRED_MILLION);
+    const value = new sys.utils.BN(amount * 1e8);
+    const feeRate = new sys.utils.BN(0.00001 * 1e8);
     const xpub = hd.getAccountXpub();
     const outputs = [
       {
@@ -978,7 +978,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       },
     ] as any;
 
-    const changeAddress = await hd.getNewChangeAddress(true, BIP_84);
+    const changeAddress = await hd.getNewChangeAddress(true, 84);
 
     try {
       const txFee = await this.estimateSysTransactionFee({
@@ -989,10 +989,10 @@ export class SyscoinTransactions implements ISyscoinTransactions {
         explorerUrl: main.blockbookURL,
       });
 
-      return +`${txFee.toNumber() / ONE_HUNDRED_MILLION}`;
+      return +`${txFee.toNumber() / 1e8}`;
     } catch (error) {
       console.log(error);
-      return SYSCOIN_BASIC_FEE;
+      return 0.00001;
     }
   };
 
