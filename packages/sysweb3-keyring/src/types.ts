@@ -238,6 +238,7 @@ export enum KeyringAccountType {
   Trezor = 'Trezor',
   Imported = 'Imported',
   HDAccount = 'HDAccount',
+  Ledger = 'Ledger',
 }
 
 export type IKeyringDApp = {

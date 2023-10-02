@@ -120,6 +120,9 @@ export const initialWalletState: IWalletState = {
     [KeyringAccountType.Trezor]: {
       [initialActiveTrezorAccountState.id]: initialActiveTrezorAccountState,
     },
+    [KeyringAccountType.Ledger]: {
+      [initialActiveTrezorAccountState.id]: initialActiveTrezorAccountState,
+    },
   },
   activeAccountId: 0,
   activeAccountType: KeyringAccountType.HDAccount,
