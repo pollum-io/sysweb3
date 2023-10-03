@@ -711,16 +711,20 @@ export class KeyringManager implements IKeyringManager {
     index: string
   ) {
     try {
-      await this.ledgerSigner.connectToLedgerDevice();
-      const importedAccount = await this._createLedgerAccount(
-        coin,
-        slip44,
-        index
-      );
-      this.wallet.accounts[KeyringAccountType.Ledger][importedAccount.id] =
-        importedAccount;
+      const connectionResponse =
+        await this.ledgerSigner.connectToLedgerDevice();
 
-      return importedAccount;
+      if (connectionResponse) {
+        const importedAccount = await this._createLedgerAccount(
+          coin,
+          slip44,
+          index
+        );
+        this.wallet.accounts[KeyringAccountType.Ledger][importedAccount.id] =
+          importedAccount;
+
+        return importedAccount;
+      }
     } catch (error) {
       console.log({ error });
       throw error;
@@ -961,26 +965,18 @@ export class KeyringManager implements IKeyringManager {
         index: +index,
         coin,
         slip44,
+        withDecriptor: true,
       });
       xpub = ledgerXpub;
     } catch (e) {
       throw new Error(e);
     }
-    // let ethPubKey = '';
 
-    // const isEVM = coin === 'eth';
-
-    const address = await this.getAddress(xpub, false, +index);
-
-    // if (isEVM) {
-    //   const response = await this.trezorSigner.getPublicKey({
-    //     coin,
-    //     slip44,
-    //     index: +index,
-    //   });
-    //   ethPubKey = response.publicKey;
-    // }
-
+    const address = await this.ledgerSigner.getAddress({
+      coin,
+      index: +index,
+      slip44,
+    });
     const accountAlreadyExists =
       Object.values(
         accounts[KeyringAccountType.Ledger] as IKeyringAccountState[]
@@ -1015,7 +1011,7 @@ export class KeyringManager implements IKeyringManager {
       undefined
     );
 
-    const trezorAccount = {
+    const ledgerAccount = {
       ...this.initialTrezorAccountState,
       balances: {
         syscoin: +balance / 1e8,
@@ -1033,7 +1029,7 @@ export class KeyringManager implements IKeyringManager {
       },
     } as IKeyringAccountState;
 
-    return trezorAccount;
+    return ledgerAccount;
   }
 
   public getAddress = async (
