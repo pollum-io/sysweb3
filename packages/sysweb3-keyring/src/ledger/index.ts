@@ -89,13 +89,13 @@ export class LedgerKeyring {
     return resp.utxos;
   };
 
-  public sendTransaction = async ({
+  public signPsbt = async ({
     accountIndex,
     amount,
   }: {
     accountIndex: number;
     amount: number;
-  }): Promise<ITxid> => {
+  }) => {
     const coin = 'sys';
     const fingerprint = await this.getMasterFingerprint();
     const xpub = await this.getXpub({ coin, index: accountIndex });
@@ -196,7 +196,29 @@ export class LedgerKeyring {
     bitcoinPsbt.finalizeAllInputs();
 
     const transaction = bitcoinPsbt.extractTransaction();
-    return { txid: transaction.getId() };
+    return { id: transaction.getId(), hex: transaction.toHex() };
+  };
+
+  public sendTransaction = async ({
+    accountIndex,
+    amount,
+  }: {
+    accountIndex: number;
+    amount: number;
+  }): Promise<ITxid> => {
+    try {
+      const transaction = await this.signPsbt({ accountIndex, amount });
+      const url = `${BLOCKBOOK_API_URL}/api/v2/sendtx/`;
+
+      const resp = await fetch(url, {
+        method: 'POST',
+        body: transaction.hex,
+      });
+      const data = await resp.json();
+      return { txid: data.result };
+    } catch (error) {
+      throw error;
+    }
   };
 
   public getXpub = async ({
