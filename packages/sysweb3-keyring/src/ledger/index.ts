@@ -119,27 +119,27 @@ export class LedgerKeyring {
         }
         return acc.derive(der);
       }, account);
-      return fetch(url)
-        .then((resp) => resp.json())
-        .then((transaction: BlockbookTransaction) => {
-          const vout = transaction.vout[utxo.vout];
-          const input = {
-            hash: utxo.txid,
-            index: utxo.vout,
-            witnessUtxo: {
-              script: Buffer.from(vout.hex, 'hex'),
-              value: parseInt(vout.value, 10),
-            },
-            bip32Derivation: [
-              {
-                masterFingerprint: Buffer.from(fingerprint, 'hex'),
-                pubkey: derivedAccount.publicKey,
-                path: utxo.path,
-              },
-            ],
-          };
-          return input;
-        });
+      const txResponse = await fetch(url);
+
+      const transaction = await txResponse.json();
+
+      const vout = transaction.vout[utxo.vout];
+      const input = {
+        hash: utxo.txid,
+        index: utxo.vout,
+        witnessUtxo: {
+          script: Buffer.from(vout.hex, 'hex'),
+          value: parseInt(vout.value, 10),
+        },
+        bip32Derivation: [
+          {
+            masterFingerprint: Buffer.from(fingerprint, 'hex'),
+            pubkey: derivedAccount.publicKey,
+            path: utxo.path,
+          },
+        ],
+      };
+      return input;
     });
 
     const inputs = await Promise.all(loadInputs);
@@ -149,7 +149,7 @@ export class LedgerKeyring {
     });
 
     bitcoinPsbt.addInputs(inputs);
-    console.log('bitcoinPsbt.txInputs', bitcoinPsbt.txInputs);
+
     bitcoinPsbt.addOutput({
       address: receivingAddress,
       value: toSatoshi(amount),
