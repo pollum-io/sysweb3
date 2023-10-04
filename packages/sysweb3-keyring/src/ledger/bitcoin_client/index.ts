@@ -1,3 +1,4 @@
+/* eslint-disable import/no-named-as-default */
 import AppClient, { PartialSignature } from './lib/appClient';
 import {
   DefaultDescriptorTemplate,

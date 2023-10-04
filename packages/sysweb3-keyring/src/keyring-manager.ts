@@ -9,6 +9,7 @@ import omit from 'lodash/omit';
 
 import {
   initialActiveImportedAccountState,
+  initialActiveLedgerAccountState,
   initialActiveTrezorAccountState,
   initialWalletState,
 } from './initial-state';
@@ -75,6 +76,7 @@ export class KeyringManager implements IKeyringManager {
   private sessionSeed: string;
   public activeChain: INetworkType;
   public initialTrezorAccountState: IKeyringAccountState;
+  public initialLedgerAccountState: IKeyringAccountState;
   private trezorAccounts: any[];
 
   //transactions objects
@@ -100,7 +102,7 @@ export class KeyringManager implements IKeyringManager {
     this.sessionMnemonic = '';
     this.memPassword = ''; //Lock wallet in case opts.password has been provided
     this.initialTrezorAccountState = initialActiveTrezorAccountState;
-
+    this.initialLedgerAccountState = initialActiveLedgerAccountState;
     this.trezorSigner = new TrezorKeyring(this.getSigner);
     this.ledgerSigner = new LedgerKeyring();
 
@@ -824,6 +826,7 @@ export class KeyringManager implements IKeyringManager {
       xprv,
       address,
       isTrezorWallet: false,
+      isLedgerWallet: false,
       isImported: false,
     };
   };
@@ -868,6 +871,7 @@ export class KeyringManager implements IKeyringManager {
     return {
       id,
       isTrezorWallet: false,
+      isLedgerWallet: false,
       label: label ? label : `Account ${Number(id) + 1}`,
       ...formattedBackendAccount,
     };
@@ -1012,7 +1016,7 @@ export class KeyringManager implements IKeyringManager {
     );
 
     const ledgerAccount = {
-      ...this.initialTrezorAccountState,
+      ...this.initialLedgerAccountState,
       balances: {
         syscoin: +balance / 1e8,
         ethereum: 0,
@@ -1241,6 +1245,7 @@ export class KeyringManager implements IKeyringManager {
     return {
       id,
       isTrezorWallet: false,
+      isLedgerWallet: false,
       label: label ? label : `Account ${id + 1}`,
       balances: {
         syscoin: 0,

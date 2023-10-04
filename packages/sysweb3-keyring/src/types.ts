@@ -290,6 +290,7 @@ export interface IKeyringAccountState {
   address: string;
   id: number;
   isTrezorWallet: boolean;
+  isLedgerWallet: boolean;
   label: string;
   xprv: string;
   balances: IKeyringBalances;

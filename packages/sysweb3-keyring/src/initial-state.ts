@@ -12,6 +12,7 @@ export const initialActiveHdAccountState: IKeyringAccountState = {
   },
   id: 0,
   isTrezorWallet: false,
+  isLedgerWallet: false,
   label: 'Account 1',
   xprv: '',
   xpub: '',
@@ -26,6 +27,13 @@ export const initialActiveImportedAccountState: IKeyringAccountState = {
 export const initialActiveTrezorAccountState: IKeyringAccountState = {
   ...initialActiveHdAccountState,
   isTrezorWallet: true,
+  isLedgerWallet: false,
+};
+
+export const initialActiveLedgerAccountState: IKeyringAccountState = {
+  ...initialActiveHdAccountState,
+  isLedgerWallet: true,
+  isTrezorWallet: false,
 };
 
 export const initialNetworksState = {
@@ -121,7 +129,7 @@ export const initialWalletState: IWalletState = {
       [initialActiveTrezorAccountState.id]: initialActiveTrezorAccountState,
     },
     [KeyringAccountType.Ledger]: {
-      [initialActiveTrezorAccountState.id]: initialActiveTrezorAccountState,
+      [initialActiveTrezorAccountState.id]: initialActiveLedgerAccountState,
     },
   },
   activeAccountId: 0,
