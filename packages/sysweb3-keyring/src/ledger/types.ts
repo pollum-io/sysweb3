@@ -88,7 +88,9 @@ export interface Vin {
   isAddress: boolean;
   value: string;
 }
-
+export type UTXOPayload = {
+  utxos: BlockbookUTXO[];
+};
 export interface Vout {
   value: string;
   n: number;

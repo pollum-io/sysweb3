@@ -165,7 +165,8 @@ export interface ISyscoinTransactions {
   getRecommendedFee: (explorerUrl: string) => Promise<number>;
   sendTransaction: (
     transaction: ITokenSend,
-    isTrezor: boolean
+    isTrezor: boolean,
+    isLedger: boolean
   ) => Promise<ITxid>;
   signTransaction: (
     data: { psbt: string; assets: string },

@@ -111,7 +111,8 @@ export class KeyringManager implements IKeyringManager {
       this.getNetwork,
       this.getSigner,
       this.getAccountsState,
-      this.getAddress
+      this.getAddress,
+      this.ledgerSigner
     );
     this.ethereumTransaction = new EthereumTransactions(
       this.getNetwork,
