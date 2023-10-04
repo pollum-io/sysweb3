@@ -92,16 +92,17 @@ export class LedgerKeyring {
   public signPsbt = async ({
     accountIndex,
     amount,
+    receivingAddress,
   }: {
     accountIndex: number;
     amount: number;
+    receivingAddress: string;
   }) => {
     const coin = 'sys';
     const fingerprint = await this.getMasterFingerprint();
     const xpub = await this.getXpub({ coin, index: accountIndex });
     this.setHdPath(coin, accountIndex);
     const path = this.hdPath;
-    const sysAddress = await this.getAddress({ coin, index: accountIndex });
     const utxos = await this.getUtxos({ accountIndex: accountIndex });
 
     const account = fromBase58(xpub);
@@ -150,7 +151,7 @@ export class LedgerKeyring {
     bitcoinPsbt.addInputs(inputs);
     console.log('bitcoinPsbt.txInputs', bitcoinPsbt.txInputs);
     bitcoinPsbt.addOutput({
-      address: sysAddress,
+      address: receivingAddress,
       value: toSatoshi(amount),
     });
 
@@ -202,12 +203,18 @@ export class LedgerKeyring {
   public sendTransaction = async ({
     accountIndex,
     amount,
+    receivingAddress,
   }: {
     accountIndex: number;
     amount: number;
+    receivingAddress: string;
   }): Promise<ITxid> => {
     try {
-      const transaction = await this.signPsbt({ accountIndex, amount });
+      const transaction = await this.signPsbt({
+        accountIndex,
+        amount,
+        receivingAddress,
+      });
       const url = `${BLOCKBOOK_API_URL}/api/v2/sendtx/`;
 
       const resp = await fetch(url, {

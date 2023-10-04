@@ -1158,6 +1158,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       return await this.ledger.sendTransaction({
         accountIndex: activeAccount.id,
         amount: temporaryTransaction.amount,
+        receivingAddress: temporaryTransaction.receivingAddress,
       });
     }
 
