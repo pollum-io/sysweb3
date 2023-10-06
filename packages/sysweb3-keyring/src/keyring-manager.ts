@@ -67,7 +67,7 @@ export class KeyringManager implements IKeyringManager {
   private hd: SyscoinHDSigner | null;
   private syscoinSigner: SyscoinMainSigner | undefined;
   private trezorSigner: TrezorKeyring;
-  private ledgerSigner: LedgerKeyring;
+  public ledgerSigner: LedgerKeyring;
   private memMnemonic: string;
   private memPassword: string;
   private currentSessionSalt: string;
@@ -711,11 +711,13 @@ export class KeyringManager implements IKeyringManager {
   public async importLedgerAccount(
     coin: string,
     slip44: string,
-    index: string
+    index: string,
+    isAlreadyConnected: boolean
   ) {
     try {
-      const connectionResponse =
-        await this.ledgerSigner.connectToLedgerDevice();
+      const connectionResponse = isAlreadyConnected
+        ? true
+        : await this.ledgerSigner.connectToLedgerDevice();
 
       if (connectionResponse) {
         const importedAccount = await this._createLedgerAccount(

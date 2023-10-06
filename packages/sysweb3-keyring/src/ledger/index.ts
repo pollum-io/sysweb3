@@ -14,7 +14,7 @@ import {
 } from './consts';
 import { getXpubWithDescriptor } from './utils';
 import { fromBase58 } from '@trezor/utxo-lib/lib/bip32';
-import { BlockbookTransaction, UTXOPayload } from './types';
+import { UTXOPayload } from './types';
 import { Psbt } from 'bitcoinjs-lib';
 import { toSatoshi } from 'satoshi-bitcoin';
 import { ITxid } from '@pollum-io/sysweb3-utils';
