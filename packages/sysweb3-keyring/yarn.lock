@@ -585,10 +585,10 @@
     ethers "^5.6.9"
     web3 "^1.7.1"
 
-"@pollum-io/sysweb3-utils@^1.1.230":
-  version "1.1.230"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.1.230.tgz#d81a5547679a9b6e7c592d241cfdc9f9733311bc"
-  integrity sha512-TYrRH/+3I1ai6Z5qz5dmLLk1z3CJ6IhXRN0umRJJtnqgHbcOiqmioCl+LUcw7bYOGQWUmFBA9I3OOkRL36hdzw==
+"@pollum-io/sysweb3-utils@^1.1.231":
+  version "1.1.231"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.1.231.tgz#ba866a276121922e36cb1edecf32e90349771647"
+  integrity sha512-7prNARyaroykOibpCPJpT3O/z815rsNSCrWhrfnlCzjNQvNmVroAmfmvdRzS9JH+9XoO74hWFoIsVCv0wI7l+A==
   dependencies:
     "@ethersproject/contracts" "^5.6.2"
     axios "^0.26.1"
