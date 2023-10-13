@@ -66,6 +66,7 @@ export class EthereumTransactions implements IEthereumTransactions {
       Trezor: accountType;
       Imported: accountType;
       HDAccount: accountType;
+      Ledger: accountType;
     };
     activeAccountType: KeyringAccountType;
     activeNetwork: INetwork;
@@ -87,6 +88,7 @@ export class EthereumTransactions implements IEthereumTransactions {
         Trezor: accountType;
         Imported: accountType;
         HDAccount: accountType;
+        Ledger: accountType;
       };
       activeAccountType: KeyringAccountType;
       activeNetwork: INetwork;
@@ -848,6 +850,7 @@ export class EthereumTransactions implements IEthereumTransactions {
     maxPriorityFeePerGas,
     maxFeePerGas,
     gasPrice,
+    decimals,
     gasLimit,
     saveTrezorTx,
   }: ISendSignedErcTransactionProps): Promise<IResponseFromSendErcSignedTransaction> => {
@@ -868,9 +871,13 @@ export class EthereumTransactions implements IEthereumTransactions {
           getErc20Abi(),
           walletSigned
         );
-
         const calculatedTokenAmount = ethers.BigNumber.from(
-          ethers.utils.parseEther(tokenAmount as string)
+          decimals
+            ? ethers.utils.parseUnits(
+                tokenAmount as string,
+                this.toBigNumber(decimals as number)
+              )
+            : ethers.utils.parseEther(tokenAmount as string)
         );
         let transferMethod;
         if (isLegacy) {
