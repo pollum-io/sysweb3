@@ -334,6 +334,7 @@ export interface ISendSignedErcTransactionProps {
   gasPrice?: BigNumberish;
   gasLimit?: BigNumberish;
   tokenAmount?: string;
+  decimals?: number;
   tokenId?: number;
   saveTrezorTx?: (tx: any) => void;
 }
