@@ -9,6 +9,7 @@ import {
   TransactionConfig,
 } from 'web3-core';
 
+import { LedgerKeyring } from './ledger';
 import { INetwork, INetworkType } from '@pollum-io/sysweb3-network';
 import {
   ITokenMint,
@@ -165,7 +166,8 @@ export interface ISyscoinTransactions {
   getRecommendedFee: (explorerUrl: string) => Promise<number>;
   sendTransaction: (
     transaction: ITokenSend,
-    isTrezor: boolean
+    isTrezor: boolean,
+    isLedger: boolean
   ) => Promise<ITxid>;
   signTransaction: (
     data: { psbt: string; assets: string },
@@ -198,6 +200,7 @@ export interface IKeyringManager {
   getSeed: (password: string) => string;
   isUnlocked: () => boolean;
   logout: () => void;
+  ledgerSigner: LedgerKeyring;
   setActiveAccount: (
     accountId: number,
     accountType: KeyringAccountType
@@ -238,6 +241,7 @@ export enum KeyringAccountType {
   Trezor = 'Trezor',
   Imported = 'Imported',
   HDAccount = 'HDAccount',
+  Ledger = 'Ledger',
 }
 
 export type IKeyringDApp = {
@@ -289,6 +293,7 @@ export interface IKeyringAccountState {
   address: string;
   id: number;
   isTrezorWallet: boolean;
+  isLedgerWallet: boolean;
   label: string;
   xprv: string;
   balances: IKeyringBalances;

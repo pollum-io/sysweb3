@@ -3,6 +3,7 @@ import coinSelectSyscoin from 'coinselectsyscoin';
 import syscointx from 'syscointx-js';
 // import { BIP_84, ONE_HUNDRED_MILLION, SYSCOIN_BASIC_FEE } from 'utils';
 
+import { LedgerKeyring } from '../ledger';
 import { SyscoinHDSigner } from '../signers';
 import { TrezorKeyring } from '../trezor';
 import {
@@ -40,12 +41,14 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     main: any;
   };
   private trezor: TrezorKeyring;
+  private ledger: LedgerKeyring;
   private getState: () => {
     activeAccountId: number;
     accounts: {
       Trezor: accountType;
       Imported: accountType;
       HDAccount: accountType;
+      Ledger: accountType;
     };
     activeAccountType: KeyringAccountType;
     activeNetwork: INetwork;
@@ -67,6 +70,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
         Trezor: accountType;
         Imported: accountType;
         HDAccount: accountType;
+        Ledger: accountType;
       };
       activeAccountType: KeyringAccountType;
       activeNetwork: INetwork;
@@ -75,13 +79,15 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       xpub: string,
       isChangeAddress: boolean,
       index: number
-    ) => Promise<string>
+    ) => Promise<string>,
+    ledgerSigner: LedgerKeyring
   ) {
     this.getNetwork = getNetwork;
     this.getSigner = getSyscoinSigner;
     this.getState = getState;
     this.getAddress = getAddress;
     this.trezor = new TrezorKeyring(this.getSigner);
+    this.ledger = ledgerSigner;
   }
 
   public estimateSysTransactionFee = async ({
@@ -1141,9 +1147,20 @@ export class SyscoinTransactions implements ISyscoinTransactions {
 
   public sendTransaction = async (
     temporaryTransaction: ITokenSend,
-    isTrezor?: boolean
+    isTrezor: boolean,
+    isLedger: boolean
   ): Promise<ITxid> => {
     const { isToken, token } = temporaryTransaction;
+    const { accounts, activeAccountId, activeAccountType } = this.getState();
+    const activeAccount = accounts[activeAccountType][activeAccountId];
+
+    if (isLedger) {
+      return await this.ledger.sendTransaction({
+        accountIndex: activeAccount.id,
+        amount: temporaryTransaction.amount,
+        receivingAddress: temporaryTransaction.receivingAddress,
+      });
+    }
 
     if (isToken && token) {
       return await this.confirmCustomTokenSend(temporaryTransaction);

@@ -66,6 +66,7 @@ export class EthereumTransactions implements IEthereumTransactions {
       Trezor: accountType;
       Imported: accountType;
       HDAccount: accountType;
+      Ledger: accountType;
     };
     activeAccountType: KeyringAccountType;
     activeNetwork: INetwork;
@@ -87,6 +88,7 @@ export class EthereumTransactions implements IEthereumTransactions {
         Trezor: accountType;
         Imported: accountType;
         HDAccount: accountType;
+        Ledger: accountType;
       };
       activeAccountType: KeyringAccountType;
       activeNetwork: INetwork;
