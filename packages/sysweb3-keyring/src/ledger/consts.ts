@@ -27,5 +27,4 @@ export const BLOCKBOOK_API_URL = 'https://blockbook.elint.services';
 export const DESCRIPTOR = 'wpkh(@0/**)';
 export const RECEIVING_ADDRESS_INDEX = 0;
 export const WILL_NOT_DISPLAY = false;
-const PATH_BASE = 'm';
-export const HD_PATH_STRING = `${PATH_BASE}/44'/60'/0'`;
+export const HD_PATH_STRING = `44'/60'/1'/0/`;

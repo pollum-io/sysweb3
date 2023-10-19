@@ -967,23 +967,47 @@ export class KeyringManager implements IKeyringManager {
   ) {
     const { accounts, activeNetwork } = this.wallet;
     let xpub;
-    try {
-      const ledgerXpub = await this.ledgerSigner.getXpub({
-        index: +index,
-        coin,
-        slip44,
-        withDecriptor: true,
-      });
-      xpub = ledgerXpub;
-    } catch (e) {
-      throw new Error(e);
+    let address = '';
+    let balance;
+
+    if (coin === 'eth') {
+      const { address: ethAddress, publicKey } =
+        await this.ledgerSigner.evm.getEvmAddressAndPubKey({
+          accountIndex: +index,
+        });
+      const ethBalance = await this.ethereumTransaction.getBalance(ethAddress);
+      address = ethAddress;
+      xpub = publicKey;
+      balance = ethBalance;
+    } else {
+      try {
+        const ledgerXpub = await this.ledgerSigner.getXpub({
+          index: +index,
+          coin,
+          slip44,
+          withDecriptor: true,
+        });
+        xpub = ledgerXpub;
+        address = await this.ledgerSigner.utxo.getUtxoAddress({
+          coin,
+          index: +index,
+          slip44,
+        });
+
+        const options = 'tokens=used&details=tokens';
+        const { balance: sysBalance } = await sys.utils.fetchBackendAccount(
+          this.wallet.activeNetwork.url,
+          xpub,
+          options,
+          true,
+          undefined
+        );
+        balance = sysBalance;
+      } catch (e) {
+        throw new Error(e);
+      }
     }
 
-    const address = await this.ledgerSigner.getAddress({
-      coin,
-      index: +index,
-      slip44,
-    });
     const accountAlreadyExists =
       Object.values(
         accounts[KeyringAccountType.Ledger] as IKeyringAccountState[]
@@ -1009,23 +1033,17 @@ export class KeyringManager implements IKeyringManager {
       Object.values(accounts[KeyringAccountType.Ledger]).length < 1
         ? 0
         : Object.values(accounts[KeyringAccountType.Ledger]).length;
-    const options = 'tokens=used&details=tokens';
-    const { balance } = await sys.utils.fetchBackendAccount(
-      this.wallet.activeNetwork.url,
-      xpub,
-      options,
-      true,
-      undefined
-    );
+
+    const currentBalances =
+      coin === 'eth'
+        ? { syscoin: 0, ethereum: balance }
+        : { syscoin: +balance / 1e8, ethereum: 0 };
 
     const ledgerAccount = {
       ...this.initialLedgerAccountState,
-      balances: {
-        syscoin: +balance / 1e8,
-        ethereum: 0,
-      },
+      balances: currentBalances,
       address,
-      originNetwork: { ...activeNetwork, isBitcoinBased: true },
+      originNetwork: { ...activeNetwork, isBitcoinBased: coin !== 'eth' },
       label: label ? label : `Ledger ${id + 1}`,
       id,
       xprv: '',

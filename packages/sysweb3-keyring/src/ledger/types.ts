@@ -1,3 +1,7 @@
+import { Version } from 'eth-sig-util';
+
+import { ITxid } from '@pollum-io/sysweb3-utils';
+
 import type LedgerHwAppEth from '@ledgerhq/hw-app-eth';
 
 export type GetPublicKeyParams = { hdPath: string };
@@ -97,4 +101,92 @@ export interface Vout {
   hex: string;
   addresses: string[];
   isAddress: boolean;
+}
+
+export interface IUTXOMethods {
+  getUtxos: ({
+    accountIndex,
+  }: {
+    accountIndex: number;
+  }) => Promise<BlockbookUTXO[]>;
+  sendTransaction: ({
+    accountIndex,
+    amount,
+    receivingAddress,
+  }: {
+    accountIndex: number;
+    amount: number;
+    receivingAddress: string;
+  }) => Promise<ITxid>;
+  getUtxoAddress: ({
+    coin,
+    index,
+    slip44,
+  }: {
+    coin: string;
+    index: number;
+    slip44?: string | undefined;
+  }) => Promise<string>;
+  getXpub: ({
+    index,
+    coin,
+    slip44,
+    withDecriptor,
+  }: {
+    index: number;
+    coin: string;
+    slip44?: string | undefined;
+    withDecriptor?: boolean | undefined;
+  }) => Promise<string>;
+}
+
+interface MessageTypeProperty {
+  name: string;
+  type: string;
+}
+export interface MessageTypes {
+  EIP712Domain: MessageTypeProperty[];
+  [additionalProperties: string]: MessageTypeProperty[];
+}
+
+export interface IEvmMethods {
+  getEvmAddressAndPubKey: ({
+    accountIndex,
+  }: {
+    accountIndex: number;
+  }) => Promise<{
+    address: string;
+    publicKey: string;
+  }>;
+  signEVMTransaction: ({
+    rawTx,
+    accountIndex,
+  }: {
+    rawTx: string;
+    accountIndex: number;
+  }) => Promise<{
+    s: string;
+    v: string;
+    r: string;
+  }>;
+  signPersonalMessage: ({
+    message,
+    accountIndex,
+  }: {
+    message: string;
+    accountIndex: number;
+  }) => Promise<{
+    v: number;
+    s: string;
+    r: string;
+  }>;
+  signTypedData: ({
+    version,
+    data,
+    accountIndex,
+  }: {
+    version: Version;
+    data: any;
+    accountIndex: number;
+  }) => Promise<string>;
 }
