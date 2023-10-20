@@ -175,11 +175,7 @@ export interface IEvmMethods {
   }: {
     message: string;
     accountIndex: number;
-  }) => Promise<{
-    v: number;
-    s: string;
-    r: string;
-  }>;
+  }) => Promise<string>;
   signTypedData: ({
     version,
     data,

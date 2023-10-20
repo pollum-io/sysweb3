@@ -118,7 +118,8 @@ export class KeyringManager implements IKeyringManager {
       this.getNetwork,
       this.getDecryptedPrivateKey,
       this.getSigner,
-      this.getAccountsState
+      this.getAccountsState,
+      this.ledgerSigner
     );
   }
   // ===================================== AUXILIARY METHOD - FOR TRANSACTIONS CLASSES ===================================== //
@@ -981,7 +982,7 @@ export class KeyringManager implements IKeyringManager {
       balance = ethBalance;
     } else {
       try {
-        const ledgerXpub = await this.ledgerSigner.getXpub({
+        const ledgerXpub = await this.ledgerSigner.utxo.getXpub({
           index: +index,
           coin,
           slip44,

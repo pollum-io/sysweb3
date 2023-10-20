@@ -18,7 +18,7 @@ import { IEvmMethods, IUTXOMethods, MessageTypes, UTXOPayload } from './types';
 import { Psbt } from 'bitcoinjs-lib';
 import { toSatoshi } from 'satoshi-bitcoin';
 import { ITxid } from '@pollum-io/sysweb3-utils';
-import LedgerEthClient from '@ledgerhq/hw-app-eth';
+import LedgerEthClient, { ledgerService } from '@ledgerhq/hw-app-eth';
 import { TypedDataUtils, TypedMessage, Version } from 'eth-sig-util';
 
 export class LedgerKeyring {
@@ -58,7 +58,7 @@ export class LedgerKeyring {
     }
   };
 
-  public getUtxoAddress = async ({
+  private getUtxoAddress = async ({
     coin,
     index, // account index
     slip44,
@@ -95,7 +95,7 @@ export class LedgerKeyring {
     }
   };
 
-  public getUtxos = async ({ accountIndex }: { accountIndex: number }) => {
+  private getUtxos = async ({ accountIndex }: { accountIndex: number }) => {
     const coin = 'sys';
     this.setHdPath(coin, accountIndex);
     const fingerprint = await this.getMasterFingerprint();
@@ -110,7 +110,7 @@ export class LedgerKeyring {
     return resp.utxos;
   };
 
-  public signPsbt = async ({
+  private signPsbt = async ({
     accountIndex,
     amount,
     receivingAddress,
@@ -225,7 +225,7 @@ export class LedgerKeyring {
     return { id: transaction.getId(), hex: transaction.toHex() };
   };
 
-  public sendUTXOTransaction = async ({
+  private sendUTXOTransaction = async ({
     accountIndex,
     amount,
     receivingAddress,
@@ -253,7 +253,7 @@ export class LedgerKeyring {
     }
   };
 
-  public getXpub = async ({
+  private getXpub = async ({
     index,
     coin,
     slip44,
@@ -293,7 +293,7 @@ export class LedgerKeyring {
     }
   };
 
-  public signEVMTransaction = async ({
+  private signEVMTransaction = async ({
     rawTx,
     accountIndex,
   }: {
@@ -301,16 +301,18 @@ export class LedgerKeyring {
     accountIndex: number;
   }) => {
     this.setHdPath('eth', accountIndex);
+    const resolution = await ledgerService.resolveTransaction(rawTx, {}, {});
 
     const signature = await this.ledgerEVMClient.signTransaction(
       this.hdPath,
-      rawTx
+      rawTx,
+      resolution
     );
 
     return signature;
   };
 
-  public signPersonalMessage = async ({
+  private signPersonalMessage = async ({
     message,
     accountIndex,
   }: {
@@ -319,12 +321,12 @@ export class LedgerKeyring {
   }) => {
     this.setHdPath('eth', accountIndex);
 
-    const signature = this.ledgerEVMClient.signPersonalMessage(
+    const signature = await this.ledgerEVMClient.signPersonalMessage(
       this.hdPath,
       message
     );
 
-    return signature;
+    return `0x${signature.r}${signature.s}${signature.v.toString(16)}`;
   };
 
   private sanitizeData(data: any): any {
@@ -385,7 +387,7 @@ export class LedgerKeyring {
     };
   };
 
-  public getEvmAddressAndPubKey = async ({
+  private getEvmAddressAndPubKey = async ({
     accountIndex,
   }: {
     accountIndex: number;
@@ -401,7 +403,7 @@ export class LedgerKeyring {
     }
   };
 
-  public signTypedData = async ({
+  private signTypedData = async ({
     version,
     data,
     accountIndex,
@@ -424,7 +426,7 @@ export class LedgerKeyring {
     return `0x${signature.r}${signature.s}${signature.v.toString(16)}`;
   };
 
-  public getMasterFingerprint = async () => {
+  private getMasterFingerprint = async () => {
     try {
       const masterFingerprint =
         await this.ledgerUtxoClient.getMasterFingerprint();
