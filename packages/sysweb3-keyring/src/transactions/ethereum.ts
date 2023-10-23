@@ -278,7 +278,7 @@ export class EthereumTransactions implements IEthereumTransactions {
       try {
         const response = await this.ledgerSigner.evm.signPersonalMessage({
           accountIndex: activeAccountId,
-          message: msg,
+          message: msg.replace('0x', ''),
         });
         return response;
       } catch (error) {
