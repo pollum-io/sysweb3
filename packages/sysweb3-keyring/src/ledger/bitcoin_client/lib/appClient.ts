@@ -2,7 +2,6 @@ import * as descriptors from '@bitcoinerlab/descriptors';
 import * as secp256k1 from '@bitcoinerlab/secp256k1';
 const { Descriptor } = descriptors.DescriptorsFactory(secp256k1);
 import Transport from '@ledgerhq/hw-transport';
-import { networks } from 'bitcoinjs-lib';
 
 import { pathElementsToBuffer, pathStringToArray } from './bip32';
 import { ClientCommandInterpreter } from './clientCommands';
@@ -11,6 +10,7 @@ import { hashLeaf, Merkle } from './merkle';
 import { WalletPolicy } from './policy';
 import { PsbtV2 } from './psbtv2';
 import { createVarint, parseVarint } from './varint';
+import { SYSCOIN_NETWORKS } from '../../../ledger/consts';
 
 const CLA_BTC = 0xe1;
 const CLA_FRAMEWORK = 0xf8;
@@ -429,9 +429,9 @@ export class AppClient {
     const appAndVer = await this.getAppAndVersion();
     let network;
     if (appAndVer.name === 'Syscoin Test') {
-      network = networks.testnet;
+      network = SYSCOIN_NETWORKS.testnet;
     } else if (appAndVer.name === 'Syscoin') {
-      network = networks.bitcoin;
+      network = SYSCOIN_NETWORKS.mainnet;
     } else {
       throw new Error(
         `Invalid network: ${appAndVer.name}. Expected 'Syscoin Test' or 'Syscoin'.`

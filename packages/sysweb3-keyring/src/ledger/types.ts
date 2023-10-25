@@ -138,6 +138,7 @@ export interface IUTXOMethods {
     slip44?: string | undefined;
     withDecriptor?: boolean | undefined;
   }) => Promise<string>;
+  verifyUtxoAddress: (accountIndex: number) => Promise<string>;
 }
 
 interface MessageTypeProperty {

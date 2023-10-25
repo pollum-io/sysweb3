@@ -35,6 +35,7 @@ export class LedgerKeyring {
       sendTransaction: this.sendUTXOTransaction,
       getUtxoAddress: this.getUtxoAddress,
       getXpub: this.getXpub,
+      verifyUtxoAddress: this.verifyUtxoAddress,
     };
     this.evm = {
       getEvmAddressAndPubKey: this.getEvmAddressAndPubKey,
@@ -62,10 +63,12 @@ export class LedgerKeyring {
     coin,
     index, // account index
     slip44,
+    showInLedger,
   }: {
     coin: string;
     index: number;
     slip44?: string;
+    showInLedger?: boolean;
   }) => {
     try {
       const fingerprint = await this.getMasterFingerprint();
@@ -86,13 +89,22 @@ export class LedgerKeyring {
         null,
         RECEIVING_ADDRESS_INDEX,
         index,
-        WILL_NOT_DISPLAY
+        showInLedger ? showInLedger : WILL_NOT_DISPLAY
       );
 
       return address;
     } catch (error) {
       throw error;
     }
+  };
+
+  private verifyUtxoAddress = async (accountIndex: number) => {
+    return await this.getUtxoAddress({
+      coin: 'sys',
+      index: accountIndex,
+      slip44: '57',
+      showInLedger: true,
+    });
   };
 
   private getUtxos = async ({ accountIndex }: { accountIndex: number }) => {
