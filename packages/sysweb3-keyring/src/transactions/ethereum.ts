@@ -609,7 +609,6 @@ export class EthereumTransactions implements IEthereumTransactions {
             chainId: activeNetwork.chainId,
             type: 2,
           };
-      console.log({ txFormattedForEthers });
       const rawTx = ethers.utils.serializeTransaction(txFormattedForEthers);
 
       const signature = await this.ledgerSigner.evm.signEVMTransaction({
@@ -622,8 +621,6 @@ export class EthereumTransactions implements IEthereumTransactions {
         s: `0x${signature.s}`,
         v: parseInt(signature.v, 16),
       };
-
-      console.log({ txFormattedForEthers, formattedSignature });
 
       if (signature) {
         try {
