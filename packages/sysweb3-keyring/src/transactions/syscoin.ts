@@ -1155,7 +1155,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     const activeAccount = accounts[activeAccountType][activeAccountId];
 
     if (isLedger) {
-      return await this.ledger.sendTransaction({
+      return await this.ledger.utxo.sendTransaction({
         accountIndex: activeAccount.id,
         amount: temporaryTransaction.amount,
         receivingAddress: temporaryTransaction.receivingAddress,

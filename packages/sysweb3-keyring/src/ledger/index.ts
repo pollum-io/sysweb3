@@ -1,35 +1,57 @@
+/* eslint-disable camelcase */
 /* eslint-disable import/no-named-as-default */
 /* eslint-disable import/order */
 import Transport from '@ledgerhq/hw-transport';
 import HIDTransport from '@ledgerhq/hw-transport-webhid';
 import { listen } from '@ledgerhq/logs';
-import AppClient, { DefaultWalletPolicy, PsbtV2 } from './bitcoin_client';
+import SysUtxoClient, { DefaultWalletPolicy, PsbtV2 } from './bitcoin_client';
 import {
   BLOCKBOOK_API_URL,
   DESCRIPTOR,
-  HD_PATH_STRING,
   RECEIVING_ADDRESS_INDEX,
   SYSCOIN_NETWORKS,
   WILL_NOT_DISPLAY,
 } from './consts';
 import { getXpubWithDescriptor } from './utils';
 import { fromBase58 } from '@trezor/utxo-lib/lib/bip32';
-import { UTXOPayload } from './types';
+import { IEvmMethods, IUTXOMethods, MessageTypes, UTXOPayload } from './types';
 import { Psbt } from 'bitcoinjs-lib';
 import { toSatoshi } from 'satoshi-bitcoin';
 import { ITxid } from '@pollum-io/sysweb3-utils';
+import LedgerEthClient, { ledgerService } from '@ledgerhq/hw-app-eth';
+import { TypedDataUtils, TypedMessage, Version } from 'eth-sig-util';
 
 export class LedgerKeyring {
-  public ledgerClient: AppClient;
+  public ledgerUtxoClient: SysUtxoClient;
+  public ledgerEVMClient: LedgerEthClient;
   public ledgerTransport: Transport;
-  public hdPath = HD_PATH_STRING;
+  public utxo: IUTXOMethods;
+  public evm: IEvmMethods;
+  public hdPath = '';
+
+  constructor() {
+    this.utxo = {
+      getUtxos: this.getUtxos,
+      sendTransaction: this.sendUTXOTransaction,
+      getUtxoAddress: this.getUtxoAddress,
+      getXpub: this.getXpub,
+      verifyUtxoAddress: this.verifyUtxoAddress,
+    };
+    this.evm = {
+      getEvmAddressAndPubKey: this.getEvmAddressAndPubKey,
+      signEVMTransaction: this.signEVMTransaction,
+      signPersonalMessage: this.signPersonalMessage,
+      signTypedData: this.signTypedData,
+    };
+  }
 
   public connectToLedgerDevice = async () => {
     try {
       const connectionResponse = await HIDTransport.create();
       listen((log) => console.log(log));
 
-      this.ledgerClient = new AppClient(connectionResponse);
+      this.ledgerUtxoClient = new SysUtxoClient(connectionResponse);
+      this.ledgerEVMClient = new LedgerEthClient(connectionResponse);
       this.ledgerTransport = connectionResponse;
       return connectionResponse;
     } catch (error) {
@@ -37,14 +59,16 @@ export class LedgerKeyring {
     }
   };
 
-  public getAddress = async ({
+  private getUtxoAddress = async ({
     coin,
     index, // account index
     slip44,
+    showInLedger,
   }: {
     coin: string;
     index: number;
     slip44?: string;
+    showInLedger?: boolean;
   }) => {
     try {
       const fingerprint = await this.getMasterFingerprint();
@@ -60,12 +84,12 @@ export class LedgerKeyring {
         xpubWithDescriptor
       );
 
-      const address = await this.ledgerClient.getWalletAddress(
+      const address = await this.ledgerUtxoClient.getWalletAddress(
         walletPolicy,
         null,
         RECEIVING_ADDRESS_INDEX,
         index,
-        WILL_NOT_DISPLAY
+        showInLedger ? showInLedger : WILL_NOT_DISPLAY
       );
 
       return address;
@@ -74,11 +98,20 @@ export class LedgerKeyring {
     }
   };
 
-  public getUtxos = async ({ accountIndex }: { accountIndex: number }) => {
+  private verifyUtxoAddress = async (accountIndex: number) => {
+    return await this.getUtxoAddress({
+      coin: 'sys',
+      index: accountIndex,
+      slip44: '57',
+      showInLedger: true,
+    });
+  };
+
+  private getUtxos = async ({ accountIndex }: { accountIndex: number }) => {
     const coin = 'sys';
     this.setHdPath(coin, accountIndex);
     const fingerprint = await this.getMasterFingerprint();
-    const xpub = await this.ledgerClient.getExtendedPubkey(this.hdPath);
+    const xpub = await this.ledgerUtxoClient.getExtendedPubkey(this.hdPath);
     const xpubWithDescriptor = getXpubWithDescriptor(
       xpub,
       this.hdPath,
@@ -89,7 +122,7 @@ export class LedgerKeyring {
     return resp.utxos;
   };
 
-  public signPsbt = async ({
+  private signPsbt = async ({
     accountIndex,
     amount,
     receivingAddress,
@@ -158,7 +191,7 @@ export class LedgerKeyring {
     const policy = `[${path}]${xpub}`.replace('m', fingerprint);
     const walletPolicy = new DefaultWalletPolicy(DESCRIPTOR, policy);
 
-    const changeAddress = await this.ledgerClient.getWalletAddress(
+    const changeAddress = await this.ledgerUtxoClient.getWalletAddress(
       walletPolicy,
       null,
       1,
@@ -181,7 +214,11 @@ export class LedgerKeyring {
 
     psbt.fromBitcoinJS(bitcoinPsbt);
 
-    const entries = await this.ledgerClient.signPsbt(psbt, walletPolicy, null);
+    const entries = await this.ledgerUtxoClient.signPsbt(
+      psbt,
+      walletPolicy,
+      null
+    );
     entries.forEach((entry) => {
       const [index, pubkeySign] = entry;
       bitcoinPsbt.updateInput(index, {
@@ -200,7 +237,7 @@ export class LedgerKeyring {
     return { id: transaction.getId(), hex: transaction.toHex() };
   };
 
-  public sendTransaction = async ({
+  private sendUTXOTransaction = async ({
     accountIndex,
     amount,
     receivingAddress,
@@ -228,7 +265,7 @@ export class LedgerKeyring {
     }
   };
 
-  public getXpub = async ({
+  private getXpub = async ({
     index,
     coin,
     slip44,
@@ -242,7 +279,7 @@ export class LedgerKeyring {
     try {
       const fingerprint = await this.getMasterFingerprint();
       this.setHdPath(coin, index, slip44);
-      const xpub = await this.ledgerClient.getExtendedPubkey(this.hdPath);
+      const xpub = await this.ledgerUtxoClient.getExtendedPubkey(this.hdPath);
       const xpubWithDescriptor = getXpubWithDescriptor(
         xpub,
         this.hdPath,
@@ -258,7 +295,7 @@ export class LedgerKeyring {
   public signUtxoMessage = async (path: string, message: string) => {
     try {
       const bufferMessage = Buffer.from(message);
-      const signature = await this.ledgerClient.signMessage(
+      const signature = await this.ledgerUtxoClient.signMessage(
         bufferMessage,
         path
       );
@@ -268,9 +305,143 @@ export class LedgerKeyring {
     }
   };
 
-  public getMasterFingerprint = async () => {
+  private signEVMTransaction = async ({
+    rawTx,
+    accountIndex,
+  }: {
+    rawTx: string;
+    accountIndex: number;
+  }) => {
+    this.setHdPath('eth', accountIndex);
+    const resolution = await ledgerService.resolveTransaction(rawTx, {}, {});
+
+    const signature = await this.ledgerEVMClient.signTransaction(
+      this.hdPath,
+      rawTx,
+      resolution
+    );
+
+    return signature;
+  };
+
+  private signPersonalMessage = async ({
+    message,
+    accountIndex,
+  }: {
+    message: string;
+    accountIndex: number;
+  }) => {
+    this.setHdPath('eth', accountIndex);
+
+    const signature = await this.ledgerEVMClient.signPersonalMessage(
+      this.hdPath,
+      message
+    );
+
+    return `0x${signature.r}${signature.s}${signature.v.toString(16)}`;
+  };
+
+  private sanitizeData(data: any): any {
+    switch (Object.prototype.toString.call(data)) {
+      case '[object Object]': {
+        const entries = Object.keys(data).map((k) => [
+          k,
+          this.sanitizeData(data[k]),
+        ]);
+        return Object.fromEntries(entries);
+      }
+
+      case '[object Array]':
+        return data.map((v: any[]) => this.sanitizeData(v));
+
+      case '[object BigInt]':
+        return data.toString();
+
+      default:
+        return data;
+    }
+  }
+
+  private transformTypedData = <T extends MessageTypes>(
+    data: TypedMessage<T>,
+    metamaskV4Compat: boolean
+  ) => {
+    if (!metamaskV4Compat) {
+      throw new Error(
+        'Ledger: Only version 4 of typed data signing is supported'
+      );
+    }
+
+    const { types, primaryType, domain, message } = this.sanitizeData(data);
+
+    const domainSeparatorHash = TypedDataUtils.hashStruct(
+      'EIP712Domain',
+      this.sanitizeData(domain),
+      types,
+      true
+    ).toString('hex');
+
+    let messageHash = null;
+
+    if (primaryType !== 'EIP712Domain') {
+      messageHash = TypedDataUtils.hashStruct(
+        primaryType as string,
+        this.sanitizeData(message),
+        types,
+        true
+      ).toString('hex');
+    }
+
+    return {
+      domain_separator_hash: domainSeparatorHash,
+      message_hash: messageHash,
+      ...data,
+    };
+  };
+
+  private getEvmAddressAndPubKey = async ({
+    accountIndex,
+  }: {
+    accountIndex: number;
+  }) => {
+    this.setHdPath('eth', accountIndex);
     try {
-      const masterFingerprint = await this.ledgerClient.getMasterFingerprint();
+      const { address, publicKey } = await this.ledgerEVMClient.getAddress(
+        this.hdPath
+      );
+      return { address, publicKey: `0x${publicKey}` };
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  private signTypedData = async ({
+    version,
+    data,
+    accountIndex,
+  }: {
+    version: Version;
+    data: any;
+    accountIndex: number;
+  }) => {
+    this.setHdPath('eth', accountIndex);
+    const dataWithHashes = this.transformTypedData(data, version === 'V4');
+
+    const { domain_separator_hash, message_hash } = dataWithHashes;
+
+    const signature = await this.ledgerEVMClient.signEIP712HashedMessage(
+      this.hdPath,
+      domain_separator_hash,
+      message_hash ? message_hash : ''
+    );
+
+    return `0x${signature.r}${signature.s}${signature.v.toString(16)}`;
+  };
+
+  private getMasterFingerprint = async () => {
+    try {
+      const masterFingerprint =
+        await this.ledgerUtxoClient.getMasterFingerprint();
       return masterFingerprint;
     } catch (error) {
       console.log('Fingerprint error: ', error);
@@ -287,7 +458,7 @@ export class LedgerKeyring {
         this.hdPath = `m/84'/0'/${accountIndex}'`;
         break;
       case 'eth':
-        this.hdPath = `m/44'/60'/0'/0/${accountIndex ? accountIndex : 0}`;
+        this.hdPath = `44'/60'/0'/0/${accountIndex ? accountIndex : 0}`;
         break;
       default:
         this.hdPath = `m/84'/${slip44 ? slip44 : 60}'/0'/0/${
