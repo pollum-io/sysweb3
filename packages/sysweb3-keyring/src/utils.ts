@@ -181,3 +181,9 @@ export function checkError(method: string, error: any, params: any): any {
 
   throw error;
 }
+
+export const SYSCOIN_BASIC_FEE = 0.00001;
+
+export const ONE_HUNDRED_MILLION = 1e8;
+
+export const BIP_84 = 84;

@@ -7,13 +7,14 @@ import { hdkey } from 'ethereumjs-wallet';
 import { ethers } from 'ethers';
 import mapValues from 'lodash/mapValues';
 import omit from 'lodash/omit';
-import sys from 'syscoinjs-lib';
 
 import {
   initialActiveImportedAccountState,
+  initialActiveLedgerAccountState,
   initialActiveTrezorAccountState,
   initialWalletState,
 } from './initial-state';
+import { LedgerKeyring } from './ledger';
 import { CustomJsonRpcProvider } from './providers';
 import {
   getSyscoinSigners,
@@ -40,6 +41,7 @@ import {
   INetwork,
   INetworkType,
 } from '@pollum-io/sysweb3-network';
+import { sys } from '@pollum-io/sysweb3-utils';
 
 export interface ISysAccount {
   xprv?: string;
@@ -66,6 +68,7 @@ export class KeyringManager implements IKeyringManager {
   private hd: SyscoinHDSigner | null;
   private syscoinSigner: SyscoinMainSigner | undefined;
   private trezorSigner: TrezorKeyring;
+  public ledgerSigner: LedgerKeyring;
   private memMnemonic: string;
   private memPassword: string;
   private currentSessionSalt: string;
@@ -74,6 +77,7 @@ export class KeyringManager implements IKeyringManager {
   private sessionSeed: string;
   public activeChain: INetworkType;
   public initialTrezorAccountState: IKeyringAccountState;
+  public initialLedgerAccountState: IKeyringAccountState;
   private trezorAccounts: any[];
   public utf8Error: boolean;
 
@@ -92,6 +96,7 @@ export class KeyringManager implements IKeyringManager {
     } else {
       this.wallet = initialWalletState;
       this.activeChain = INetworkType.Syscoin;
+      // @ts-ignore
       this.hd = new sys.utils.HDSigner('');
     }
     this.utf8Error = false;
@@ -100,21 +105,24 @@ export class KeyringManager implements IKeyringManager {
     this.sessionMnemonic = '';
     this.memPassword = ''; //Lock wallet in case opts.password has been provided
     this.initialTrezorAccountState = initialActiveTrezorAccountState;
-
+    this.initialLedgerAccountState = initialActiveLedgerAccountState;
     this.trezorSigner = new TrezorKeyring(this.getSigner);
+    this.ledgerSigner = new LedgerKeyring();
 
     // this.syscoinTransaction = SyscoinTransactions();
     this.syscoinTransaction = new SyscoinTransactions(
       this.getNetwork,
       this.getSigner,
       this.getAccountsState,
-      this.getAddress
+      this.getAddress,
+      this.ledgerSigner
     );
     this.ethereumTransaction = new EthereumTransactions(
       this.getNetwork,
       this.getDecryptedPrivateKey,
       this.getSigner,
-      this.getAccountsState
+      this.getAccountsState,
+      this.ledgerSigner
     );
   }
   // ===================================== AUXILIARY METHOD - FOR TRANSACTIONS CLASSES ===================================== //
@@ -227,10 +235,12 @@ export class KeyringManager implements IKeyringManager {
         },
         this.memPassword
       );
+
       this.sessionMnemonic = CryptoJS.AES.encrypt(
         this.memMnemonic,
-        pwd
+        this.sessionPassword
       ).toString();
+
       this.memMnemonic = '';
     }
     if (prvPwd) this.updateWalletKeys(prvPwd);
@@ -706,6 +716,7 @@ export class KeyringManager implements IKeyringManager {
           seedPhrase,
           this.sessionPassword
         ).toString();
+
         this.memMnemonic = '';
       }
       return seedPhrase;
@@ -751,6 +762,34 @@ export class KeyringManager implements IKeyringManager {
 
     return importedAccount;
   }
+
+  public async importLedgerAccount(
+    coin: string,
+    slip44: string,
+    index: string,
+    isAlreadyConnected: boolean
+  ) {
+    try {
+      const connectionResponse = isAlreadyConnected
+        ? true
+        : await this.ledgerSigner.connectToLedgerDevice();
+
+      if (connectionResponse) {
+        const importedAccount = await this._createLedgerAccount(
+          coin,
+          slip44,
+          index
+        );
+        this.wallet.accounts[KeyringAccountType.Ledger][importedAccount.id] =
+          importedAccount;
+
+        return importedAccount;
+      }
+    } catch (error) {
+      console.log({ error });
+      throw error;
+    }
+  }
   public getActiveUTXOAccountState = () => {
     return {
       ...this.wallet.accounts.HDAccount[this.wallet.activeAccountId],
@@ -784,6 +823,7 @@ export class KeyringManager implements IKeyringManager {
   private createMainWallet = async (
     mnemonic: string
   ): Promise<IKeyringAccountState> => {
+    //@ts-ignore
     this.hd = new sys.utils.HDSigner(
       mnemonic,
       null,
@@ -795,7 +835,8 @@ export class KeyringManager implements IKeyringManager {
     ) as SyscoinHDSigner; //To understand better this look at: https://github.com/syscoin/syscoinjs-lib/blob/298fda26b26d7007f0c915a6f77626fb2d3c852f/utils.js#L894
     this.syscoinSigner = new sys.SyscoinJSLib(
       this.hd,
-      this.wallet.activeNetwork.url
+      this.wallet.activeNetwork.url,
+      undefined
     );
 
     const xpub = this.hd.getAccountXpub();
@@ -843,6 +884,7 @@ export class KeyringManager implements IKeyringManager {
       xprv,
       address,
       isTrezorWallet: false,
+      isLedgerWallet: false,
       isImported: false,
     };
   };
@@ -903,6 +945,7 @@ export class KeyringManager implements IKeyringManager {
     return {
       id,
       isTrezorWallet: false,
+      isLedgerWallet: false,
       label: label ? label : `Account ${Number(id) + 1}`,
       ...formattedBackendAccount,
     };
@@ -987,6 +1030,104 @@ export class KeyringManager implements IKeyringManager {
     return trezorAccount;
   }
 
+  private async _createLedgerAccount(
+    coin: string,
+    slip44: string,
+    index: string,
+    label?: string
+  ) {
+    const { accounts, activeNetwork } = this.wallet;
+    let xpub;
+    let address = '';
+    let balance;
+
+    if (coin === 'eth') {
+      const { address: ethAddress, publicKey } =
+        await this.ledgerSigner.evm.getEvmAddressAndPubKey({
+          accountIndex: +index,
+        });
+      const ethBalance = await this.ethereumTransaction.getBalance(ethAddress);
+      address = ethAddress;
+      xpub = publicKey;
+      balance = ethBalance;
+    } else {
+      try {
+        const ledgerXpub = await this.ledgerSigner.utxo.getXpub({
+          index: +index,
+          coin,
+          slip44,
+          withDecriptor: true,
+        });
+        xpub = ledgerXpub;
+        address = await this.ledgerSigner.utxo.getUtxoAddress({
+          coin,
+          index: +index,
+          slip44,
+        });
+
+        const options = 'tokens=used&details=tokens';
+        const { balance: sysBalance } = await sys.utils.fetchBackendAccount(
+          this.wallet.activeNetwork.url,
+          xpub,
+          options,
+          true,
+          undefined
+        );
+        balance = sysBalance;
+      } catch (e) {
+        throw new Error(e);
+      }
+    }
+
+    const accountAlreadyExists =
+      Object.values(
+        accounts[KeyringAccountType.Ledger] as IKeyringAccountState[]
+      ).some((account) => account.address === address) ||
+      Object.values(
+        accounts[KeyringAccountType.Trezor] as IKeyringAccountState[]
+      ).some((account) => account.address === address) ||
+      Object.values(
+        accounts[KeyringAccountType.HDAccount] as IKeyringAccountState[]
+      ).some((account) => account.address === address) ||
+      Object.values(
+        accounts[KeyringAccountType.Imported] as IKeyringAccountState[]
+      ).some((account) => account.address === address);
+
+    if (accountAlreadyExists)
+      throw new Error('Account already exists on your Wallet.');
+    if (!xpub || !address)
+      throw new Error(
+        'Something wrong happened. Please, try again or report it'
+      );
+
+    const id =
+      Object.values(accounts[KeyringAccountType.Ledger]).length < 1
+        ? 0
+        : Object.values(accounts[KeyringAccountType.Ledger]).length;
+
+    const currentBalances =
+      coin === 'eth'
+        ? { syscoin: 0, ethereum: balance }
+        : { syscoin: +balance / 1e8, ethereum: 0 };
+
+    const ledgerAccount = {
+      ...this.initialLedgerAccountState,
+      balances: currentBalances,
+      address,
+      originNetwork: { ...activeNetwork, isBitcoinBased: coin !== 'eth' },
+      label: label ? label : `Ledger ${id + 1}`,
+      id,
+      xprv: '',
+      xpub,
+      assets: {
+        syscoin: [],
+        ethereum: [],
+      },
+    } as IKeyringAccountState;
+
+    return ledgerAccount;
+  }
+
   public getAddress = async (
     xpub: string,
     isChangeAddress: boolean,
@@ -999,7 +1140,8 @@ export class KeyringManager implements IKeyringManager {
       main.blockbookURL,
       xpub,
       options,
-      true
+      true,
+      undefined
     );
     const { receivingIndex, changeIndex } =
       this.setLatestIndexesFromXPubTokens(tokens);
@@ -1046,7 +1188,8 @@ export class KeyringManager implements IKeyringManager {
         url,
         xpub,
         options,
-        true
+        true,
+        undefined
       );
       const { receivingIndex } = this.setLatestIndexesFromXPubTokens(tokens);
       balance = _balance;
@@ -1220,6 +1363,7 @@ export class KeyringManager implements IKeyringManager {
     return {
       id,
       isTrezorWallet: false,
+      isLedgerWallet: false,
       label: label ? label : `Account ${id + 1}`,
       balances: {
         syscoin: 0,

@@ -9,6 +9,7 @@ import {
   TransactionConfig,
 } from 'web3-core';
 
+import { LedgerKeyring } from './ledger';
 import { INetwork, INetworkType } from '@pollum-io/sysweb3-network';
 import {
   ITokenMint,
@@ -145,6 +146,13 @@ export interface IEthereumTransactions {
 }
 
 export interface ISyscoinTransactions {
+  getEstimateSysTransactionFee: ({
+    amount,
+    receivingAddress,
+  }: {
+    amount: number;
+    receivingAddress: string;
+  }) => Promise<number>;
   confirmNftCreation: (tx: any) => { success: boolean };
   confirmTokenMint: (transaction: ITokenMint) => Promise<ITxid>;
   confirmTokenCreation: (transaction: any) => Promise<{
@@ -158,7 +166,8 @@ export interface ISyscoinTransactions {
   getRecommendedFee: (explorerUrl: string) => Promise<number>;
   sendTransaction: (
     transaction: ITokenSend,
-    isTrezor: boolean
+    isTrezor: boolean,
+    isLedger: boolean
   ) => Promise<ITxid>;
   signTransaction: (
     data: { psbt: string; assets: string },
@@ -195,6 +204,7 @@ export interface IKeyringManager {
   }>;
   isUnlocked: () => boolean;
   logout: () => void;
+  ledgerSigner: LedgerKeyring;
   setActiveAccount: (
     accountId: number,
     accountType: KeyringAccountType
@@ -236,6 +246,7 @@ export enum KeyringAccountType {
   Trezor = 'Trezor',
   Imported = 'Imported',
   HDAccount = 'HDAccount',
+  Ledger = 'Ledger',
 }
 
 export type IKeyringDApp = {
@@ -287,6 +298,7 @@ export interface IKeyringAccountState {
   address: string;
   id: number;
   isTrezorWallet: boolean;
+  isLedgerWallet: boolean;
   label: string;
   xprv: string;
   balances: IKeyringBalances;
@@ -327,6 +339,7 @@ export interface ISendSignedErcTransactionProps {
   gasPrice?: BigNumberish;
   gasLimit?: BigNumberish;
   tokenAmount?: string;
+  decimals?: number;
   tokenId?: number;
   saveTrezorTx?: (tx: any) => void;
 }

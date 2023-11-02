@@ -1,8 +1,9 @@
 import axios from 'axios';
 import coinSelectSyscoin from 'coinselectsyscoin';
-import sys from 'syscoinjs-lib';
 import syscointx from 'syscointx-js';
+// import { BIP_84, ONE_HUNDRED_MILLION, SYSCOIN_BASIC_FEE } from 'utils';
 
+import { LedgerKeyring } from '../ledger';
 import { SyscoinHDSigner } from '../signers';
 import { TrezorKeyring } from '../trezor';
 import {
@@ -12,6 +13,7 @@ import {
 } from '../types';
 import { INetwork } from '@pollum-io/sysweb3-network';
 import {
+  sys,
   INewNFT,
   isBase64,
   repairBase64,
@@ -39,12 +41,14 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     main: any;
   };
   private trezor: TrezorKeyring;
+  private ledger: LedgerKeyring;
   private getState: () => {
     activeAccountId: number;
     accounts: {
       Trezor: accountType;
       Imported: accountType;
       HDAccount: accountType;
+      Ledger: accountType;
     };
     activeAccountType: KeyringAccountType;
     activeNetwork: INetwork;
@@ -66,6 +70,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
         Trezor: accountType;
         Imported: accountType;
         HDAccount: accountType;
+        Ledger: accountType;
       };
       activeAccountType: KeyringAccountType;
       activeNetwork: INetwork;
@@ -74,13 +79,15 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       xpub: string,
       isChangeAddress: boolean,
       index: number
-    ) => Promise<string>
+    ) => Promise<string>,
+    ledgerSigner: LedgerKeyring
   ) {
     this.getNetwork = getNetwork;
     this.getSigner = getSyscoinSigner;
     this.getState = getState;
     this.getAddress = getAddress;
     this.trezor = new TrezorKeyring(this.getSigner);
+    this.ledger = ledgerSigner;
   }
 
   public estimateSysTransactionFee = async ({
@@ -94,11 +101,18 @@ export class SyscoinTransactions implements ISyscoinTransactions {
 
     const txOpts = { rbf: true };
 
-    const utxos = await sys.utils.fetchBackendUTXOS(explorerUrl, xpub);
+    const utxos = await sys.utils.fetchBackendUTXOS(
+      explorerUrl,
+      xpub,
+      undefined
+    );
     const utxosSanitized = sys.utils.sanitizeBlockbookUTXOs(
       null,
       utxos,
-      hd.Signer.network
+      hd.Signer.network,
+      undefined,
+      undefined,
+      undefined
     );
 
     // 0 feerate to create tx, then find bytes and multiply feeRate by bytes to get estimated txfee
@@ -129,11 +143,18 @@ export class SyscoinTransactions implements ISyscoinTransactions {
 
     const txOpts = { rbf: true };
 
-    const utxos = await sys.utils.fetchBackendUTXOS(explorerUrl, xpub);
+    const utxos = await sys.utils.fetchBackendUTXOS(
+      explorerUrl,
+      xpub,
+      undefined
+    );
     const utxosSanitized = sys.utils.sanitizeBlockbookUTXOs(
       null,
       utxos,
-      hd.Signer.network
+      hd.Signer.network,
+      undefined,
+      undefined,
+      undefined
     );
 
     const tx = await syscointx.createTransaction(
@@ -150,7 +171,9 @@ export class SyscoinTransactions implements ISyscoinTransactions {
   };
 
   public getRecommendedFee = async (explorerUrl: string): Promise<number> => {
-    return (await sys.utils.fetchEstimateFee(explorerUrl, 1)) / 10 ** 8;
+    return (
+      (await sys.utils.fetchEstimateFee(explorerUrl, 1, undefined)) / 10 ** 8
+    );
   };
 
   public txUtilsFunctions = () => {
@@ -200,7 +223,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
             const tokenMap = getTokenMap({
               guid,
               changeAddress,
-              amount: new sys.utils.BN(initialSupply * 10 ** precision),
+              amount: new sys.utils.BN(initialSupply * 10 ** precision) as any,
               receivingAddress,
             });
             const txOptions = { rbf: true };
@@ -304,7 +327,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       const notaryPayment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: notaryAddress,
         network: main.network,
-      });
+      }) as any;
 
       tokenOptions = {
         ...tokenOptions,
@@ -322,7 +345,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       const payment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: payoutAddress,
         network: main.network,
-      });
+      }) as any;
 
       const auxFeeKeyID = Buffer.from(payment.hash.toString('hex'), 'hex');
 
@@ -371,7 +394,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       const notaryPayment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: notaryAddress,
         network: main.network,
-      });
+      }) as any;
 
       tokenOptions = {
         ...tokenOptions,
@@ -389,7 +412,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       const payment = sys.utils.bitcoinjs.payments.p2wpkh({
         address: payoutAddress,
         network: main.network,
-      });
+      }) as any;
 
       const auxFeeKeyID = Buffer.from(payment.hash.toString('hex'), 'hex');
 
@@ -481,7 +504,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     const tokenMap = getTokenMap({
       guid: assetGuid,
       changeAddress: '',
-      amount: new sys.utils.BN(amount * 10 ** token.decimals),
+      amount: new sys.utils.BN(amount * 10 ** token.decimals) as any,
       receivingAddress,
     });
 
@@ -565,7 +588,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     const tokenMap = getTokenMap({
       guid,
       changeAddress: '',
-      amount: new sys.utils.BN(0),
+      amount: new sys.utils.BN(0) as any,
       receivingAddress,
     });
 
@@ -617,7 +640,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     const tokenMap = getTokenMap({
       guid,
       changeAddress: '',
-      amount: new sys.utils.BN(1 * 10 ** precision),
+      amount: new sys.utils.BN(1 * 10 ** precision) as any,
       receivingAddress,
     });
 
@@ -662,14 +685,14 @@ export class SyscoinTransactions implements ISyscoinTransactions {
 
     const { fee, symbol, description, precision } = tx;
 
-    const feeRate = new sys.utils.BN(fee * 1e8);
+    const feeRate = new sys.utils.BN(fee * 1e8) as any;
 
     const tokenOptions = {
       precision,
       symbol,
       maxsupply: new sys.utils.BN(1 * 10 ** precision),
       description,
-    };
+    } as any;
 
     const parentToken = await this.createParentToken({ tokenOptions, feeRate });
 
@@ -718,7 +741,10 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     psbt: string;
     signer: any;
   }): Promise<JSON> => {
-    return sys.utils.exportPsbtToJson(await signer.sign(psbt));
+    return sys.utils.exportPsbtToJson(
+      await signer.sign(psbt),
+      undefined
+    ) as any;
   };
 
   public signAndSendPsbt = async ({
@@ -730,11 +756,15 @@ export class SyscoinTransactions implements ISyscoinTransactions {
   }): Promise<JSON> => {
     const { main } = this.getSigner();
     if (notaryAssets.size === 0) {
-      return sys.utils.exportPsbtToJson(await main.signAndSend(psbt));
+      return sys.utils.exportPsbtToJson(
+        await main.signAndSend(psbt),
+        undefined
+      ) as any;
     } else {
       return sys.utils.exportPsbtToJson(
-        await main.signAndSend(psbt, notaryAssets)
-      );
+        await main.signAndSend(psbt, notaryAssets),
+        undefined
+      ) as any;
     }
   };
 
@@ -756,7 +786,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     }
 
     try {
-      const response = sys.utils.importPsbtFromJson(data);
+      const response = sys.utils.importPsbtFromJson(data, undefined) as any;
 
       if (isSignOnly) {
         return await this.signPSBT({
@@ -790,7 +820,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       const tokenMap = getTokenMap({
         guid: assetGuid,
         changeAddress: await hd.getNewChangeAddress(true, 84),
-        amount: new sys.utils.BN(0),
+        amount: new sys.utils.BN(0) as any,
         receivingAddress: await hd.getNewReceivingAddress(true, 84),
       });
 
@@ -851,7 +881,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       const tokenOptions = getTokenMap({
         guid,
         changeAddress: '',
-        amount: value,
+        amount: value as any,
         receivingAddress,
       });
 
@@ -903,7 +933,8 @@ export class SyscoinTransactions implements ISyscoinTransactions {
             blockbookURL,
             xpub,
             'tokens=used&details=tokens',
-            true
+            true,
+            undefined
           );
 
           return data;
@@ -919,7 +950,8 @@ export class SyscoinTransactions implements ISyscoinTransactions {
             blockbookURL,
             xpub,
             'tokens=used&details=tokens',
-            true
+            true,
+            undefined
           );
           console.log(
             'tx send successfully',
@@ -933,6 +965,42 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       return e;
     }
   }
+
+  public getEstimateSysTransactionFee = async ({
+    amount,
+    receivingAddress,
+  }: {
+    amount: number;
+    receivingAddress: string;
+  }) => {
+    const { hd, main } = this.getSigner();
+    const value = new sys.utils.BN(amount * 1e8);
+    const feeRate = new sys.utils.BN(0.00001 * 1e8);
+    const xpub = hd.getAccountXpub();
+    const outputs = [
+      {
+        address: receivingAddress,
+        value,
+      },
+    ] as any;
+
+    const changeAddress = await hd.getNewChangeAddress(true, 84);
+
+    try {
+      const txFee = await this.estimateSysTransactionFee({
+        outputs,
+        changeAddress,
+        feeRateBN: feeRate,
+        xpub,
+        explorerUrl: main.blockbookURL,
+      });
+
+      return +`${txFee.toNumber() / 1e8}`;
+    } catch (error) {
+      console.log(error);
+      return 0.00001;
+    }
+  };
 
   public confirmNativeTokenSend = async (
     temporaryTransaction: ITokenSend,
@@ -951,7 +1019,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
         const {
           xpub,
           balances: { syscoin },
-        } = accounts[activeAccountType][activeAccountId];
+        }: any = accounts[activeAccountType][activeAccountId];
 
         const feeRate = new sys.utils.BN(fee * 1e8);
 
@@ -962,7 +1030,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
             address: receivingAddress,
             value,
           },
-        ];
+        ] as any;
 
         const changeAddress = await this.getAddress(
           xpub,
@@ -982,7 +1050,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
           outputs = [
             {
               address: receivingAddress,
-              value: value.sub(txFee),
+              value: value,
             },
           ];
         }
@@ -1025,7 +1093,8 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       main.blockbookURL,
       xpub,
       {},
-      true
+      true,
+      undefined
     );
 
     const value = new sys.utils.BN(amount * 1e8);
@@ -1035,7 +1104,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
         address: receivingAddress,
         value,
       },
-    ];
+    ] as any;
 
     const changeAddress = await hd.getNewChangeAddress(true, 84);
 
@@ -1054,7 +1123,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
         outputs = [
           {
             address: receivingAddress,
-            value: value.sub(txFee),
+            value: value,
           },
         ];
       }
@@ -1078,9 +1147,20 @@ export class SyscoinTransactions implements ISyscoinTransactions {
 
   public sendTransaction = async (
     temporaryTransaction: ITokenSend,
-    isTrezor?: boolean
+    isTrezor: boolean,
+    isLedger: boolean
   ): Promise<ITxid> => {
     const { isToken, token } = temporaryTransaction;
+    const { accounts, activeAccountId, activeAccountType } = this.getState();
+    const activeAccount = accounts[activeAccountType][activeAccountId];
+
+    if (isLedger) {
+      return await this.ledger.utxo.sendTransaction({
+        accountIndex: activeAccount.id,
+        amount: temporaryTransaction.amount,
+        receivingAddress: temporaryTransaction.receivingAddress,
+      });
+    }
 
     if (isToken && token) {
       return await this.confirmCustomTokenSend(temporaryTransaction);
