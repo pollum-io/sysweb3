@@ -306,13 +306,31 @@ export class KeyringManager implements IKeyringManager {
 
         const isHdCreated = !!this.hd;
 
-        if (this.utf8Error || !this.sessionMnemonic || !isHdCreated) {
-          await this.resetWalletValuesDueErrors(password);
+        if(this.utf8Error) {
+          const sysMainnetNetwork = {
+            apiUrl: "",
+            chainId: 57,
+            currency: "sys",
+            default: true,
+            explorer: "https://blockbook.elint.services/",
+            label: "Syscoin Mainnet",
+            slip44: 57,
+            url: "https://blockbook.elint.services/"
+          }
 
-          wallet = this.wallet;
+          await this.setSignerNetwork(sysMainnetNetwork, INetworkType.Syscoin)
 
-          this.utf8Error = false;
+          await this.restoreWallet(isHdCreated, password)
+
+          wallet = this.wallet
+
+          this.utf8Error = false
         }
+
+        if(!isHdCreated || !this.sessionMnemonic) {
+          await this.restoreWallet(isHdCreated, password)
+        }
+        
         this.updateWalletKeys(password);
       }
 
@@ -1577,29 +1595,27 @@ export class KeyringManager implements IKeyringManager {
     return updatedAccount;
   }
 
-  private async resetWalletValuesDueErrors(pwd: string) {
-    let { mnemonic } = getDecryptedVault(pwd);
-    mnemonic = CryptoJS.AES.decrypt(mnemonic, pwd).toString(CryptoJS.enc.Utf8);
-    this.sessionMnemonic = CryptoJS.AES.encrypt(
-      mnemonic,
-      this.sessionPassword
-    ).toString();
-    const seed = (await mnemonicToSeed(mnemonic)).toString('hex');
-    this.sessionSeed = CryptoJS.AES.encrypt(
-      seed,
-      this.sessionPassword
-    ).toString();
-
-    if (this.activeChain === INetworkType.Syscoin) {
+  private async restoreWallet(hdCreated: boolean, pwd: string) {
+    if (!this.sessionMnemonic) {
+      let { mnemonic } = getDecryptedVault(pwd);
+      mnemonic = CryptoJS.AES.decrypt(mnemonic, pwd).toString(
+        CryptoJS.enc.Utf8
+      );
+      this.sessionMnemonic = CryptoJS.AES.encrypt(
+        mnemonic,
+        this.sessionPassword
+      ).toString();
+      const seed = (await mnemonicToSeed(mnemonic)).toString('hex');
+      this.sessionSeed = CryptoJS.AES.encrypt(
+        seed,
+        this.sessionPassword
+      ).toString();
+    }
+    if (this.activeChain === INetworkType.Syscoin && !hdCreated) {
       const { rpc, isTestnet } = await this.getSignerUTXO(
         this.wallet.activeNetwork
       );
       await this.updateUTXOAccounts(rpc, isTestnet);
-      if (!this.hd) throw new Error('Error initialising HD');
-      this.hd.setAccountIndex(this.wallet.activeAccountId);
-    } else if (this.activeChain === INetworkType.Ethereum) {
-      await this.setSignerEVM(this.wallet.activeNetwork);
-      await this.updateWeb3Accounts();
       if (!this.hd) throw new Error('Error initialising HD');
       this.hd.setAccountIndex(this.wallet.activeAccountId);
     }
