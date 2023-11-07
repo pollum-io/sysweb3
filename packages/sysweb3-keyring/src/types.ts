@@ -198,7 +198,7 @@ export interface IKeyringManager {
     pwd: string
   ) => string;
   getSeed: (password: string) => string;
-  unlock: () => Promise<{
+  unlock: (password: string, isForPvtKey?: boolean) => Promise<{
     canLogin: boolean;
     wallet?: IWalletState | null;
   }>;

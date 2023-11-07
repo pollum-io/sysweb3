@@ -289,7 +289,8 @@ export class KeyringManager implements IKeyringManager {
   }
 
   public unlock = async (
-    password: string
+    password: string,
+    isForPvtKey?:boolean
   ): Promise<{
     canLogin: boolean;
     wallet?: IWalletState | null;
@@ -298,6 +299,10 @@ export class KeyringManager implements IKeyringManager {
       const { hash, salt } = this.storage.get('vault-keys');
 
       const hashPassword = this.encryptSHA512(password, salt);
+
+      if(isForPvtKey) return {
+        canLogin: hashPassword === hash
+      }
 
       let wallet: IWalletState | null = null;
 
