@@ -89,6 +89,9 @@ export class KeyringManager implements IKeyringManager {
     this.trezorAccounts = [];
     this.currentSessionSalt = this.generateSalt();
     this.sessionPassword = '';
+    this.storage.set('utf8Error', {
+      hasUtf8Error: false,
+    });
     if (opts) {
       this.wallet = opts.wallet;
       this.activeChain = opts.activeChain;
@@ -258,9 +261,7 @@ export class KeyringManager implements IKeyringManager {
       message.includes(utf8ErrorMessage) ||
       message.toLowerCase().includes(utf8ErrorMessage.toLowerCase())
     ) {
-      this.utf8Error = true;
-
-      return this.utf8Error;
+      this.storage.set('utf8Error', { hasUtf8Error: true });
     }
   }
 
@@ -290,19 +291,20 @@ export class KeyringManager implements IKeyringManager {
 
   public unlock = async (
     password: string,
-    isForPvtKey?:boolean
+    isForPvtKey?: boolean
   ): Promise<{
     canLogin: boolean;
     wallet?: IWalletState | null;
   }> => {
     try {
       const { hash, salt } = this.storage.get('vault-keys');
-
+      const { hasUtf8Error } = this.storage.get('utf8Error');
       const hashPassword = this.encryptSHA512(password, salt);
 
-      if(isForPvtKey) return {
-        canLogin: hashPassword === hash
-      }
+      if (isForPvtKey)
+        return {
+          canLogin: hashPassword === hash,
+        };
 
       let wallet: IWalletState | null = null;
 
@@ -311,31 +313,30 @@ export class KeyringManager implements IKeyringManager {
 
         const isHdCreated = !!this.hd;
 
-        if(this.utf8Error) {
+        if (hasUtf8Error) {
           const sysMainnetNetwork = {
-            apiUrl: "",
+            apiUrl: '',
             chainId: 57,
-            currency: "sys",
+            currency: 'sys',
             default: true,
-            explorer: "https://blockbook.elint.services/",
-            label: "Syscoin Mainnet",
+            explorer: 'https://blockbook.elint.services/',
+            label: 'Syscoin Mainnet',
             slip44: 57,
-            url: "https://blockbook.elint.services/"
-          }
+            url: 'https://blockbook.elint.services/',
+          };
 
-          await this.setSignerNetwork(sysMainnetNetwork, INetworkType.Syscoin)
+          await this.setSignerNetwork(sysMainnetNetwork, INetworkType.Syscoin);
 
-          await this.restoreWallet(isHdCreated, password)
+          await this.restoreWallet(isHdCreated, password);
 
-          wallet = this.wallet
-
-          this.utf8Error = false
+          wallet = this.wallet;
+          this.storage.set('utf8Error', { hasUtf8Error: false });
         }
 
-        if(!isHdCreated || !this.sessionMnemonic) {
-          await this.restoreWallet(isHdCreated, password)
+        if (!isHdCreated || !this.sessionMnemonic) {
+          await this.restoreWallet(isHdCreated, password);
         }
-        
+
         this.updateWalletKeys(password);
       }
 
