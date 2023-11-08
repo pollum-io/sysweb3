@@ -298,7 +298,8 @@ export class KeyringManager implements IKeyringManager {
   }> => {
     try {
       const { hash, salt } = this.storage.get('vault-keys');
-      const { hasUtf8Error } = this.storage.get('utf8Error');
+      const utf8ErrorData = this.storage.get('utf8Error');
+      const hasUtf8Error = utf8ErrorData ? utf8ErrorData.hasUtf8Error : false;
       const hashPassword = this.encryptSHA512(password, salt);
 
       if (isForPvtKey)
