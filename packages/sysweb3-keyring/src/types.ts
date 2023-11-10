@@ -198,6 +198,10 @@ export interface IKeyringManager {
     pwd: string
   ) => string;
   getSeed: (password: string) => string;
+  unlock: (password: string, isForPvtKey?: boolean) => Promise<{
+    canLogin: boolean;
+    wallet?: IWalletState | null;
+  }>;
   isUnlocked: () => boolean;
   logout: () => void;
   ledgerSigner: LedgerKeyring;
@@ -235,6 +239,7 @@ export interface IKeyringManager {
     accountId: number,
     accountType: KeyringAccountType
   ) => void;
+  utf8Error: boolean;
 }
 
 export enum KeyringAccountType {
