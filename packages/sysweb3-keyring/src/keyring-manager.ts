@@ -1727,10 +1727,12 @@ export class KeyringManager implements IKeyringManager {
             }
 
             // Update xprv
-            const encryptNewXprv = CryptoJS.AES.encrypt(
-              decryptedXprv,
-              this.sessionPassword
-            ).toString();
+            const encryptNewXprv = isBitcoinBased
+              ? decryptedXprv
+              : CryptoJS.AES.encrypt(
+                  decryptedXprv,
+                  this.sessionPassword
+                ).toString();
 
             activeAccount.xprv = encryptNewXprv;
           }
