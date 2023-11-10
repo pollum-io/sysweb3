@@ -302,10 +302,11 @@ export class KeyringManager implements IKeyringManager {
       const hasUtf8Error = utf8ErrorData ? utf8ErrorData.hasUtf8Error : false;
       const hashPassword = this.encryptSHA512(password, salt);
 
-      if (isForPvtKey)
+      if (isForPvtKey) {
         return {
           canLogin: hashPassword === hash,
         };
+      }
 
       let wallet: IWalletState | null = null;
 
@@ -479,14 +480,6 @@ export class KeyringManager implements IKeyringManager {
     pwd: string
   ): string => {
     try {
-      const genPwd = this.encryptSHA512(pwd, this.currentSessionSalt);
-
-      if (!this.sessionPassword) {
-        throw new Error('Unlock wallet first');
-      } else if (this.sessionPassword !== genPwd) {
-        throw new Error('Invalid password');
-      }
-
       const accounts = this.wallet.accounts[acountType];
 
       const account = Object.values(accounts).find(
@@ -1704,14 +1697,6 @@ export class KeyringManager implements IKeyringManager {
   private async updateWalletKeys(pwd: string) {
     try {
       const vaultKeys = this.storage.get('vault-keys');
-      let oldSessionPassword = pwd; //Default to the password to keep compatibility with older sysweb3 packages
-
-      if (vaultKeys.currentSessionSalt) {
-        oldSessionPassword = this.encryptSHA512(
-          pwd,
-          vaultKeys.currentSessionSalt
-        );
-      }
 
       //Update values
       this.guaranteeUpdatedPrivateValues(pwd);
@@ -1722,22 +1707,32 @@ export class KeyringManager implements IKeyringManager {
         if (accountTypeKey !== KeyringAccountType.Trezor) {
           // Iterate through each account in the current accountType
           for (const id in accounts[accountTypeKey as KeyringAccountType]) {
+            const activeAccount =
+              accounts[accountTypeKey as KeyringAccountType][id];
+            const isBitcoinBased = !ethers.utils.isHexString(
+              activeAccount.address
+            );
+
+            let decryptedXprv = '';
+
+            if (!isBitcoinBased) {
+              let { mnemonic } = getDecryptedVault(pwd);
+              mnemonic = CryptoJS.AES.decrypt(mnemonic, pwd).toString(
+                CryptoJS.enc.Utf8
+              );
+              const { privateKey } = ethers.Wallet.fromMnemonic(mnemonic);
+              decryptedXprv = privateKey;
+            } else {
+              decryptedXprv = this.getEncryptedXprv();
+            }
+
             // Update xprv
-            const encryptedxprv =
-              accounts[accountTypeKey as KeyringAccountType][id].xprv;
-
-            const decryptedxprv = CryptoJS.AES.decrypt(
-              encryptedxprv,
-              oldSessionPassword
-            ).toString(CryptoJS.enc.Utf8);
-
             const encryptNewXprv = CryptoJS.AES.encrypt(
-              decryptedxprv,
+              decryptedXprv,
               this.sessionPassword
             ).toString();
 
-            accounts[accountTypeKey as KeyringAccountType][id].xprv =
-              encryptNewXprv;
+            activeAccount.xprv = encryptNewXprv;
           }
         }
       }
