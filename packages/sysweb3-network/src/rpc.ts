@@ -86,6 +86,7 @@ export const validateEthRpc = async (
   valid: boolean;
   hexChainId: string;
   details: Chain | undefined;
+  isTestnet: boolean;
   chain: string;
 }> => {
   try {
@@ -104,11 +105,18 @@ export const validateEthRpc = async (
       throw new Error('RPC has an invalid chain ID');
     }
 
+    const ethTestnetsChainsIds = [5700, 80001, 11155111, 421611, 5, 69]; // Some ChainIds from Ethereum Testnets as Polygon Testnet, Goerli, Sepolia, etc.
+
+    const isTestnet = details
+      ? details.name.toLowerCase().includes('test')
+      : ethTestnetsChainsIds.includes(chainId); // Fallback for RPCs that don't have details
+
     return {
       chainId,
       details,
       chain: details && details.chain ? details.chain : 'unknown',
       hexChainId,
+      isTestnet,
       valid,
     };
   } catch (error) {
@@ -123,7 +131,7 @@ export const getEthRpc = async (
   formattedNetwork: INetwork;
 }> => {
   const endsWithSlash = /\/$/;
-  const { valid, hexChainId, details } = await validateEthRpc(
+  const { valid, hexChainId, details, isTestnet } = await validateEthRpc(
     data.url,
     isInCooldown
   );
@@ -149,6 +157,7 @@ export const getEthRpc = async (
     explorer: String(explorer),
     currency: details ? details.nativeCurrency.symbol : data.symbol,
     chainId: chainIdNumber,
+    isTestnet,
   };
 
   return {
@@ -264,6 +273,7 @@ export const getSysRpc = async (data: any) => {
       slip44: networkConfig
         ? networkConfig.networks[networkType].slip44
         : syscoinSLIP,
+      isTestnet: chain === 'test',
     };
     const rpc = {
       formattedNetwork,
