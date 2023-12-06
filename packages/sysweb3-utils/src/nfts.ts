@@ -131,8 +131,8 @@ export const detectCollectibles = async (
   requestedSelectedAddress: string,
   chainId: number,
   rpcUrl: string,
-) => {
-  let collectibles;
+): Promise<INftsStructure[] | undefined> => {
+  let collectibles: INftsStructure[] | undefined;
 
   if (isSupportOpensea(chainId)) {
     collectibles = await getCollectiblesByOpensea(
@@ -217,7 +217,7 @@ export const fixDataCollectibles = async (
   chainId: number,
   walletAddress: string,
   rpcUrl: string,
-) => {
+): Promise<INftsStructure[] | undefined> => {
   const erc721Tokens: string[] = [];
   const erc721Ids: string[] = [];
 
@@ -284,7 +284,7 @@ export const fixDataCollectibles = async (
     }
   }
 
-  const ownedCollectibles: any = [];
+  const ownedCollectibles: INftsStructure[] = [];
   collectibles.forEach((collectible: any) => {
     const owner = allOwners.find(
       (item) => item.address === collectible.asset_contract.address && item.token_id === collectible.token_id
@@ -429,5 +429,36 @@ export const getERC1155BalancesInSingleCallInternal = async(walletAddress: strin
        
     })
   });
-  
+}
+
+export interface IApiNftsCreator {
+  user: { username: string };
+  profile_img_url: string;
+  address: string;
+}
+
+export interface IApiNftsLastSale {
+  event_timestamp: string;
+  total_price: string;
+  transaction: { transaction_hash: string; block_hash: string };
+}
+
+export interface INftsStructure {
+  chainId: string;
+  token_id: string;
+  address: string;
+  num_sales: number | null;
+  background_color: string | null;
+  image_url: string | null;
+  image_preview_url: string | null;
+  image_thumbnail_url: string | null;
+  image_original_url: string | null;
+  animation_url: string | null;
+  animation_original_url: string | null;
+  name: string | null;
+  description: string | null;
+  external_link: string | null;
+  creator: IApiNftsCreator | null;
+  last_sale: IApiNftsLastSale | null;
+  balanceOf: BigNumber;
 }
