@@ -443,10 +443,18 @@ export interface IApiNftsLastSale {
   transaction: { transaction_hash: string; block_hash: string };
 }
 
+export interface IApiNftsCollection {
+  name: string,
+  slug: string,
+  image_url: string,
+  description: string
+}
+
 export interface INftsStructure {
   chainId: string;
   token_id: string;
   address: string;
+  collection: IApiNftsCollection | null;
   num_sales: number | null;
   background_color: string | null;
   image_url: string | null;
