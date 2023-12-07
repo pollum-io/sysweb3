@@ -580,29 +580,10 @@
     ethers "^5.6.9"
     web3 "^1.7.1"
 
-"@pollum-io/sysweb3-utils@/home/leozera/Projects/Pollum/sysweb3/packages/sysweb3-utils/dist":
+"@pollum-io/sysweb3-utils@^1.1.231":
   version "1.1.231"
-  dependencies:
-    "@ethersproject/contracts" "^5.6.2"
-    axios "^0.26.1"
-    bech32 "^2.0.0"
-    bip32 "^3.0.1"
-    bip44-constants "^114.0.0"
-    bip84 "^0.2.7"
-    bitcoinjs-lib "^5.2.0"
-    camelcase-keys "^7.0.2"
-    coinselectsyscoin "^1.0.77"
-    crypto-js "^4.1.1"
-    eth-object "https://github.com/syscoin/eth-object.git"
-    eth-proof "^2.1.6"
-    eth-util-lite "^1.0.1"
-    ethers "^5.6.4"
-    syscoinjs-lib "^1.0.218"
-    syscointx-js "^1.0.106"
-    web3 "^1.7.1"
-
-"@pollum-io/sysweb3-utils@file:../sysweb3-utils/dist":
-  version "1.1.231"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.1.231.tgz#ba866a276121922e36cb1edecf32e90349771647"
+  integrity sha512-7prNARyaroykOibpCPJpT3O/z815rsNSCrWhrfnlCzjNQvNmVroAmfmvdRzS9JH+9XoO74hWFoIsVCv0wI7l+A==
   dependencies:
     "@ethersproject/contracts" "^5.6.2"
     axios "^0.26.1"
@@ -4431,3 +4412,4 @@ yallist@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/yallist/-/yallist-4.0.0.tgz#9bb92790d9c0effec63be73519e11a35019a3a72"
   integrity sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==
+  
