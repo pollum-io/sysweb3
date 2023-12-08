@@ -124,6 +124,7 @@ export type INetwork = {
   currency?: string;
   explorer?: string;
   slip44?: number;
+  isTestnet: boolean;
 };
 
 export enum INetworkType {
