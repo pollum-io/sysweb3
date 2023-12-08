@@ -47,6 +47,7 @@ export const initialNetworksState = {
       apiUrl: '',
       explorer: 'https://blockbook.elint.services/',
       slip44: 57,
+      isTestnet: false,
     },
     5700: {
       chainId: 5700,
@@ -57,6 +58,7 @@ export const initialNetworksState = {
       apiUrl: '',
       explorer: '',
       slip44: 5700,
+      isTestnet: true,
     },
   },
   ethereum: {
@@ -68,6 +70,7 @@ export const initialNetworksState = {
       currency: 'eth',
       explorer: 'https://etherscan.io/',
       apiUrl: 'https://api.etherscan.io/api',
+      isTestnet: false,
     },
     137: {
       chainId: 137,
@@ -77,6 +80,7 @@ export const initialNetworksState = {
       url: 'https://polygon-rpc.com',
       apiUrl: 'https://api.polygonscan.com/api',
       explorer: 'https://polygonscan.com/',
+      isTestnet: false,
     },
     80001: {
       chainId: 80001,
@@ -86,6 +90,7 @@ export const initialNetworksState = {
       url: 'https://endpoints.omniatech.io/v1/matic/mumbai/public',
       apiUrl: 'https://api-testnet.polygonscan.com/api',
       explorer: 'https://mumbai.polygonscan.com/',
+      isTestnet: true,
     },
     57: {
       chainId: 57,
@@ -95,6 +100,7 @@ export const initialNetworksState = {
       url: 'https://rpc.syscoin.org',
       apiUrl: 'https://explorer.syscoin.org/api',
       explorer: 'https://explorer.syscoin.org/',
+      isTestnet: false,
     },
     570: {
       chainId: 570,
@@ -104,6 +110,7 @@ export const initialNetworksState = {
       url: 'https://rpc.rollux.com',
       apiUrl: 'https://explorer.rollux.com/api',
       explorer: 'https://explorer.rollux.com/',
+      isTestnet: false,
     },
     5700: {
       chainId: 5700,
@@ -113,6 +120,7 @@ export const initialNetworksState = {
       url: 'https://rpc.tanenbaum.io',
       apiUrl: 'https://tanenbaum.io/api',
       explorer: 'https://tanenbaum.io/',
+      isTestnet: true,
     },
   },
 };
@@ -141,5 +149,6 @@ export const initialWalletState: IWalletState = {
     url: 'https://blockbook.elint.services/',
     default: true,
     currency: 'sys',
+    isTestnet: false,
   },
 };
