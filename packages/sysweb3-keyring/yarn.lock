@@ -568,10 +568,10 @@
   resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-core/-/sysweb3-core-1.0.26.tgz#57a1fd60942b6d2261fb74f73807698205ecb344"
   integrity sha512-6NG2s0PLEMVQyMQnC8voZOKWh+MAp6SX9B4Dseg79Xtfi/flWp2FV/uVg7WzY9C3bTpHJ+mqtLWeWRgG63dQ/w==
 
-"@pollum-io/sysweb3-network@1.0.94":
-  version "1.0.94"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-network/-/sysweb3-network-1.0.94.tgz#2bb41d746e9001df0a283f9da618be7a0e061f5d"
-  integrity sha512-sR3XjDGIlCAy1ELYyfVmbYjTKLCKcScW9EoHJn37LPtyzdkwesSwxQa7A9VOjrDFE05rE2RFdpxsEHOukXGMPg==
+"@pollum-io/sysweb3-network@^1.0.95":
+  version "1.0.95"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-network/-/sysweb3-network-1.0.95.tgz#94b2bd4d189ef97d6f43e8086f8fb3484affa987"
+  integrity sha512-u3BqbZQ0a+nl0CkkRYZLoCbXDEHbcuYb1U4MvVtY94qQeMpG2WaIXKC4eG6m0HYoe+qDt2ibUSaLUbL0HC8RNQ==
   dependencies:
     axios "^0.26.1"
     bip44-constants "^114.0.0"
@@ -580,10 +580,10 @@
     ethers "^5.6.9"
     web3 "^1.7.1"
 
-"@pollum-io/sysweb3-utils@^1.1.231":
-  version "1.1.231"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.1.231.tgz#ba866a276121922e36cb1edecf32e90349771647"
-  integrity sha512-7prNARyaroykOibpCPJpT3O/z815rsNSCrWhrfnlCzjNQvNmVroAmfmvdRzS9JH+9XoO74hWFoIsVCv0wI7l+A==
+"@pollum-io/sysweb3-utils@^1.1.232":
+  version "1.1.232"
+  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.1.232.tgz#f12d2ebf2c4eaf024008b0a90275ff21b663bfa1"
+  integrity sha512-g84Y80PzUgw6ZryXA9rrPrA6nESrkVUE9OzVYX1VgR8tkuqyk1o0fN/BZMDEiZCmhAE3F8JX//+gJfGNvdknLg==
   dependencies:
     "@ethersproject/contracts" "^5.6.2"
     axios "^0.26.1"
