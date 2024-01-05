@@ -222,12 +222,7 @@ export class LedgerKeyring {
     entries.forEach((entry) => {
       const [index, pubkeySign] = entry;
       bitcoinPsbt.updateInput(index, {
-        partialSig: [
-          {
-            pubkey: pubkeySign.pubkey as Buffer,
-            signature: pubkeySign.signature as Buffer,
-          },
-        ],
+        partialSig: [pubkeySign],
       });
     });
 
