@@ -297,8 +297,8 @@ export class KeyringManager implements IKeyringManager {
     wallet?: IWalletState | null;
   }> => {
     try {
-      const { hash, salt } = this.storage.get('vault-keys');
-      const utf8ErrorData = this.storage.get('utf8Error');
+      const { hash, salt } = await this.storage.get('vault-keys');
+      const utf8ErrorData = await this.storage.get('utf8Error');
       const hasUtf8Error = utf8ErrorData ? utf8ErrorData.hasUtf8Error : false;
       const hashPassword = this.encryptSHA512(password, salt);
 
@@ -400,7 +400,7 @@ export class KeyringManager implements IKeyringManager {
       if (!this.memPassword) {
         throw new Error('Create a password first');
       }
-      let { mnemonic } = getDecryptedVault(this.memPassword);
+      let { mnemonic } = await getDecryptedVault(this.memPassword);
       mnemonic = CryptoJS.AES.decrypt(mnemonic, this.memPassword).toString(
         CryptoJS.enc.Utf8
       );
@@ -527,14 +527,14 @@ export class KeyringManager implements IKeyringManager {
       this.sessionPassword
     ).toString();
 
-  public getSeed = (pwd: string) => {
+  public getSeed = async (pwd: string) => {
     const genPwd = this.encryptSHA512(pwd, this.currentSessionSalt);
     if (!this.sessionPassword) {
       throw new Error('Unlock wallet first');
     } else if (this.sessionPassword !== genPwd) {
       throw new Error('Invalid password');
     }
-    let { mnemonic } = getDecryptedVault(pwd);
+    let { mnemonic } = await getDecryptedVault(pwd);
     mnemonic = CryptoJS.AES.decrypt(mnemonic, pwd).toString(CryptoJS.enc.Utf8);
 
     return mnemonic;
@@ -1627,7 +1627,7 @@ export class KeyringManager implements IKeyringManager {
 
   private async restoreWallet(hdCreated: boolean, pwd: string) {
     if (!this.sessionMnemonic) {
-      let { mnemonic } = getDecryptedVault(pwd);
+      let { mnemonic } = await getDecryptedVault(pwd);
       mnemonic = CryptoJS.AES.decrypt(mnemonic, pwd).toString(
         CryptoJS.enc.Utf8
       );
@@ -1716,7 +1716,7 @@ export class KeyringManager implements IKeyringManager {
             let decryptedXprv = '';
 
             if (!isBitcoinBased) {
-              let { mnemonic } = getDecryptedVault(pwd);
+              let { mnemonic } = await getDecryptedVault(pwd);
               mnemonic = CryptoJS.AES.decrypt(mnemonic, pwd).toString(
                 CryptoJS.enc.Utf8
               );

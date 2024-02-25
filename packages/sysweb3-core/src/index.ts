@@ -1,3 +1,5 @@
+import { parseJsonRecursively } from './utils';
+
 interface IStateStorageClient {
   getItem(key: string): string | null;
   removeItem(key: string): void;
@@ -25,7 +27,7 @@ const defaultStorage =
   typeof window !== 'undefined' ? window.localStorage : undefined;
 
 const StateStorageDb = (
-  storageClient: IStateStorageClient | undefined = defaultStorage
+  storageClient: any | undefined = defaultStorage
 ): IKeyValueDb => {
   let keyPrefix = 'sysweb3-';
 
@@ -45,11 +47,25 @@ const StateStorageDb = (
   const set = (key: string, value: any) => {
     if (!storageClient) return;
 
+    if ('set' in storageClient) {
+      storageClient.set({ [keyPrefix + key]: value });
+      return;
+    }
+
     storageClient.setItem(keyPrefix + key, JSON.stringify(value));
   };
 
-  const get = (key: string): any => {
+  const get = async (key: string): Promise<any> => {
     if (!storageClient) return;
+
+    if ('get' in storageClient) {
+      const value = await storageClient.get(keyPrefix + key);
+      if (value) {
+        const result = parseJsonRecursively(value);
+        return result[keyPrefix + key];
+      }
+      return {};
+    }
 
     const value = storageClient.getItem(keyPrefix + key);
     if (value) {
@@ -59,6 +75,10 @@ const StateStorageDb = (
 
   const deleteItem = (key: string) => {
     if (!storageClient) return;
+    if ('remove' in storageClient) {
+      storageClient.remove(keyPrefix + key);
+      return;
+    }
 
     storageClient.removeItem(keyPrefix + key);
   };
@@ -109,9 +129,8 @@ const CrossPlatformDi = () => {
   };
 };
 
-const crossPlatformDi = CrossPlatformDi();
-
 const SysWeb3Di = () => {
+  const crossPlatformDi = CrossPlatformDi();
   const getStateStorageDb = (): IKeyValueDb => {
     return crossPlatformDi.getStateStorageDb();
   };
