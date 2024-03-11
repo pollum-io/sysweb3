@@ -265,10 +265,10 @@ export class KeyringManager implements IKeyringManager {
     }
   }
 
-  private recoverLastSessionPassword(pwd: string): string {
+  private async recoverLastSessionPassword(pwd: string) {
     //As before locking the wallet we always keep the value of the last currentSessionSalt correctly stored in vault,
     //we use the value in vault instead of the one present in the class to get the last correct value for sessionPassword
-    const initialVaultKeys = this.storage.get('vault-keys');
+    const initialVaultKeys = await this.storage.get('vault-keys');
 
     //Here we need to validate if user has the currentSessionSalt in the vault-keys, because for Pali Users that
     //already has accounts created in some old version this value will not be in the storage. So we need to check it
@@ -311,7 +311,7 @@ export class KeyringManager implements IKeyringManager {
       let wallet: IWalletState | null = null;
 
       if (hashPassword === hash) {
-        this.sessionPassword = this.recoverLastSessionPassword(password);
+        this.sessionPassword = await this.recoverLastSessionPassword(password);
 
         const isHdCreated = !!this.hd;
 
@@ -339,7 +339,7 @@ export class KeyringManager implements IKeyringManager {
           await this.restoreWallet(isHdCreated, password);
         }
 
-        this.updateWalletKeys(password);
+        await this.updateWalletKeys(password);
       }
 
       return {
@@ -1696,7 +1696,7 @@ export class KeyringManager implements IKeyringManager {
 
   private async updateWalletKeys(pwd: string) {
     try {
-      const vaultKeys = this.storage.get('vault-keys');
+      const vaultKeys = await this.storage.get('vault-keys');
 
       //Update values
       this.guaranteeUpdatedPrivateValues(pwd);
