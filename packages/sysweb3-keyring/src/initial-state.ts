@@ -41,11 +41,11 @@ export const initialNetworksState = {
     57: {
       chainId: 57,
       label: 'Syscoin Mainnet',
-      url: 'https://blockbook.elint.services/',
+      url: 'https://blockbook.syscoin.org',
       default: true,
       currency: 'sys',
       apiUrl: '',
-      explorer: 'https://blockbook.elint.services/',
+      explorer: 'https://blockbook.syscoin.org',
       slip44: 57,
       isTestnet: false,
     },
