@@ -321,10 +321,10 @@ export class KeyringManager implements IKeyringManager {
             chainId: 57,
             currency: 'sys',
             default: true,
-            explorer: 'https://blockbook.elint.services/',
+            explorer: 'https://blockbook.syscoin.org/',
             label: 'Syscoin Mainnet',
             slip44: 57,
-            url: 'https://blockbook.elint.services/',
+            url: 'https://blockbook.syscoin.org/',
           };
 
           await this.setSignerNetwork(sysMainnetNetwork, INetworkType.Syscoin);

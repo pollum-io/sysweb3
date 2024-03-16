@@ -146,7 +146,7 @@ export const initialWalletState: IWalletState = {
   activeNetwork: {
     chainId: 57,
     label: 'Syscoin Mainnet',
-    url: 'https://blockbook.elint.services/',
+    url: 'https://blockbook.syscoin.org/',
     default: true,
     currency: 'sys',
     isTestnet: false,
