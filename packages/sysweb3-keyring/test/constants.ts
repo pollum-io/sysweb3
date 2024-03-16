@@ -36,17 +36,17 @@ export const SYS_TANENBAUM_UTXO_NETWORK = {
 export const BTC_TESTNET_TOKEN = {
   chainId: 57,
   label: 'Bitcoin Testnet',
-  url: 'https://blockbook.elint.services/',
+  url: 'https://blockbook.syscoin.org/',
   default: true,
   currency: 'sys',
   apiUrl: '',
-  explorer: 'https://blockbook.elint.services/',
+  explorer: 'https://blockbook.syscoin.org/',
 };
 
 export const SYS_MAINNET_UTXO_NETWORK = {
   chainId: 57,
   label: 'Syscoin Mainnet',
-  url: 'https://blockbook.elint.services/',
+  url: 'https://blockbook.syscoin.org/',
   default: true,
   currency: 'sys',
 };
@@ -211,7 +211,7 @@ export const previousWalletState: IWalletState = {
   activeNetwork: {
     chainId: 57,
     label: 'Syscoin Mainnet',
-    url: 'https://blockbook.elint.services/',
+    url: 'https://blockbook.syscoin.org/',
     default: true,
     currency: 'sys',
   },
