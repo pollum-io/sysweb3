@@ -1,21 +1,24 @@
+import { BigNumber } from 'bignumber.js';
 import { ethers } from 'ethers';
 
-import {BigNumber} from 'bignumber.js'
-
+import NFT_BALANCE_CHECKER_ABI from './abi/nft_balance_checker_abi.json';
 import { createContractUsingAbi } from './contracts';
-import { BaseChainConfig,  getScanApiByType, timeoutFetch, toLowerCaseEquals } from './nfts_config';
-import NFT_BALANCE_CHECKER_ABI from './abi/nft_balance_checker_abi.json'
-
+import {
+  BaseChainConfig,
+  getScanApiByType,
+  timeoutFetch,
+  toLowerCaseEquals,
+} from './nfts_config';
 
 const LOAD_NFT_MAX = 400;
 
 export const isSupportOpensea = (chainId: number) => {
-  return chainId === 1 ||  chainId === 137;
-}
+  return chainId === 1 || chainId === 137;
+};
 
 export const isSupportLuxy = (chainId: number) => {
   return chainId === 57 || chainId === 570;
-}
+};
 
 export const getOwnerCollectiblesApi = (
   chainId: number,
@@ -39,7 +42,7 @@ export const getOwnerCollectiblesApi = (
 
 export const getCollectiblesByType = async (
   walletAddress: string,
-  chainId: number,
+  chainId: number
 ) => {
   const api = await getScanApiByType(
     chainId,
@@ -70,13 +73,13 @@ export const fetchLuxyNFTs = async (
   try {
     const network = chainId === 57 ? 'Syscoin' : 'Rollux';
 
-    const formattedWalletAddress = ethers.utils.getAddress(walletAddress)
+    const formattedWalletAddress = ethers.utils.getAddress(walletAddress);
 
     const limit = 50;
     let page = 0;
     let pagingFinish = false;
     let collectibles: any[] = [];
-    let url = `https://backend.luxy.io/nft/by-owner/${formattedWalletAddress}?network=["${network}"]&page=${page}&limit=${limit}`;
+    let url = `https://backend.luxy.io/nft/by-owner/${formattedWalletAddress}?network=%5B${network}%5D&page=${page}&limit=${limit}`;
 
     do {
       const response = await fetch(url);
@@ -113,7 +116,7 @@ export const fetchLuxyNFTs = async (
 export const getCollectiblesByOpensea = async (
   chainId: number,
   walletAddress: string,
-  rpcUrl: string,
+  rpcUrl: string
 ) => {
   const collectibles = await getOwnerCollectibles(chainId, walletAddress);
   if (!collectibles) {
@@ -130,7 +133,7 @@ export const getCollectiblesByOpensea = async (
 export const detectCollectibles = async (
   requestedSelectedAddress: string,
   chainId: number,
-  rpcUrl: string,
+  rpcUrl: string
 ): Promise<INftsStructure[] | undefined> => {
   let collectibles: INftsStructure[] | undefined;
 
@@ -148,7 +151,7 @@ export const detectCollectibles = async (
     );
   }
 
-  return collectibles
+  return collectibles;
 };
 
 export const getOwnerCollectibles = async (
@@ -216,7 +219,7 @@ export const fixDataCollectibles = async (
   collectibles: any,
   chainId: number,
   walletAddress: string,
-  rpcUrl: string,
+  rpcUrl: string
 ): Promise<INftsStructure[] | undefined> => {
   const erc721Tokens: string[] = [];
   const erc721Ids: string[] = [];
@@ -243,7 +246,7 @@ export const fixDataCollectibles = async (
         erc721Tokens,
         erc721Ids,
         rpcUrl,
-        chainId,
+        chainId
       );
     } catch (e) {
       console.log('PPYang getERC721OwnersInSingleCall e:', e);
@@ -251,11 +254,19 @@ export const fixDataCollectibles = async (
     if (owners && owners.length === erc721Tokens.length) {
       erc721Tokens.forEach((address, index) => {
         if (toLowerCaseEquals(owners[index], walletAddress)) {
-          allOwners.push({ balanceOf: new BigNumber(1), address, token_id: erc721Ids[index] });
+          allOwners.push({
+            balanceOf: new BigNumber(1),
+            address,
+            token_id: erc721Ids[index],
+          });
         }
       });
     } else {
-      console.log('PPYang getERC721OwnersInSingleCall length is not match:', owners?.length, erc721Tokens.length);
+      console.log(
+        'PPYang getERC721OwnersInSingleCall length is not match:',
+        owners?.length,
+        erc721Tokens.length
+      );
       return undefined;
     }
   }
@@ -267,7 +278,7 @@ export const fixDataCollectibles = async (
         erc1155Tokens,
         erc1155Ids,
         rpcUrl,
-        chainId,
+        chainId
       );
     } catch (e) {
       console.log('PPYang getERC1155BalancesInSingleCall e:', e);
@@ -275,11 +286,19 @@ export const fixDataCollectibles = async (
     if (owners && owners.length === erc1155Tokens.length) {
       erc1155Tokens.forEach((address, index) => {
         if (owners[index]?.gt(0)) {
-          allOwners.push({ balanceOf: owners[index], address, token_id: erc1155Ids[index] });
+          allOwners.push({
+            balanceOf: owners[index],
+            address,
+            token_id: erc1155Ids[index],
+          });
         }
       });
     } else {
-      console.log('PPYang getERC1155BalancesInSingleCall length is not match:', owners?.length, erc1155Tokens.length);
+      console.log(
+        'PPYang getERC1155BalancesInSingleCall length is not match:',
+        owners?.length,
+        erc1155Tokens.length
+      );
       return undefined;
     }
   }
@@ -287,11 +306,17 @@ export const fixDataCollectibles = async (
   const ownedCollectibles: INftsStructure[] = [];
   collectibles.forEach((collectible: any) => {
     const owner = allOwners.find(
-      (item) => item.address === collectible.asset_contract.address && item.token_id === collectible.token_id
-     );
+      (item) =>
+        item.address === collectible.asset_contract.address &&
+        item.token_id === collectible.token_id
+    );
 
     if (owner) {
-      ownedCollectibles.push({ ...collectible, balanceOf: owner.balanceOf, chainId });
+      ownedCollectibles.push({
+        ...collectible,
+        balanceOf: owner.balanceOf,
+        chainId,
+      });
     }
   });
 
@@ -302,7 +327,7 @@ export const getERC721OwnersInSingleCall = async (
   walletAddress: string,
   tokens: string[],
   ids: string[],
-  rpcUrl:string,
+  rpcUrl: string,
   currentChainId: number,
   targetChainId: number | undefined = undefined
 ): Promise<string[]> => {
@@ -329,7 +354,7 @@ export const getERC721OwnersInSingleCall = async (
       sliced_ids,
       rpcUrl,
       currentChainId,
-      targetChainId as number,
+      targetChainId as number
     );
     result && allBalances.push(...result);
   }
@@ -356,30 +381,43 @@ export const getERC721OwnersInSingleCallInternal = async (
   if (!ADDRESS) {
     return [];
   }
-  const provider = new ethers.providers.JsonRpcProvider(rpcUrl)
+  const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
-  const contract = createContractUsingAbi(NFT_BALANCE_CHECKER_ABI, ADDRESS, provider);
+  const contract = createContractUsingAbi(
+    NFT_BALANCE_CHECKER_ABI,
+    ADDRESS,
+    provider
+  );
   return new Promise<string[]>((resolve) => {
-    contract.owners([walletAddress], tokens, ids)
-    .then((result: string[]) => {
+    contract
+      .owners([walletAddress], tokens, ids)
+      .then((result: string[]) => {
         let allBalances = [];
 
         allBalances = result;
         resolve(allBalances);
-    })
-    .catch((error: Error) => {
-      if(error) {
-        resolve([])
-        return
-      }
-    })
-   
-});
+      })
+      .catch((error: Error) => {
+        if (error) {
+          resolve([]);
+          return;
+        }
+      });
+  });
 };
 
-export const getERC1155BalancesInSingleCall = async (walletAddress: string, tokens: string[], ids: string[], rpcUrl: string, currentChainId: number, targetChainId: number | undefined = undefined): Promise<BigNumber[]> => {
+export const getERC1155BalancesInSingleCall = async (
+  walletAddress: string,
+  tokens: string[],
+  ids: string[],
+  rpcUrl: string,
+  currentChainId: number,
+  targetChainId: number | undefined = undefined
+): Promise<BigNumber[]> => {
   if (targetChainId && targetChainId !== currentChainId) {
-    console.log(`getERC1155BalancesInSingleCall:Cannot match target chainId, current ${currentChainId} target ${targetChainId}`);
+    console.log(
+      `getERC1155BalancesInSingleCall:Cannot match target chainId, current ${currentChainId} target ${targetChainId}`
+    );
     return [];
   }
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -388,22 +426,36 @@ export const getERC1155BalancesInSingleCall = async (walletAddress: string, toke
   if (!ADDRESS) {
     return [];
   }
-
-
 
   const allBalances = [];
   for (let i = 0; i <= tokens.length / 500; i++) {
     const sliced_tokens = tokens.slice(i * 500, (i + 1) * 500);
     const sliced_ids = ids.slice(i * 500, (i + 1) * 500);
-    const result = await getERC1155BalancesInSingleCallInternal(walletAddress, sliced_tokens, sliced_ids,rpcUrl, currentChainId, targetChainId);
+    const result = await getERC1155BalancesInSingleCallInternal(
+      walletAddress,
+      sliced_tokens,
+      sliced_ids,
+      rpcUrl,
+      currentChainId,
+      targetChainId
+    );
     result && allBalances.push(...result);
   }
   return allBalances;
-}
+};
 
-export const getERC1155BalancesInSingleCallInternal = async(walletAddress: string, tokens: string[], ids: string[], rpcUrl: string, currentChainId: number, targetChainId: number | undefined = undefined): Promise<BigNumber[]> => {
+export const getERC1155BalancesInSingleCallInternal = async (
+  walletAddress: string,
+  tokens: string[],
+  ids: string[],
+  rpcUrl: string,
+  currentChainId: number,
+  targetChainId: number | undefined = undefined
+): Promise<BigNumber[]> => {
   if (targetChainId && targetChainId !== currentChainId) {
-    console.log(`getERC1155BalancesInSingleCall:Cannot match target chainId, current ${currentChainId} target ${targetChainId}`);
+    console.log(
+      `getERC1155BalancesInSingleCall:Cannot match target chainId, current ${currentChainId} target ${targetChainId}`
+    );
     return [];
   }
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -412,24 +464,28 @@ export const getERC1155BalancesInSingleCallInternal = async(walletAddress: strin
   if (!ADDRESS) {
     return [];
   }
-  const provider = new ethers.providers.JsonRpcProvider(rpcUrl)
+  const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
-  const contract = createContractUsingAbi(NFT_BALANCE_CHECKER_ABI, ADDRESS, provider);
+  const contract = createContractUsingAbi(
+    NFT_BALANCE_CHECKER_ABI,
+    ADDRESS,
+    provider
+  );
 
   return new Promise<BigNumber[]>((resolve) => {
-    contract.balances([walletAddress], tokens, ids)
-    .then((result: BigNumber[]) => {
-        resolve(result)
-    })
-    .catch((error: Error) => {
-      if(error) {
-        resolve([])
-        return
-      }
-       
-    })
+    contract
+      .balances([walletAddress], tokens, ids)
+      .then((result: BigNumber[]) => {
+        resolve(result);
+      })
+      .catch((error: Error) => {
+        if (error) {
+          resolve([]);
+          return;
+        }
+      });
   });
-}
+};
 
 export interface IApiNftsCreator {
   user: { username: string };
@@ -444,10 +500,10 @@ export interface IApiNftsLastSale {
 }
 
 export interface IApiNftsCollection {
-  name: string,
-  slug: string,
-  image_url: string,
-  description: string
+  name: string;
+  slug: string;
+  image_url: string;
+  description: string;
 }
 
 export interface INftsStructure {
