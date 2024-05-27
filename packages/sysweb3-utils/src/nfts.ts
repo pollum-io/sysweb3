@@ -79,7 +79,7 @@ export const fetchLuxyNFTs = async (
     let page = 0;
     let pagingFinish = false;
     let collectibles: any[] = [];
-    let url = `https://backend.luxy.io/nft/by-owner/${formattedWalletAddress}?network=%5B${network}%5D&page=${page}&limit=${limit}`;
+    let url = `https://backend.luxy.io/nft/by-owner/${formattedWalletAddress}?network=%5B"${network}"%5D&page=${page}&limit=${limit}`;
 
     do {
       const response = await fetch(url);
@@ -93,7 +93,7 @@ export const fetchLuxyNFTs = async (
         pagingFinish = true;
       }
 
-      url = `https://backend.luxy.io/nft/by-owner/${formattedWalletAddress}?network=["${network}"]&page=${page}&limit=${limit}`;
+      url = `https://backend.luxy.io/nft/by-owner/${formattedWalletAddress}?network=%5B"${network}"%5D&page=${page}&limit=${limit}`;
       page += 1;
     } while (!pagingFinish);
 
