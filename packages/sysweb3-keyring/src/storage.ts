@@ -14,8 +14,8 @@ export const setEncryptedVault = (decryptedVault: any, pwd: string) => {
   storage.set('vault', encryptedVault.toString());
 };
 
-export const getDecryptedVault = (pwd: string) => {
-  const vault = storage.get('vault');
+export const getDecryptedVault = async (pwd: string) => {
+  const vault = await storage.get('vault');
 
   const decryptedVault = CryptoJS.AES.decrypt(vault, pwd).toString(
     CryptoJS.enc.Utf8
