@@ -1,9 +1,8 @@
 # Project Build Scripts
 
-
-
 ## Prerequisites
-- Before running the script, make sure the following tools are installed on your system:
+
+Before running the script, make sure the following tools are installed on your system:
 
 - yarn: Used to manage dependencies and execute build scripts.
 - jq: Used to programmatically manipulate JSON files.
@@ -18,7 +17,9 @@ npm install -g yarn
 ```
 
 ## Build local development
-- This script automates the process of building specified local packages and updating their paths in the `package.json` of the pali-wallet project.
+
+This script automates the process of building specified local packages and updating their paths in the `package.json` of the pali-wallet project.
+
 ### Usage
 
 To run the script, you need to provide the path to the `package.json` file of the pali-wallet project. You can optionally specify which packages you want to build and update. If no packages are specified, all packages will be processed.
@@ -42,7 +43,9 @@ To run the script, you need to provide the path to the `package.json` file of th
 ```
 
 ## Build manifest v3 local development
-- This script automates the process of building the local development using manifest v3
+
+This script automates the process of building the local development using manifest v3
+
 ### Usage
 
 To run the script, you need to provide the path to the `pali-wallet` project.
@@ -52,4 +55,3 @@ To run the script, you need to provide the path to the `pali-wallet` project.
 ```bash
 ./build-local-mv3.sh <path_to_pali>
 ```
-
