@@ -67,7 +67,7 @@ export class KeyringManager implements IKeyringManager {
   //local variables
   private hd: SyscoinHDSigner | null;
   private syscoinSigner: SyscoinMainSigner | undefined;
-  private trezorSigner: TrezorKeyring;
+  public trezorSigner: TrezorKeyring;
   public ledgerSigner: LedgerKeyring;
   private memMnemonic: string;
   private memPassword: string;

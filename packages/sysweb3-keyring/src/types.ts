@@ -10,6 +10,7 @@ import {
 } from 'web3-core';
 
 import { LedgerKeyring } from './ledger';
+import { TrezorKeyring } from './trezor';
 import { INetwork, INetworkType } from '@pollum-io/sysweb3-network';
 import {
   ITokenMint,
@@ -198,13 +199,17 @@ export interface IKeyringManager {
     pwd: string
   ) => string;
   getSeed: (password: string) => string;
-  unlock: (password: string, isForPvtKey?: boolean) => Promise<{
+  unlock: (
+    password: string,
+    isForPvtKey?: boolean
+  ) => Promise<{
     canLogin: boolean;
     wallet?: IWalletState | null;
   }>;
   isUnlocked: () => boolean;
   logout: () => void;
   ledgerSigner: LedgerKeyring;
+  trezorSigner: TrezorKeyring;
   setActiveAccount: (
     accountId: number,
     accountType: KeyringAccountType

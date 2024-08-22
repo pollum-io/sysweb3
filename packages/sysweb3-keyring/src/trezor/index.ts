@@ -4,7 +4,8 @@ import TrezorConnect, {
   DEVICE_EVENT,
   EthereumTransaction,
   EthereumTransactionEIP1559,
-} from '@trezor/connect-web';
+  // @ts-ignore
+} from '@trezor/connect-webextension';
 import { address } from '@trezor/utxo-lib';
 import bitcoinops from 'bitcoin-ops';
 import { Transaction, payments, script } from 'bitcoinjs-lib';
@@ -72,7 +73,6 @@ export class TrezorKeyring {
         this.model = event.payload.features.model;
       }
     });
-    this.init();
   }
 
   /**
@@ -82,16 +82,15 @@ export class TrezorKeyring {
    * @returns true, if trezor was initialized successfully and false, if some error happen
    */
 
-  private async init() {
-    if (window) {
-      window.TrezorConnect = TrezorConnect;
-    }
+  public async init() {
     try {
       await TrezorConnect.init({
         manifest: TREZOR_CONNECT_MANIFEST,
         lazyLoad: true,
         popup: true,
         connectSrc: 'https://connect.trezor.io/9/',
+        _extendWebextensionLifetime: true,
+        transports: ['BridgeTransport', 'WebUsbTransport'], // Transport protocols to be used
       });
       return true;
     } catch (error) {
@@ -138,14 +137,14 @@ export class TrezorKeyring {
         path: keypath,
         coin: coin,
       })
-        .then((response) => {
+        .then((response: any) => {
           if (response.success) {
             resolve(response.payload);
           }
           // @ts-ignore
           reject(response.payload.error);
         })
-        .catch((error) => {
+        .catch((error: any) => {
           console.error('TrezorConnectError', error);
           reject(error);
         });
@@ -638,7 +637,7 @@ export class TrezorKeyring {
           message: Web3.utils.stripHexPrefix(message),
           hex: true,
         })
-          .then((response) => {
+          .then((response: any) => {
             if (response.success) {
               if (
                 address &&
@@ -655,7 +654,7 @@ export class TrezorKeyring {
               );
             }
           })
-          .catch((e) => {
+          .catch((e: any) => {
             reject(new Error(e.toString() || 'Unknown error'));
           });
         // This is necessary to avoid popup collision
@@ -860,7 +859,7 @@ export class TrezorKeyring {
         })),
       });
       if (success) {
-        return payload.map((item) => item.address);
+        return payload.map((item: any) => item.address);
       }
     } catch (error) {
       return error;
