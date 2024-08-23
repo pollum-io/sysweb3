@@ -737,12 +737,14 @@ export class SyscoinTransactions implements ISyscoinTransactions {
   public signPSBT = async ({
     psbt,
     signer,
+    pathIn,
   }: {
     psbt: string;
     signer: any;
+    pathIn?: string;
   }): Promise<JSON> => {
     return sys.utils.exportPsbtToJson(
-      await signer.sign(psbt),
+      await signer.sign(psbt, pathIn),
       undefined
     ) as any;
   };
@@ -770,7 +772,8 @@ export class SyscoinTransactions implements ISyscoinTransactions {
 
   signTransaction = async (
     data: { psbt: string; assets: string },
-    isSignOnly: boolean
+    isSignOnly: boolean,
+    pathIn?: string
   ): Promise<any> => {
     const { hd } = this.getSigner();
 
@@ -792,6 +795,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
         return await this.signPSBT({
           psbt: response.psbt,
           signer: hd,
+          pathIn,
         });
       }
 
