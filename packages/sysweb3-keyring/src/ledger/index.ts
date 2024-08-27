@@ -376,7 +376,7 @@ export class LedgerKeyring {
       true
     ).toString('hex');
 
-    let messageHash = null;
+    let messageHash: string | null = null;
 
     if (primaryType !== 'EIP712Domain') {
       messageHash = TypedDataUtils.hashStruct(
