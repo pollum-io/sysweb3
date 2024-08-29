@@ -173,7 +173,7 @@ export interface ISyscoinTransactions {
   signTransaction: (
     data: { psbt: string; assets: string },
     isSendOnly: boolean,
-    isTrezor?: boolean
+    pathIn?: string
   ) => Promise<any>;
 }
 
