@@ -172,7 +172,7 @@ export interface ISyscoinTransactions {
   signTransaction: (
     data: { psbt: string; assets: string },
     isSendOnly: boolean,
-    isTrezor?: boolean
+    pathIn?: string
   ) => Promise<any>;
 }
 
@@ -198,7 +198,10 @@ export interface IKeyringManager {
     pwd: string
   ) => string;
   getSeed: (password: string) => string;
-  unlock: (password: string, isForPvtKey?: boolean) => Promise<{
+  unlock: (
+    password: string,
+    isForPvtKey?: boolean
+  ) => Promise<{
     canLogin: boolean;
     wallet?: IWalletState | null;
   }>;
