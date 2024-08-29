@@ -35,6 +35,7 @@
     "@pollum-io/sysweb3-network": "^1.0.95",
     "@pollum-io/sysweb3-utils": "^1.1.232",
     "@trezor/connect-web": "^9.1.5",
+    "@trezor/connect-webextension": "^9.3.0",
     "@trezor/utxo-lib": "^1.0.12",
     "axios": "^1.6.0",
     "bip32-path": "^0.4.2",

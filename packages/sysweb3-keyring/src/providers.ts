@@ -35,6 +35,17 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
     this.signal = signal;
     this._pendingBatchAggregator = null;
     this._pendingBatch = null;
+
+    this.bindMethods();
+  }
+
+  private bindMethods() {
+    const proto = Object.getPrototypeOf(this);
+    for (const key of Object.getOwnPropertyNames(proto)) {
+      if (typeof this[key] === 'function' && key !== 'constructor') {
+        this[key] = this[key].bind(this);
+      }
+    }
   }
 
   private throttledRequest = <T>(requestFn: () => Promise<T>): Promise<T> => {

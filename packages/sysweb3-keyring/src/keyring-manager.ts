@@ -67,7 +67,7 @@ export class KeyringManager implements IKeyringManager {
   //local variables
   private hd: SyscoinHDSigner | null;
   private syscoinSigner: SyscoinMainSigner | undefined;
-  private trezorSigner: TrezorKeyring;
+  public trezorSigner: TrezorKeyring;
   public ledgerSigner: LedgerKeyring;
   private memMnemonic: string;
   private memPassword: string;
@@ -265,10 +265,10 @@ export class KeyringManager implements IKeyringManager {
     }
   }
 
-  private recoverLastSessionPassword(pwd: string): string {
+  private async recoverLastSessionPassword(pwd: string) {
     //As before locking the wallet we always keep the value of the last currentSessionSalt correctly stored in vault,
     //we use the value in vault instead of the one present in the class to get the last correct value for sessionPassword
-    const initialVaultKeys = this.storage.get('vault-keys');
+    const initialVaultKeys = await this.storage.get('vault-keys');
 
     //Here we need to validate if user has the currentSessionSalt in the vault-keys, because for Pali Users that
     //already has accounts created in some old version this value will not be in the storage. So we need to check it
@@ -297,8 +297,8 @@ export class KeyringManager implements IKeyringManager {
     wallet?: IWalletState | null;
   }> => {
     try {
-      const { hash, salt } = this.storage.get('vault-keys');
-      const utf8ErrorData = this.storage.get('utf8Error');
+      const { hash, salt } = await this.storage.get('vault-keys');
+      const utf8ErrorData = await this.storage.get('utf8Error');
       const hasUtf8Error = utf8ErrorData ? utf8ErrorData.hasUtf8Error : false;
       const hashPassword = this.encryptSHA512(password, salt);
 
@@ -311,7 +311,7 @@ export class KeyringManager implements IKeyringManager {
       let wallet: IWalletState | null = null;
 
       if (hashPassword === hash) {
-        this.sessionPassword = this.recoverLastSessionPassword(password);
+        this.sessionPassword = await this.recoverLastSessionPassword(password);
 
         const isHdCreated = !!this.hd;
 
@@ -339,7 +339,7 @@ export class KeyringManager implements IKeyringManager {
           await this.restoreWallet(isHdCreated, password);
         }
 
-        this.updateWalletKeys(password);
+        await this.updateWalletKeys(password);
       }
 
       return {
@@ -400,7 +400,7 @@ export class KeyringManager implements IKeyringManager {
       if (!this.memPassword) {
         throw new Error('Create a password first');
       }
-      let { mnemonic } = getDecryptedVault(this.memPassword);
+      let { mnemonic } = await getDecryptedVault(this.memPassword);
       mnemonic = CryptoJS.AES.decrypt(mnemonic, this.memPassword).toString(
         CryptoJS.enc.Utf8
       );
@@ -527,14 +527,14 @@ export class KeyringManager implements IKeyringManager {
       this.sessionPassword
     ).toString();
 
-  public getSeed = (pwd: string) => {
+  public getSeed = async (pwd: string) => {
     const genPwd = this.encryptSHA512(pwd, this.currentSessionSalt);
     if (!this.sessionPassword) {
       throw new Error('Unlock wallet first');
     } else if (this.sessionPassword !== genPwd) {
       throw new Error('Invalid password');
     }
-    let { mnemonic } = getDecryptedVault(pwd);
+    let { mnemonic } = await getDecryptedVault(pwd);
     mnemonic = CryptoJS.AES.decrypt(mnemonic, pwd).toString(CryptoJS.enc.Utf8);
 
     return mnemonic;
@@ -1627,7 +1627,7 @@ export class KeyringManager implements IKeyringManager {
 
   private async restoreWallet(hdCreated: boolean, pwd: string) {
     if (!this.sessionMnemonic) {
-      let { mnemonic } = getDecryptedVault(pwd);
+      let { mnemonic } = await getDecryptedVault(pwd);
       mnemonic = CryptoJS.AES.decrypt(mnemonic, pwd).toString(
         CryptoJS.enc.Utf8
       );
@@ -1696,7 +1696,7 @@ export class KeyringManager implements IKeyringManager {
 
   private async updateWalletKeys(pwd: string) {
     try {
-      const vaultKeys = this.storage.get('vault-keys');
+      const vaultKeys = await this.storage.get('vault-keys');
 
       //Update values
       this.guaranteeUpdatedPrivateValues(pwd);
@@ -1716,7 +1716,7 @@ export class KeyringManager implements IKeyringManager {
             let decryptedXprv = '';
 
             if (!isBitcoinBased) {
-              let { mnemonic } = getDecryptedVault(pwd);
+              let { mnemonic } = await getDecryptedVault(pwd);
               mnemonic = CryptoJS.AES.decrypt(mnemonic, pwd).toString(
                 CryptoJS.enc.Utf8
               );
