@@ -602,15 +602,11 @@ export const getTokenInfoBasedOnNetwork = async (
     chainId: networkChainId,
   };
 
-  console.log({ web3Token, isRolluxNetwork, networkChainId });
-
   switch (isRolluxNetwork) {
     case true: {
       const fetchTokenData = await getSearchTokenAtSysGithubRepo(
         token.tokenSymbol
       );
-
-      console.log({ fetchTokenData });
 
       if (fetchTokenData?.token !== null && fetchTokenData?.imageUrl !== '') {
         web3Token = {
