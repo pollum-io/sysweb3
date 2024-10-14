@@ -900,10 +900,29 @@
     ethers "^5.6.9"
     web3 "^1.7.1"
 
-"@pollum-io/sysweb3-utils@^1.1.232":
+"@pollum-io/sysweb3-utils@/Volumes/SSD/Lucas/Jobs/Pollum/sysweb3/packages/sysweb3-utils/dist":
   version "1.1.232"
-  resolved "https://registry.yarnpkg.com/@pollum-io/sysweb3-utils/-/sysweb3-utils-1.1.232.tgz#f12d2ebf2c4eaf024008b0a90275ff21b663bfa1"
-  integrity sha512-g84Y80PzUgw6ZryXA9rrPrA6nESrkVUE9OzVYX1VgR8tkuqyk1o0fN/BZMDEiZCmhAE3F8JX//+gJfGNvdknLg==
+  dependencies:
+    "@ethersproject/contracts" "^5.6.2"
+    axios "^0.26.1"
+    bech32 "^2.0.0"
+    bip32 "^3.0.1"
+    bip44-constants "^114.0.0"
+    bip84 "^0.2.7"
+    bitcoinjs-lib "^5.2.0"
+    camelcase-keys "^7.0.2"
+    coinselectsyscoin "^1.0.77"
+    crypto-js "^4.1.1"
+    eth-object "https://github.com/syscoin/eth-object.git"
+    eth-proof "^2.1.6"
+    eth-util-lite "^1.0.1"
+    ethers "^5.6.4"
+    syscoinjs-lib "^1.0.218"
+    syscointx-js "^1.0.106"
+    web3 "^1.7.1"
+
+"@pollum-io/sysweb3-utils@file:../sysweb3-utils/dist":
+  version "1.1.232"
   dependencies:
     "@ethersproject/contracts" "^5.6.2"
     axios "^0.26.1"

@@ -33,7 +33,7 @@
     "@ledgerhq/logs": "^6.10.1",
     "@pollum-io/sysweb3-core": "^1.0.27",
     "@pollum-io/sysweb3-network": "^1.0.95",
-    "@pollum-io/sysweb3-utils": "^1.1.232",
+    "@pollum-io/sysweb3-utils": "/Volumes/SSD/Lucas/Jobs/Pollum/sysweb3/packages/sysweb3-utils/dist",
     "@trezor/connect-web": "^9.1.5",
     "@trezor/connect-webextension": "^9.3.0",
     "@trezor/utxo-lib": "^1.0.12",
