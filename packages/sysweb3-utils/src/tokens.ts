@@ -548,13 +548,29 @@ export const getSearchTokenAtCoingecko = async (
     return null;
   }
 };
+const isImageUrlAvailable = async (imageUrl: string) => {
+  try {
+    const response = await fetch(imageUrl);
+
+    return response.status === 200;
+  } catch (error) {
+    console.log('isImageUrlAvailable -->', { error });
+    return false;
+  }
+};
 
 export const getSearchTokenAtSysGithubRepo = async (tokenSymbol: string) => {
   const baseUrlToFetch = `https://raw.githubusercontent.com/syscoin/syscoin-rollux.github.io/master/data/${tokenSymbol}`;
 
   try {
-    const imageUrl = `${baseUrlToFetch}/logo.svg`;
+    const imageUrl = `${baseUrlToFetch}/logo`;
     const dataUrl = `${baseUrlToFetch}/data.json`;
+
+    const isPngImageAvailable = await isImageUrlAvailable(`${imageUrl}.png`);
+
+    const formattedImgUrl = isPngImageAvailable
+      ? `${imageUrl}.png`
+      : `${imageUrl}.svg`;
 
     const tokenData = await fetch(dataUrl);
 
@@ -563,7 +579,7 @@ export const getSearchTokenAtSysGithubRepo = async (tokenSymbol: string) => {
     if (formattedTokenData) {
       return {
         token: formattedTokenData,
-        imageUrl,
+        imageUrl: formattedImgUrl,
       };
     } else {
       return {
