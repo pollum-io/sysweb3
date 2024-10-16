@@ -4,6 +4,7 @@ dist/
 build/
 bak/
 
+.idea
 .DS_Store
 node_modules/
 scratch/
