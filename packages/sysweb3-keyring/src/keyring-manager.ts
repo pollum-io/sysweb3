@@ -56,10 +56,13 @@ export interface IkeyringManagerOpts {
   activeChain: INetworkType;
   password?: string;
 }
+
 export interface ISysAccountWithId extends ISysAccount {
   id: number;
 }
+
 const ethHdPath: Readonly<string> = "m/44'/60'/0'";
+
 export class KeyringManager implements IKeyringManager {
   private storage: any; //todo type
   private wallet: IWalletState; //todo change this name, we will use wallets for another const -> Maybe for defaultInitialState / defaultStartState;
@@ -84,6 +87,7 @@ export class KeyringManager implements IKeyringManager {
   //transactions objects
   public ethereumTransaction: IEthereumTransactions;
   public syscoinTransaction: ISyscoinTransactions;
+
   constructor(opts?: IkeyringManagerOpts | null) {
     this.storage = sysweb3.sysweb3Di.getStateStorageDb();
     this.trezorAccounts = [];
@@ -128,6 +132,7 @@ export class KeyringManager implements IKeyringManager {
       this.ledgerSigner
     );
   }
+
   // ===================================== AUXILIARY METHOD - FOR TRANSACTIONS CLASSES ===================================== //
   private getDecryptedPrivateKey = (): {
     address: string;
@@ -795,6 +800,7 @@ export class KeyringManager implements IKeyringManager {
       },
     };
   };
+
   public async importTrezorAccount(
     coin: string,
     slip44: string,
@@ -838,6 +844,7 @@ export class KeyringManager implements IKeyringManager {
       throw error;
     }
   }
+
   public getActiveUTXOAccountState = () => {
     return {
       ...this.wallet.accounts.HDAccount[this.wallet.activeAccountId],
@@ -1260,28 +1267,59 @@ export class KeyringManager implements IKeyringManager {
   };
 
   private setLatestIndexesFromXPubTokens = (tokens: any) => {
-    let changeIndex = 0;
-    let receivingIndex = 0;
-    if (tokens) {
-      tokens.forEach((token: any) => {
+    let maxChangeIndex = 0;
+    let maxReceivingIndex = 0;
+
+    if (tokens && tokens.length > 0) {
+      for (let i = tokens.length - 1; i >= 0; i--) {
+        const token = tokens[i];
         if (!token.transfers || !token.path) {
-          return;
+          continue;
         }
+
         const transfers = parseInt(token.transfers, 10);
         if (token.path && transfers > 0) {
           const splitPath = token.path.split('/');
           if (splitPath.length >= 6) {
             const change = parseInt(splitPath[4], 10);
             const index = parseInt(splitPath[5], 10);
-            if (change === 1) {
-              changeIndex = index + 1;
+
+            // set the max index for change and receiving
+            if (change === 1 && maxChangeIndex === 0) {
+              maxChangeIndex = index;
+            } else if (change === 0 && maxReceivingIndex === 0) {
+              maxReceivingIndex = index;
             }
-            receivingIndex = index + 1;
+
+            if (maxChangeIndex !== 0 && maxReceivingIndex !== 0) {
+              // we found both indexes
+              break;
+            }
           }
         }
-      });
+      }
     }
-    return { changeIndex, receivingIndex };
+
+    // create a range
+    const changeRange = Array.from({ length: maxChangeIndex + 1 }, (_, i) => i);
+    const receivingRange = Array.from(
+      { length: maxReceivingIndex + 1 },
+      (_, i) => i
+    );
+
+    const getRandomIndex = (type: 'change' | 'receiving') => {
+      const range = type === 'change' ? changeRange : receivingRange;
+      return range[Math.floor(Math.random() * range.length)];
+    };
+
+    // select random indexes (using the max index as the range)
+    const randomChangeIndex = changeRange[getRandomIndex('change')];
+    const randomReceivingIndex = receivingRange[getRandomIndex('receiving')];
+
+    return {
+      changeIndex: randomChangeIndex,
+      receivingIndex: randomReceivingIndex,
+    };
   };
 
   //todo network type
@@ -1820,6 +1858,7 @@ export class KeyringManager implements IKeyringManager {
 
     return importedAccount;
   }
+
   //TODO: validate updateAllPrivateKeyAccounts updating 2 accounts or more works properly
   public async updateAllPrivateKeyAccounts() {
     try {
