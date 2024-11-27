@@ -8,6 +8,7 @@ import {
   SignedTransaction,
   TransactionConfig,
 } from 'web3-core';
+import { Provider } from 'zksync-ethers';
 
 import { LedgerKeyring } from './ledger';
 import { TrezorKeyring } from './trezor';
@@ -134,8 +135,8 @@ export interface IEthereumTransactions {
   ) => Promise<any[]>;
   setWeb3Provider: (network: INetwork) => void;
   importAccount: (mnemonicOrPrivKey: string) => ethers.Wallet;
-  web3Provider: CustomJsonRpcProvider;
-  contentScriptWeb3Provider: CustomJsonRpcProvider;
+  web3Provider: CustomJsonRpcProvider | Provider;
+  contentScriptWeb3Provider: CustomJsonRpcProvider | Provider;
 }
 
 export interface ISyscoinTransactions {

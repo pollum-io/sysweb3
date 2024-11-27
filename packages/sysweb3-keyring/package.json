@@ -56,7 +56,8 @@
     "satoshi-bitcoin": "^1.0.5",
     "syscoinjs-lib": "^1.0.218",
     "syscointx-js": "^1.0.106",
-    "web3": "^1.7.1"
+    "web3": "^1.7.1",
+    "zksync-ethers": "5"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.1.3",
