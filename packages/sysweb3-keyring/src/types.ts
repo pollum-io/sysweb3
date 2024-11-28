@@ -1,14 +1,13 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { TypedData, TypedMessage } from 'eth-sig-util';
 import { ethers, BigNumber, BigNumberish } from 'ethers';
-import { CustomJsonRpcProvider } from 'providers';
+import { CustomJsonRpcProvider, CustomL2JsonRpcProvider } from 'providers';
 import {
   EncryptedKeystoreV3Json,
   Sign,
   SignedTransaction,
   TransactionConfig,
 } from 'web3-core';
-import { Provider } from 'zksync-ethers';
 
 import { LedgerKeyring } from './ledger';
 import { TrezorKeyring } from './trezor';
@@ -135,8 +134,8 @@ export interface IEthereumTransactions {
   ) => Promise<any[]>;
   setWeb3Provider: (network: INetwork) => void;
   importAccount: (mnemonicOrPrivKey: string) => ethers.Wallet;
-  web3Provider: CustomJsonRpcProvider | Provider;
-  contentScriptWeb3Provider: CustomJsonRpcProvider | Provider;
+  web3Provider: CustomJsonRpcProvider | CustomL2JsonRpcProvider;
+  contentScriptWeb3Provider: CustomJsonRpcProvider | CustomL2JsonRpcProvider;
 }
 
 export interface ISyscoinTransactions {
