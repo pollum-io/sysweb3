@@ -26,7 +26,7 @@ import floor from 'lodash/floor';
 import omit from 'lodash/omit';
 
 import { LedgerKeyring } from '../ledger';
-import { CustomJsonRpcProvider } from '../providers';
+import { CustomJsonRpcProvider, CustomL2JsonRpcProvider } from '../providers';
 import { SyscoinHDSigner } from '../signers';
 import { TrezorKeyring } from '../trezor';
 import {
@@ -48,8 +48,10 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export class EthereumTransactions implements IEthereumTransactions {
-  public web3Provider: CustomJsonRpcProvider;
-  public contentScriptWeb3Provider: CustomJsonRpcProvider;
+  public web3Provider: CustomJsonRpcProvider | CustomL2JsonRpcProvider;
+  public contentScriptWeb3Provider:
+    | CustomJsonRpcProvider
+    | CustomL2JsonRpcProvider;
   public trezorSigner: TrezorKeyring;
   public ledgerSigner: LedgerKeyring;
   private getNetwork: () => INetwork;
@@ -1775,11 +1777,18 @@ export class EthereumTransactions implements IEthereumTransactions {
   public setWeb3Provider(network: INetwork) {
     this.abortController.abort();
     this.abortController = new AbortController();
-    this.web3Provider = new CustomJsonRpcProvider(
+    const L2Networks = [324, 300];
+    const isL2Network = L2Networks.includes(network.chainId);
+
+    const CurrentProvider = isL2Network
+      ? CustomL2JsonRpcProvider
+      : CustomJsonRpcProvider;
+
+    this.web3Provider = new CurrentProvider(
       this.abortController.signal,
       network.url
     );
-    this.contentScriptWeb3Provider = new CustomJsonRpcProvider(
+    this.contentScriptWeb3Provider = new CurrentProvider(
       this.abortController.signal,
       network.url
     );
