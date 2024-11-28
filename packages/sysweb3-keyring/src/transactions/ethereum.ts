@@ -24,7 +24,6 @@ import { BigNumber, ethers } from 'ethers';
 import { Deferrable } from 'ethers/lib/utils';
 import floor from 'lodash/floor';
 import omit from 'lodash/omit';
-import { Provider } from 'zksync-ethers';
 
 import { LedgerKeyring } from '../ledger';
 import { CustomJsonRpcProvider, CustomL2JsonRpcProvider } from '../providers';
@@ -49,8 +48,10 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export class EthereumTransactions implements IEthereumTransactions {
-  public web3Provider: CustomJsonRpcProvider | Provider;
-  public contentScriptWeb3Provider: CustomJsonRpcProvider | Provider;
+  public web3Provider: CustomJsonRpcProvider | CustomL2JsonRpcProvider;
+  public contentScriptWeb3Provider:
+    | CustomJsonRpcProvider
+    | CustomL2JsonRpcProvider;
   public trezorSigner: TrezorKeyring;
   public ledgerSigner: LedgerKeyring;
   private getNetwork: () => INetwork;
