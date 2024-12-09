@@ -3,10 +3,12 @@ import { deepCopy } from '@ethersproject/properties';
 import { fetchJson } from '@ethersproject/web';
 import { BigNumber, ethers, logger } from 'ethers';
 import { ConnectionInfo, Logger, shallowCopy } from 'ethers/lib/utils';
+import { Provider } from 'zksync-ethers';
 
 import { handleStatusCodeError } from './errorUtils';
 import { checkError } from './utils';
-export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
+
+class BaseProvider extends ethers.providers.JsonRpcProvider {
   private timeoutCounter = 0;
   private isPossibleGetChainId = true;
   private cooldownTime = 120 * 1000;
@@ -354,5 +356,40 @@ export class CustomJsonRpcProvider extends ethers.providers.JsonRpcProvider {
     }
 
     return promise;
+  }
+}
+
+export class CustomJsonRpcProvider extends BaseProvider {
+  constructor(
+    signal: AbortSignal,
+    url?: ConnectionInfo | string,
+    network?: Networkish
+  ) {
+    super(signal, url, network);
+  }
+}
+
+export class CustomL2JsonRpcProvider extends Provider {
+  private baseProvider: BaseProvider;
+
+  constructor(
+    signal: AbortSignal,
+    url?: ConnectionInfo | string,
+    network?: ethers.providers.Networkish
+  ) {
+    super(url, network);
+    this.baseProvider = new BaseProvider(signal, url, network);
+  }
+
+  perform(method: string, params: any) {
+    return this.baseProvider.perform(method, params);
+  }
+
+  send(method: string, params: any[]) {
+    return this.baseProvider.send(method, params);
+  }
+
+  sendBatch(method: string, params: any[]) {
+    return this.baseProvider.sendBatch(method, params);
   }
 }
