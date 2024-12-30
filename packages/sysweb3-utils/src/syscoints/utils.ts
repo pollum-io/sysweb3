@@ -24,11 +24,12 @@ const syscoinNetworks = {
     messagePrefix: '\x18Syscoin Signed Message:\n',
     bech32: 'sys',
     bip32: {
-      public: 0x0488b21e,
-      private: 0x0488ade4,
+      public: 0x04b24746, // zpub
+      private: 0x04b2430c, // zprv
     },
     pubKeyHash: 0x3f,
     scriptHash: 0x05,
+    slip44: 57,
     wif: 0x80,
   },
   testnet: {
@@ -79,8 +80,9 @@ const tokenFreezeFunction =
 const axiosConfig = {
   withCredentials: true,
 };
+
 /* fetchNotarizationFromEndPoint
-Purpose: Fetch notarization signature via axois from an endPoint URL, see spec for more info: https://github.com/syscoin/sips/blob/master/sip-0002.mediawiki
+Purpose: Fetch notarization signature via axios from an endPoint URL, see spec for more info: https://github.com/syscoin/sips/blob/master/sip-0002.mediawiki
 Param endPoint: Required. Fully qualified URL which will take transaction information and respond with a signature or error on denial
 Param txHex: Required. Raw transaction hex
 Returns: Returns JSON object in response, signature on success and error on denial of notarization
@@ -691,6 +693,7 @@ async function signWithWIF(psbt: any, wif: any, network: any) {
     return await signPSBTWithWIF(psbt, wif, network);
   }
 }
+
 /* buildEthProof
 Purpose: Build Ethereum SPV proof using eth-proof library
 Param assetOpts: Required. Object containing web3url and ethtxid fields populated
@@ -1065,6 +1068,7 @@ function setTransactionMemo(rawHex: any, memoHeader: any, buffMemo: any) {
   }
   return txn;
 }
+
 function copyPSBT(
   psbt: any,
   networkIn: any,
@@ -1131,6 +1135,7 @@ class Signer {
   public accountIndex: number;
   public setIndexFlag: number;
   public blockbookURL: any;
+
   constructor(
     password?: any,
     isTestnet?: boolean,
@@ -1382,14 +1387,17 @@ Param accountIndex: Required. Account number to use
     return payment.address;
   };
 }
+
 class HDSigner {
   public Signer: Signer;
-  public mnemonic: string;
-  public fromMnemonic: any;
+  public mnemonicOrZprv: string;
+  public node: any;
   public changeIndex: number;
+  public importMethod: 'fromBase58' | 'fromSeed';
   public receivingIndex: number;
+
   constructor(
-    mnemonic: string,
+    mnemonicOrZpr: string,
     password?: any,
     isTestnet?: boolean,
     networks?: any,
@@ -1400,20 +1408,34 @@ class HDSigner {
     this.changeIndex = -1;
     this.receivingIndex = -1;
     this.Signer = new Signer(password, isTestnet, networks, SLIP44, pubTypes);
-    this.mnemonic = mnemonic; // serialized
+    this.mnemonicOrZprv = mnemonicOrZpr;
+    this.importMethod = 'fromSeed';
 
-    /* eslint new-cap: ["error", { "newIsCap": false }] */
-    this.fromMnemonic = new BIP84.fromMnemonic(
-      mnemonic,
-      this.Signer.password,
-      this.Signer.isTestnet,
-      this.Signer.SLIP44,
-      this.Signer.pubTypes,
-      this.Signer.network
-    );
+    const isZprv = mnemonicOrZpr.startsWith('zprv');
+
+    if (isZprv) {
+      this.importMethod = 'fromBase58';
+
+      this.node = new BIP84.fromZPrv(
+        mnemonicOrZpr,
+        this.Signer.pubTypes,
+        this.Signer.networks
+      );
+    } else {
+      /* eslint new-cap: ["error", { "newIsCap": false }] */
+      this.node = new BIP84.fromMnemonic(
+        mnemonicOrZpr,
+        this.Signer.password,
+        this.Signer.isTestnet,
+        this.Signer.SLIP44,
+        this.Signer.pubTypes,
+        this.Signer.network
+      );
+    }
+
     // try to restore, if it does not succeed then initialize from scratch
     if (!this.Signer.password || !this.restore(this.Signer.password, bipNum)) {
-      this.createAccount(bipNum);
+      this.createAccount(bipNum, isZprv ? mnemonicOrZpr : undefined);
     }
   }
 
@@ -1426,14 +1448,13 @@ class HDSigner {
   Param keypath: Required. HD BIP32 path of key desired based on internal seed and network
   Returns: bitcoinjs-lib keypair
   */
-  deriveKeypair = (keypath: any) => {
-    const keyPair = bjs.bip32
-      .fromSeed(this.fromMnemonic.seed, this.Signer.network)
-      .derivePath(keypath);
-    if (!keyPair) {
-      return null;
-    }
-    return keyPair;
+  deriveKeypair = (keypath: string) => {
+    const keyPair = bjs.bip32[this.importMethod](
+      this.node.seed || this.mnemonicOrZprv,
+      this.Signer.network
+    ).derivePath(keypath);
+
+    return !keyPair ? null : keyPair;
   };
 
   /* derivePubKey
@@ -1441,14 +1462,16 @@ class HDSigner {
   Param keypath: Required. HD BIP32 path of key desired based on internal seed and network
   Returns: bitcoinjs-lib pubkey
   */
-  derivePubKey = (keypath: any) => {
-    const keyPair = bjs.bip32
-      .fromSeed(this.fromMnemonic.seed, this.Signer.network)
-      .derivePath(keypath);
-    if (!keyPair) {
-      return null;
-    }
-    return keyPair.publicKey;
+  derivePubKey = (path: any) => {
+    // const path =
+    //   this.importMethod === 'fromBase58' ? keypath.slice(13) : keypath;
+
+    const keyPair = bjs.bip32[this.importMethod](
+      this.node.seed || this.mnemonicOrZprv,
+      this.Signer.network
+    ).derivePath(path);
+
+    return !keyPair ? null : keyPair.publicKey;
   };
 
   /* getRootNode
@@ -1456,7 +1479,10 @@ class HDSigner {
   Returns: BIP32 root node representing the seed
   */
   getRootNode = () => {
-    return bjs.bip32.fromSeed(this.fromMnemonic.seed, this.Signer.network);
+    return bjs.bip32[this.importMethod](
+      this.node.seed || this.mnemonicOrZprv,
+      this.Signer.network
+    );
   };
 
   /* sign
@@ -1473,8 +1499,10 @@ Returns: psbt from bitcoinjs-lib
   Returns: bip32 root master fingerprint
   */
   getMasterFingerprint = () => {
-    return bjs.bip32.fromSeed(this.fromMnemonic.seed, this.Signer.network)
-      .fingerprint;
+    return bjs.bip32[this.importMethod](
+      this.node.seed || this.mnemonicOrZprv,
+      this.Signer.network
+    ).fingerprint;
   };
 
   /* deriveAccount
@@ -1494,7 +1522,8 @@ Returns: psbt from bitcoinjs-lib
     ) {
       bipNum = 84;
     }
-    return this.fromMnemonic.deriveAccount(index, bipNum);
+
+    return this.node.deriveAccount(index, bipNum);
   };
 
   /* signPSBT
@@ -1505,7 +1534,8 @@ Returns: psbt from bitcoinjs-lib
 */
   signPSBT = async (psbt: any, pathIn: any) => {
     const txInputs = psbt.txInputs;
-    const fp = this.getMasterFingerprint();
+    const rootNode = this.getRootNode();
+
     for (let i = 0; i < txInputs.length; i++) {
       const dataInput = psbt.data.inputs[i];
       if (
@@ -1516,24 +1546,30 @@ Returns: psbt from bitcoinjs-lib
           (!dataInput.bip32Derivation ||
             dataInput.bip32Derivation.length === 0))
       ) {
-        const path = pathIn || dataInput.unknownKeyVals[1].value.toString();
+        const keyPath = pathIn || dataInput.unknownKeyVals[1].value.toString();
+        const path =
+          this.importMethod === 'fromBase58' ? keyPath.slice(13) : keyPath;
+
         const pubkey = this.derivePubKey(path);
         const address = this.getAddressFromPubKey(pubkey);
+
         if (
           pubkey &&
           (pathIn || dataInput.unknownKeyVals[0].value.toString() === address)
         ) {
           dataInput.bip32Derivation = [
             {
-              masterFingerprint: fp,
-              path: path,
-              pubkey: pubkey,
+              masterFingerprint: rootNode.fingerprint,
+              path,
+              pubkey,
             },
           ];
         }
       }
     }
-    await psbt.signAllInputsHDAsync(this.getRootNode());
+
+    await psbt.signAllInputsHDAsync(rootNode);
+
     try {
       if (psbt.validateSignaturesOfAllInputs()) {
         psbt.finalizeAllInputs();
@@ -1573,7 +1609,7 @@ Returns: psbt from bitcoinjs-lib
       return false;
     }
     const decryptedData = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-    this.mnemonic = decryptedData.mnemonic;
+    this.mnemonicOrZprv = decryptedData.mnemonic;
     const numAccounts = decryptedData.numAccounts;
     // sanity checks
     if (this.Signer.accountIndex > 1000) {
@@ -1615,7 +1651,7 @@ Returns: psbt from bitcoinjs-lib
     }
     const key = this.Signer.network.bech32 + '_hdsigner';
     const obj = {
-      mnemonic: this.mnemonic,
+      mnemonic: this.mnemonicOrZprv,
       numAccounts: this.Signer.accounts.length,
     };
     const ciphertext = CryptoJS.AES.encrypt(
@@ -1640,10 +1676,16 @@ Returns: psbt from bitcoinjs-lib
   Returns: Account index of new account
   */
 
-  createAccount = (bipNum: any) => {
+  createAccount = (bipNum: any, zprv?: string) => {
     this.Signer.changeIndex = -1;
     this.Signer.receivingIndex = -1;
-    const child = this.deriveAccount(this.Signer.accounts.length, bipNum);
+    const zPrivate =
+      zprv || this.mnemonicOrZprv.startsWith('zprv')
+        ? this.mnemonicOrZprv
+        : null;
+
+    const child =
+      zPrivate || this.deriveAccount(this.Signer.accounts.length, bipNum);
     this.Signer.accountIndex = this.Signer.accounts.length;
     /* eslint new-cap: ["error", { "newIsCap": false }] */
     this.Signer.accounts.push(
@@ -1705,24 +1747,29 @@ Returns: psbt from bitcoinjs-lib
 /* Override PSBT stuff so fee check isn't done as Syscoin Allocation burns outputs > inputs */
 function scriptWitnessToWitnessStack(buffer: any) {
   let offset = 0;
+
   function readSlice(n: any) {
     offset += n;
     return buffer.slice(offset - n, offset);
   }
+
   function readVarInt() {
     const vi = varuint.decode(buffer, offset);
     offset += varuint.decode.bytes;
     return vi;
   }
+
   function readVarSlice() {
     return readSlice(readVarInt());
   }
+
   function readVector() {
     const count = readVarInt();
     const vector = [];
     for (let i = 0; i < count; i++) vector.push(readVarSlice());
     return vector;
   }
+
   return readVector();
 }
 
@@ -1840,6 +1887,15 @@ function getTxCacheValue(key: any, name: any, inputs: any, c: any) {
 }
 
 class SPSBT extends bjs.Psbt {
+  static fromBase64(data: any, opts = {}) {
+    const buffer = Buffer.from(data, 'base64');
+    const psbt = this.fromBuffer(buffer, opts);
+    psbt.getFeeRate = SPSBT.prototype.getFeeRate;
+    psbt.getFee = SPSBT.prototype.getFee;
+    psbt.extractTransaction = SPSBT.prototype.extractTransaction;
+    return psbt;
+  }
+
   getFeeRate() {
     return getTxCacheValue(
       '__FEE_RATE',
@@ -1867,15 +1923,6 @@ class SPSBT extends bjs.Psbt {
     const tx = c.__TX.clone();
     inputFinalizeGetAmts(this.data.inputs, tx, c, true);
     return tx;
-  }
-
-  static fromBase64(data: any, opts = {}) {
-    const buffer = Buffer.from(data, 'base64');
-    const psbt = this.fromBuffer(buffer, opts);
-    psbt.getFeeRate = SPSBT.prototype.getFeeRate;
-    psbt.getFee = SPSBT.prototype.getFee;
-    psbt.extractTransaction = SPSBT.prototype.extractTransaction;
-    return psbt;
   }
 }
 
@@ -1909,6 +1956,7 @@ function getAssetIDs(assetGuid: any) {
   const BN_NFT = new BN(assetGuid).shrn(32);
   return { baseAssetID: getBaseAssetID(assetGuid), NFTID: BN_NFT.toString(10) };
 }
+
 const Psbt = SPSBT;
 
 export {
