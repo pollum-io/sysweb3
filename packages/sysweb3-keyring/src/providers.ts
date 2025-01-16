@@ -156,7 +156,7 @@ class BaseProvider extends ethers.providers.JsonRpcProvider {
     }
   }
 
-  async send(method: string, params: any[]) {
+  override send = async (method: string, params: any[]) => {
     if (!this.isPossibleGetChainId && method === 'eth_chainId') {
       return this.currentChainId;
     }
@@ -236,7 +236,7 @@ class BaseProvider extends ethers.providers.JsonRpcProvider {
         })
     );
     return result;
-  }
+  };
 
   async sendBatch(method: string, params: Array<any>) {
     const request = {
