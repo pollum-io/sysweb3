@@ -229,6 +229,7 @@ export interface IKeyringManager {
     accountType: KeyringAccountType
   ) => void;
   utf8Error: boolean;
+  validateZprv: (zprv: string) => IValidateZprvResponse;
 }
 
 export enum KeyringAccountType {
@@ -276,6 +277,11 @@ type IsBitcoinBased = {
 };
 
 type IOriginNetwork = INetwork & IsBitcoinBased;
+
+interface IValidateZprvResponse {
+  isValid: boolean;
+  message: string;
+}
 
 export interface IKeyringAccountState {
   address: string;
