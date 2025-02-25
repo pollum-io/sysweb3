@@ -1,7 +1,7 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { TypedData, TypedMessage } from 'eth-sig-util';
 import { ethers, BigNumber, BigNumberish } from 'ethers';
-import { CustomJsonRpcProvider } from 'providers';
+import { CustomJsonRpcProvider, CustomL2JsonRpcProvider } from 'providers';
 import {
   EncryptedKeystoreV3Json,
   Sign,
@@ -10,17 +10,9 @@ import {
 } from 'web3-core';
 
 import { LedgerKeyring } from './ledger';
+import { TrezorKeyring } from './trezor';
 import { INetwork, INetworkType } from '@pollum-io/sysweb3-network';
-import {
-  ITokenMint,
-  ITokenSend,
-  ITokenUpdate,
-  ITxid,
-} from '@pollum-io/sysweb3-utils';
-
-export interface ITrezorWallet {
-  createHardwareWallet: () => Promise<IKeyringAccountState>;
-}
+import { ITokenSend, ITxid } from '@pollum-io/sysweb3-utils';
 
 export interface ISendTransaction {
   sender: string;
@@ -30,6 +22,7 @@ export interface ISendTransaction {
   gasPrice?: number;
   token?: any;
 }
+
 export type SimpleTransactionRequest = {
   to: string;
   from: string;
@@ -141,8 +134,8 @@ export interface IEthereumTransactions {
   ) => Promise<any[]>;
   setWeb3Provider: (network: INetwork) => void;
   importAccount: (mnemonicOrPrivKey: string) => ethers.Wallet;
-  web3Provider: CustomJsonRpcProvider;
-  contentScriptWeb3Provider: CustomJsonRpcProvider;
+  web3Provider: CustomJsonRpcProvider | CustomL2JsonRpcProvider;
+  contentScriptWeb3Provider: CustomJsonRpcProvider | CustomL2JsonRpcProvider;
 }
 
 export interface ISyscoinTransactions {
@@ -153,16 +146,6 @@ export interface ISyscoinTransactions {
     amount: number;
     receivingAddress: string;
   }) => Promise<number>;
-  confirmNftCreation: (tx: any) => { success: boolean };
-  confirmTokenMint: (transaction: ITokenMint) => Promise<ITxid>;
-  confirmTokenCreation: (transaction: any) => Promise<{
-    transactionData: any;
-    txid: string;
-    confirmations: number;
-    guid: string;
-  }>;
-  transferAssetOwnership: (transaction: any) => Promise<ITxid>;
-  confirmUpdateToken: (transaction: ITokenUpdate) => Promise<ITxid>;
   getRecommendedFee: (explorerUrl: string) => Promise<number>;
   sendTransaction: (
     transaction: ITokenSend,
@@ -172,7 +155,7 @@ export interface ISyscoinTransactions {
   signTransaction: (
     data: { psbt: string; assets: string },
     isSendOnly: boolean,
-    isTrezor?: boolean
+    pathIn?: string
   ) => Promise<any>;
 }
 
@@ -186,11 +169,13 @@ export interface IKeyringManager {
   ) => Omit<IKeyringAccountState, 'xprv'>;
   getAccountXpub: () => string;
   getEncryptedXprv: () => string;
+
   importTrezorAccount(
     coin: string,
     slip44: string,
     index: string
   ): Promise<IKeyringAccountState>;
+
   getNetwork: () => INetwork;
   getPrivateKeyByAccountId: (
     id: number,
@@ -198,13 +183,17 @@ export interface IKeyringManager {
     pwd: string
   ) => string;
   getSeed: (password: string) => string;
-  unlock: (password: string, isForPvtKey?: boolean) => Promise<{
+  unlock: (
+    password: string,
+    isForPvtKey?: boolean
+  ) => Promise<{
     canLogin: boolean;
     wallet?: IWalletState | null;
   }>;
   isUnlocked: () => boolean;
   logout: () => void;
   ledgerSigner: LedgerKeyring;
+  trezorSigner: TrezorKeyring;
   setActiveAccount: (
     accountId: number,
     accountType: KeyringAccountType
@@ -240,6 +229,7 @@ export interface IKeyringManager {
     accountType: KeyringAccountType
   ) => void;
   utf8Error: boolean;
+  validateZprv: (zprv: string) => IValidateZprvResponse;
 }
 
 export enum KeyringAccountType {
@@ -248,12 +238,6 @@ export enum KeyringAccountType {
   HDAccount = 'HDAccount',
   Ledger = 'Ledger',
 }
-
-export type IKeyringDApp = {
-  id: number;
-  url: string;
-  active: boolean;
-};
 
 export type accountType = {
   [id: number]: IKeyringAccountState;
@@ -293,6 +277,11 @@ type IsBitcoinBased = {
 };
 
 type IOriginNetwork = INetwork & IsBitcoinBased;
+
+interface IValidateZprvResponse {
+  isValid: boolean;
+  message: string;
+}
 
 export interface IKeyringAccountState {
   address: string;

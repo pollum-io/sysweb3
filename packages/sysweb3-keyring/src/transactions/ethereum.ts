@@ -26,7 +26,7 @@ import floor from 'lodash/floor';
 import omit from 'lodash/omit';
 
 import { LedgerKeyring } from '../ledger';
-import { CustomJsonRpcProvider } from '../providers';
+import { CustomJsonRpcProvider, CustomL2JsonRpcProvider } from '../providers';
 import { SyscoinHDSigner } from '../signers';
 import { TrezorKeyring } from '../trezor';
 import {
@@ -48,8 +48,10 @@ import {
 } from '@pollum-io/sysweb3-utils';
 
 export class EthereumTransactions implements IEthereumTransactions {
-  public web3Provider: CustomJsonRpcProvider;
-  public contentScriptWeb3Provider: CustomJsonRpcProvider;
+  public web3Provider: CustomJsonRpcProvider | CustomL2JsonRpcProvider;
+  public contentScriptWeb3Provider:
+    | CustomJsonRpcProvider
+    | CustomL2JsonRpcProvider;
   public trezorSigner: TrezorKeyring;
   public ledgerSigner: LedgerKeyring;
   private getNetwork: () => INetwork;
@@ -653,13 +655,13 @@ export class EthereumTransactions implements IEthereumTransactions {
               typeof formatParams.gasLimit === 'string'
                 ? formatParams.gasLimit
                 : // @ts-ignore
-                  `${params.gasLimit.toHexString()}`,
+                  `${params.gasLimit.hex}`,
             value:
               typeof formatParams.value === 'string' ||
               typeof formatParams.value === 'number'
                 ? `${formatParams.value}`
                 : // @ts-ignore
-                  `${params.value.toHexString()}`,
+                  `${params.value.hex}`,
             nonce: this.toBigNumber(transactionNonce)._hex,
             chainId: activeNetwork.chainId,
           };
@@ -671,23 +673,23 @@ export class EthereumTransactions implements IEthereumTransactions {
               typeof formatParams.gasLimit === 'string'
                 ? formatParams.gasLimit
                 : // @ts-ignore
-                  `${params.gasLimit.toHexString()}`,
+                  `${params.gasLimit.hex}`,
             maxFeePerGas:
               typeof formatParams.maxFeePerGas === 'string'
                 ? formatParams.maxFeePerGas
                 : // @ts-ignore
-                  `${params.maxFeePerGas.toHexString()}`,
+                  `${params.maxFeePerGas.hex}`,
             maxPriorityFeePerGas:
               typeof formatParams.maxPriorityFeePerGas === 'string'
                 ? formatParams.maxPriorityFeePerGas
                 : // @ts-ignore
-                  `${params.maxPriorityFeePerGas.toHexString()}`,
+                  `${params.maxPriorityFeePerGas.hex}`,
             value:
               typeof formatParams.value === 'string' ||
               typeof formatParams.value === 'number'
                 ? `${formatParams.value}`
                 : // @ts-ignore
-                  `${params.value.toHexString()}`,
+                  `${params.value.hex}`,
             nonce: this.toBigNumber(transactionNonce)._hex,
             chainId: activeNetwork.chainId,
           };
@@ -699,23 +701,23 @@ export class EthereumTransactions implements IEthereumTransactions {
               typeof formatParams.gasLimit === 'string'
                 ? formatParams.gasLimit
                 : // @ts-ignore
-                  `${params.gasLimit.toHexString()}`,
+                  `${params.gasLimit.hex}`,
             maxFeePerGas:
               typeof formatParams.maxFeePerGas === 'string'
                 ? formatParams.maxFeePerGas
                 : // @ts-ignore
-                  `${params.maxFeePerGas.toHexString()}`,
+                  `${params.maxFeePerGas.hex}`,
             maxPriorityFeePerGas:
               typeof formatParams.maxPriorityFeePerGas === 'string'
                 ? formatParams.maxPriorityFeePerGas
                 : // @ts-ignore
-                  `${params.maxPriorityFeePerGas.toHexString()}`,
+                  `${params.maxPriorityFeePerGas.hex}`,
             value:
               typeof formatParams.value === 'string' ||
               typeof formatParams.value === 'number'
                 ? `${formatParams.value}`
                 : // @ts-ignore
-                  `${params.value.toHexString()}`,
+                  `${params.value.hex}`,
             nonce: this.toBigNumber(transactionNonce)._hex,
             chainId: activeNetwork.chainId,
           };
@@ -1117,7 +1119,7 @@ export class EthereumTransactions implements IEthereumTransactions {
             to: tokenAddress,
             value: '0x0',
             // @ts-ignore
-            gasLimit: `${gasLimit.toHexString()}`,
+            gasLimit: `${gasLimit.hex}`,
             // @ts-ignore
             gasPrice: `${gasPrice}`,
             nonce: this.toBigNumber(transactionNonce)._hex,
@@ -1129,11 +1131,11 @@ export class EthereumTransactions implements IEthereumTransactions {
             to: tokenAddress,
             value: '0x0',
             // @ts-ignore
-            gasLimit: `${gasLimit.toHexString()}`,
+            gasLimit: `${gasLimit.hex}`,
             // @ts-ignore
-            maxFeePerGas: `${maxFeePerGas.toHexString()}`,
+            maxFeePerGas: `${maxFeePerGas.hex}`,
             // @ts-ignore
-            maxPriorityFeePerGas: `${maxPriorityFeePerGas.toHexString()}`,
+            maxPriorityFeePerGas: `${maxPriorityFeePerGas.hex}`,
             nonce: this.toBigNumber(transactionNonce)._hex,
             chainId: activeNetwork.chainId,
             data: txData,
@@ -1362,7 +1364,7 @@ export class EthereumTransactions implements IEthereumTransactions {
             to: tokenAddress,
             value: '0x0',
             // @ts-ignore
-            gasLimit: `${gasLimit.toHexString()}`,
+            gasLimit: `${gasLimit.hex}`,
             // @ts-ignore
             gasPrice: `${gasPrice}`,
             nonce: this.toBigNumber(transactionNonce)._hex,
@@ -1375,11 +1377,11 @@ export class EthereumTransactions implements IEthereumTransactions {
             to: tokenAddress,
             value: '0x0',
             // @ts-ignore
-            gasLimit: `${gasLimit.toHexString()}`,
+            gasLimit: `${gasLimit.hex}`,
             // @ts-ignore
-            maxFeePerGas: `${maxFeePerGas.toHexString()}`,
+            maxFeePerGas: `${maxFeePerGas.hex}`,
             // @ts-ignore
-            maxPriorityFeePerGas: `${maxPriorityFeePerGas.toHexString()}`,
+            maxPriorityFeePerGas: `${maxPriorityFeePerGas.hex}`,
             nonce: this.toBigNumber(transactionNonce)._hex,
             chainId: activeNetwork.chainId,
             data: txData,
@@ -1596,7 +1598,7 @@ export class EthereumTransactions implements IEthereumTransactions {
             to: tokenAddress,
             value: '0x0',
             // @ts-ignore
-            gasLimit: `${gasLimit.toHexString()}`,
+            gasLimit: `${gasLimit.hex}`,
             // @ts-ignore
             gasPrice: `${gasPrice}`,
             nonce: this.toBigNumber(transactionNonce)._hex,
@@ -1608,11 +1610,11 @@ export class EthereumTransactions implements IEthereumTransactions {
             to: tokenAddress,
             value: '0x0',
             // @ts-ignore
-            gasLimit: `${gasLimit.toHexString()}`,
+            gasLimit: `${gasLimit.hex}`,
             // @ts-ignore
-            maxFeePerGas: `${maxFeePerGas.toHexString()}`,
+            maxFeePerGas: `${maxFeePerGas.hex}`,
             // @ts-ignore
-            maxPriorityFeePerGas: `${maxPriorityFeePerGas.toHexString()}`,
+            maxPriorityFeePerGas: `${maxPriorityFeePerGas.hex}`,
             nonce: this.toBigNumber(transactionNonce)._hex,
             chainId: activeNetwork.chainId,
             data: txData,
@@ -1775,11 +1777,18 @@ export class EthereumTransactions implements IEthereumTransactions {
   public setWeb3Provider(network: INetwork) {
     this.abortController.abort();
     this.abortController = new AbortController();
-    this.web3Provider = new CustomJsonRpcProvider(
+    const L2Networks = [324, 300];
+    const isL2Network = L2Networks.includes(network.chainId);
+
+    const CurrentProvider = isL2Network
+      ? CustomL2JsonRpcProvider
+      : CustomJsonRpcProvider;
+
+    this.web3Provider = new CurrentProvider(
       this.abortController.signal,
       network.url
     );
-    this.contentScriptWeb3Provider = new CustomJsonRpcProvider(
+    this.contentScriptWeb3Provider = new CurrentProvider(
       this.abortController.signal,
       network.url
     );

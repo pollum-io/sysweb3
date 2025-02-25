@@ -14,11 +14,9 @@ import {
 import { INetwork } from '@pollum-io/sysweb3-network';
 import {
   sys,
-  INewNFT,
   isBase64,
   repairBase64,
   ITokenSend,
-  ITokenUpdate,
   ITxid,
   txUtils,
   getAsset,
@@ -35,7 +33,7 @@ type EstimateFeeParams = {
 
 export class SyscoinTransactions implements ISyscoinTransactions {
   //TODO: test and validate for general UTXO chains which will be the working methods, for now we just allow contentScripts for syscoin Chains
-  private getNetwork: () => INetwork;
+  public getNetwork: () => INetwork;
   private getSigner: () => {
     hd: SyscoinHDSigner;
     main: any;
@@ -58,6 +56,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     isChangeAddress: boolean,
     index: number
   ) => Promise<string>;
+
   constructor(
     getNetwork: () => INetwork,
     getSyscoinSigner: () => {
@@ -185,564 +184,17 @@ export class SyscoinTransactions implements ISyscoinTransactions {
     };
   };
 
-  public createMintedToken = async ({
-    txid,
-    guid,
-    initialSupply,
-    precision,
-    receivingAddress,
-    fee,
-  }: {
-    txid: string;
-    guid: string;
-    initialSupply: number;
-    precision: number;
-    receivingAddress: string;
-    fee: number;
-  }) => {
-    const network = this.getNetwork();
-
-    const { hd, main } = this.getSigner();
-
-    return await new Promise((resolve: any, reject: any) => {
-      const interval = setInterval(async () => {
-        const { getRawTransaction, getFeeRate, getTokenMap } =
-          this.txUtilsFunctions();
-        const createdTokenTransaction = await getRawTransaction(
-          network.url,
-          txid
-        );
-
-        if (
-          createdTokenTransaction &&
-          createdTokenTransaction.confirmations > 1
-        ) {
-          const changeAddress = await hd.getNewChangeAddress(true, 84);
-
-          try {
-            const tokenMap = getTokenMap({
-              guid,
-              changeAddress,
-              amount: new sys.utils.BN(initialSupply * 10 ** precision) as any,
-              receivingAddress,
-            });
-            const txOptions = { rbf: true };
-
-            const pendingTransaction = await main.assetSend(
-              txOptions,
-              tokenMap,
-              receivingAddress,
-              getFeeRate(fee)
-            );
-
-            if (!pendingTransaction) {
-              throw new Error(
-                'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-              );
-            }
-
-            const txid = pendingTransaction.extractTransaction().getId();
-
-            resolve({
-              createdTokenTransaction,
-              txid,
-              confirmations: createdTokenTransaction.confirmations,
-              guid,
-            });
-          } catch (error) {
-            clearInterval(interval);
-
-            reject(error);
-          }
-        }
-      }, 16000);
-    });
-  };
-
-  public transferAssetOwnership = async (transaction: any): Promise<ITxid> => {
-    const { hd, main } = this.getSigner();
-    const { fee, assetGuid, newOwner } = transaction;
-
-    const feeRate = new sys.utils.BN(fee * 1e8);
-    const txOpts = { rbf: true };
-    const assetOpts = {};
-
-    const assetMap = new Map([
-      [
-        assetGuid,
-        {
-          changeAddress: await hd.getNewChangeAddress(true, 84),
-          outputs: [
-            {
-              value: new sys.utils.BN(0),
-              address: newOwner,
-            },
-          ],
-        },
-      ],
-    ]);
-
-    const pendingTx = await main.assetUpdate(
-      assetGuid,
-      assetOpts,
-      txOpts,
-      assetMap,
-      null,
-      feeRate
-    );
-
-    if (!pendingTx) {
-      console.error('Could not create transaction, not enough funds?');
-    }
-
-    const txid = pendingTx.extractTransaction().getId();
-
-    return { txid };
-  };
-
-  // todo: create temp tx type new token
-  public getTokenUpdateOptions = (temporaryTransaction: any) => {
-    const { main } = this.getSigner();
-
-    const {
-      capabilityflags,
-      contract,
-      description,
-      notarydetails,
-      auxfeedetails,
-      notaryAddress,
-      payoutAddress,
-    } = temporaryTransaction;
-
-    let tokenOptions = {
-      description,
-      updatecapabilityflags: capabilityflags ? String(capabilityflags) : '127',
-      notarydetails,
-      auxfeedetails,
-      notarykeyid: Buffer.from('', 'hex'),
-      contract: contract ? Buffer.from(contract, 'hex') : null,
-    };
-
-    if (notaryAddress) {
-      const notaryPayment = sys.utils.bitcoinjs.payments.p2wpkh({
-        address: notaryAddress,
-        network: main.network,
-      }) as any;
-
-      tokenOptions = {
-        ...tokenOptions,
-        notarydetails: {
-          ...notarydetails,
-          endpoint: Buffer.from(
-            syscointx.utils.encodeToBase64(notarydetails.endpoint)
-          ),
-        },
-        notarykeyid: Buffer.from(notaryPayment.hash.toString('hex'), 'hex'),
-      };
-    }
-
-    if (payoutAddress) {
-      const payment = sys.utils.bitcoinjs.payments.p2wpkh({
-        address: payoutAddress,
-        network: main.network,
-      }) as any;
-
-      const auxFeeKeyID = Buffer.from(payment.hash.toString('hex'), 'hex');
-
-      tokenOptions = {
-        ...tokenOptions,
-        auxfeedetails: {
-          ...tokenOptions.auxfeedetails,
-          auxfeekeyid: auxFeeKeyID,
-        },
-      };
-    }
-
-    return tokenOptions;
-  };
-
-  // todo: create temp tx type new token
-  public getTokenCreationOptions = (temporaryTransaction: any) => {
-    const { main } = this.getSigner();
-
-    const {
-      capabilityflags,
-      notarydetails,
-      auxfeedetails,
-      precision,
-      symbol,
-      description,
-      maxsupply,
-      notaryAddress,
-      payoutAddress,
-    } = temporaryTransaction;
-
-    const newMaxSupply = maxsupply * 10 ** precision;
-
-    let tokenOptions = {
-      precision,
-      symbol,
-      description,
-      maxsupply: new sys.utils.BN(newMaxSupply),
-      updatecapabilityflags: capabilityflags ? String(capabilityflags) : '127',
-      notarydetails,
-      auxfeedetails,
-      notarykeyid: Buffer.from('', 'hex'),
-    };
-
-    if (notaryAddress) {
-      const notaryPayment = sys.utils.bitcoinjs.payments.p2wpkh({
-        address: notaryAddress,
-        network: main.network,
-      }) as any;
-
-      tokenOptions = {
-        ...tokenOptions,
-        notarydetails: {
-          ...notarydetails,
-          endpoint: Buffer.from(
-            syscointx.utils.encodeToBase64(notarydetails.endpoint)
-          ),
-        },
-        notarykeyid: Buffer.from(notaryPayment.hash.toString('hex'), 'hex'),
-      };
-    }
-
-    if (payoutAddress) {
-      const payment = sys.utils.bitcoinjs.payments.p2wpkh({
-        address: payoutAddress,
-        network: main.network,
-      }) as any;
-
-      const auxFeeKeyID = Buffer.from(payment.hash.toString('hex'), 'hex');
-
-      tokenOptions = {
-        ...tokenOptions,
-        auxfeedetails: {
-          ...tokenOptions.auxfeedetails,
-          auxfeekeyid: auxFeeKeyID,
-        },
-      };
-    }
-
-    return tokenOptions;
-  };
-  confirmTokenCreation = async (
-    // todo: type
-    temporaryTransaction: any
-  ): Promise<{
-    transactionData: any;
-    txid: string;
-    confirmations: number;
-    guid: string;
-  }> => {
-    const { hd, main } = this.getSigner();
-    const { getRawTransaction } = this.txUtilsFunctions();
-
-    const { precision, initialSupply, maxsupply, fee, receiver } =
-      temporaryTransaction;
-
-    const amount = maxsupply * 10 ** precision;
-
-    const tokenOptions = this.getTokenCreationOptions(temporaryTransaction);
-    const txOptions = { rbf: true };
-
-    const newChangeAddress = await hd.getNewChangeAddress(true, 84);
-    const newFee = new sys.utils.BN(fee * 1e8);
-
-    const pendingTransaction = await main.assetNew(
-      tokenOptions,
-      txOptions,
-      newChangeAddress,
-      receiver,
-      newFee
-    );
-
-    const txid = pendingTransaction.extractTransaction().getId();
-    const transactionData = await getRawTransaction(main.blockbookURL, txid);
-    const assets = syscointx.getAssetsFromTx(
-      pendingTransaction.extractTransaction()
-    );
-    const createdTokenGuid = assets.keys().next().value;
-
-    if (initialSupply && initialSupply < amount) {
-      this.createMintedToken({
-        txid,
-        guid: createdTokenGuid,
-        initialSupply,
-        precision,
-        receivingAddress: receiver,
-        fee,
-      });
-    }
-
-    return {
-      transactionData,
-      txid,
-      confirmations: transactionData.confirmations,
-      guid: createdTokenGuid,
-    };
-  };
-
-  public confirmTokenMint = async (temporaryTransaction: any): Promise<any> => {
-    const { getTokenMap } = this.txUtilsFunctions();
-    const { main } = this.getSigner();
-
-    const { fee, assetGuid, amount, receivingAddress } = temporaryTransaction;
-
-    const feeRate = new sys.utils.BN(fee * 1e8);
-
-    const token = await getAsset(main.blockbookURL, assetGuid);
-
-    if (!token)
-      throw new Error(
-        'Bad Request: Could not create transaction. Token not found.'
-      );
-
-    const txOptions = { rbf: true };
-
-    const tokenMap = getTokenMap({
-      guid: assetGuid,
-      changeAddress: '',
-      amount: new sys.utils.BN(amount * 10 ** token.decimals) as any,
-      receivingAddress,
-    });
-
-    try {
-      const pendingTransaction = await main.assetSend(
-        txOptions,
-        tokenMap,
-        null,
-        feeRate
-      );
-
-      if (!pendingTransaction) {
-        throw new Error(
-          'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-        );
-      }
-
-      const txid = pendingTransaction.extractTransaction().getId();
-
-      return { txid };
-    } catch (error) {
-      throw new Error('Bad Request: Could not create transaction.');
-    }
-  };
-
-  public createParentToken = async ({
-    tokenOptions,
-    feeRate,
-  }: {
-    tokenOptions: {
-      precision: number;
-      symbol: string;
-      maxsupply: number;
-      description: string;
-    };
-    feeRate: number;
-  }) => {
-    const { hd, main } = this.getSigner();
-
-    const tokenChangeAddress = await hd.getNewChangeAddress(true, 84);
-    const txOptions = { rbf: true };
-
-    const pendingTransaction = await main.assetNew(
-      tokenOptions,
-      txOptions,
-      tokenChangeAddress,
-      tokenChangeAddress,
-      feeRate
-    );
-
-    if (!pendingTransaction) {
-      throw new Error(
-        'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-      );
-    }
-
-    const tokensFromTransaction = syscointx.getAssetsFromTx(
-      pendingTransaction.extractTransaction()
-    );
-    const txid = pendingTransaction.extractTransaction().getId();
-
-    return {
-      guid: tokensFromTransaction.keys().next().value,
-      txid,
-    };
-  };
-
-  public nftCreationStep3 = async (
-    tx: INewNFT,
-    guid: string
-  ): Promise<ITxid> => {
-    const { main } = this.getSigner();
-    const { getRawTransaction, getTokenMap } = this.txUtilsFunctions();
-
-    const { receivingAddress } = tx;
-
-    const feeRate = new sys.utils.BN(10);
-    const tokenOptions = { updatecapabilityflags: '0' };
-    const txOptions = { rbf: true };
-
-    const tokenMap = getTokenMap({
-      guid,
-      changeAddress: '',
-      amount: new sys.utils.BN(0) as any,
-      receivingAddress,
-    });
-
-    const pendingTransaction = await main.assetUpdate(
-      guid,
-      tokenOptions,
-      txOptions,
-      tokenMap,
-      receivingAddress,
-      feeRate
-    );
-
-    if (!pendingTransaction) {
-      throw new Error(
-        'Bad Request: Could not update minted token. Invalid or incorrect data provided.'
-      );
-    }
-
-    const txid = pendingTransaction.extractTransaction().getId();
-
-    return await new Promise((resolve, reject) => {
-      const interval = setInterval(async () => {
-        try {
-          const updateTx = await getRawTransaction(main.blockbookURL, txid);
-
-          if (updateTx.confirmations <= 0) return;
-
-          clearInterval(interval);
-
-          return resolve({ txid });
-        } catch (error) {
-          reject(error);
-        }
-      }, 16000);
-    });
-  };
-
-  public nftCreationStep2 = async (
-    tx: INewNFT,
-    guid: string
-  ): Promise<ITxid> => {
-    const { main } = this.getSigner();
-    const { getRawTransaction, getTokenMap } = this.txUtilsFunctions();
-
-    const { receivingAddress, precision, fee } = tx;
-
-    const feeRate = new sys.utils.BN(fee * 1e8);
-
-    const tokenMap = getTokenMap({
-      guid,
-      changeAddress: '',
-      amount: new sys.utils.BN(1 * 10 ** precision) as any,
-      receivingAddress,
-    });
-
-    const txOptions = { rbf: true };
-    const pendingTransaction = await main.assetSend(
-      txOptions,
-      tokenMap,
-      null,
-      feeRate
-    );
-
-    if (!pendingTransaction) {
-      throw new Error(
-        `Bad Request: Could not mint token ${guid}. Invalid or incorrect data provided.`
-      );
-    }
-
-    const txid = pendingTransaction.extractTransaction().getId();
-
-    return await new Promise((resolve, reject) => {
-      const interval = setInterval(async () => {
-        try {
-          const mintTx = await getRawTransaction(main.blockbookURL, txid);
-
-          if (mintTx.confirmations <= 0) return;
-
-          clearInterval(interval);
-
-          return resolve({ txid });
-        } catch (error) {
-          reject(error);
-        }
-      }, 16000);
-    });
-  };
-
-  public nftCreationStep1 = async (
-    tx: INewNFT
-  ): Promise<{ parent: { guid: string; txid: string } }> => {
-    const { main } = this.getSigner();
-    const { getRawTransaction } = this.txUtilsFunctions();
-
-    const { fee, symbol, description, precision } = tx;
-
-    const feeRate = new sys.utils.BN(fee * 1e8) as any;
-
-    const tokenOptions = {
-      precision,
-      symbol,
-      maxsupply: new sys.utils.BN(1 * 10 ** precision),
-      description,
-    } as any;
-
-    const parentToken = await this.createParentToken({ tokenOptions, feeRate });
-
-    return await new Promise((resolve, reject) => {
-      const interval = setInterval(async () => {
-        try {
-          const creationTx = await getRawTransaction(
-            main.blockbookURL,
-            parentToken.txid
-          );
-
-          if (creationTx.confirmations <= 0) return;
-
-          clearInterval(interval);
-
-          return resolve({ parent: parentToken });
-        } catch (error) {
-          reject(error);
-        }
-      }, 16000);
-    });
-  };
-
-  confirmNftCreation = (tx: any) => {
-    if (tx) {
-      // create token
-      this.nftCreationStep1(tx).then((createRes) => {
-        const {
-          parent: { guid },
-        } = createRes;
-        // mint token
-        this.nftCreationStep2(tx, guid).then(() => {
-          // update token
-          this.nftCreationStep3(tx, guid);
-        });
-      });
-      return { success: true };
-    }
-    return { success: false };
-  };
-
   public signPSBT = async ({
     psbt,
     signer,
+    pathIn,
   }: {
     psbt: string;
     signer: any;
+    pathIn?: string;
   }): Promise<JSON> => {
     return sys.utils.exportPsbtToJson(
-      await signer.sign(psbt),
+      await signer.sign(psbt, pathIn),
       undefined
     ) as any;
   };
@@ -770,7 +222,8 @@ export class SyscoinTransactions implements ISyscoinTransactions {
 
   signTransaction = async (
     data: { psbt: string; assets: string },
-    isSignOnly: boolean
+    isSignOnly: boolean,
+    pathIn?: string
   ): Promise<any> => {
     const { hd } = this.getSigner();
 
@@ -792,6 +245,7 @@ export class SyscoinTransactions implements ISyscoinTransactions {
         return await this.signPSBT({
           psbt: response.psbt,
           signer: hd,
+          pathIn,
         });
       }
 
@@ -803,49 +257,6 @@ export class SyscoinTransactions implements ISyscoinTransactions {
       throw new Error(
         String('Bad Request: Could not create transaction. ' + error)
       );
-    }
-  };
-
-  public confirmUpdateToken = async (
-    temporaryTransaction: ITokenUpdate
-  ): Promise<ITxid> => {
-    const { hd, main } = this.getSigner(); //TODO: remove hd as its defined inside main
-    const { getTokenMap } = this.txUtilsFunctions();
-
-    const { fee, assetGuid, assetWhiteList } = temporaryTransaction;
-
-    const txOptions = { rbf: true, assetWhiteList };
-
-    try {
-      const tokenMap = getTokenMap({
-        guid: assetGuid,
-        changeAddress: await hd.getNewChangeAddress(true, 84),
-        amount: new sys.utils.BN(0) as any,
-        receivingAddress: await hd.getNewReceivingAddress(true, 84),
-      });
-
-      const tokenOptions = this.getTokenUpdateOptions(temporaryTransaction);
-
-      const pendingTransaction = await main.assetUpdate(
-        assetGuid,
-        tokenOptions,
-        txOptions,
-        tokenMap,
-        null,
-        new sys.utils.BN(fee * 1e8)
-      );
-
-      const txid = pendingTransaction.extractTransaction().getId();
-
-      if (!pendingTransaction || !txid) {
-        throw new Error(
-          'Bad Request: Could not create transaction. Invalid or incorrect data provided.'
-        );
-      }
-
-      return { txid };
-    } catch (error) {
-      throw new Error('Bad Request: Could not create transaction.');
     }
   };
 

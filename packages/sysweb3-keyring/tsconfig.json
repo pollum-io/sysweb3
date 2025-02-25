@@ -7,7 +7,10 @@
     "outDir": "dist/cjs",
     "declarationDir": "dist/types",
     "resolveJsonModule": true,
+    "noImplicitAny": false,
     "strictPropertyInitialization": false
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

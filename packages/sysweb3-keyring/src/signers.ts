@@ -108,8 +108,8 @@ export interface SyscoinHDSigner {
     setIndexFlag: number;
     blockbookURL: string;
   };
-  mnemonic: string;
-  fromMnemonic: {
+  mnemonicOrZprv: string;
+  node: {
     seed: Buffer;
     isTestnet: boolean;
     coinType: number;

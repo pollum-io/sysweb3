@@ -548,40 +548,38 @@ export const getSearchTokenAtCoingecko = async (
     return null;
   }
 };
+const isImageUrlAvailable = async (imageUrl: string) => {
+  try {
+    const response = await fetch(imageUrl);
 
-const convertToRawGithubURL = (githubUrl: string) => {
-  // Replace "github.com" with "raw.githubusercontent.com"
-  const rawGitHubUrl = githubUrl.replace(
-    'github.com',
-    'raw.githubusercontent.com'
-  );
-
-  // Remove "blob/" if it exists in the URL
-  return rawGitHubUrl.replace('/blob/', '/').replace('/tree/', '/');
+    return response.status === 200;
+  } catch (error) {
+    console.log('isImageUrlAvailable -->', { error });
+    return false;
+  }
 };
 
 export const getSearchTokenAtSysGithubRepo = async (tokenSymbol: string) => {
-  const baseUrlToFetch = `https://github.com/syscoin/syscoin-rollux.github.io/tree/master/data/${tokenSymbol}`;
+  const baseUrlToFetch = `https://raw.githubusercontent.com/syscoin/syscoin-rollux.github.io/master/data/${tokenSymbol}`;
 
   try {
-    const fetchTokenData = await fetch(baseUrlToFetch);
+    const imageUrl = `${baseUrlToFetch}/logo`;
+    const dataUrl = `${baseUrlToFetch}/data.json`;
 
-    const tokenDataJson = await fetchTokenData.json();
+    const isPngImageAvailable = await isImageUrlAvailable(`${imageUrl}.png`);
 
-    if (tokenDataJson.payload) {
-      const getTokenImage = tokenDataJson.payload.tree.items[1].name as string;
+    const formattedImgUrl = isPngImageAvailable
+      ? `${imageUrl}.png`
+      : `${imageUrl}.svg`;
 
-      const fetchedData = await fetch(
-        convertToRawGithubURL(`${baseUrlToFetch}/data.json`)
-      );
+    const tokenData = await fetch(dataUrl);
 
-      const convertedDataToJSON = await fetchedData.json();
+    const formattedTokenData = await tokenData.json();
 
+    if (formattedTokenData) {
       return {
-        token: convertedDataToJSON as any,
-        imageUrl: getTokenImage
-          ? `${convertToRawGithubURL(baseUrlToFetch)}/${getTokenImage}`
-          : '',
+        token: formattedTokenData,
+        imageUrl: formattedImgUrl,
       };
     } else {
       return {
@@ -590,6 +588,7 @@ export const getSearchTokenAtSysGithubRepo = async (tokenSymbol: string) => {
       };
     }
   } catch (error) {
+    console.log('getSearchTokenAtSysGithubRepo error --> ', { error });
     return {
       token: null,
       imageUrl: '',
@@ -919,6 +918,7 @@ export interface NftMetadata {
   name: string;
   symbol: string;
 }
+
 export type IErc20Token = {
   name: string;
   symbol: string;
