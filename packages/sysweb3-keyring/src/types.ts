@@ -12,7 +12,16 @@ import {
 import { LedgerKeyring } from './ledger';
 import { TrezorKeyring } from './trezor';
 import { INetwork, INetworkType } from '@pollum-io/sysweb3-network';
-import { ITokenSend, ITxid } from '@pollum-io/sysweb3-utils';
+import {
+  ITokenMint,
+  ITokenSend,
+  ITokenUpdate,
+  ITxid,
+} from '@pollum-io/sysweb3-utils';
+
+export interface ITrezorWallet {
+  createHardwareWallet: () => Promise<IKeyringAccountState>;
+}
 
 export interface ISendTransaction {
   sender: string;
@@ -22,7 +31,6 @@ export interface ISendTransaction {
   gasPrice?: number;
   token?: any;
 }
-
 export type SimpleTransactionRequest = {
   to: string;
   from: string;
@@ -146,6 +154,16 @@ export interface ISyscoinTransactions {
     amount: number;
     receivingAddress: string;
   }) => Promise<number>;
+  confirmNftCreation: (tx: any) => { success: boolean };
+  confirmTokenMint: (transaction: ITokenMint) => Promise<ITxid>;
+  confirmTokenCreation: (transaction: any) => Promise<{
+    transactionData: any;
+    txid: string;
+    confirmations: number;
+    guid: string;
+  }>;
+  transferAssetOwnership: (transaction: any) => Promise<ITxid>;
+  confirmUpdateToken: (transaction: ITokenUpdate) => Promise<ITxid>;
   getRecommendedFee: (explorerUrl: string) => Promise<number>;
   sendTransaction: (
     transaction: ITokenSend,
@@ -169,13 +187,11 @@ export interface IKeyringManager {
   ) => Omit<IKeyringAccountState, 'xprv'>;
   getAccountXpub: () => string;
   getEncryptedXprv: () => string;
-
   importTrezorAccount(
     coin: string,
     slip44: string,
     index: string
   ): Promise<IKeyringAccountState>;
-
   getNetwork: () => INetwork;
   getPrivateKeyByAccountId: (
     id: number,
@@ -238,6 +254,12 @@ export enum KeyringAccountType {
   HDAccount = 'HDAccount',
   Ledger = 'Ledger',
 }
+
+export type IKeyringDApp = {
+  id: number;
+  url: string;
+  active: boolean;
+};
 
 export type accountType = {
   [id: number]: IKeyringAccountState;

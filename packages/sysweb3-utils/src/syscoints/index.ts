@@ -7,7 +7,6 @@ export class Syscoin {
   public Signer;
   public blockbookURL;
   public network;
-
   constructor(SignerIn: any, blockbookURL: string, network: any) {
     this.blockbookURL = blockbookURL;
     if (SignerIn) {
@@ -20,7 +19,6 @@ export class Syscoin {
       this.network = network || utils.syscoinNetworks.mainnet;
     }
   }
-
   // proxy to signAndSend
   public signAndSendWithSigner = async (
     psbt: any,
@@ -443,6 +441,220 @@ export class Syscoin {
     const psbt = await this.createPSBTFromRes(res, redeemOrWitnessScript);
 
     if (fromXpubOrAddress || !this.Signer) {
+      return {
+        psbt: psbt,
+        res: psbt,
+        assets: utils.getAssetsRequiringNotarization(psbt, utxos.assets),
+      };
+    }
+    return await this.signAndSend(
+      psbt,
+      utils.getAssetsRequiringNotarization(psbt, utxos.assets),
+      undefined,
+      undefined
+    );
+  };
+
+  /* assetNew
+  Purpose: Create new Syscoin SPT.
+  Param assetOpts: Required. Asset details. Fields described below:
+    Field precision. Required. Digits precision for this asset. Range is 0 to 8
+    Field symbol. Required. Symbol up to 8 characters in length in ASCII.
+    Field maxsupply. Required. Maximum satoshis for supply. Range is 1 to 1 quintillion (10^18)
+    Field description. Optional. Description in ASCII describing token. The description will be encoded via JSON in the pubdata field for the asset and will be in the 'desc' field of the JSON object.
+    Field contract. Optional. ERC20 address of the contract connected to this SPT for use in the SysEthereum bridge.
+    Field notarykeyid. Optional. Notary KeyID, the hash160 of the address used for notarization. Should be P2WPKH.
+    Field notarydetails. Optional. Notary Details, Fields described below:
+      Field endpoint. Required. Fully qualified URL of the notary endpoint. The endpoint will be sent a POST request with transaction hex and some other details in a JSON object and requires a signature signing the transaction following notarization protocol.
+      Field instanttransfers. Optional. Default is 0 (false). Instant transfers by blocking double-spends from inputs. Since notarization is happening via API the API can block any double-spend attempts thereby allowing for instant transactions.
+      Field hdrequired. Optional. Default is 0 (false). If HD account XPUB and HD path information is required by the notary to verify change addresses belong to the sender account.
+    Field auxfeedetails. Optional. Enforce auxiliary fees to every transaction on this asset. Fields described below:
+      Field auxfeekeyid. Required. AuxFee KeyID, the hash160 of the address used where fees are paid out to. Should be P2WPKH.
+      Field auxfees. Required. Array of AuxFee amounts based on total value being sent. Fields described below:
+        Field bound. Required. The amount threshold (in satoshi) where if total output value for this asset is at or above this amount apply a percentage fee.
+        Field percent. Required. Percent of total output value applied as a fee. Multiplied by 1000 to avoid floating point precision. For example 1% would be entered as 1000. 0.5% would be entered as 500. 0.001% would be entered as 1 (tenth of a basis point).
+    Field updatecapabilityflags. Optional. Defaults to 127 or ALL capabilities. Update capabilities on this asset. Fields are masks which are described below:
+      Mask 0 (No flags enabled)
+      Mask 1 (ASSET_UPDATE_DATA, can you update public data field?)
+      Mask 2 (ASSET_UPDATE_CONTRACT, can you update smart contract field?)
+      Mask 4 (ASSET_UPDATE_SUPPLY, can you issue or distribute supply via assetsend?)
+      Mask 8 (ASSET_UPDATE_NOTARY_KEY, can you update notary address?)
+      Mask 16 (ASSET_UPDATE_NOTARY_DETAILS, can you update notary details?)
+      Mask 32 (ASSET_UPDATE_AUXFEE, can you update aux fees?)
+      Mask 64 (ASSET_UPDATE_CAPABILITYFLAGS, can you update capability flags?)
+      Mask 127 (ASSET_CAPABILITY_ALL, All flags enabled)
+  Param txOpts: Optional. Transaction options. Fields are described below:
+    Field rbf. Optional. True by default. Replace-by-fee functionality allowing one to bump transaction by increasing fee for UTXOs used. Will be overrided to False, cannot be set to True for new asset transactions.
+    Field assetWhiteList. Optional. null by default. Allows UTXO's to be added from assets in the whitelist or the asset being sent
+  Param sysChangeAddress: Optional. Change address if defined is where Syscoin only change outputs are sent to. If not defined and Signer is defined then a new change address will be automatically created using the next available change address index in the HD path
+  Param sysReceivingAddress: Optional. Address which will hold the new asset. If not defined and Signer is defined then a new receiving address will be automatically created using the next available receiving address index in the HD path
+  Param feeRate: Optional. Defaults to 10 satoshi per byte. How many satoshi per byte the network fee should be paid out as.
+  Param sysFromXpubOrAddress: Optional. If wanting to fund from a specific XPUB or address specify this field should be set
+  Param utxos: Optional. Pass in specific utxos to fund a transaction.
+  Param redeemOrWitnessScript: Optional. redeemScript for P2SH and witnessScript for P2WSH spending conditions.
+  Returns: PSBT if if Signer is set or result object which is used to create PSBT and sign/send if xpub/address are passed in to fund transaction
+  */
+  public assetNew = async (
+    assetOpts: any,
+    txOpts: any,
+    sysChangeAddress: any,
+    sysReceivingAddress: any,
+    feeRate: any,
+    sysFromXpubOrAddress: any,
+    utxos: any,
+    redeemOrWitnessScript: any
+  ) => {
+    if (this.Signer) {
+      if (!sysChangeAddress) {
+        sysChangeAddress = await this.Signer.getNewChangeAddress();
+      }
+      if (!sysReceivingAddress) {
+        sysReceivingAddress = await this.Signer.getNewReceivingAddress();
+      }
+    }
+    // create dummy map where GUID will be replaced by deterministic one based on first input txid, we need this so fees will be accurately determined on first place of coinselect
+    const assetMap = new Map([
+      [
+        '0',
+        {
+          changeAddress: sysChangeAddress,
+          outputs: [{ value: new BN(0), address: sysReceivingAddress }],
+        },
+      ],
+    ]);
+    // true last param for filtering out 0 conf UTXO, new/update/send asset transactions must use confirmed inputs only as per Syscoin Core mempool policy
+    utxos = await this.fetchAndSanitizeUTXOs(
+      utxos,
+      sysFromXpubOrAddress,
+      txOpts,
+      assetMap,
+      true
+    );
+    const res = syscointx.assetNew(
+      assetOpts,
+      txOpts,
+      utxos,
+      assetMap,
+      sysChangeAddress,
+      feeRate
+    );
+    const psbt = await this.createPSBTFromRes(res, redeemOrWitnessScript);
+    if (sysFromXpubOrAddress || !this.Signer) {
+      return {
+        psbt: psbt,
+        res: psbt,
+        assets: utils.getAssetsRequiringNotarization(psbt, utxos.assets),
+      };
+    }
+    return await this.signAndSend(
+      psbt,
+      utils.getAssetsRequiringNotarization(psbt, utxos.assets),
+      undefined,
+      undefined
+    );
+  };
+
+  /* assetUpdate
+  Purpose: Update existing Syscoin SPT.
+  Param assetGuid: Required. Asset GUID to update.
+  Param assetMap: Required. Description of Map:
+    Index assetGuid. Required. Numeric Asset GUID you are sending to
+    Value is described below:
+      Field changeAddress. Optional. Where asset change outputs will be sent to. If it is not there or null a new change address will be created. If Signer is not set, it will send asset change outputs to sysChangeAddress
+      Field outputs. Required. Array of objects described below:
+        Field value. Required. Big Number representing satoshi's to send. Should be 0 if doing an update.
+        Field address. Optional. Destination address for asset.
+    Example:
+      const assetMap = new Map([
+        [assetGuid, { outputs: [{ value: new BN(0), address: 'tsys1qdflre2yd37qtpqe2ykuhwandlhq04r2td2t9ae' }] }]
+      ])
+      Would update assetGuid asset and send it as change back to 'tsys1qdflre2yd37qtpqe2ykuhwandlhq04r2td2t9ae'. Change is the 0-value UTXO for asset ownership.
+  Param assetOpts: Required. Asset details. Fields described below:
+    Field description. Optional. Description in ASCII describing token. The description will be encoded via JSON in the pubdata field for the asset and will be in the 'desc' field of the JSON object.
+    Field contract. Optional. ERC20 address of the contract connected to this SPT for use in the SysEthereum bridge.
+    Field notarykeyid. Optional. Notary KeyID, the hash160 of the address used for notarization. Should be P2WPKH.
+    Field notarydetails. Optional. Notary Details, Fields described below:
+      Field endpoint. Required. Fully qualified URL of the notary endpoint. The endpoint will be sent a POST request with transaction hex and some other details in a JSON object and requires a signature signing the transaction following notarization protocol.
+      Field instanttransfers. Optional. Default is 0 (false). Instant transfers by blocking double-spends from inputs. Since notarization is happening via API the API can block any double-spend attempts thereby allowing for instant transactions.
+      Field hdrequired. Optional. Default is 0 (false). If HD account XPUB and HD path information is required by the notary to verify change addresses belong to the sender account.
+    Field auxfeedetails. Optional. Enforce auxiliary fees to every transaction on this asset. Fields described below:
+      Field auxfeekeyid. Required. AuxFee KeyID, the hash160 of the address used where fees are paid out to. Should be P2WPKH.
+      Field auxfees. Required. Array of AuxFee amounts based on total value being sent. Fields described below:
+        Field bound. Required. The amount threshold (in satoshi) where if total output value for this asset is at or above this amount apply a percentage fee.
+        Field percent. Required. Percent of total output value applied as a fee. Multiplied by 1000 to avoid floating point precision. For example 1% would be entered as 1000. 0.5% would be entered as 500. 0.001% would be entered as 1 (tenth of a basis point).
+    Field updatecapabilityflags. Optional. Defaults to 127 or ALL capabilities. Update capabilities on this asset. Fields are masks which are described below:
+      Mask 0 (No flags enabled)
+      Mask 1 (ASSET_UPDATE_DATA, can you update public data field?)
+      Mask 2 (ASSET_UPDATE_CONTRACT, can you update smart contract field?)
+      Mask 4 (ASSET_UPDATE_SUPPLY, can you issue or distribute supply via assetsend?)
+      Mask 8 (ASSET_UPDATE_NOTARY_KEY, can you update notary address?)
+      Mask 16 (ASSET_UPDATE_NOTARY_DETAILS, can you update notary details?)
+      Mask 32 (ASSET_UPDATE_AUXFEE, can you update aux fees?)
+      Mask 64 (ASSET_UPDATE_CAPABILITYFLAGS, can you update capability flags?)
+      Mask 127 (ASSET_CAPABILITY_ALL, All flags enabled)
+  Param txOpts: Optional. Transaction options. Fields are described below:
+    Field rbf. Optional. True by default. Replace-by-fee functionality allowing one to bump transaction by increasing fee for UTXOs used.
+    Field assetWhiteList. Optional. null by default. Allows UTXO's to be added from assets in the whitelist or the asset being sent
+  Param sysChangeAddress: Optional. Change address if defined is where Syscoin only change outputs are sent to. Does not apply to asset change outputs which are definable in the assetOpts object. If not defined and Signer is defined then a new change address will be automatically created using the next available change address index in the HD path
+  Param feeRate: Optional. Defaults to 10 satoshi per byte. How many satoshi per byte the network fee should be paid out as.
+  Param sysFromXpubOrAddress: Optional. If wanting to fund from a specific XPUB or address specify this field should be set
+  Param utxos: Optional. Pass in specific utxos to fund a transaction.
+  Param redeemOrWitnessScript: Optional. redeemScript for P2SH and witnessScript for P2WSH spending conditions.
+  Returns: PSBT if if Signer is set or result object which is used to create PSBT and sign/send if xpub/address are passed in to fund transaction
+  */
+  public assetUpdate = async (
+    assetGuid: any,
+    assetOpts: any,
+    txOpts: any,
+    assetMap: any,
+    sysChangeAddress: any,
+    feeRate: any,
+    sysFromXpubOrAddress: any,
+    utxos: any,
+    redeemOrWitnessScript: any
+  ) => {
+    if (!utxos) {
+      if (sysFromXpubOrAddress || !this.Signer) {
+        utxos = await utils.fetchBackendUTXOS(
+          this.blockbookURL,
+          sysFromXpubOrAddress
+        );
+      } else if (this.Signer) {
+        utxos = await utils.fetchBackendUTXOS(
+          this.blockbookURL,
+          this.Signer.getAccountXpub()
+        );
+      }
+    }
+    if (this.Signer) {
+      for (const valueAssetObj of assetMap.values()) {
+        if (!valueAssetObj.changeAddress) {
+          valueAssetObj.changeAddress = await this.Signer.getNewChangeAddress();
+        }
+      }
+      if (!sysChangeAddress) {
+        sysChangeAddress = await this.Signer.getNewChangeAddress();
+      }
+    }
+    // true last param for filtering out 0 conf UTXO, new/update/send asset transactions must use confirmed inputs only as per Syscoin Core mempool policy
+    utxos = await this.fetchAndSanitizeUTXOs(
+      utxos,
+      sysFromXpubOrAddress,
+      txOpts,
+      assetMap,
+      true
+    );
+    const res = syscointx.assetUpdate(
+      assetGuid,
+      assetOpts,
+      txOpts,
+      utxos,
+      assetMap,
+      sysChangeAddress,
+      feeRate
+    );
+    const psbt = await this.createPSBTFromRes(res, redeemOrWitnessScript);
+    if (sysFromXpubOrAddress || !this.Signer) {
       return {
         psbt: psbt,
         res: psbt,
@@ -914,7 +1126,6 @@ export class Syscoin {
     );
   };
 }
-
 const SyscoinJSLib = Syscoin;
 const syscoin = Syscoin;
 
