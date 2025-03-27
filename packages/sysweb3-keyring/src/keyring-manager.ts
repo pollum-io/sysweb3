@@ -847,7 +847,6 @@ export class KeyringManager implements IKeyringManager {
   public logout = () => {
     this.sessionPassword = '';
     this.sessionSeed = '';
-    this.currentSessionSalt = '';
     this.sessionMnemonic = '';
     this.sessionMainMnemonic = '';
   };
