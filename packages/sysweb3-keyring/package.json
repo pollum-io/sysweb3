@@ -1,6 +1,6 @@
 {
   "name": "@pollum-io/sysweb3-keyring",
-  "version": "1.0.489",
+  "version": "1.0.491",
   "description": "Keyring Manager for UTXO and Web3 Wallets",
   "main": "cjs/index.js",
   "types": "types/index.d.ts",
@@ -32,7 +32,7 @@
     "@ledgerhq/hw-transport-webhid": "^6.27.19",
     "@ledgerhq/logs": "^6.10.1",
     "@pollum-io/sysweb3-core": "^1.0.27",
-    "@pollum-io/sysweb3-network": "^1.0.95",
+    "@pollum-io/sysweb3-network": "^1.0.96",
     "@pollum-io/sysweb3-utils": "^1.1.237",
     "@trezor/connect-web": "^9.1.5",
     "@trezor/connect-webextension": "^9.3.0",
