@@ -847,7 +847,6 @@ export class KeyringManager implements IKeyringManager {
   public logout = () => {
     this.sessionPassword = '';
     this.sessionSeed = '';
-    this.currentSessionSalt = '';
     this.sessionMnemonic = '';
     this.sessionMainMnemonic = '';
   };
@@ -1814,9 +1813,13 @@ export class KeyringManager implements IKeyringManager {
     if (isEthAddress) {
       balance = await this.ethereumTransaction.getBalance(account.address);
     } else {
+      const networkUrl =
+        this.wallet.networks.syscoin[
+          this.wallet.activeNetwork.isTestnet ? '5700' : '57'
+        ].url;
       const options = 'tokens=used&details=tokens';
       const response = await sys.utils.fetchBackendAccount(
-        this.wallet.activeNetwork.url,
+        networkUrl,
         account.xpub,
         options,
         true,

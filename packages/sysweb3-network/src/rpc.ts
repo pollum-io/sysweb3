@@ -233,8 +233,10 @@ export const getSysRpc = async (data: any) => {
   try {
     const { valid, coin, chain } = await validateSysRpc(data.url);
     if (coin.toLowerCase().includes('syscoin')) {
+      const chainId = chain === 'test' ? 5700 : 57;
+
       return {
-        rpc: { formattedNetwork: data, networkConfig: null },
+        rpc: { formattedNetwork: { ...data, chainId }, networkConfig: null },
         coin,
         chain,
       };
